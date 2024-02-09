@@ -1,0 +1,21 @@
+input:
+  network-filepath: ""
+  annotation-filepath: ""
+  annotation-orf-colname: "orf"
+  annotation-attribute-sign: both  # OPTIONS: highest, lowest, both
+
+network:
+  enrichment:
+    background: annotation_file # OPTIONS: network, annotation_file
+    type: auto
+    min-module-size: 5 # Must be an integer greater than 1
+    max-log10-pvalue: 16
+    alpha-cutoff: 0.05
+  node:
+    neighborhood-distance-algorithm: shortpath_weighted_layout # OPTIONS: euclidean, shortpath, shortpath_weighted_layout
+    neighborhood-radius: 0.1  
+    neighborhood-radius-type: diameter
+    group-distance-metric: jaccard # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
+    group-distance-threshold: 0.75
+    unimodality-type: connectivity
+
