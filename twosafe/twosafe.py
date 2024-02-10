@@ -14,32 +14,25 @@ if "matplotlib" not in sys.modules:
 
     matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import multiprocessing as mp
+
+# import multiprocessing as mp
 
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.stats import hypergeom
 from itertools import compress
 from scipy.cluster.hierarchy import linkage, fcluster
-from scipy.spatial.distance import pdist, squareform
-from statsmodels.stats.multitest import fdrcorrection
 
 
-from . import network, stats
+from .network.io import load_cys_network, load_network_annotation
+from .network.neighborhoods import get_network_neighborhoods, define_top_attributes
+from .network.stats import compute_pvalues_by_randomization
 from .config import read_default_config, validate_config
 
 
 class SAFE:
     """SAFE"""
-
-    network_options = {
-        "cys": network.load_cys_network,
-        # 'mat': load_mat_network,
-        # 'scatter': load_scatter_network,
-        # 'txt': load_txt_network,
-    }
 
     def __init__(self, network_filepath="", annotation_filepath="", **kwargs):
         """
@@ -52,18 +45,21 @@ class SAFE:
 
         """
         user_input = {
+            **kwargs,
             "network_filepath": network_filepath,
             "annotation_filepath": annotation_filepath,
-            **kwargs,
         }
-        self.config = validate_config({**user_input, **read_default_config()})
-        self.network = self.load_network()
-        (
-            self.node_to_attributes,
-            self.node_label_order,
-            self.attributes,
-        ) = self.load_network_attributes(self.network)
-        self.neighborhoods = self.get_node_neighborhoods(self.network)
+        self.config = validate_config({**read_default_config(), **user_input})
+        # TODO: What if the API is something like twosafe.load_cytoscape_network --> SAFE object
+        self.network = self.load_cytoscape_network()
+        self.annotation_map = self.load_network_annotation(self.network)
+        self.neighborhoods = self.load_neighborhoods(self.network)
+        self.neighborhood_enrichment_map = self.get_pvalues(self.neighborhoods, self.annotation_map)
+        print(
+            self.define_top_attributes(
+                self.network, self.annotation_map, self.neighborhood_enrichment_map
+            )
+        )
 
         self.default_config = None
         self.path_to_safe_data = None
@@ -74,7 +70,7 @@ class SAFE:
         self.graph = None
         self.node_key_attribute = "label_orf"
 
-        self.attributes = None
+        self.attributes_matrix = None
         self.nodes = None
         self.node2attribute = None
         self.num_nodes_per_attribute = None
@@ -112,188 +108,74 @@ class SAFE:
         # Output
         self.output_dir = ""
 
-    def load_network(self, *args, **kwargs):
+    def load_cytoscape_network(self, *args, **kwargs):
         network_filepath = self.config["network_filepath"]
-        network_file_extension = str(network_filepath).split(".")[-1].lower()
-        try:
-            network_func = self.network_options[network_file_extension]
-            return network_func(network_filepath, *args, **kwargs)
-        except KeyError as e:
-            raise KeyError(
-                f"{network_file_extension} is not a valid network file extension."
-                f"Choose from the following: {', '.join(network_file_extension)}"
-            ) from e
+        return load_cys_network(network_filepath, *args, **kwargs)
+        # except KeyError as e:
+        #     raise KeyError(
+        #         f"{network_file_extension} is not a valid network file extension."
+        #         f" Choose from the following: {', '.join(self.network_options)}"
+        #     ) from e
 
-    def get_network_nodes(self, network):
-        annotation_key_colname = self.config["annotation_key_colname"]
-        node_attributes = nx.get_node_attributes(network, annotation_key_colname)
-        if not bool(node_attributes):
-            raise AttributeError(
-                f"{self.config['annotation_key_colname']} is not a valid column name for annotation keys."
-                f"Consider setting `annotation_key_colname` to one of the following {', '.join(network.nodes[0].keys())}"
-            )
-        nx.set_node_attributes(network, annotation_key_colname, name="key")
-        label_list = nx.get_node_attributes(network, "label")
-        return pd.DataFrame(
-            {
-                "id": list(label_list.keys()),
-                "key": list(node_attributes.values()),
-                "label": list(label_list.values()),
-            }
+    # def get_network_nodes(self, network):
+    #     annotation_id_colname = self.config["annotation_id_colname"]
+    #     node_attributes = nx.get_node_attributes(network, annotation_id_colname)
+    #     if not bool(node_attributes):
+    #         raise AttributeError(
+    #             f"{self.config['annotation_id_colname']} is not a valid column name for annotation keys."
+    #             f"Consider setting `annotation_id_colname` to one of the following {', '.join(network.nodes[0].keys())}"
+    #         )
+    #     nx.set_node_attributes(network, annotation_id_colname, name="key")
+    #     label_list = nx.get_node_attributes(network, "label")
+    #     return pd.DataFrame(
+    #         {
+    #             "id": list(label_list.keys()),
+    #             "key": list(node_attributes.values()),
+    #             "label": list(label_list.values()),
+    #         }
+    #     )
+
+    def load_network_annotation(self, network):
+        annotation = load_network_annotation(
+            network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
+        return annotation
 
-    def load_network_attributes(self, network):
-        return network.load_network_attributes(
-            network, self.config["annotation_filepath"], self.config["annotation_key_colname"]
+    def load_neighborhoods(self, network):
+        neighborhoods = get_network_neighborhoods(
+            network, self.config["neighborhood_distance_metric"], self.config["neighborhood_radius"]
         )
-
-    def get_node_neighborhoods(self, network):
-        all_shortest_paths = {}
-        neighborhoods = np.zeros([network.number_of_nodes(), network.number_of_nodes()], dtype=int)
-        all_x = list(dict(network.nodes.data("x")).values())
-
-        if self.config["node_distance_metric"] == "euclidean":
-            node_radius = self.config["neighborhood_radius"] * (np.max(all_x) - np.min(all_x))
-            x = np.matrix(network.nodes.data("x"))[:, 1]
-            y = np.matrix(network.nodes.data("y"))[:, 1]
-            node_coordinates = np.concatenate([x, y], axis=1)
-            node_distances = squareform(pdist(node_coordinates, "euclidean"))
-            neighborhoods[node_distances < node_radius] = 1
-            return neighborhoods
-
-        if self.node_distance_metric == "shortpath_weighted_layout":
-            network_radius = self.neighborhood_radius * (np.max(all_x) - np.min(all_x))
-            all_shortest_paths = dict(
-                nx.all_pairs_dijkstra_path_length(network, weight="length", cutoff=network_radius)
-            )
-        if self.node_distance_metric == "shortpath":
-            network_radius = self.neighborhood_radius
-            all_shortest_paths = dict(
-                nx.all_pairs_dijkstra_path_length(network, cutoff=network_radius)
-            )
-        neighbors = [(s, t) for s in all_shortest_paths for t in all_shortest_paths[s].keys()]
-        for i in neighbors:
-            neighborhoods[i] = 1
         return neighborhoods
 
-    def compute_pvalues_by_randomization(
-        self, num_permutations=1000, max_workers=1, random_seed=888, multiple_testing=False
-    ):
-        # Pause for 1 sec to prevent the progress bar from showing up too early
-        time.sleep(1)
-        num_permutations_per_process = (
-            np.ceil(num_permutations / max_workers).astype(int)
-            if max_workers > 1
-            else num_permutations
+    def get_pvalues(self, neighborhoods, annotation):
+        annotation_matrix = annotation["annotation_matrix"]
+        neighborhood_enrichment_map = compute_pvalues_by_randomization(
+            neighborhoods,
+            annotation_matrix,
+            self.config["neighborhood_score_metric"],
+            self.config["network_enrichment_direction"],
+            self.config["enrichment_alpha_cutoff"],
+            num_permutations=2,
+            max_workers=1,
+            random_seed=888,
+            multiple_testing=False,
         )
-        arg_tuple = (
-            self.neighborhoods,
-            self.node_to_attributes,
-            self.neighborhood_score_type,
-            num_permutations_per_process,
-            random_seed,
+        return neighborhood_enrichment_map
+
+    def define_top_attributes(self, network, annotation_map, neighborhoods_map):
+        ordered_column_annotations = annotation_map["ordered_column_annotations"]
+        neighborhood_enrichment_sums = neighborhoods_map["neighborhood_enrichment_sums"]
+        neighborhood_binary_enrichment_matrix_below_alpha = neighborhoods_map[
+            "neighborhood_binary_enrichment_matrix_below_alpha"
+        ]
+        return define_top_attributes(
+            network,
+            ordered_column_annotations,
+            neighborhood_enrichment_sums,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+            self.config["min_annotation_size"],
+            self.config["unimodality_type"],
         )
-        counts_neg, counts_pos = stats.map_permutation_processes(arg_tuple, max_workers=max_workers)
-
-        N_in_neighborhood_in_group = stats.compute_neighborhood_score(
-            self.neighborhoods, self.node_to_attributes, self.neighborhood_score_type
-        )
-        idx = np.isnan(N_in_neighborhood_in_group)
-        counts_neg[idx] = np.nan
-        counts_pos[idx] = np.nan
-        # Compute P-values
-        neg_pvals = counts_neg / num_permutations
-        pos_pvals = counts_pos / num_permutations
-        # Correct for multiple testing
-        if multiple_testing:
-            out = np.apply_along_axis(fdrcorrection, 1, neg_pvals)
-            neg_pvals = out[:, 1, :]
-            out = np.apply_along_axis(fdrcorrection, 1, pos_pvals)
-            pos_pvals = out[:, 1, :]
-
-        # Log-transform into neighborhood enrichment scores (NES)
-        # Necessary conservative adjustment: when p-value = 0, set it to 1/num_permutations
-        nes_pos = -np.log10(np.where(pos_pvals == 0, 1 / num_permutations, pos_pvals))
-        nes_neg = -np.log10(np.where(neg_pvals == 0, 1 / num_permutations, neg_pvals))
-
-        if self.config["annotation_attr_sign"] == "highest":
-            nes = nes_pos
-        if self.config["annotation_attr_sign"] == "lowest":
-            nes = nes_neg
-        else:
-            # Only other option is 'both'
-            nes = nes_pos - nes_neg
-
-        idx = ~np.isnan(nes)
-        nes_binary = np.zeros(nes.shape)
-        nes_binary[idx] = np.abs(nes[idx]) > -np.log10(self.config["enrichment_alpha_cutoff"])
-        num_enriched_neighborhoods = np.sum(self.nes_binary, axis=0)
-
-        return nes, nes_binary, num_enriched_neighborhoods
-
-    def define_top_attributes(self, **kwargs):
-        if "attribute_unimodality_metric" in kwargs:
-            self.attribute_unimodality_metric = kwargs["attribute_unimodality_metric"]
-
-        if "attribute_enrichment_min_size" in kwargs:
-            self.attribute_enrichment_min_size = kwargs["attribute_enrichment_min_size"]
-
-        # Make sure that the settings are still valid
-        self.validate_config()
-
-        print("Criteria for top attributes:")
-        print("- minimum number of enriched neighborhoods: %d" % self.attribute_enrichment_min_size)
-        print(
-            "- region-specific distribution of enriched neighborhoods as defined by: %s"
-            % self.attribute_unimodality_metric
-        )
-
-        self.attributes["top"] = False
-
-        # Requirement 1: a minimum number of enriched neighborhoods
-        self.attributes.loc[
-            self.attributes["num_neighborhoods_enriched"] >= self.attribute_enrichment_min_size,
-            "top",
-        ] = True
-
-        # Requirement 2: 1 connected component in the subnetwork of enriched neighborhoods
-        if self.attribute_unimodality_metric == "connectivity":
-            self.attributes["num_connected_components"] = 0
-            self.attributes["size_connected_components"] = None
-            self.attributes["size_connected_components"] = self.attributes[
-                "size_connected_components"
-            ].astype(object)
-            self.attributes["num_large_connected_components"] = 0
-
-            for attribute in self.attributes.index.values[self.attributes["top"]]:
-                enriched_neighborhoods = list(
-                    compress(list(self.graph), self.nes_binary[:, attribute] > 0)
-                )
-                H = nx.subgraph(self.graph, enriched_neighborhoods)
-
-                connected_components = sorted(nx.connected_components(H), key=len, reverse=True)
-                num_connected_components = len(connected_components)
-                size_connected_components = np.array([len(c) for c in connected_components])
-                num_large_connected_components = np.sum(
-                    size_connected_components >= self.attribute_enrichment_min_size
-                )
-
-                self.attributes.loc[
-                    attribute, "num_connected_components"
-                ] = num_connected_components
-                self.attributes.at[
-                    attribute, "size_connected_components"
-                ] = size_connected_components
-                self.attributes.loc[
-                    attribute, "num_large_connected_components"
-                ] = num_large_connected_components
-
-            # Exclude attributes that have more than 1 connected component
-            # self.attributes.loc[self.attributes['num_large_connected_components'] > 1, 'top'] = False
-            self.attributes.loc[self.attributes["num_connected_components"] > 1, "top"] = False
-
-        if self.verbose:
-            print("Number of top attributes: %d" % np.sum(self.attributes["top"]))
 
     def define_domains(self, **kwargs):
         # Overwriting global settings, if necessary
@@ -303,20 +185,22 @@ class SAFE:
         # Make sure that the settings are still valid
         self.validate_config()
 
-        m = self.nes_binary[:, self.attributes["top"]].T
+        m = self.nes_binary[:, self.attributes_matrix["top"]].T
         Z = linkage(m, method="average", metric=self.attribute_distance_metric)
         max_d = np.max(Z[:, 2] * self.attribute_distance_threshold)
         domains = fcluster(Z, max_d, criterion="distance")
 
-        self.attributes["domain"] = 0
-        self.attributes.loc[self.attributes["top"], "domain"] = domains
+        self.attributes_matrix["domain"] = 0
+        self.attributes_matrix.loc[self.attributes_matrix["top"], "domain"] = domains
 
         # Assign nodes to domains
         node2nes = pd.DataFrame(
-            data=self.nes, columns=[self.attributes.index.values, self.attributes["domain"]]
+            data=self.nes,
+            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
         )
         node2nes_binary = pd.DataFrame(
-            data=self.nes_binary, columns=[self.attributes.index.values, self.attributes["domain"]]
+            data=self.nes_binary,
+            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
         )
 
         # # A node belongs to the domain that contains the attribute
@@ -343,7 +227,9 @@ class SAFE:
         if self.verbose:
             num_domains = len(np.unique(domains))
             num_attributes_per_domain = (
-                self.attributes.loc[self.attributes["domain"] > 0].groupby("domain")["id"].count()
+                self.attributes_matrix.loc[self.attributes_matrix["domain"] > 0]
+                .groupby("domain")["id"]
+                .count()
             )
             min_num_attributes = num_attributes_per_domain.min()
             max_num_attributes = num_attributes_per_domain.max()
@@ -354,30 +240,32 @@ class SAFE:
 
     def trim_domains(self, **kwargs):
         # Remove domains that are the top choice for less than a certain number of neighborhoods
-        domain_counts = np.zeros(len(self.attributes["domain"].unique())).astype(int)
+        domain_counts = np.zeros(len(self.attributes_matrix["domain"].unique())).astype(int)
         t = self.node2domain.groupby("primary_domain")["primary_domain"].count()
         domain_counts[t.index] = t.values
         to_remove = np.flatnonzero(domain_counts < self.attribute_enrichment_min_size)
 
-        self.attributes.loc[self.attributes["domain"].isin(to_remove), "domain"] = 0
+        self.attributes_matrix.loc[self.attributes_matrix["domain"].isin(to_remove), "domain"] = 0
 
         idx = self.node2domain["primary_domain"].isin(to_remove)
         self.node2domain.loc[idx, ["primary_domain", "primary_nes"]] = 0
 
         # Rename the domains (simple renumber)
-        a = np.sort(self.attributes["domain"].unique())
+        a = np.sort(self.attributes_matrix["domain"].unique())
         b = np.arange(len(a))
         renumber_dict = dict(zip(a, b))
 
-        self.attributes["domain"] = [renumber_dict[k] for k in self.attributes["domain"]]
+        self.attributes_matrix["domain"] = [
+            renumber_dict[k] for k in self.attributes_matrix["domain"]
+        ]
         self.node2domain["primary_domain"] = [
             renumber_dict[k] for k in self.node2domain["primary_domain"]
         ]
         self.node2domain.drop(columns=to_remove)
 
         # Make labels for each domain
-        domains = np.sort(self.attributes["domain"].unique())
-        domains_labels = self.attributes.groupby("domain")["name"].apply(chop_and_filter)
+        domains = np.sort(self.attributes_matrix["domain"].unique())
+        domains_labels = self.attributes_matrix.groupby("domain")["name"].apply(chop_and_filter)
         self.domains = pd.DataFrame(data={"id": domains, "label": domains_labels})
         self.domains.set_index("id", drop=False)
 
@@ -397,7 +285,7 @@ class SAFE:
         if background_color == "#ffffff":
             foreground_color = "#000000"
 
-        domains = np.sort(self.attributes["domain"].unique())
+        domains = np.sort(self.attributes_matrix["domain"].unique())
         # domains = self.domains.index.values
 
         # Define colors per domain
@@ -472,7 +360,7 @@ class SAFE:
         if background_color == "#ffffff":
             foreground_color = "#000000"
 
-        domains = np.sort(self.attributes["domain"].unique())
+        domains = np.sort(self.attributes_matrix["domain"].unique())
         # domains = self.domains.index.values
 
         # Define colors per domain
@@ -483,11 +371,13 @@ class SAFE:
 
         # Compute composite node colors
         node2nes = pd.DataFrame(
-            data=self.nes, columns=[self.attributes.index.values, self.attributes["domain"]]
+            data=self.nes,
+            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
         )
 
         node2nes_binary = pd.DataFrame(
-            data=self.nes_binary, columns=[self.attributes.index.values, self.attributes["domain"]]
+            data=self.nes_binary,
+            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
         )
         node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
         node2all_domains_count = node2domain_count.sum(axis=1)[:, np.newaxis]
@@ -618,9 +508,9 @@ class SAFE:
         if background_color == "#ffffff":
             foreground_color = "#000000"
 
-        all_attributes = self.attributes.index.values
+        all_attributes = self.attributes_matrix.index.values
         if top_attributes_only:
-            all_attributes = all_attributes[self.attributes["top"]]
+            all_attributes = all_attributes[self.attributes_matrix["top"]]
 
         if isinstance(attributes, int):
             if attributes < len(all_attributes):
@@ -628,10 +518,11 @@ class SAFE:
             else:
                 attributes = np.arange(len(all_attributes))
         elif isinstance(attributes, str):
-            attributes = [list(self.attributes["name"].values).index(attributes)]
+            attributes = [list(self.attributes_matrix["name"].values).index(attributes)]
         elif isinstance(attributes, list):
             attributes = [
-                list(self.attributes["name"].values).index(attribute) for attribute in attributes
+                list(self.attributes_matrix["name"].values).index(attribute)
+                for attribute in attributes
             ]
 
         node_xy = get_node_coordinates(self.graph)
@@ -900,7 +791,7 @@ class SAFE:
             if idx_attribute + nax == 0:
                 ax.invert_yaxis()
 
-            title = self.attributes.loc[attribute, "name"]
+            title = self.attributes_matrix.loc[attribute, "name"]
 
             title = "\n".join(textwrap.wrap(title, width=30))
             ax.set_title(title, color=foreground_color)
@@ -929,7 +820,7 @@ class SAFE:
 
         # Attribute properties
         path_attributes = os.path.join(self.output_dir, "attribute_properties_annotation.txt")
-        self.attributes.to_csv(path_attributes, sep="\t")
+        self.attributes_matrix.to_csv(path_attributes, sep="\t")
         print(path_attributes)
 
         # Node properties
@@ -956,7 +847,7 @@ class SAFE:
             )
         else:
             self.nodes = pd.DataFrame(self.nes)
-            self.nodes.columns = self.attributes["name"]
+            self.nodes.columns = self.attributes_matrix["name"]
             self.nodes.insert(loc=0, column="key", value=keys)
             self.nodes.insert(loc=1, column="label", value=labels)
 
@@ -969,7 +860,7 @@ def run_safe_batch(attribute_file):
     sf.load_network()
     sf.define_neighborhoods()
 
-    sf.load_network_attributes(attribute_file=attribute_file)
+    sf.load_network_annotation(attribute_file=attribute_file)
     sf.compute_pvalues(num_permutations=1000)
 
     return sf.nes
@@ -985,13 +876,13 @@ if __name__ == "__main__":
         "path_to_attribute_file",
         metavar="path_to_attribute_file",
         type=str,
-        help="Path to the file containing label-to-attribute annotations",
+        help="Path to the file containing label-to-attribute annotation",
     )
 
     args = parser.parse_args()
 
     # Load the attribute file
-    [attributes, node_label_order, node2attribute] = load_network_attributes(
+    [attributes, node_label_order, node2attribute] = load_network_annotation(
         args.path_to_attribute_file
     )
 
