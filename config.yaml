@@ -2,17 +2,18 @@ input:
   network-filepath: ""
   annotation-filepath: ""
   annotation-id-colname: "label"
-  annotation-attribute-sign: both  # OPTIONS: Enrichment type: 'highest', 'lowest', 'both'
 
 network:
   enrichment:
     background: annotation_file # OPTIONS: 'network', 'annotation_file'
     type: auto
-    min-module-size: 5 # Must be an integer greater than 1
+    direction: both  # OPTIONS: Enrichment direction: 'highest', 'lowest', 'both'
+    min-annotation-size: 5 # Size of annotation collection (e.g., modules with genes); must be an integer greater than 1
     max-log10-pvalue: 16
     alpha-cutoff: 0.05
   node:
-    neighborhood-distance-algorithm: shortpath_weighted_layout # OPTIONS: 'euclidean', 'shortpath', 'shortpath_weighted_layout'
+    neighborhood-distance-metric: shortpath_weighted_layout # OPTIONS: 'euclidean', 'shortpath', 'shortpath_weighted_layout'
+    neighborhood-score-metric: sum  # OPTIONS: 'sum', 'z-score'
     neighborhood-radius: 0.1  
     neighborhood-radius-type: diameter
     group-distance-metric: jaccard # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
