@@ -17,17 +17,16 @@ def read_default_config():
         # Input
         "network_filepath": input_config["network-filepath"],
         "annotation_filepath": input_config["annotation-filepath"],
-        "annotation_key_colname": input_config["annotation-key-colname"],
-        "annotation_attr_sign": input_config["annotation-attribute-sign"],
+        "annotation_id_colname": input_config["annotation-id-colname"],
         # Network
         "network_enrichment_background": network_config["enrichment"]["background"],
         "network_enrichment_type": network_config["enrichment"]["type"],
-        "min_module_size": network_config["enrichment"]["min-module-size"],
+        "network_enrichment_direction": network_config["enrichment"]["direction"],
+        "min_annotation_size": network_config["enrichment"]["min-annotation-size"],
         "enrichment_max_log10_pvalue": network_config["enrichment"]["max-log10-pvalue"],
         "enrichment_alpha_cutoff": network_config["enrichment"]["alpha-cutoff"],
-        "neighborhood_distance_algorithm": network_config["node"][
-            "neighborhood-distance-algorithm"
-        ],
+        "neighborhood_distance_metric": network_config["node"]["neighborhood-distance-metric"],
+        "neighborhood_score_metric": network_config["node"]["neighborhood-score-metric"],
         "neighborhood_radius": network_config["node"]["neighborhood-radius"],
         "neighborhood_radius_type": network_config["node"]["neighborhood-radius-type"],
         "group_distance_metric": network_config["node"]["group-distance-metric"],
@@ -49,13 +48,18 @@ def validate_config(config):
         keywords=["annotation_file", "network"],
     )
     _assert_user_input_in_valid_keywords(
-        "Neighborhood Distance Algorithm",
-        user_input=config["neighborhood_distance_algorithm"],
+        "Neighborhood Distance Metric",
+        user_input=config["neighborhood_distance_metric"],
         keywords=["euclidean", "shortpath", "shortpath_weighted_layout"],
     )
     _assert_user_input_in_valid_keywords(
+        "Neighborhood Distance Metric",
+        user_input=config["neighborhood_score_metric"],
+        keywords=["sum", "z-score"],
+    )
+    _assert_user_input_in_valid_keywords(
         "Annotation Attribute Sign",
-        user_input=config["annotation_attr_sign"],
+        user_input=config["network_enrichment_direction"],
         keywords=["highest", "lowest", "both"],
     )
 
@@ -66,7 +70,7 @@ def validate_config(config):
     assert isinstance(
         config["enrichment_max_log10_pvalue"], (int, float)
     ), "Maximum enrichment Log10 P-value must be a number."
-    assert config["min_module_size"] > 1, "The minimum functional module size is 2."
+    assert config["min_annotation_size"] > 1, "The minimum permitted annotation size is 2."
     assert (
         1 > config["group_distance_threshold"] > 0
     ), "Group distance threshold must be between 0 and 1."
