@@ -55,7 +55,7 @@ def validate_config(config):
     _assert_user_input_in_valid_keywords(
         "Neighborhood Distance Metric",
         user_input=config["neighborhood_score_metric"],
-        keywords=["sum", "z-score"],
+        keywords=["sum", "variance", "zscore"],
     )
     _assert_user_input_in_valid_keywords(
         "Annotation Attribute Sign",
