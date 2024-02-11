@@ -30,44 +30,34 @@ def plot_composite_network(
         foreground_color = "#000000"
 
     domains = np.sort(annotation_matrix["domain"].unique())
-    # domains = trimmed_domains_matrix.index.values
-
     # Define colors per domain
     domain2rgb = get_colors("hsv", len(domains))
-
     # Store domain info
     trimmed_domains_matrix["rgba"] = domain2rgb
-
     # Compute composite node colors
     node2nes = pd.DataFrame(
         data=neighborhood_enrichment_matrix,
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
     )
-
     node2nes_binary = pd.DataFrame(
         data=neighborhood_binary_enrichment_matrix_below_alpha,
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
     )
     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
     node2all_domains_count = node2domain_count.sum(axis=1).to_numpy()[:, np.newaxis]
-
     with np.errstate(divide="ignore", invalid="ignore"):
         c = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
 
     t = np.sum(c, axis=1)
     c[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
-
     # Adjust brightness
     coeff_brightness = 0.1 / np.nanmean(np.ravel(c[:, :-1]))
     if coeff_brightness > 1:
         c = c * coeff_brightness
     c = np.clip(c, None, 1)
-
     # Sort nodes by their overall brightness
     ix = np.argsort(np.sum(c, axis=1))
-
     node_xy = get_node_coordinates(network)
-
     # Figure parameters
     num_plots = 2
 
@@ -125,12 +115,8 @@ def plot_composite_network(
             alpha = alpha / max_log10_pvalue
             alpha[alpha > 1] = 1
             alpha = np.reshape(alpha, -1)
-
             c = np.repeat(domain_color, len(alpha), axis=0)
-            # c[:, 3] = alpha
-
             idx = domains_matrix["primary domain"] == domain
-            # ix = np.argsort(c)
             axes[1 + domain].scatter(
                 node_xy[idx, 0], node_xy[idx, 1], c=c[idx], s=60, edgecolor=None
             )

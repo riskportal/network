@@ -129,19 +129,18 @@ def define_domains(
         data=binary_enrichment_matrix_below_alpha,
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
     )
-
     node2domain = node2nes_binary.groupby(level="domain", axis=1).sum()
     t_max = node2domain.loc[:, 1:].max(axis=1)
     t_idxmax = node2domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
 
     node2domain["primary domain"] = t_idxmax
-
     # Get the max NES for the primary domain
     o = node2nes.groupby(level="domain", axis=1).max()
     i = pd.Series(t_idxmax)
     # Extract values from 'o' at the indices specified by 'i'
-    node2domain["primary nes"] = o.values[i.index, i.values]
+    # Subtrace i.values - 1, as i.values starts with 1 and we are looking at a 0-based index
+    node2domain["primary nes"] = o.values[i.index, i.values - 1]
 
     return node2domain
 

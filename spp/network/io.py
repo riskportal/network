@@ -77,8 +77,7 @@ def load_cys_network(cys_filepath, view_name=None):
             G.remove_node(node)
 
     # Read the node attributes (from /tables/)
-    network_filename = cys_filepath.stem
-    attribute_metadata_keywords = ["/tables/", network_filename, "SHARED_ATTRS", "node.cytable"]
+    attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "node.cytable"]
     attribute_metadata = [
         cf for cf in cys_files if all(keyword in cf for keyword in attribute_metadata_keywords)
     ][0]
