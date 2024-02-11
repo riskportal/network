@@ -8,7 +8,7 @@ network:
     background: annotation_file # OPTIONS: 'network', 'annotation_file'
     type: auto
     direction: both  # OPTIONS: Enrichment direction: 'highest', 'lowest', 'both'
-    min-annotation-size: 5 # Size of annotation collection (e.g., modules with genes); must be an integer greater than 1
+    min-annotation-size: 5 # Size of mapped annotation collection to consider plotting (e.g., modules with genes); must be an integer greater than 1
     max-log10-pvalue: 16
     alpha-cutoff: 0.05
   node:
