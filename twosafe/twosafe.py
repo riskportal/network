@@ -21,14 +21,18 @@ import numpy as np
 # import multiprocessing as mp
 
 from matplotlib.colors import LinearSegmentedColormap
-from itertools import compress
-from scipy.cluster.hierarchy import linkage, fcluster
 
 
-from .network.io import load_cys_network, load_network_annotation
-from .network.neighborhoods import get_network_neighborhoods, define_top_attributes
-from .network.stats import compute_pvalues_by_randomization
 from .config import read_default_config, validate_config
+from .network.io import load_cys_network, load_network_annotation
+from .network.neighborhoods import (
+    get_network_neighborhoods,
+    define_top_attributes,
+    define_domains,
+    trim_domains,
+)
+from .network.plot import plot_composite_network
+from .network.stats import compute_pvalues_by_randomization
 
 
 class SAFE:
@@ -55,12 +59,26 @@ class SAFE:
         self.annotation_map = self.load_network_annotation(self.network)
         self.neighborhoods = self.load_neighborhoods(self.network)
         self.neighborhood_enrichment_map = self.get_pvalues(self.neighborhoods, self.annotation_map)
-        print(
-            self.define_top_attributes(
-                self.network, self.annotation_map, self.neighborhood_enrichment_map
-            )
+        self.annotation_enrichment_matrix = self.define_top_attributes(
+            self.network, self.annotation_map, self.neighborhood_enrichment_map
+        )
+        self.domains_matrix = self.define_domains(
+            self.neighborhood_enrichment_map, self.annotation_enrichment_matrix
+        )
+        (
+            self.annotation_enrichment_matrix,
+            self.domains_matrix,
+            self.trimmed_domains_matrix,
+        ) = self.trim_domains(self.annotation_enrichment_matrix, self.domains_matrix)
+        self.plot_composite_network(
+            self.network,
+            self.neighborhood_enrichment_map,
+            self.annotation_enrichment_matrix,
+            self.domains_matrix,
+            self.trimmed_domains_matrix,
         )
 
+        # ===== CHECKPOINT =====
         self.default_config = None
         self.path_to_safe_data = None
         self.path_to_network_file = None
@@ -109,6 +127,7 @@ class SAFE:
         self.output_dir = ""
 
     def load_cytoscape_network(self, *args, **kwargs):
+        print("Loading Cytoscape network...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
         # except KeyError as e:
@@ -136,18 +155,21 @@ class SAFE:
     #     )
 
     def load_network_annotation(self, network):
+        print("Loading network annotations...")
         annotation = load_network_annotation(
             network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
         return annotation
 
     def load_neighborhoods(self, network):
+        print("Loading network neighborhoods...")
         neighborhoods = get_network_neighborhoods(
             network, self.config["neighborhood_distance_metric"], self.config["neighborhood_radius"]
         )
         return neighborhoods
 
     def get_pvalues(self, neighborhoods, annotation):
+        print("Computing P-values by randomization...")
         annotation_matrix = annotation["annotation_matrix"]
         neighborhood_enrichment_map = compute_pvalues_by_randomization(
             neighborhoods,
@@ -155,7 +177,7 @@ class SAFE:
             self.config["neighborhood_score_metric"],
             self.config["network_enrichment_direction"],
             self.config["enrichment_alpha_cutoff"],
-            num_permutations=2,
+            num_permutations=150,
             max_workers=1,
             random_seed=888,
             multiple_testing=False,
@@ -168,7 +190,7 @@ class SAFE:
         neighborhood_binary_enrichment_matrix_below_alpha = neighborhoods_map[
             "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
-        return define_top_attributes(
+        top_attributes = define_top_attributes(
             network,
             ordered_column_annotations,
             neighborhood_enrichment_sums,
@@ -176,315 +198,268 @@ class SAFE:
             self.config["min_annotation_size"],
             self.config["unimodality_type"],
         )
+        return top_attributes
 
-    def define_domains(self, **kwargs):
-        # Overwriting global settings, if necessary
-        if "attribute_distance_threshold" in kwargs:
-            self.attribute_distance_threshold = kwargs["attribute_distance_threshold"]
-
-        # Make sure that the settings are still valid
-        self.validate_config()
-
-        m = self.nes_binary[:, self.attributes_matrix["top"]].T
-        Z = linkage(m, method="average", metric=self.attribute_distance_metric)
-        max_d = np.max(Z[:, 2] * self.attribute_distance_threshold)
-        domains = fcluster(Z, max_d, criterion="distance")
-
-        self.attributes_matrix["domain"] = 0
-        self.attributes_matrix.loc[self.attributes_matrix["top"], "domain"] = domains
-
-        # Assign nodes to domains
-        node2nes = pd.DataFrame(
-            data=self.nes,
-            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
-        )
-        node2nes_binary = pd.DataFrame(
-            data=self.nes_binary,
-            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
-        )
-
-        # # A node belongs to the domain that contains the attribute
-        # for which the node has the highest enrichment
-        # self.node2domain = node2nes.groupby(level='domain', axis=1).max()
-        # t_max = self.node2domain.loc[:, 1:].max(axis=1)
-        # t_idxmax = self.node2domain.loc[:, 1:].idxmax(axis=1)
-        # t_idxmax[t_max < -np.log10(self.enrichment_threshold)] = 0
-
-        # A node belongs to the domain that contains the highest number of attributes
-        # for which the nodes is significantly enriched
-        self.node2domain = node2nes_binary.groupby(level="domain", axis=1).sum()
-        t_max = self.node2domain.loc[:, 1:].max(axis=1)
-        t_idxmax = self.node2domain.loc[:, 1:].idxmax(axis=1)
-        t_idxmax[t_max == 0] = 0
-
-        self.node2domain["primary_domain"] = t_idxmax
-
-        # Get the max NES for the primary domain
-        o = node2nes.groupby(level="domain", axis=1).max()
-        i = pd.Series(t_idxmax)
-        self.node2domain["primary_nes"] = o.lookup(i.index, i.values)
-
-        if self.verbose:
-            num_domains = len(np.unique(domains))
-            num_attributes_per_domain = (
-                self.attributes_matrix.loc[self.attributes_matrix["domain"] > 0]
-                .groupby("domain")["id"]
-                .count()
-            )
-            min_num_attributes = num_attributes_per_domain.min()
-            max_num_attributes = num_attributes_per_domain.max()
-            print(
-                "Number of domains: %d (containing %d-%d attributes)"
-                % (num_domains, min_num_attributes, max_num_attributes)
-            )
-
-    def trim_domains(self, **kwargs):
-        # Remove domains that are the top choice for less than a certain number of neighborhoods
-        domain_counts = np.zeros(len(self.attributes_matrix["domain"].unique())).astype(int)
-        t = self.node2domain.groupby("primary_domain")["primary_domain"].count()
-        domain_counts[t.index] = t.values
-        to_remove = np.flatnonzero(domain_counts < self.attribute_enrichment_min_size)
-
-        self.attributes_matrix.loc[self.attributes_matrix["domain"].isin(to_remove), "domain"] = 0
-
-        idx = self.node2domain["primary_domain"].isin(to_remove)
-        self.node2domain.loc[idx, ["primary_domain", "primary_nes"]] = 0
-
-        # Rename the domains (simple renumber)
-        a = np.sort(self.attributes_matrix["domain"].unique())
-        b = np.arange(len(a))
-        renumber_dict = dict(zip(a, b))
-
-        self.attributes_matrix["domain"] = [
-            renumber_dict[k] for k in self.attributes_matrix["domain"]
+    def define_domains(self, neighborhood_enrichment_map, annotation_enrichment_matrix):
+        print("Defining domains...")
+        neighborhood_enrichment_matrix = neighborhood_enrichment_map[
+            "neighborhood_enrichment_matrix"
         ]
-        self.node2domain["primary_domain"] = [
-            renumber_dict[k] for k in self.node2domain["primary_domain"]
+        neighborhood_binary_enrichment_matrix_below_alpha = neighborhood_enrichment_map[
+            "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
-        self.node2domain.drop(columns=to_remove)
-
-        # Make labels for each domain
-        domains = np.sort(self.attributes_matrix["domain"].unique())
-        domains_labels = self.attributes_matrix.groupby("domain")["name"].apply(chop_and_filter)
-        self.domains = pd.DataFrame(data={"id": domains, "label": domains_labels})
-        self.domains.set_index("id", drop=False)
-
-        if self.verbose:
-            print(
-                "Removed %d domains because they were the top choice for less than %d neighborhoods."
-                % (len(to_remove), self.attribute_enrichment_min_size)
-            )
-
-    def plot_network(self, background_color="#000000"):
-        plot_network(self.graph, background_color=background_color)
-
-    def plot_composite_network_contours(
-        self, save_fig=None, clabels=False, background_color="#000000"
-    ):
-        foreground_color = "#ffffff"
-        if background_color == "#ffffff":
-            foreground_color = "#000000"
-
-        domains = np.sort(self.attributes_matrix["domain"].unique())
-        # domains = self.domains.index.values
-
-        # Define colors per domain
-        domain2rgb = get_colors("hsv", len(domains))
-
-        # Store domain info
-        self.domains["rgba"] = domain2rgb.tolist()
-
-        # Get node coordinates
-        node_xy = get_node_coordinates(self.graph)
-
-        # Figure parameters
-        num_plots = 2
-
-        nrows = int(np.ceil(num_plots / 2))
-        ncols = np.min([num_plots, 2])
-        figsize = (10 * ncols, 10 * nrows)
-
-        [fig, axes] = plt.subplots(
-            nrows=nrows,
-            ncols=ncols,
-            figsize=figsize,
-            sharex=True,
-            sharey=True,
-            facecolor=background_color,
+        group_distance_metric = self.config["group_distance_metric"]
+        group_distance_threshold = self.config["group_distance_threshold"]
+        domains_matrix = define_domains(
+            neighborhood_enrichment_matrix,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+            annotation_enrichment_matrix,
+            group_distance_metric,
+            group_distance_threshold,
         )
-        axes = axes.ravel()
+        return domains_matrix
 
-        # First, plot the network
-        ax = axes[0]
-        ax = plot_network(self.graph, ax=ax, background_color=background_color)
-
-        # Then, plot the composite network as contours
-
-        for n_domain, domain in enumerate(self.domains["label"].values):
-            nodes_indices = self.node2domain.loc[
-                self.node2domain.loc[:, n_domain] > 0,
-            ].index.values
-            pos3 = node_xy[nodes_indices, :]
-
-            kernel = gaussian_kde(pos3.T)
-            [X, Y] = np.mgrid[
-                np.min(pos3[:, 0]) : np.max(pos3[:, 0]) : 100j,
-                np.min(pos3[:, 1]) : np.max(pos3[:, 1]) : 100j,
-            ]
-            positions = np.vstack([X.ravel(), Y.ravel()])
-            Z = np.reshape(kernel(positions).T, X.shape)
-
-            C = ax[1].contour(X, Y, Z, [1e-6], colors=self.domains.loc[n_domain, "rgba"], alpha=1)
-
-            if clabels:
-                C.levels = [n_domain + 1]
-                plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
-                print("%d -- %s" % (n_domain + 1, domain))
-
-        fig.set_facecolor(background_color)
-
-        if save_fig:
-            path_to_fig = save_fig
-            print("Output path: %s" % path_to_fig)
-            plt.savefig(path_to_fig, facecolor=background_color)
+    def trim_domains(self, annotation_matrix, domains_matrix):
+        print("Trimming domains...")
+        trimmed_domains = trim_domains(
+            annotation_matrix,
+            domains_matrix,
+            self.config["min_annotation_size"],
+        )
+        return trimmed_domains
 
     def plot_composite_network(
         self,
-        show_each_domain=False,
-        show_domain_ids=True,
-        save_fig=None,
-        labels=[],
-        background_color="#000000",
+        network,
+        neighborhood_enrichment_map,
+        annotation_matrix,
+        domains_matrix,
+        trimmed_domains_matrix,
     ):
-        foreground_color = "#ffffff"
-        if background_color == "#ffffff":
-            foreground_color = "#000000"
-
-        domains = np.sort(self.attributes_matrix["domain"].unique())
-        # domains = self.domains.index.values
-
-        # Define colors per domain
-        domain2rgb = get_colors("hsv", len(domains))
-
-        # Store domain info
-        self.domains["rgba"] = domain2rgb.tolist()
-
-        # Compute composite node colors
-        node2nes = pd.DataFrame(
-            data=self.nes,
-            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
+        print("Plotting composite network contours...")
+        neighborhood_enrichment_matrix = neighborhood_enrichment_map[
+            "neighborhood_enrichment_matrix"
+        ]
+        neighborhood_binary_enrichment_matrix_below_alpha = neighborhood_enrichment_map[
+            "neighborhood_binary_enrichment_matrix_below_alpha"
+        ]
+        return plot_composite_network(
+            network,
+            annotation_matrix,
+            domains_matrix,
+            trimmed_domains_matrix,
+            neighborhood_enrichment_matrix,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+            self.config["enrichment_max_log10_pvalue"],
         )
 
-        node2nes_binary = pd.DataFrame(
-            data=self.nes_binary,
-            columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
-        )
-        node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
-        node2all_domains_count = node2domain_count.sum(axis=1)[:, np.newaxis]
+    # def plot_composite_network_contours(
+    #     self, save_fig=None, clabels=False, background_color="#000000"
+    # ):
+    #     foreground_color = "#ffffff"
+    #     if background_color == "#ffffff":
+    #         foreground_color = "#000000"
 
-        with np.errstate(divide="ignore", invalid="ignore"):
-            c = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
+    #     domains = np.sort(self.attributes_matrix["domain"].unique())
+    #     # domains = self.domains.index.values
 
-        t = np.sum(c, axis=1)
-        c[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
+    #     # Define colors per domain
+    #     domain2rgb = get_colors("hsv", len(domains))
 
-        # Adjust brightness
-        coeff_brightness = 0.1 / np.nanmean(np.ravel(c[:, :-1]))
-        if coeff_brightness > 1:
-            c = c * coeff_brightness
-        c = np.clip(c, None, 1)
+    #     # Store domain info
+    #     self.domains["rgba"] = domain2rgb.tolist()
 
-        # Sort nodes by their overall brightness
-        ix = np.argsort(np.sum(c, axis=1))
+    #     # Get node coordinates
+    #     node_xy = get_node_coordinates(self.graph)
 
-        node_xy = get_node_coordinates(self.graph)
+    #     # Figure parameters
+    #     num_plots = 2
 
-        # Figure parameters
-        num_plots = 2
+    #     nrows = int(np.ceil(num_plots / 2))
+    #     ncols = np.min([num_plots, 2])
+    #     figsize = (10 * ncols, 10 * nrows)
 
-        if show_each_domain:
-            num_plots = num_plots + (len(domains) - 1)
+    #     [fig, axes] = plt.subplots(
+    #         nrows=nrows,
+    #         ncols=ncols,
+    #         figsize=figsize,
+    #         sharex=True,
+    #         sharey=True,
+    #         facecolor=background_color,
+    #     )
+    #     axes = axes.ravel()
 
-        nrows = int(np.ceil(num_plots / 2))
-        ncols = np.min([num_plots, 2])
-        figsize = (10 * ncols, 10 * nrows)
+    #     # First, plot the network
+    #     ax = axes[0]
+    #     ax = plot_network(self.graph, ax=ax, background_color=background_color)
 
-        [fig, axes] = plt.subplots(
-            nrows=nrows,
-            ncols=ncols,
-            figsize=figsize,
-            sharex=True,
-            sharey=True,
-            facecolor=background_color,
-        )
-        axes = axes.ravel()
+    #     # Then, plot the composite network as contours
 
-        # First, plot the network
-        ax = axes[0]
-        ax = plot_network(self.graph, ax=ax, background_color=background_color)
+    #     for n_domain, domain in enumerate(self.domains["label"].values):
+    #         nodes_indices = self.node2domain.loc[
+    #             self.node2domain.loc[:, n_domain] > 0,
+    #         ].index.values
+    #         pos3 = node_xy[nodes_indices, :]
 
-        # Then, plot the composite network
-        axes[1].scatter(node_xy[ix, 0], node_xy[ix, 1], c=c[ix], s=60, edgecolor=None)
-        axes[1].set_aspect("equal")
-        axes[1].set_facecolor(background_color)
+    #         kernel = gaussian_kde(pos3.T)
+    #         [X, Y] = np.mgrid[
+    #             np.min(pos3[:, 0]) : np.max(pos3[:, 0]) : 100j,
+    #             np.min(pos3[:, 1]) : np.max(pos3[:, 1]) : 100j,
+    #         ]
+    #         positions = np.vstack([X.ravel(), Y.ravel()])
+    #         Z = np.reshape(kernel(positions).T, X.shape)
 
-        # Plot a circle around the network
-        plot_network_contour(self.graph, axes[1], background_color=background_color)
+    #         C = ax[1].contour(X, Y, Z, [1e-6], colors=self.domains.loc[n_domain, "rgba"], alpha=1)
 
-        # Plot the labels, if any
-        if labels:
-            plot_labels(labels, self.graph, axes[1])
+    #         if clabels:
+    #             C.levels = [n_domain + 1]
+    #             plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
+    #             print("%d -- %s" % (n_domain + 1, domain))
 
-        if show_domain_ids:
-            for domain in domains[domains > 0]:
-                idx = self.node2domain["primary_domain"] == domain
-                centroid_x = np.nanmean(node_xy[idx, 0])
-                centroid_y = np.nanmean(node_xy[idx, 1])
-                axes[1].text(
-                    centroid_x,
-                    centroid_y,
-                    str(domain),
-                    fontdict={"size": 16, "color": foreground_color, "weight": "bold"},
-                )
+    #     fig.set_facecolor(background_color)
 
-        # Then, plot each domain separately, if requested
-        if show_each_domain:
-            for domain in domains[domains > 0]:
-                domain_color = np.reshape(domain2rgb[domain, :], (1, 4))
+    #     if save_fig:
+    #         path_to_fig = save_fig
+    #         print("Output path: %s" % path_to_fig)
+    #         plt.savefig(path_to_fig, facecolor=background_color)
 
-                alpha = node2nes.loc[:, domain].values
-                alpha = alpha / self.enrichment_max_log10
-                alpha[alpha > 1] = 1
-                alpha = np.reshape(alpha, -1)
+    # def plot_composite_network(
+    #     self,
+    #     show_each_domain=False,
+    #     show_domain_ids=True,
+    #     save_fig=None,
+    #     labels=[],
+    #     background_color="#000000",
+    # ):
+    #     foreground_color = "#ffffff"
+    #     if background_color == "#ffffff":
+    #         foreground_color = "#000000"
 
-                c = np.repeat(domain_color, len(alpha), axis=0)
-                # c[:, 3] = alpha
+    #     domains = np.sort(self.attributes_matrix["domain"].unique())
+    #     # domains = self.domains.index.values
 
-                idx = self.node2domain["primary_domain"] == domain
-                # ix = np.argsort(c)
-                axes[1 + domain].scatter(
-                    node_xy[idx, 0], node_xy[idx, 1], c=c[idx], s=60, edgecolor=None
-                )
-                axes[1 + domain].set_aspect("equal")
-                axes[1 + domain].set_facecolor(background_color)
-                axes[1 + domain].set_title(
-                    "Domain %d\n%s" % (domain, self.domains.loc[domain, "label"]),
-                    color=foreground_color,
-                )
-                plot_network_contour(
-                    self.graph, axes[1 + domain], background_color=background_color
-                )
+    #     # Define colors per domain
+    #     domain2rgb = get_colors("hsv", len(domains))
 
-                # Plot the labels, if any
-                if labels:
-                    plot_labels(labels, self.graph, axes[1 + domain])
+    #     # Store domain info
+    #     self.domains["rgba"] = domain2rgb.tolist()
 
-        fig.set_facecolor(background_color)
+    #     # Compute composite node colors
+    #     node2nes = pd.DataFrame(
+    #         data=self.nes,
+    #         columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
+    #     )
 
-        if save_fig:
-            path_to_fig = save_fig
-            print("Output path: %s" % path_to_fig)
-            plt.savefig(path_to_fig, facecolor=background_color)
+    #     node2nes_binary = pd.DataFrame(
+    #         data=self.nes_binary,
+    #         columns=[self.attributes_matrix.index.values, self.attributes_matrix["domain"]],
+    #     )
+    #     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
+    #     node2all_domains_count = node2domain_count.sum(axis=1)[:, np.newaxis]
+
+    #     with np.errstate(divide="ignore", invalid="ignore"):
+    #         c = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
+
+    #     t = np.sum(c, axis=1)
+    #     c[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
+
+    #     # Adjust brightness
+    #     coeff_brightness = 0.1 / np.nanmean(np.ravel(c[:, :-1]))
+    #     if coeff_brightness > 1:
+    #         c = c * coeff_brightness
+    #     c = np.clip(c, None, 1)
+
+    #     # Sort nodes by their overall brightness
+    #     ix = np.argsort(np.sum(c, axis=1))
+
+    #     node_xy = get_node_coordinates(self.graph)
+
+    #     # Figure parameters
+    #     num_plots = 2
+
+    #     if show_each_domain:
+    #         num_plots = num_plots + (len(domains) - 1)
+
+    #     nrows = int(np.ceil(num_plots / 2))
+    #     ncols = np.min([num_plots, 2])
+    #     figsize = (10 * ncols, 10 * nrows)
+
+    #     [fig, axes] = plt.subplots(
+    #         nrows=nrows,
+    #         ncols=ncols,
+    #         figsize=figsize,
+    #         sharex=True,
+    #         sharey=True,
+    #         facecolor=background_color,
+    #     )
+    #     axes = axes.ravel()
+
+    #     # First, plot the network
+    #     ax = axes[0]
+    #     ax = plot_network(self.graph, ax=ax, background_color=background_color)
+
+    #     # Then, plot the composite network
+    #     axes[1].scatter(node_xy[ix, 0], node_xy[ix, 1], c=c[ix], s=60, edgecolor=None)
+    #     axes[1].set_aspect("equal")
+    #     axes[1].set_facecolor(background_color)
+
+    #     # Plot a circle around the network
+    #     plot_network_contour(self.graph, axes[1], background_color=background_color)
+
+    #     # Plot the labels, if any
+    #     if labels:
+    #         plot_labels(labels, self.graph, axes[1])
+
+    #     if show_domain_ids:
+    #         for domain in domains[domains > 0]:
+    #             idx = self.node2domain["primary_domain"] == domain
+    #             centroid_x = np.nanmean(node_xy[idx, 0])
+    #             centroid_y = np.nanmean(node_xy[idx, 1])
+    #             axes[1].text(
+    #                 centroid_x,
+    #                 centroid_y,
+    #                 str(domain),
+    #                 fontdict={"size": 16, "color": foreground_color, "weight": "bold"},
+    #             )
+
+    #     # Then, plot each domain separately, if requested
+    #     if show_each_domain:
+    #         for domain in domains[domains > 0]:
+    #             domain_color = np.reshape(domain2rgb[domain, :], (1, 4))
+
+    #             alpha = node2nes.loc[:, domain].values
+    #             alpha = alpha / self.enrichment_max_log10
+    #             alpha[alpha > 1] = 1
+    #             alpha = np.reshape(alpha, -1)
+
+    #             c = np.repeat(domain_color, len(alpha), axis=0)
+    #             # c[:, 3] = alpha
+
+    #             idx = self.node2domain["primary_domain"] == domain
+    #             # ix = np.argsort(c)
+    #             axes[1 + domain].scatter(
+    #                 node_xy[idx, 0], node_xy[idx, 1], c=c[idx], s=60, edgecolor=None
+    #             )
+    #             axes[1 + domain].set_aspect("equal")
+    #             axes[1 + domain].set_facecolor(background_color)
+    #             axes[1 + domain].set_title(
+    #                 "Domain %d\n%s" % (domain, self.domains.loc[domain, "label"]),
+    #                 color=foreground_color,
+    #             )
+    #             plot_network_contour(
+    #                 self.graph, axes[1 + domain], background_color=background_color
+    #             )
+
+    #             # Plot the labels, if any
+    #             if labels:
+    #                 plot_labels(labels, self.graph, axes[1 + domain])
+
+    #     fig.set_facecolor(background_color)
+
+    #     if save_fig:
+    #         path_to_fig = save_fig
+    #         print("Output path: %s" % path_to_fig)
+    #         plt.savefig(path_to_fig, facecolor=background_color)
 
     def plot_sample_attributes(
         self,
