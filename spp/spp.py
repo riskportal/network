@@ -7,6 +7,7 @@ import time
 import re
 
 import pandas as pd
+from rich import print
 
 # Necessary check to make sure code runs both in Jupyter and in command line
 if "matplotlib" not in sys.modules:
@@ -127,7 +128,7 @@ class SAFE:
         self.output_dir = ""
 
     def load_cytoscape_network(self, *args, **kwargs):
-        print("Loading Cytoscape network...")
+        print("[cyan]Loading Cytoscape network...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
         # except KeyError as e:
@@ -155,14 +156,14 @@ class SAFE:
     #     )
 
     def load_network_annotation(self, network):
-        print("Loading network annotations...")
+        print("[cyan]Loading network annotations...")
         annotation = load_network_annotation(
             network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
         return annotation
 
     def load_neighborhoods(self, network):
-        print("Loading network neighborhoods...")
+        print("[cyan]Loading network neighborhoods...")
         neighborhoods = get_network_neighborhoods(
             network, self.config["neighborhood_distance_metric"], self.config["neighborhood_radius"]
         )
@@ -171,7 +172,7 @@ class SAFE:
     def get_pvalues(self, neighborhoods, annotation):
         neighborhood_score_metric = self.config["neighborhood_score_metric"]
         print(
-            f"Computing P-values by randomization using the '{neighborhood_score_metric}'-based neighborhood scoring approach..."
+            f"[cyan]Computing P-values by randomization using the '{neighborhood_score_metric}'-based neighborhood scoring approach..."
         )
         annotation_matrix = annotation["annotation_matrix"]
         neighborhood_enrichment_map = compute_pvalues_by_randomization(
@@ -180,7 +181,7 @@ class SAFE:
             self.config["neighborhood_score_metric"],
             self.config["network_enrichment_direction"],
             self.config["enrichment_alpha_cutoff"],
-            num_permutations=10_000,
+            num_permutations=1000,
             random_seed=888,
             multiple_testing=False,
         )
@@ -203,7 +204,7 @@ class SAFE:
         return top_attributes
 
     def define_domains(self, neighborhood_enrichment_map, annotation_enrichment_matrix):
-        print("Defining domains...")
+        print("[cyan]Defining domains...")
         neighborhood_enrichment_matrix = neighborhood_enrichment_map[
             "neighborhood_enrichment_matrix"
         ]
@@ -222,7 +223,7 @@ class SAFE:
         return domains_matrix
 
     def trim_domains(self, annotation_matrix, domains_matrix):
-        print("Trimming domains...")
+        print("[cyan]Trimming domains...")
         trimmed_domains = trim_domains(
             annotation_matrix,
             domains_matrix,
@@ -238,7 +239,7 @@ class SAFE:
         domains_matrix,
         trimmed_domains_matrix,
     ):
-        print("Plotting composite network contours...")
+        print("[cyan]Plotting composite network contours...")
         neighborhood_enrichment_matrix = neighborhood_enrichment_map[
             "neighborhood_enrichment_matrix"
         ]
@@ -316,13 +317,13 @@ class SAFE:
     #         if clabels:
     #             C.levels = [n_domain + 1]
     #             plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
-    #             print("%d -- %s" % (n_domain + 1, domain))
+    #             print("[cyan]%d -- %s" % (n_domain + 1, domain))
 
     #     fig.set_facecolor(background_color)
 
     #     if save_fig:
     #         path_to_fig = save_fig
-    #         print("Output path: %s" % path_to_fig)
+    #         print("[cyan]Output path: %s" % path_to_fig)
     #         plt.savefig(path_to_fig, facecolor=background_color)
 
     # def plot_composite_network(
@@ -460,7 +461,7 @@ class SAFE:
 
     #     if save_fig:
     #         path_to_fig = save_fig
-    #         print("Output path: %s" % path_to_fig)
+    #         print("[cyan]Output path: %s" % path_to_fig)
     #         plt.savefig(path_to_fig, facecolor=background_color)
 
     def plot_sample_attributes(
@@ -781,7 +782,7 @@ class SAFE:
             path_to_fig = save_fig
             if not os.path.isabs(path_to_fig):
                 path_to_fig = os.path.join(self.output_dir, save_fig)
-            print("Output path: %s" % path_to_fig)
+            print("[cyan]Output path: %s" % path_to_fig)
             plt.savefig(path_to_fig, facecolor=background_color)
 
     def print_output_files(self, **kwargs):
@@ -882,7 +883,7 @@ if __name__ == "__main__":
 
     combined_nes = []
 
-    print("Running SAFE on %d chunks of size %d..." % (nr_processes, chunk_size))
+    print("[cyan]Running SAFE on %d chunks of size %d..." % (nr_processes, chunk_size))
     for res in pool.map_async(run_safe_batch, all_chunks).get():
         combined_nes.append(res)
 
@@ -890,6 +891,6 @@ if __name__ == "__main__":
 
     output_file = format("%s_safe_nes.p" % args.path_to_attribute_file)
 
-    print("Saving the results...")
+    print("[cyan]Saving the results...")
     with open(output_file, "wb") as handle:
         pickle.dump(all_nes, handle)
