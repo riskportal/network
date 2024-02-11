@@ -18,7 +18,6 @@ def compute_pvalues_by_randomization(
     random_seed=888,
     multiple_testing=False,
 ):
-    print("Computing P-values by randomization...")
     # Pause for 1 sec to prevent the progress bar from showing up too early
     time.sleep(1)
     num_permutations_per_process = (
@@ -114,6 +113,12 @@ def distributed_permutation_test(arg_tuple):
             counts_pos = np.add(
                 counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group
             )
+
+    # # NOTE: FOR DEV - just create a random perumation results matrix
+    # # Replace elements in the existing matrix with random integers between 0 and 10,000
+    # rows, cols = counts_neg.shape
+    # counts_neg = np.random.randint(0, 10001, size=(rows, cols)).astype(float)
+    # counts_pos = np.random.randint(0, 10001, size=(rows, cols)).astype(float)
 
     return counts_neg, counts_pos
 

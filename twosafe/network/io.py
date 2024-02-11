@@ -24,7 +24,6 @@ from xml.dom import minidom
 
 
 def load_cys_network(cys_filepath, view_name=None):
-    print("Loading Cytoscape network...")
     # Unzip CYS file
     cys_filepath = Path(str(cys_filepath))
     with zipfile.ZipFile(cys_filepath, "r") as zip_ref:
@@ -134,7 +133,6 @@ def calculate_edge_lengths(G):
 
 
 def load_network_annotation(network, annotation_filepath, node_colname="label"):
-    print("Loading network annotations...")
     # Convert JSON data to a Python dictionary
     with open(annotation_filepath, "r") as file:
         annotation_input = json.load(file)
