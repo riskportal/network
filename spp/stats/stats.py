@@ -85,7 +85,7 @@ def run_permutation_test(
     counts_pos = np.zeros(N_in_neighborhood_in_group.shape)
     with Progress() as progress:
         task = progress.add_task(
-            f"[green]Running {num_permutations} permutations", total=num_permutations
+            f"[yellow]Running {num_permutations} permutations", total=num_permutations
         )
         # We are computing the permuted test statistics
         for i in range(num_permutations):
@@ -103,7 +103,7 @@ def run_permutation_test(
                     counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group
                 )
             progress.update(
-                task, advance=1, description=f"[green]Running permutation {i+1}/{num_permutations}"
+                task, advance=1, description=f"[yellow]Running permutation {i+1}/{num_permutations}"
             )
 
     return counts_neg, counts_pos
