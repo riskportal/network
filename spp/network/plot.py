@@ -92,7 +92,6 @@ def plot_composite_network(
     ax = axes[0]
     ax = plot_network(network, ax=ax, background_color=background_color)
 
-    print(node_xy)
     # Then, plot the composite network
     axes[1].scatter(node_xy[ix, 0], node_xy[ix, 1], c=c[ix], s=60, edgecolor=None)
     axes[1].set_aspect("equal")

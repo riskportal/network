@@ -1,6 +1,6 @@
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
-from tqdm import tqdm
+from rich.progress import Progress
 
 from spp.stats.permutation import (
     compute_neighborhood_score_by_sum_cython,
@@ -83,20 +83,27 @@ def run_permutation_test(
     idxs = np.nonzero(np.sum(~np.isnan(annotation_matrix), axis=1))[0]
     counts_neg = np.zeros(N_in_neighborhood_in_group.shape)
     counts_pos = np.zeros(N_in_neighborhood_in_group.shape)
-    # We are computing the permuted test statistics
-    for _ in tqdm(range(num_permutations)):
-        # Permute only the rows that have values
-        annotation_matrix[idxs, :] = annotation_matrix[np.random.permutation(idxs), :]
-        N_in_neighborhood_in_group_perm = neighborhood_score_func(
-            neighborhoods_matrix, annotation_matrix
+    with Progress() as progress:
+        task = progress.add_task(
+            f"[green]Running {num_permutations} permutations", total=num_permutations
         )
-        # Below is NOT the bottleneck...
-        with np.errstate(invalid="ignore", divide="ignore"):
-            counts_neg = np.add(
-                counts_neg, N_in_neighborhood_in_group_perm <= N_in_neighborhood_in_group
+        # We are computing the permuted test statistics
+        for i in range(num_permutations):
+            # Permute only the rows that have values
+            annotation_matrix[idxs, :] = annotation_matrix[np.random.permutation(idxs), :]
+            N_in_neighborhood_in_group_perm = neighborhood_score_func(
+                neighborhoods_matrix, annotation_matrix
             )
-            counts_pos = np.add(
-                counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group
+            # Below is NOT the bottleneck...
+            with np.errstate(invalid="ignore", divide="ignore"):
+                counts_neg = np.add(
+                    counts_neg, N_in_neighborhood_in_group_perm <= N_in_neighborhood_in_group
+                )
+                counts_pos = np.add(
+                    counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group
+                )
+            progress.update(
+                task, advance=1, description=f"[green]Running permutation {i+1}/{num_permutations}"
             )
 
     return counts_neg, counts_pos
