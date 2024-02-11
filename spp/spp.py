@@ -23,16 +23,16 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 
-from .config import read_default_config, validate_config
-from .network.io import load_cys_network, load_network_annotation
-from .network.neighborhoods import (
+from spp.config import read_default_config, validate_config
+from spp.network.io import load_cys_network, load_network_annotation
+from spp.network.neighborhoods import (
     get_network_neighborhoods,
     define_top_attributes,
     define_domains,
     trim_domains,
 )
-from .network.plot import plot_composite_network
-from .network.stats import compute_pvalues_by_randomization
+from spp.network.plot import plot_composite_network
+from spp.stats.stats import compute_pvalues_by_randomization
 
 
 class SAFE:
@@ -169,7 +169,10 @@ class SAFE:
         return neighborhoods
 
     def get_pvalues(self, neighborhoods, annotation):
-        print("Computing P-values by randomization...")
+        neighborhood_score_metric = self.config["neighborhood_score_metric"]
+        print(
+            f"Computing P-values by randomization using '{neighborhood_score_metric}'-based neighborhood scoring approach..."
+        )
         annotation_matrix = annotation["annotation_matrix"]
         neighborhood_enrichment_map = compute_pvalues_by_randomization(
             neighborhoods,
@@ -177,8 +180,7 @@ class SAFE:
             self.config["neighborhood_score_metric"],
             self.config["network_enrichment_direction"],
             self.config["enrichment_alpha_cutoff"],
-            num_permutations=150,
-            max_workers=1,
+            num_permutations=1000,
             random_seed=888,
             multiple_testing=False,
         )

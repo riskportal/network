@@ -148,7 +148,7 @@ def plot_composite_network(
                 plot_labels(labels, network, axes[1 + domain])
 
     fig.set_facecolor(background_color)
-    plt.savefig("demo.png", facecolor=background_color)
+    plt.savefig("./data/demo.png", facecolor=background_color)
 
 
 def plot_composite_network_contours(
@@ -200,7 +200,6 @@ def plot_composite_network_contours(
 
     # Then, plot the composite network as contours
     for n_domain, domain in enumerate(trimmed_domains_matrix["label"].values):
-        print(domain)
         with contextlib.suppress(KeyError):
             # This line throws key error for domain
             nodes_indices = domains_matrix.loc[domains_matrix.loc[:, n_domain] > 0,].index.values
