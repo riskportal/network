@@ -1,1 +1,1 @@
-from .spp import SAFE
+from spp.spp import SAFE
