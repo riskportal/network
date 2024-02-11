@@ -13,7 +13,7 @@ network:
     alpha-cutoff: 0.05
   node:
     neighborhood-distance-metric: shortpath_weighted_layout # OPTIONS: 'euclidean', 'shortpath', 'shortpath_weighted_layout'
-    neighborhood-score-metric: sum  # OPTIONS: 'sum', 'z-score'
+    neighborhood-score-metric: variance  # OPTIONS: 'sum', 'variance', 'zscore'
     neighborhood-radius: 0.1  
     neighborhood-radius-type: diameter
     group-distance-metric: jaccard # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
