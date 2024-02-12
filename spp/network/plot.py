@@ -21,20 +21,16 @@ def plot_composite_network(
     neighborhood_binary_enrichment_matrix_below_alpha,
     max_log10_pvalue,
     labels=[],
-    show_each_domain=False,
+    show_each_domain=True,
     show_domain_ids=False,
     background_color="#000000",
 ):
-    foreground_color = "#ffffff"
-    if background_color == "#ffffff":
-        foreground_color = "#000000"
+    foreground_color = "#ffffff" if background_color == "#000000" else "#000000"
 
+    # Obtain unique domains and assign colors
     domains = np.sort(annotation_matrix["domain"].unique())
-    # Define colors per domain
     domain2rgb = get_colors("hsv", len(domains))
-    # Store domain info
-    trimmed_domains_matrix["rgba"] = domain2rgb
-    # Compute composite node colors
+    # Create DataFrame mappings for node to enrichment score and binary presence
     node2nes = pd.DataFrame(
         data=neighborhood_enrichment_matrix,
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
@@ -45,95 +41,124 @@ def plot_composite_network(
     )
     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
     node2all_domains_count = node2domain_count.sum(axis=1).to_numpy()[:, np.newaxis]
+
+    # Calculate composite colors
     with np.errstate(divide="ignore", invalid="ignore"):
-        c = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
+        composite_colors = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
+    composite_colors[np.isnan(composite_colors).any(axis=1), :] = [0, 0, 0, 0]
 
-    t = np.sum(c, axis=1)
-    c[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
-    # Adjust brightness
-    coeff_brightness = 0.1 / np.nanmean(np.ravel(c[:, :-1]))
-    if coeff_brightness > 1:
-        c = c * coeff_brightness
-    c = np.clip(c, None, 1)
-    # Sort nodes by their overall brightness
-    ix = np.argsort(np.sum(c, axis=1))
+    # Adjust brightness and clip colors
+    coeff_brightness = 1 / np.nanmean(np.ravel(composite_colors[:, :-1]))
+    composite_colors = np.clip(composite_colors * min(coeff_brightness, 1), 0, 1)
+
+    # Order nodes by brightness for plotting
+    node_order = np.argsort(np.sum(composite_colors, axis=1))
     node_xy = get_node_coordinates(network)
-    # Figure parameters
-    num_plots = 2
 
-    if show_each_domain:
-        num_plots = num_plots + (len(domains) - 1)
-
+    # Prepare figure layout
+    num_plots = 2 + show_each_domain * len(domains)
     nrows = int(np.ceil(num_plots / 2))
-    ncols = np.min([num_plots, 2])
+    ncols = min(num_plots, 2)
     figsize = (10 * ncols, 10 * nrows)
 
-    [fig, axes] = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
-        figsize=figsize,
-        sharex=True,
-        sharey=True,
-        facecolor=background_color,
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=figsize, sharex=True, sharey=True, facecolor=background_color
     )
     axes = axes.ravel()
 
-    # First, plot the network
-    ax = axes[0]
-    ax = plot_network(network, ax=ax, background_color=background_color)
-
-    # Then, plot the composite network
-    axes[1].scatter(node_xy[ix, 0], node_xy[ix, 1], c=c[ix], s=60, edgecolor=None)
-    axes[1].set_aspect("equal")
-    axes[1].set_facecolor(background_color)
-
-    # Plot a circle around the network
-    plot_network_contour(network, axes[1], background_color=background_color)
-
-    # Plot the labels, if any
-    if labels:
-        plot_labels(labels, network, axes[1])
+    plotter = NetworkPlotter(axes, background_color, foreground_color)
+    plotter.plot_main_network(network, node_xy, node_order, composite_colors)
 
     if show_domain_ids:
-        for domain in domains[domains > 0]:
-            idx = domains_matrix["primary domain"] == domain
-            centroid_x = np.nanmean(node_xy[idx, 0])
-            centroid_y = np.nanmean(node_xy[idx, 1])
-            axes[1].text(
+        plotter.plot_domain_ids(domains, domains_matrix, node_xy)
+
+    if show_each_domain:
+        plotter.plot_each_domain(
+            network,
+            show_each_domain,
+            domains,
+            domains_matrix,
+            trimmed_domains_matrix,
+            node_xy,
+            node2nes,
+            composite_colors,
+            max_log10_pvalue,
+            labels,
+        )
+
+    fig.set_facecolor(background_color)
+    plt.savefig("./data/demo.png", facecolor=background_color, bbox_inches="tight")
+
+
+class NetworkPlotter:
+    def __init__(self, axes, background_color, foreground_color):
+        self.axes = axes
+        self.background_color = background_color
+        self.foreground_color = foreground_color
+
+    def plot_main_network(self, network, node_xy, node_order, composite_colors):
+        # Plot the main network
+        plot_network(network, ax=self.axes[0], background_color=self.background_color)
+        self.plot_composite_network(network, node_xy, node_order, composite_colors)
+
+    def plot_composite_network(self, network, node_xy, node_order, composite_colors):
+        ax = self.axes[1]
+        ax.scatter(
+            node_xy[node_order, 0],
+            node_xy[node_order, 1],
+            c=composite_colors[node_order],
+            s=60,
+            edgecolor=None,
+        )
+        ax.set_aspect("equal")
+        ax.set_facecolor(self.background_color)
+        plot_network_contour(network, ax, self.background_color)
+
+    def plot_domain_ids(self, domains, domains_matrix, node_xy):
+        ax = self.axes[1]
+        for domain in domains:
+            domain_indices = domains_matrix["primary domain"] == domain
+            centroid_x, centroid_y = np.nanmean(node_xy[domain_indices, :], axis=0)
+            ax.text(
                 centroid_x,
                 centroid_y,
                 str(domain),
-                fontdict={"size": 16, "color": foreground_color, "weight": "bold"},
+                fontdict={"size": 16, "color": self.foreground_color, "weight": "bold"},
             )
 
-    # Then, plot each domain separately, if requested
-    if show_each_domain:
-        for domain in domains[domains > 0]:
-            domain_color = np.reshape(domain2rgb[domain], (1, 4))
-
-            alpha = node2nes.loc[:, domain].values
-            alpha = alpha / max_log10_pvalue
+    def plot_each_domain(
+        self,
+        network,
+        show_each_domain,
+        domains,
+        domains_matrix,
+        trimmed_domains_matrix,
+        node_xy,
+        node2nes,
+        composite_colors,
+        max_log10_pvalue,
+        labels,
+    ):
+        if not show_each_domain:
+            return
+        for domain_idx, domain in enumerate(domains, start=2):
+            ax = self.axes[domain_idx]
+            alpha = node2nes.loc[:, domain].values / max_log10_pvalue
             alpha[alpha > 1] = 1
             alpha = np.reshape(alpha, -1)
-            c = np.repeat(domain_color, len(alpha), axis=0)
             idx = domains_matrix["primary domain"] == domain
-            axes[1 + domain].scatter(
-                node_xy[idx, 0], node_xy[idx, 1], c=c[idx], s=60, edgecolor=None
-            )
-            axes[1 + domain].set_aspect("equal")
-            axes[1 + domain].set_facecolor(background_color)
-            axes[1 + domain].set_title(
-                "Domain %d\n%s" % (domain, trimmed_domains_matrix.loc[domain, "label"]),
-                color=foreground_color,
-            )
-            plot_network_contour(network, axes[1 + domain], background_color=background_color)
 
-            # Plot the labels, if any
+            ax.scatter(node_xy[idx, 0], node_xy[idx, 1], c=composite_colors[idx], s=60)
+            ax.set_aspect("equal")
+            ax.set_facecolor(self.background_color)
+            ax.set_title(
+                f"Domain {domain_idx}\n{trimmed_domains_matrix.loc[domain, 'label']}",
+                color=self.foreground_color,
+            )
+
+            plot_network_contour(network, ax, self.background_color)
             if labels:
-                plot_labels(labels, network, axes[1 + domain])
-
-    fig.set_facecolor(background_color)
-    plt.savefig("./data/demo.png", facecolor=background_color)
+                plot_labels(labels, network, ax)
 
 
 def plot_composite_network_contours(
@@ -147,16 +172,9 @@ def plot_composite_network_contours(
     foreground_color = "#ffffff"
     if background_color == "#ffffff":
         foreground_color = "#000000"
-
-    domains = np.sort(annotation_matrix["domain"].unique())
-    # domains = trimmed_domains_matrix.index.values
-
+    unique_domains = np.sort(annotation_matrix["domain"].unique())
     # Define colors per domain
-    domain2rgb = get_colors("hsv", len(domains))
-
-    # Store domain info
-    trimmed_domains_matrix["rgba"] = domain2rgb
-
+    unique_domain_colors = get_colors("viridis", len(unique_domains))
     # Get node coordinates
     node_xy = get_node_coordinates(network)
 
@@ -408,36 +426,34 @@ def get_node_coordinates(graph):
     return node_xy
 
 
-class MidpointRangeNormalize(colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, midrange=None, clip=False):
-        self.midrange = midrange
-        colors.Normalize.__init__(self, vmin, vmax, clip)
-
-    def __call__(self, value, clip=None):
-        x = [self.vmin, self.midrange[0], self.midrange[1], self.midrange[2], self.vmax]
-        y = [0, 0.25, 0.5, 0.75, 1]
-        return np.ma.masked_array(np.interp(value, x, y))
-
-
-def get_colors(colormap="hsv", n=10):
-    cmap = cm.get_cmap(colormap)
-
+def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
+    # Updated colormap keywords with diverse colormaps and removed less distinct ones
+    colormap_keywords = {
+        "viridis",
+        "plasma",
+        "inferno",
+        "hsv",
+        "magma",
+        "cividis",
+        "rainbow",
+        "jet",
+        # Adding more diverse colormaps
+        "twilight",
+        "nipy_spectral",
+        "ocean",
+        "gist_earth",
+        "terrain",
+        "gist_ncar",
+        "Spectral",
+        "coolwarm",
+    }
+    random.seed(random_seed)
+    cmap = cm.get_cmap("hsv")
     # First color, always black
-    rgbas = [(0, 0, 0, 1)]
-
-    for c in np.arange(1, n):
-        rgbas.append(cmap(c / n))
-    rgba0 = rgbas.pop(0)
-    random.shuffle(rgbas)
-    rgbas = [rgba0] + rgbas
-    # rgb = np.asarray(rgb)
-
-    # # Randomize the other colors
-    # np.random.shuffle(rgb[1:])
-
-    # Set to RGBA standard
-    # rgbas_scaled = []
-    # for rgba in rgbas:
-    #     rgbas_scaled.append(tuple(int(val * 255) if i != 3 else val for i, val in enumerate(rgba)))
+    # Evenly distribute the remaining colors
+    color_positions = np.linspace(0, 1, num_colors_to_generate)
+    random.shuffle(color_positions)
+    # Generate colors based on positions
+    rgbas = [cmap(pos) for pos in color_positions]
 
     return rgbas
