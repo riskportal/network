@@ -107,11 +107,6 @@ def define_domains(
     group_distance_metric,
     group_distance_threshold,
 ):
-    # # NOTE: FOR DEV
-    # annotation_matrix["top attributes"] = np.random.choice(
-    #     [True, False], size=len(annotation_matrix)
-    # )
-    # END
     m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
     Z = linkage(m, method="average", metric=group_distance_metric)
     max_d = np.max(Z[:, 2] * group_distance_threshold)
