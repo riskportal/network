@@ -131,29 +131,6 @@ class SAFE:
         print("[cyan]Loading Cytoscape network...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
-        # except KeyError as e:
-        #     raise KeyError(
-        #         f"{network_file_extension} is not a valid network file extension."
-        #         f" Choose from the following: {', '.join(self.network_options)}"
-        #     ) from e
-
-    # def get_network_nodes(self, network):
-    #     annotation_id_colname = self.config["annotation_id_colname"]
-    #     node_attributes = nx.get_node_attributes(network, annotation_id_colname)
-    #     if not bool(node_attributes):
-    #         raise AttributeError(
-    #             f"{self.config['annotation_id_colname']} is not a valid column name for annotation keys."
-    #             f"Consider setting `annotation_id_colname` to one of the following {', '.join(network.nodes[0].keys())}"
-    #         )
-    #     nx.set_node_attributes(network, annotation_id_colname, name="key")
-    #     label_list = nx.get_node_attributes(network, "label")
-    #     return pd.DataFrame(
-    #         {
-    #             "id": list(label_list.keys()),
-    #             "key": list(node_attributes.values()),
-    #             "label": list(label_list.values()),
-    #         }
-    #     )
 
     def load_network_annotation(self, network):
         print("[cyan]Loading network annotations...")
