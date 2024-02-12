@@ -25,10 +25,10 @@ from matplotlib.colors import LinearSegmentedColormap
 
 
 from spp.config import read_default_config, validate_config
+from spp.network.annotation import define_top_annotations
 from spp.network.io import load_cys_network, load_network_annotation
 from spp.network.neighborhoods import (
     get_network_neighborhoods,
-    define_top_attributes,
     define_domains,
     trim_domains,
 )
@@ -60,7 +60,7 @@ class SAFE:
         self.annotation_map = self.load_network_annotation(self.network)
         self.neighborhoods = self.load_neighborhoods(self.network)
         self.neighborhood_enrichment_map = self.get_pvalues(self.neighborhoods, self.annotation_map)
-        self.annotation_enrichment_matrix = self.define_top_attributes(
+        self.annotation_enrichment_matrix = self.define_top_annotations(
             self.network, self.annotation_map, self.neighborhood_enrichment_map
         )
         self.domains_matrix = self.define_domains(
@@ -164,13 +164,13 @@ class SAFE:
         )
         return neighborhood_enrichment_map
 
-    def define_top_attributes(self, network, annotation_map, neighborhoods_map):
+    def define_top_annotations(self, network, annotation_map, neighborhoods_map):
         ordered_column_annotations = annotation_map["ordered_column_annotations"]
         neighborhood_enrichment_sums = neighborhoods_map["neighborhood_enrichment_sums"]
         neighborhood_binary_enrichment_matrix_below_alpha = neighborhoods_map[
             "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
-        top_attributes = define_top_attributes(
+        top_attributes = define_top_annotations(
             network,
             ordered_column_annotations,
             neighborhood_enrichment_sums,
