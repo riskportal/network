@@ -7,17 +7,18 @@ network:
   enrichment:
     background: network # OPTIONS: 'network', 'annotation_file'
     type: permutation
-    num-permutations: 1000
+    num-permutations: 1_000
     direction: both  # OPTIONS: Enrichment direction: 'highest', 'lowest', 'both'
     min-annotation-size: 5 # Size of mapped annotation collection to consider plotting (e.g., modules with genes); must be an integer greater than 1
     max-log10-pvalue: 16
-    alpha-cutoff: 0.05
+    alpha-cutoff: 0.01
   node:
     neighborhood-distance-metric: shortpath_weighted_layout # OPTIONS: 'euclidean', 'shortpath', 'shortpath_weighted_layout'
     neighborhood-score-metric: sum  # OPTIONS: 'sum', 'variance', 'zscore'
-    neighborhood-radius: 0.1  
+    neighborhood-radius: 0.10
     neighborhood-radius-type: diameter
-    group-distance-metric: jaccard # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
-    group-distance-threshold: 0.75
+    group-distance-metric: correlation # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
+    # braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule.
+    group-distance-threshold: 0.85
     unimodality-type: connectivity
 
