@@ -21,6 +21,7 @@ def read_default_config():
         # Network
         "network_enrichment_background": network_config["enrichment"]["background"],
         "network_enrichment_type": network_config["enrichment"]["type"],
+        "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],
         "network_enrichment_direction": network_config["enrichment"]["direction"],
         "min_annotation_size": network_config["enrichment"]["min-annotation-size"],
         "enrichment_max_log10_pvalue": network_config["enrichment"]["max-log10-pvalue"],
@@ -64,6 +65,9 @@ def validate_config(config):
     )
 
     # Check numerical user inputs
+    assert (
+        config["network_enrichment_num_permutations"] > 99
+    ), "Number of enrichment permutations must be greater than or equal to 100."
     assert (
         1 > config["enrichment_alpha_cutoff"] > 0
     ), "Enrichment alpha cutoff must be between 0 and 1."
