@@ -6,15 +6,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import pdist, squareform
 
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from collections import Counter
-import pandas as pd
-import nltk
-
-# Ensure you have the necessary NLTK data (uncomment if needed)
-# nltk.download('punkt')
-# nltk.download('stopwords')
+from spp.network.annotation import chop_and_filter
 
 
 def get_network_neighborhoods(network, neighborhood_distance_algorithm, neighborhood_radius):
@@ -176,45 +168,3 @@ def trim_domains(annotation_matrix, domains_matrix, min_annotation_size):
     trimmed_domains_matrix.set_index("id", drop=False, inplace=True)
 
     return annotation_matrix, domains_matrix, trimmed_domains_matrix
-
-
-def jaccard_index(set1, set2):
-    """Calculate the Jaccard Index of two sets."""
-    intersection = len(set1.intersection(set2))
-    union = len(set1.union(set2))
-    return intersection / union if union else 0
-
-
-def simplify_word_list(words, threshold=0.90):
-    """Filter out words that are too similar based on the Jaccard index."""
-    filtered_words = []
-    for word in words:
-        word_set = set(word)
-        if all(
-            jaccard_index(word_set, set(other_word)) < threshold for other_word in filtered_words
-        ):
-            filtered_words.append(word)
-    return filtered_words
-
-
-def chop_and_filter(s, top_words_count=5):
-    """Process input Series to identify and return the top N frequent, significant words,
-    filtering based on stopwords and similarity (Jaccard index)."""
-    # Tokenize the concatenated string and filter out stopwords and non-alphabetic words in one step
-    stop_words = set(stopwords.words("english"))
-    words = [
-        word.lower()
-        for word in word_tokenize(s.str.cat(sep=" "))
-        if word.isalpha() and word.lower() not in stop_words
-    ]
-
-    # Simplify the word list to remove similar words based on the Jaccard index
-    simplified_words = simplify_word_list(words, threshold=0.90)
-
-    # Count the occurrences of each word and sort them by frequency in descending order
-    word_counts = Counter(simplified_words)
-    sorted_words = sorted(word_counts, key=word_counts.get, reverse=True)
-
-    # Select the top N words
-    top_words = sorted_words[:top_words_count]
-    return ", ".join(top_words)
