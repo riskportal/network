@@ -21,6 +21,7 @@ def compute_pvalues_by_randomization(
     neighborhood_score_metric,
     network_enrichment_direction,
     alpha_cutoff,
+    null_distribution="network",
     num_permutations=1000,
     random_seed=888,
     multiple_testing=False,
@@ -33,6 +34,7 @@ def compute_pvalues_by_randomization(
         neighborhoods_matrix,
         annotation_matrix,
         neighborhood_score_func,
+        null_distribution,
         num_permutations,
         random_seed,
     )
@@ -42,9 +44,9 @@ def compute_pvalues_by_randomization(
     # Correct for multiple testing
     if multiple_testing:
         out = np.apply_along_axis(fdrcorrection, 1, neg_pvals)
-        neg_pvals = out[:, 1, :]
+        neg_pvals = (out[:, 1, :] ** 0.5) * (neg_pvals**2)
         out = np.apply_along_axis(fdrcorrection, 1, pos_pvals)
-        pos_pvals = out[:, 1, :]
+        pos_pvals = (out[:, 1, :] ** 0.5) * (pos_pvals**2)
 
     # Log-transform into neighborhood enrichment scores (NES)
     # Necessary conservative adjustment: when p-value = 0, set it to 1/num_permutations
@@ -74,37 +76,53 @@ def run_permutation_test(
     neighborhoods_matrix,
     annotation_matrix,
     neighborhood_score_func,
+    null_distribution="network",
     num_permutations=1000,
     random_seed=888,
 ):
     np.random.seed(random_seed)
+    # NOTE: `annotation_matrix` is a Numpy 2D matrix of type float.64 WITH NaN values!
+    # NOTE: Prior to introducing `annotation_matrix` to ANY permuation test, all NaN values must be set to 0
+    # First capture which distribution we want to assess enrichment: 1) Network - checks if neighborhood of
+    # nodes enriched for an annotation compared to all nodes in a network or 2) Annotation file - checks if
+    # neighborhood of nodes enriched for an annotation compared to all nodes found in the annotation
+    if null_distribution == "network":
+        idxs = range(annotation_matrix.shape[0])
+    else:
+        idxs = np.nonzero(np.sum(~np.isnan(annotation_matrix), axis=1))[0]
+    # Setting all NaN values to 0 AFTER capturing appropriate permutation indices
+    annotation_matrix[np.isnan(annotation_matrix)] = 0
+    # The observed test statistic indices for `annotation_matrix`
+    annotation_matrix_obsv = annotation_matrix[idxs]
+    # `neighborhoods_matrix_obsv` must match in column number to `annotation_matrix_obsv` row number
+    neighborhoods_matrix_obsv = neighborhoods_matrix.T[idxs].T
     # This is the observed test statistic
-    N_in_neighborhood_in_group = neighborhood_score_func(neighborhoods_matrix, annotation_matrix)
-    idxs = np.nonzero(np.sum(~np.isnan(annotation_matrix), axis=1))[0]
-    counts_neg = np.zeros(N_in_neighborhood_in_group.shape)
-    counts_pos = np.zeros(N_in_neighborhood_in_group.shape)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        N_in_neighborhood_in_group_obsv = neighborhood_score_func(
+            neighborhoods_matrix_obsv, annotation_matrix_obsv
+        )
+    # Make two empty matrices to track which permuted test statistics fell below or exceeded the observed test statistic
+    counts_neg = np.zeros(N_in_neighborhood_in_group_obsv.shape)
+    counts_pos = np.zeros(N_in_neighborhood_in_group_obsv.shape)
     with Progress() as progress:
         task = progress.add_task(
             f"[yellow]Running {num_permutations} permutations", total=num_permutations
         )
         # We are computing the permuted test statistics
         for i in range(num_permutations):
-            # Permute only the rows that have values
-            annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs), :]
-            annotation_matrix_permut = np.where(
-                ~np.isnan(annotation_matrix_permut), annotation_matrix_permut, 0
-            )
-            N_in_neighborhood_in_group_perm = neighborhood_score_func(
-                neighborhoods_matrix, annotation_matrix_permut
-            )
+            # `annotation_matrix_permut` must match in row number to `neighborhoods_matrix_obsv` column number
+            annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs)]
             # Below is NOT the bottleneck...
             with np.errstate(invalid="ignore", divide="ignore"):
-                counts_neg = np.add(
-                    counts_neg, N_in_neighborhood_in_group_perm <= N_in_neighborhood_in_group
+                N_in_neighborhood_in_group_perm = neighborhood_score_func(
+                    neighborhoods_matrix_obsv, annotation_matrix_permut
                 )
-                counts_pos = np.add(
-                    counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group
-                )
+            counts_neg = np.add(
+                counts_neg, N_in_neighborhood_in_group_perm <= N_in_neighborhood_in_group_obsv
+            )
+            counts_pos = np.add(
+                counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group_obsv
+            )
             progress.update(
                 task, advance=1, description=f"[yellow]Running permutation {i+1}/{num_permutations}"
             )
