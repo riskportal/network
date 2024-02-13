@@ -100,8 +100,12 @@ class SAFE:
 
     def get_pvalues(self, neighborhoods, annotation):
         neighborhood_score_metric = self.config["neighborhood_score_metric"]
+        network_null_distribution = self.config["network_enrichment_null_distribution"]
         print(
-            f"[cyan]Computing P-values by randomization using the '{neighborhood_score_metric}'-based neighborhood scoring approach..."
+            f"[cyan]Computing P-values by randomization using the null distribution option: [yellow]'{network_null_distribution}'[/yellow]..."
+        )
+        print(
+            f"[cyan]Computing test statistics using the [yellow]'{neighborhood_score_metric}'[/yellow]-based neighborhood scoring approach..."
         )
         annotation_matrix = annotation["annotation_matrix"]
         neighborhood_enrichment_map = compute_pvalues_by_randomization(
@@ -110,9 +114,10 @@ class SAFE:
             self.config["neighborhood_score_metric"],
             self.config["network_enrichment_direction"],
             self.config["enrichment_alpha_cutoff"],
+            null_distribution=network_null_distribution,
             num_permutations=self.config["network_enrichment_num_permutations"],
             random_seed=888,
-            multiple_testing=False,
+            multiple_testing=True,
         )
         return neighborhood_enrichment_map
 
