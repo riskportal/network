@@ -28,7 +28,7 @@ def compute_pvalues_by_randomization(
 ):
     # NOTE: Both `neighborhoods_matrix` and `annotation_matrix` are binary matrices and must NOT have any NaN values
     neighborhoods_matrix = neighborhoods_matrix.astype(np.int8)
-    annotation_matrix = annotation_matrix.astype(np.float64)
+    annotation_matrix = annotation_matrix.astype(np.float32)
     neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[neighborhood_score_metric]
     counts_neg, counts_pos = run_permutation_test(
         neighborhoods_matrix,
