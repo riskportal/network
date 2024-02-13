@@ -3,17 +3,17 @@ input:
   annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/spp/data/metab_fm_x_fm_annotation.json
   # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/spp/data/gene_x_gene_cytoscape.cys
   # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/spp/data/500_modules_annotation_file.json
-  annotation-id-colname: "label"
+  annotation-id-colname: label
 
 network:
   enrichment:
-    background: network # OPTIONS: 'network', 'annotation_file'
+    null-distribution: network # OPTIONS: 'network', 'annotation'
     type: permutation
-    num-permutations: 1000
+    num-permutations: 500
     direction: both  # OPTIONS: Enrichment direction: 'highest', 'lowest', 'both'
-    min-cluster-size: 10 # Minimum cluster size
+    min-cluster-size: 8 # Minimum cluster size
     max-log10-pvalue: 16
-    alpha-cutoff: 0.005
+    alpha-cutoff: 0.01
   node:
     neighborhood-distance-metric: shortpath_weighted_layout # OPTIONS: 'euclidean', 'shortpath', 'shortpath_weighted_layout'
     neighborhood-score-metric: sum  # OPTIONS: 'sum', 'variance', 'zscore'
@@ -21,6 +21,6 @@ network:
     neighborhood-radius-type: diameter
     group-distance-metric: jaccard # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
     # braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule.
-    group-distance-threshold: 0.70
+    group-distance-threshold: 0.20
     unimodality-type: connectivity
 

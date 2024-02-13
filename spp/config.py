@@ -19,7 +19,7 @@ def read_default_config():
         "annotation_filepath": input_config["annotation-filepath"],
         "annotation_id_colname": input_config["annotation-id-colname"],
         # Network
-        "network_enrichment_background": network_config["enrichment"]["background"],
+        "network_enrichment_null_distribution": network_config["enrichment"]["null-distribution"],
         "network_enrichment_type": network_config["enrichment"]["type"],
         "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],
         "network_enrichment_direction": network_config["enrichment"]["direction"],
@@ -45,8 +45,8 @@ def validate_config(config):
     # Check if user inputs are found in accepted keywords
     _assert_user_input_in_valid_keywords(
         "Network Enrichment Background",
-        user_input=config["network_enrichment_background"],
-        keywords=["annotation_file", "network"],
+        user_input=config["network_enrichment_null_distribution"],
+        keywords=["annotation", "network"],
     )
     _assert_user_input_in_valid_keywords(
         "Neighborhood Distance Metric",
