@@ -1,0 +1,31 @@
+THINGS I UPDATED
+================
+1. 
+    - No longer using matrix multiplication to multiply colors (array of 4 floats (rgba)) with enrichment of domain per node (domain also is 4 floats (value unknown)).
+    - ChatGPT:
+"""
+Refactoring the given code block to implement an alternative to matrix multiplication for creating node colors that signify importance or enrichment involves a few steps. Given your description, it seems like you want to aggregate domain associations for each node and then apply a color mapping based on these associations. Since matmul may not be the most intuitive choice here, especially for custom logic involving color intensity or shading based on domain counts, we'll proceed with an element-wise approach that provides more control.
+
+First, let's outline the steps needed to refactor the code block:
+
+    Aggregate Domain Associations: Summarize the domain associations per node to determine the "weight" or "importance" of each node based on its domain counts.
+    Normalize Domain Counts: Normalize these counts to ensure they fall within a range that can be mapped to colors effectively.
+    Apply Color Mapping: Based on the normalized counts, apply a color mapping strategy that reflects the node's importance or enrichment.
+    Implement Custom Logic for Color Intensity: Develop a logic that adjusts color intensity or shading based on the normalized domain counts. This could involve interpolating between a set of base colors and adjusting the intensity or transparency (alpha value) of the colors based on the domain count.
+
+Since you've already aggregated domain associations (node2domain_count) and computed the total domain counts per node (node2all_domains_count), the next step is to apply the color mapping.
+
+Assuming domain2rgb contains base colors for domains and you want to generate a composite color for each node based on its associations, here is how you can refactor the existing code block to apply a custom color mapping without using np.matmul:
+"""
+    - Notable improvement in coloring with appropriate shading of less enriched nodes
+
+2. 
+    - Permutation test
+    - Much faster (build metrics to quantify this)
+3.
+    - Accepts more intuitive filetypes (JSON annotation file)
+4.
+    - Improved domain description generation using NLTK
+5.
+    - More explicit way to remove highly inflated domains (Z-score to remove outliers)
+    - By inflated, I mean the vastly inflated number of members in the domain
