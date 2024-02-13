@@ -54,7 +54,7 @@ class SAFE:
             "network_filepath": network_filepath,
             "annotation_filepath": annotation_filepath,
         }
-        self.config = validate_config({**read_default_config(), **user_input})
+        self.config = validate_config(merge_configs(read_default_config(), user_input))
         # TODO: What if the API is something like twosafe.load_cytoscape_network --> SAFE object
         self.network = self.load_cytoscape_network()
         self.annotation_map = self.load_network_annotation(self.network)
@@ -78,54 +78,6 @@ class SAFE:
             self.domains_matrix,
             self.trimmed_domains_matrix,
         )
-
-        # ===== CHECKPOINT =====
-        self.default_config = None
-        self.path_to_safe_data = None
-        self.path_to_network_file = None
-        self.view_name = None
-        self.path_to_attribute_file = None
-
-        self.graph = None
-        self.node_key_attribute = "label_orf"
-
-        self.attributes_matrix = None
-        self.nodes = None
-        self.node2attribute = None
-        self.num_nodes_per_attribute = None
-        self.attribute_sign = "both"
-
-        self.node_distance_metric = "shortpath_weighted_layout"
-        self.neighborhood_radius_type = None
-        self.neighborhood_radius = None
-
-        self.background = "attribute_file"
-        self.num_permutations = 1000
-        self.multiple_testing = False
-        self.neighborhood_score_type = "sum"
-        self.enrichment_type = "auto"
-        self.enrichment_threshold = 0.05
-        self.enrichment_max_log10 = 16
-        self.attribute_enrichment_min_size = 10
-
-        self.neighborhoods = None
-
-        self.ns = None
-        neg_pvals = None
-        pos_pvals = None
-        self.nes = None
-        self.nes_threshold = None
-        self.nes_binary = None
-
-        self.attribute_unimodality_metric = "connectivity"
-        self.attribute_distance_metric = "jaccard"
-        self.attribute_distance_threshold = 0.75
-
-        self.domains = None
-        self.node2domain = None
-
-        # Output
-        self.output_dir = ""
 
     def load_cytoscape_network(self, *args, **kwargs):
         print("[cyan]Loading Cytoscape network...")
@@ -175,7 +127,7 @@ class SAFE:
             ordered_column_annotations,
             neighborhood_enrichment_sums,
             neighborhood_binary_enrichment_matrix_below_alpha,
-            self.config["min_annotation_size"],
+            self.config["min_cluster_size"],
             self.config["unimodality_type"],
         )
         return top_attributes
@@ -204,7 +156,7 @@ class SAFE:
         trimmed_domains = trim_domains(
             annotation_matrix,
             domains_matrix,
-            self.config["min_annotation_size"],
+            self.config["min_cluster_size"],
         )
         return trimmed_domains
 
@@ -611,6 +563,22 @@ def run_safe_batch(attribute_file):
     sf.compute_pvalues(num_permutations=1000)
 
     return sf.nes
+
+
+def merge_configs(default_config, user_input):
+    """
+    Merges two configuration dictionaries, overwriting keys in the default
+    configuration with those from user input only if the user input value is truthy.
+
+    :param default_config: Dictionary with default configuration settings.
+    :param user_input: Dictionary with user-specified configuration settings.
+    :return: A new dictionary with the merged configuration.
+    """
+    merged_config = default_config.copy()  # Start with a copy of the default configuration
+    for key, value in user_input.items():
+        if value:  # Check if the user_input value is truthy
+            merged_config[key] = value  # Only overwrite if truthy
+    return merged_config
 
 
 if __name__ == "__main__":
