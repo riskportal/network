@@ -23,7 +23,7 @@ def read_default_config():
         "network_enrichment_type": network_config["enrichment"]["type"],
         "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],
         "network_enrichment_direction": network_config["enrichment"]["direction"],
-        "min_annotation_size": network_config["enrichment"]["min-annotation-size"],
+        "min_cluster_size": network_config["enrichment"]["min-cluster-size"],
         "enrichment_max_log10_pvalue": network_config["enrichment"]["max-log10-pvalue"],
         "enrichment_alpha_cutoff": network_config["enrichment"]["alpha-cutoff"],
         "neighborhood_distance_metric": network_config["node"]["neighborhood-distance-metric"],
@@ -74,7 +74,7 @@ def validate_config(config):
     assert isinstance(
         config["enrichment_max_log10_pvalue"], (int, float)
     ), "Maximum enrichment Log10 P-value must be a number."
-    assert config["min_annotation_size"] > 1, "The minimum permitted annotation size is 2."
+    assert config["min_cluster_size"] > 1, "The minimum permitted annotation size is 2."
     assert (
         1 > config["group_distance_threshold"] > 0
     ), "Group distance threshold must be between 0 and 1."
