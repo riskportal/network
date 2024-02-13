@@ -1,7 +1,6 @@
 import contextlib
 import random
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -21,7 +20,7 @@ def plot_composite_network(
     neighborhood_binary_enrichment_matrix_below_alpha,
     max_log10_pvalue,
     labels=[],
-    show_each_domain=True,
+    show_each_domain=False,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -46,25 +45,13 @@ def plot_composite_network(
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
     )
     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
-    node2all_domains_count = node2domain_count.sum(axis=1).to_numpy()[:, np.newaxis]
-
+    composite_colors = get_composite_node_colors(domain2rgb, node2domain_count)
     # Omit bad group
     domains_matrix = domains_matrix[domains_matrix["primary domain"] != 888888]
     trimmed_indices = domains_matrix.index
     # Order nodes by brightness for plotting
     node_xy = get_node_coordinates(network)
     node_xy_trimmed = node_xy[trimmed_indices]
-
-    # Calculate composite colors
-    with np.errstate(divide="ignore", invalid="ignore"):
-        composite_colors = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
-    # t = np.sum(composite_colors, axis=1)
-    # composite_colors[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
-    composite_colors[np.isnan(composite_colors).any(axis=1), :] = [0, 0, 0, 0]
-
-    # Adjust brightness and clip colors
-    coeff_brightness = 0.4 / np.nanmean(np.ravel(composite_colors[:, :-1]))
-    composite_colors = np.clip(composite_colors * min(coeff_brightness, 1), 0, 1)
     composite_colors_trimmed = composite_colors[trimmed_indices]
 
     # Prepare figure layout
@@ -86,6 +73,8 @@ def plot_composite_network(
 
     plotter = NetworkPlotter(axes, background_color, foreground_color)
     node_order = np.argsort(np.sum(composite_colors_trimmed, axis=1))
+    # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
+    composite_colors_trimmed[:, 3] = 1.0
     plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
 
     if show_domain_ids:
@@ -107,6 +96,46 @@ def plot_composite_network(
 
     fig.set_facecolor(background_color)
     plt.savefig("./data/demo.png", facecolor=background_color, bbox_inches="tight")
+
+
+def get_composite_node_colors(domain2rgb, node2domain_count):
+    # Ensure domain2rgb is a numpy array. If it's not, convert it:
+    # If domain2rgb is a list of tuples/lists, convert it to a numpy array
+    if not isinstance(domain2rgb, np.ndarray):
+        domain2rgb = np.array(domain2rgb)
+
+    # Placeholder for the output composite colors, one row per node
+    composite_colors = np.zeros((node2domain_count.shape[0], 4))  # Assuming RGBA
+    # Iterate over each node to compute its composite color
+    for node_idx in range(node2domain_count.shape[0]):
+        # Extract the domain counts for this node
+        domain_counts = node2domain_count.values[node_idx, :]
+        # Handle division by zero by checking if the maximum count is greater than 0
+        max_count = np.max(domain_counts)
+        if max_count > 0:
+            normalized_counts = domain_counts / max_count
+        else:
+            # Handle the case where max_count is 0 to avoid division by zero
+            normalized_counts = domain_counts
+        # Compute the weighted color for each domain and sum them
+        weighted_color_sum = np.zeros(4)
+        for domain_idx, count in enumerate(normalized_counts):
+            color = domain2rgb[domain_idx]  # Ensure color is an array
+            weighted_color = color * count  # Element-wise multiplication
+            weighted_color_sum += weighted_color
+        # Normalize the weighted sum of colors by the number of domains with non-zero counts
+        non_zero_domains = np.count_nonzero(normalized_counts)
+        if non_zero_domains > 0:
+            composite_color = weighted_color_sum / non_zero_domains
+        else:
+            # Handle the case with no domain associations
+            composite_color = np.array([0, 0, 0, 1])  # Default color, e.g., transparent or black
+        composite_colors[node_idx] = composite_color
+
+    # Handle division by zero or other adjustments as necessary
+    composite_colors = np.nan_to_num(composite_colors)
+
+    return composite_colors
 
 
 class NetworkPlotter:
