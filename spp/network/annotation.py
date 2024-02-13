@@ -18,7 +18,7 @@ def define_top_annotations(
     ordered_annotation_labels,
     ordered_annotation_enrichment,
     binary_enrichment_matrix_below_alpha,
-    min_annotation_size,
+    min_cluster_size,
     unimodality_type,
 ):
     annotation_enrichment_matrix = pd.DataFrame(
@@ -31,7 +31,7 @@ def define_top_annotations(
     annotation_enrichment_matrix["top attributes"] = False
     # Requirement 1: a minimum number of enriched neighborhoods
     annotation_enrichment_matrix.loc[
-        annotation_enrichment_matrix["num enriched neighborhoods"] >= min_annotation_size,
+        annotation_enrichment_matrix["num enriched neighborhoods"] >= min_cluster_size,
         "top attributes",
     ] = True
 
@@ -57,9 +57,7 @@ def define_top_annotations(
             )
             num_connected_components = len(connected_components)
             size_connected_components = np.array([len(c) for c in connected_components])
-            num_large_connected_components = np.sum(
-                size_connected_components >= min_annotation_size
-            )
+            num_large_connected_components = np.sum(size_connected_components >= min_cluster_size)
 
             annotation_enrichment_matrix.loc[
                 attribute, "num connected components"
@@ -75,7 +73,8 @@ def define_top_annotations(
         annotation_enrichment_matrix.loc[
             annotation_enrichment_matrix["num connected components"] > 1, "top attributes"
         ] = False
-        return annotation_enrichment_matrix
+
+    return annotation_enrichment_matrix
 
 
 def chop_and_filter(s, top_words_count=5):

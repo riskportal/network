@@ -75,29 +75,58 @@ def define_domains(
     return node2domain
 
 
-def trim_domains(annotation_matrix, domains_matrix, min_annotation_size):
+from collections import Counter
+
+
+def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
     # Remove domains that are the top choice for less than a certain number of neighborhoods
     domain_counts = domains_matrix["primary domain"].value_counts()
-    to_remove = domain_counts[domain_counts < min_annotation_size].index
-
-    annotation_matrix["domain"].replace(to_remove, 0, inplace=True)
-
+    to_remove = list(domain_counts[domain_counts < min_cluster_size].index)
+    to_remove.extend(find_outlier_domains(Counter(domains_matrix["primary domain"])))
+    # annotation_matrix = annotation_matrix[~annotation_matrix["domain"].isin(to_remove)]
+    # domains_matrix = domains_matrix[~domains_matrix["primary domain"].isin(to_remove)]
+    annotation_matrix["domain"].replace(to_remove, 888888, inplace=True)
     domains_matrix.loc[
         domains_matrix["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
-    ] = 0
+    ] = 888888
+    # # Rename the domains (simple renumber)
+    # renumber_dict = {domain: idx for idx, domain in enumerate(annotation_matrix["domain"].unique())}
 
-    # Rename the domains (simple renumber)
-    renumber_dict = {domain: idx for idx, domain in enumerate(annotation_matrix["domain"].unique())}
-
-    annotation_matrix["domain"] = annotation_matrix["domain"].map(renumber_dict)
-    domains_matrix["primary domain"] = domains_matrix["primary domain"].map(renumber_dict)
-    domains_matrix.drop(columns=to_remove, inplace=True)
+    # annotation_matrix["domain"] = annotation_matrix["domain"].map(renumber_dict)
+    # domains_matrix["primary domain"] = domains_matrix["primary domain"].map(renumber_dict)
+    # domains_matrix.drop(columns=to_remove, inplace=True)
 
     # Make labels for each domain
-    domains_labels = annotation_matrix.groupby("domain")["name"].apply(chop_and_filter)
-    trimmed_domains_matrix = pd.DataFrame(
-        data={"id": annotation_matrix["domain"].unique(), "label": domains_labels}
+    domains_labels = (
+        annotation_matrix.groupby("domain")["name"].apply(chop_and_filter).reset_index()
+    )
+    trimmed_domains_matrix = pd.DataFrame(domains_labels).rename(
+        columns={"domain": "id", "name": "label"}
     )
     trimmed_domains_matrix.set_index("id", drop=False, inplace=True)
 
     return annotation_matrix, domains_matrix, trimmed_domains_matrix
+
+
+def find_outlier_domains(data_dict, z_score_threshold=3):
+    import numpy as np
+
+    # Extract values from the dictionary
+    values = np.array(list(data_dict.values()))
+
+    # Calculate mean and standard deviation
+    mean = np.mean(values)
+    std_dev = np.std(values)
+
+    # Function to calculate Z-score
+    def calculate_z_score(value):
+        return (value - mean) / std_dev
+
+    # Identify outliers
+    outlier_keys = []
+    for key, value in data_dict.items():
+        z_score = calculate_z_score(value)
+        if abs(z_score) > z_score_threshold:
+            outlier_keys.append(key)
+
+    return outlier_keys

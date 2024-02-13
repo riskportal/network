@@ -31,9 +31,15 @@ def plot_composite_network(
     domains = np.sort(annotation_matrix["domain"].unique())
     domain2rgb = get_colors("hsv", len(domains))
     # Create DataFrame mappings for node to enrichment score and binary presence
+    neighborhood_enrichment_matrix = neighborhood_enrichment_matrix[
+        :, annotation_matrix.index.values
+    ]
     node2nes = pd.DataFrame(
         data=neighborhood_enrichment_matrix,
         columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
+    )
+    neighborhood_binary_enrichment_matrix_below_alpha = (
+        neighborhood_binary_enrichment_matrix_below_alpha[:, annotation_matrix.index.values]
     )
     node2nes_binary = pd.DataFrame(
         data=neighborhood_binary_enrichment_matrix_below_alpha,
@@ -42,18 +48,24 @@ def plot_composite_network(
     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
     node2all_domains_count = node2domain_count.sum(axis=1).to_numpy()[:, np.newaxis]
 
+    # Omit bad group
+    domains_matrix = domains_matrix[domains_matrix["primary domain"] != 888888]
+    trimmed_indices = domains_matrix.index
+    # Order nodes by brightness for plotting
+    node_xy = get_node_coordinates(network)
+    node_xy_trimmed = node_xy[trimmed_indices]
+
     # Calculate composite colors
     with np.errstate(divide="ignore", invalid="ignore"):
         composite_colors = np.matmul(node2domain_count.values, domain2rgb) / node2all_domains_count
+    # t = np.sum(composite_colors, axis=1)
+    # composite_colors[np.isnan(t) | np.isinf(t), :] = [0, 0, 0, 0]
     composite_colors[np.isnan(composite_colors).any(axis=1), :] = [0, 0, 0, 0]
 
     # Adjust brightness and clip colors
-    coeff_brightness = 1 / np.nanmean(np.ravel(composite_colors[:, :-1]))
+    coeff_brightness = 0.4 / np.nanmean(np.ravel(composite_colors[:, :-1]))
     composite_colors = np.clip(composite_colors * min(coeff_brightness, 1), 0, 1)
-
-    # Order nodes by brightness for plotting
-    node_order = np.argsort(np.sum(composite_colors, axis=1))
-    node_xy = get_node_coordinates(network)
+    composite_colors_trimmed = composite_colors[trimmed_indices]
 
     # Prepare figure layout
     num_plots = 2 + show_each_domain * len(domains)
@@ -61,13 +73,20 @@ def plot_composite_network(
     ncols = min(num_plots, 2)
     figsize = (10 * ncols, 10 * nrows)
 
+    # Create the subplots dynamically based on the number of plots needed
     fig, axes = plt.subplots(
-        nrows, ncols, figsize=figsize, sharex=True, sharey=True, facecolor=background_color
+        nrows=nrows,
+        ncols=ncols,
+        figsize=figsize,
+        sharex=True,
+        sharey=True,
+        facecolor=background_color,
     )
     axes = axes.ravel()
 
     plotter = NetworkPlotter(axes, background_color, foreground_color)
-    plotter.plot_main_network(network, node_xy, node_order, composite_colors)
+    node_order = np.argsort(np.sum(composite_colors_trimmed, axis=1))
+    plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
 
     if show_domain_ids:
         plotter.plot_domain_ids(domains, domains_matrix, node_xy)
@@ -79,9 +98,9 @@ def plot_composite_network(
             domains,
             domains_matrix,
             trimmed_domains_matrix,
-            node_xy,
+            node_xy_trimmed,
             node2nes,
-            composite_colors,
+            composite_colors_trimmed,
             max_log10_pvalue,
             labels,
         )
@@ -141,24 +160,55 @@ class NetworkPlotter:
     ):
         if not show_each_domain:
             return
-        for domain_idx, domain in enumerate(domains, start=2):
-            ax = self.axes[domain_idx]
-            alpha = node2nes.loc[:, domain].values / max_log10_pvalue
-            alpha[alpha > 1] = 1
-            alpha = np.reshape(alpha, -1)
-            idx = domains_matrix["primary domain"] == domain
+        ax_count = 2
+        for domain in domains:
+            with contextlib.suppress(KeyError):
+                alpha = node2nes.loc[:, domain].values / max_log10_pvalue
+                alpha = np.clip(alpha, 0, 1)  # Clip alpha values between 0 and 1
+                alpha = np.reshape(alpha, -1)
+                # composite_colors[:, 3] = alpha  # Super dim
+                domains_to_filter = domains_matrix["primary domain"] == domain
+                # Empty matrices
+                if not node_xy[domains_to_filter, 0].shape[0]:
+                    continue
+                # Now begin to plot
+                ax = self.axes[ax_count]
+                ax.scatter(
+                    node_xy[domains_to_filter, 0],
+                    node_xy[domains_to_filter, 1],
+                    c=composite_colors[domains_to_filter],
+                    s=60,
+                )
+                ax.set_aspect("equal")
+                ax.set_facecolor(self.background_color)
+                ax.set_title(
+                    f"Domain {ax_count}\n{trimmed_domains_matrix.loc[domain, 'label']}",
+                    color=self.foreground_color,
+                )
+                plot_network_contour(network, ax, self.background_color)
+                if labels:
+                    plot_labels(labels, network, ax)
+                ax_count += 1
 
-            ax.scatter(node_xy[idx, 0], node_xy[idx, 1], c=composite_colors[idx], s=60)
-            ax.set_aspect("equal")
-            ax.set_facecolor(self.background_color)
-            ax.set_title(
-                f"Domain {domain_idx}\n{trimmed_domains_matrix.loc[domain, 'label']}",
-                color=self.foreground_color,
-            )
 
-            plot_network_contour(network, ax, self.background_color)
-            if labels:
-                plot_labels(labels, network, ax)
+def remove_outliers(data_dict, z_score_threshold=3):
+    values = np.array(list(data_dict.values()))
+    # Calculate mean and standard deviation
+    mean = np.mean(values)
+    std_dev = np.std(values)
+
+    # Function to calculate Z-score
+    def calculate_z_score(value):
+        return (value - mean) / std_dev
+
+    # Identify and remove outliers
+    cleaned_dict = {}
+    for key, value in data_dict.items():
+        z_score = calculate_z_score(value)
+        if abs(z_score) <= z_score_threshold:
+            cleaned_dict[key] = value
+
+    return cleaned_dict
 
 
 def plot_composite_network_contours(
@@ -451,9 +501,9 @@ def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
     cmap = cm.get_cmap("hsv")
     # First color, always black
     # Evenly distribute the remaining colors
-    color_positions = np.linspace(0, 1, num_colors_to_generate)
+    color_positions = np.linspace(0, 1, num_colors_to_generate - 1)
     random.shuffle(color_positions)
     # Generate colors based on positions
     rgbas = [cmap(pos) for pos in color_positions]
 
-    return rgbas
+    return [(0, 0, 0, 1)] + rgbas

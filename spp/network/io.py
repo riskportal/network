@@ -2,24 +2,15 @@
 """This file contains the code for the SAFE class and command-line access."""
 import contextlib
 import json
-import re
-import os
 from pathlib import Path
-import logging
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
 import zipfile
-import random
 import shutil
 
-from scipy.spatial import ConvexHull
 from scipy.spatial.distance import pdist, squareform
-from scipy.stats import gaussian_kde
-from scipy.optimize import fmin
-from collections import Counter
 from xml.dom import minidom
 
 
@@ -156,5 +147,5 @@ def load_network_annotation(network, annotation_filepath, node_colname="label"):
     return {
         "ordered_row_nodes": ordered_nodes,
         "ordered_column_annotations": ordered_annotations,
-        "annotation_matrix": annotation_pivot.to_numpy().astype(int),
+        "annotation_matrix": annotation_pivot.to_numpy(),
     }
