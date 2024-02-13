@@ -90,9 +90,12 @@ def run_permutation_test(
         # We are computing the permuted test statistics
         for i in range(num_permutations):
             # Permute only the rows that have values
-            annotation_matrix[idxs, :] = annotation_matrix[np.random.permutation(idxs), :]
+            annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs), :]
+            annotation_matrix_permut = np.where(
+                ~np.isnan(annotation_matrix_permut), annotation_matrix_permut, 0
+            )
             N_in_neighborhood_in_group_perm = neighborhood_score_func(
-                neighborhoods_matrix, annotation_matrix
+                neighborhoods_matrix, annotation_matrix_permut
             )
             # Below is NOT the bottleneck...
             with np.errstate(invalid="ignore", divide="ignore"):
