@@ -1,3 +1,5 @@
+from collections import Counter
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -75,9 +77,6 @@ def define_domains(
     return node2domain
 
 
-from collections import Counter
-
-
 def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
     # Remove domains that are the top choice for less than a certain number of neighborhoods
     domain_counts = domains_matrix["primary domain"].value_counts()
@@ -89,12 +88,6 @@ def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
     domains_matrix.loc[
         domains_matrix["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
     ] = 888888
-    # # Rename the domains (simple renumber)
-    # renumber_dict = {domain: idx for idx, domain in enumerate(annotation_matrix["domain"].unique())}
-
-    # annotation_matrix["domain"] = annotation_matrix["domain"].map(renumber_dict)
-    # domains_matrix["primary domain"] = domains_matrix["primary domain"].map(renumber_dict)
-    # domains_matrix.drop(columns=to_remove, inplace=True)
 
     # Make labels for each domain
     domains_labels = (
