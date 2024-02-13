@@ -133,15 +133,15 @@ def load_network_annotation(network, annotation_filepath, node_colname="label"):
     # Create a DataFrame
     annotation = pd.DataFrame(flattened_annotation, columns=["Node", "Annotation"])
     annotation["Is Member"] = 1
+    # Pivot the DataFrame to achieve the desired format
     annotation_pivot = annotation.pivot_table(
         index="Node", columns="Annotation", values="Is Member", fill_value=0, dropna=False
     )
     # Get list of node labels as ordered in a graph object
     node_label_order = list(nx.get_node_attributes(network, node_colname).values())
-    # NOTE: This sets the node annotation background (union of all annotation nodes) to nodes as found in the network
+    # This will reindex the annotation matrix with node labels as found in annotation file - those that are not found,
+    # (i.e., rows) will be set to NaN values
     annotation_pivot = annotation_pivot.reindex(index=node_label_order)
-    annotation_pivot[np.isnan(annotation_pivot)] = 0
-    # Pivot the DataFrame to achieve the desired format
     ordered_nodes = tuple(annotation_pivot.index)
     ordered_annotations = tuple(annotation_pivot.columns)
     return {
