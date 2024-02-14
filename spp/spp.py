@@ -56,21 +56,27 @@ class SAFE:
         )
 
     def load_cytoscape_network(self, *args, **kwargs):
-        print("[cyan]Loading Cytoscape network...")
+        print("[cyan]Loading [blue]Cytoscape[/blue] network...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
 
     def load_network_annotation(self, network):
-        print("[cyan]Loading network annotations...")
+        print("[cyan]Loading [blue]network annotations[/blue]...")
         annotation = load_network_annotation(
             network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
         return annotation
 
     def load_neighborhoods(self, network):
-        print("[cyan]Loading network neighborhoods...")
+        neighborhood_distance_metric = self.config["neighborhood_distance_metric"]
+        print(
+            f"[cyan]Computing [blue]network neighborhoods[/blue] using [yellow]'{neighborhood_distance_metric}'[/yellow] as the metric..."
+        )
         neighborhoods = get_network_neighborhoods(
-            network, self.config["neighborhood_distance_metric"], self.config["neighborhood_radius"]
+            network,
+            neighborhood_distance_metric,
+            self.config["neighborhood_radius"],
+            self.config["neighborhood_distance_louvaine_resolution"],
         )
         return neighborhoods
 
@@ -78,10 +84,10 @@ class SAFE:
         neighborhood_score_metric = self.config["neighborhood_score_metric"]
         network_null_distribution = self.config["network_enrichment_null_distribution"]
         print(
-            f"[cyan]Computing P-values by randomization using the null distribution option: [yellow]'{network_null_distribution}'[/yellow]..."
+            f"[cyan]Computing [blue]P-values by randomization[/blue] using the [blue]null distribution[/blue] option: [yellow]'{network_null_distribution}'[/yellow]..."
         )
         print(
-            f"[cyan]Computing test statistics using the [yellow]'{neighborhood_score_metric}'[/yellow]-based neighborhood scoring approach..."
+            f"[cyan]Computing [blue]test statistics[/blue] using the [yellow]'{neighborhood_score_metric}'[/yellow]-based [blue]neighborhood scoring[/blue] approach..."
         )
         annotation_matrix = annotation["annotation_matrix"]
         neighborhood_enrichment_map = compute_pvalues_by_randomization(
@@ -114,7 +120,6 @@ class SAFE:
         return top_attributes
 
     def define_domains(self, neighborhood_enrichment_map, annotation_enrichment_matrix):
-        print("[cyan]Defining domains...")
         neighborhood_enrichment_matrix = neighborhood_enrichment_map[
             "neighborhood_enrichment_matrix"
         ]
@@ -123,6 +128,9 @@ class SAFE:
         ]
         group_distance_metric = self.config["group_distance_metric"]
         group_distance_threshold = self.config["group_distance_threshold"]
+        print(
+            f"[cyan]Defining [blue]domains[/blue] using the [yellow]'{group_distance_metric}'[/yellow] metric with [yellow]{'automatic' if not group_distance_threshold else group_distance_threshold}[/yellow] distance thresholding..."
+        )
         domains_matrix = define_domains(
             neighborhood_enrichment_matrix,
             neighborhood_binary_enrichment_matrix_below_alpha,
@@ -133,7 +141,7 @@ class SAFE:
         return domains_matrix
 
     def trim_domains(self, annotation_matrix, domains_matrix):
-        print("[cyan]Trimming domains...")
+        print("[cyan]Trimming [blue]domains[/blue]...")
         trimmed_domains = trim_domains(
             annotation_matrix,
             domains_matrix,
@@ -149,7 +157,7 @@ class SAFE:
         domains_matrix,
         trimmed_domains_matrix,
     ):
-        print("[cyan]Plotting composite network contours...")
+        print("[cyan]Plotting [blue]composite network contours[/blue]...")
         neighborhood_enrichment_matrix = neighborhood_enrichment_map[
             "neighborhood_enrichment_matrix"
         ]
