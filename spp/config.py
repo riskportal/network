@@ -27,6 +27,9 @@ def read_default_config():
         "enrichment_max_log10_pvalue": network_config["enrichment"]["max-log10-pvalue"],
         "enrichment_alpha_cutoff": network_config["enrichment"]["alpha-cutoff"],
         "neighborhood_distance_metric": network_config["node"]["neighborhood-distance-metric"],
+        "neighborhood_distance_louvaine_resolution": network_config["node"][
+            "neighborhood-distance-louvaine-resolution"
+        ],
         "neighborhood_score_metric": network_config["node"]["neighborhood-score-metric"],
         "neighborhood_radius": network_config["node"]["neighborhood-radius"],
         "neighborhood_radius_type": network_config["node"]["neighborhood-radius-type"],
@@ -51,7 +54,13 @@ def validate_config(config):
     _assert_user_input_in_valid_keywords(
         "Neighborhood Distance Metric",
         user_input=config["neighborhood_distance_metric"],
-        keywords=["euclidean", "shortpath", "shortpath_weighted_layout"],
+        keywords=[
+            "euclidean",
+            "shortpath",
+            "shortpath_weighted",
+            "louvain",
+            "affinity_propagation",
+        ],
     )
     _assert_user_input_in_valid_keywords(
         "Neighborhood Distance Metric",
@@ -74,10 +83,13 @@ def validate_config(config):
     assert isinstance(
         config["enrichment_max_log10_pvalue"], (int, float)
     ), "Maximum enrichment Log10 P-value must be a number."
+    assert isinstance(
+        config["neighborhood_distance_louvaine_resolution"], (int, float)
+    ), "Louvaine resolution must be a number."
     assert config["min_cluster_size"] > 1, "The minimum permitted annotation size is 2."
     assert (
-        1 > config["group_distance_threshold"] > 0
-    ), "Group distance threshold must be between 0 and 1."
+        1 >= config["group_distance_threshold"] >= 0
+    ), "Group distance threshold must be between 0 and 1, inclusive."
 
     return config
 
