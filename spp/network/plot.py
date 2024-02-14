@@ -20,7 +20,7 @@ def plot_composite_network(
     neighborhood_binary_enrichment_matrix_below_alpha,
     max_log10_pvalue,
     labels=[],
-    show_each_domain=True,
+    show_each_domain=False,
     show_domain_ids=False,
     background_color="#000000",
 ):

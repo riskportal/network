@@ -86,7 +86,7 @@ def define_domains(
     # Automatically compute a threshold if no threshold is provided
     if not group_distance_threshold:
         # Calculate silhouette scores for a range of thresholds
-        thresholds = np.linspace(0.1, 0.9, 9)  # Example range of thresholds
+        thresholds = np.linspace(0.001, 0.999, 999)  # Example range of thresholds
         silhouette_scores = []
         for threshold in thresholds:
             max_d = np.max(Z[:, 2]) * threshold
@@ -96,7 +96,7 @@ def define_domains(
         # Find the threshold with the highest silhouette score
         group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
         print(
-            f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 1)}[/red][/yellow]"
+            f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
         )
 
     max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
