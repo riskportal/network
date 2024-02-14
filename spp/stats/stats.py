@@ -44,9 +44,9 @@ def compute_pvalues_by_randomization(
     # Correct for multiple testing
     if multiple_testing:
         out = np.apply_along_axis(fdrcorrection, 1, neg_pvals)
-        neg_pvals = (out[:, 1, :] ** 0.5) * (neg_pvals**2)
+        neg_pvals = (out[:, 1, :] ** 2) * (neg_pvals**0.5)
         out = np.apply_along_axis(fdrcorrection, 1, pos_pvals)
-        pos_pvals = (out[:, 1, :] ** 0.5) * (pos_pvals**2)
+        pos_pvals = (out[:, 1, :] ** 2) * (pos_pvals**0.5)
 
     # Log-transform into neighborhood enrichment scores (NES)
     # Necessary conservative adjustment: when p-value = 0, set it to 1/num_permutations
