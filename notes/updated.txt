@@ -2,8 +2,8 @@ PROJECT NAME IDEA
 =================
 - SPP: SAFE Plus Plus
 - DANGER:
-    Detection Algorithm for Network Group Enrichment Regions
     Discovery Algorithm for Network Group Enrichment Regions
+    Detection Algorithm for Network Group Enrichment Regions
     Data-driven Algorithm for Network Group Enrichment Recognition
     Dynamic Algorithm for Network Group Enrichment Revelation
     Deep Analysis Network Group Enrichment Resolver
@@ -22,6 +22,10 @@ PROJECT NAME IDEA
     Discovery Algorithms for Network Geographies, Entanglements, and Repatternings
     Data Analytics for Networked Groups, Efficiencies, and Resiliencies
     Deep Analytic Network Guidance for Enrichment Realization
+- RISK:
+    RISK Informs Spatial Kinship
+    Regional Identification of Significant Kinships
+    Regional Identification of Structural Kinships
 
 THINGS I UPDATED
 ================
