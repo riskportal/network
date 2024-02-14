@@ -95,11 +95,12 @@ class SAFE:
             annotation_matrix,
             self.config["neighborhood_score_metric"],
             self.config["network_enrichment_direction"],
-            self.config["enrichment_alpha_cutoff"],
+            self.config["enrichment_pval_cutoff"],
+            self.config["enrichment_apply_fdr"],
+            self.config["enrichment_fdr_cutoff"],
             null_distribution=network_null_distribution,
             num_permutations=self.config["network_enrichment_num_permutations"],
             random_seed=888,
-            multiple_testing=True,
         )
         return neighborhood_enrichment_map
 
@@ -171,7 +172,6 @@ class SAFE:
             trimmed_domains_matrix,
             neighborhood_enrichment_matrix,
             neighborhood_binary_enrichment_matrix_below_alpha,
-            self.config["enrichment_max_log10_pvalue"],
         )
 
 
