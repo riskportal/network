@@ -20,7 +20,7 @@ def plot_composite_network(
     neighborhood_binary_enrichment_matrix_below_alpha,
     max_log10_pvalue,
     labels=[],
-    show_each_domain=False,
+    show_each_domain=True,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -31,6 +31,7 @@ def plot_composite_network(
     # Omit bad group
     annotation_matrix = annotation_matrix[annotation_matrix["domain"] != 888888]
     domains_matrix = domains_matrix[domains_matrix["primary domain"] != 888888]
+    trimmed_domains_matrix = trimmed_domains_matrix[trimmed_domains_matrix["id"] != 888888]
     # Create DataFrame mappings for node to enrichment score and binary presence
     neighborhood_enrichment_matrix = neighborhood_enrichment_matrix[
         :, annotation_matrix.index.values
@@ -62,7 +63,7 @@ def plot_composite_network(
     node_xy = get_node_coordinates(network)
     # Begin trimming
     # Remove nodes that are very far away from their domain's hub
-    node_xy_trimmed, composite_colors_trimmed = remove_node_outliers_subclusters(
+    node_xy_trimmed, composite_colors_trimmed, domains_matrix = remove_node_outliers_subclusters(
         node_xy, composite_colors, domains_matrix, std_dev_factor=2
     )
 
@@ -86,7 +87,7 @@ def plot_composite_network(
     plotter = NetworkPlotter(axes, background_color, foreground_color)
     node_order = np.argsort(np.sum(composite_colors_trimmed, axis=1))
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
-    composite_colors_trimmed[:, 3] = 1.0
+    composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
     plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
 
     if show_domain_ids:
@@ -100,9 +101,8 @@ def plot_composite_network(
             domains_matrix,
             trimmed_domains_matrix,
             node_xy_trimmed,
-            node2nes,
+            node_order,
             composite_colors_trimmed,
-            max_log10_pvalue,
             labels,
         )
 
@@ -110,7 +110,8 @@ def plot_composite_network(
     plt.savefig("./data/demo.png", facecolor=background_color, bbox_inches="tight")
 
 
-def get_composite_node_colors(domain2rgb, node2domain_count):
+def get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
+    random.seed(random_seed)
     # Ensure domain2rgb is a numpy array. If it's not, convert it:
     # If domain2rgb is a list of tuples/lists, convert it to a numpy array
     if not isinstance(domain2rgb, np.ndarray):
@@ -141,7 +142,7 @@ def get_composite_node_colors(domain2rgb, node2domain_count):
             composite_color = weighted_color_sum / non_zero_domains
         else:
             # Handle the case with no domain associations
-            composite_color = np.array([0, 0, 0, 1])  # Default color, e.g., transparent or black
+            composite_color = np.array([1, 1, 1, 0])  # Default color, e.g., transparent or black
         composite_colors[node_idx] = composite_color
 
     # Handle division by zero or other adjustments as necessary
@@ -154,6 +155,7 @@ def remove_node_outliers_subclusters(node_xy, composite_colors, domains_matrix, 
     """
     Remove outliers from node positions and corresponding composite colors,
     considering subclusters identified by the 'primary domain' in domains_matrix.
+    Additionally, return the filtered domains matrix with the same indexing as its input.
 
     Parameters:
     - node_xy: Numpy array of node positions.
@@ -162,44 +164,32 @@ def remove_node_outliers_subclusters(node_xy, composite_colors, domains_matrix, 
     - std_dev_factor: Number of standard deviations for defining outliers within each subcluster.
 
     Returns:
-    - Filtered node positions and composite colors without outliers.
+    - Filtered node positions, composite colors, and domains matrix without outliers.
     """
-    unique_domains = domains_matrix["primary domain"].unique()
-    filtered_node_xy_list = []
-    filtered_composite_colors_list = []
+    filtered_indices = []
 
-    for domain in unique_domains:
+    for domain in domains_matrix["primary domain"].unique():
         domain_indices = domains_matrix[domains_matrix["primary domain"] == domain].index
         subcluster_node_xy = node_xy[domain_indices]
         subcluster_composite_colors = composite_colors[domain_indices]
 
-        if (
-            len(subcluster_node_xy) > 1
-        ):  # Ensure there are enough points to compute a meaningful centroid
-            centroid = np.mean(subcluster_node_xy, axis=0)
-            distances = np.linalg.norm(subcluster_node_xy - centroid, axis=1)
+        # Calculate the centroid and distances of points in the subcluster
+        centroid = np.mean(subcluster_node_xy, axis=0)
+        distances = np.linalg.norm(subcluster_node_xy - centroid, axis=1)
+        distance_threshold = np.mean(distances) + std_dev_factor * np.std(distances)
 
-            mean_distance = np.mean(distances)
-            std_distance = np.std(distances)
-            threshold_distance = mean_distance + std_dev_factor * std_distance
+        # Indices of non-outlier points within the current domain
+        non_outlier_indices = domain_indices[distances <= distance_threshold]
 
-            non_outlier_indices = np.where(distances <= threshold_distance)[0]
+        # Collect all non-outlier indices
+        filtered_indices.extend(non_outlier_indices)
 
-            filtered_subcluster_node_xy = subcluster_node_xy[non_outlier_indices]
-            filtered_subcluster_composite_colors = subcluster_composite_colors[non_outlier_indices]
-        else:
-            # If the subcluster has only one point, keep it as it cannot be an outlier by itself
-            filtered_subcluster_node_xy = subcluster_node_xy
-            filtered_subcluster_composite_colors = subcluster_composite_colors
+    # Use collected indices to filter node positions, composite colors, and the domains matrix
+    filtered_node_xy = node_xy[filtered_indices]
+    filtered_composite_colors = composite_colors[filtered_indices]
+    filtered_domains_matrix = domains_matrix.loc[filtered_indices].copy()
 
-        filtered_node_xy_list.append(filtered_subcluster_node_xy)
-        filtered_composite_colors_list.append(filtered_subcluster_composite_colors)
-
-    # Combine the results from all subclusters
-    filtered_node_xy = np.vstack(filtered_node_xy_list)
-    filtered_composite_colors = np.vstack(filtered_composite_colors_list)
-
-    return filtered_node_xy, filtered_composite_colors
+    return filtered_node_xy, filtered_composite_colors, filtered_domains_matrix
 
 
 class NetworkPlotter:
@@ -248,42 +238,52 @@ class NetworkPlotter:
         domains_matrix,
         trimmed_domains_matrix,
         node_xy,
-        node2nes,
+        node_order,
         composite_colors,
-        max_log10_pvalue,
         labels,
     ):
         if not show_each_domain:
             return
         ax_count = 2
         for domain in domains:
-            with contextlib.suppress(KeyError):
-                alpha = node2nes.loc[:, domain].values / max_log10_pvalue
-                alpha = np.clip(alpha, 0, 1)  # Clip alpha values between 0 and 1
-                alpha = np.reshape(alpha, -1)
-                # composite_colors[:, 3] = alpha  # Super dim
-                domains_to_filter = domains_matrix["primary domain"] == domain
-                # Empty matrices
-                if not node_xy[domains_to_filter, 0].shape[0]:
-                    continue
-                # Now begin to plot
-                ax = self.axes[ax_count]
-                ax.scatter(
-                    node_xy[domains_to_filter, 0],
-                    node_xy[domains_to_filter, 1],
-                    c=composite_colors[domains_to_filter],
-                    s=60,
-                )
-                ax.set_aspect("equal")
-                ax.set_facecolor(self.background_color)
-                ax.set_title(
-                    f"Domain {ax_count}\n{trimmed_domains_matrix.loc[domain, 'label']}",
-                    color=self.foreground_color,
-                )
-                draw_network_perimeter(network, ax, self.background_color)
-                if labels:
-                    plot_labels(labels, network, ax)
-                ax_count += 1
+            # Identify indices where the 'primary domain' matches the current domain
+            domains_to_filter = domains_matrix["primary domain"] == domain
+            filtered_indices = np.where(domains_to_filter)[0]
+
+            # Determine the order of these indices as per node_order
+            # This ensures we only consider nodes in the current domain and follow the specified node_order
+            ordered_indices = [idx for idx in node_order if idx in filtered_indices]
+
+            # Check if there are any nodes to plot for this domain
+            if not len(ordered_indices):
+                continue
+
+            # Convert to a NumPy array for easier indexing
+            ordered_indices = np.array(ordered_indices)
+
+            # Now, use these ordered indices to filter node_xy and composite_colors
+            ordered_node_xy = node_xy[ordered_indices]
+            ordered_composite_colors = composite_colors[ordered_indices]
+
+            # Plotting
+            ax = self.axes[ax_count]
+            # First, draw the perimeter
+            draw_network_perimeter(network, ax, self.background_color)
+            ax.scatter(
+                ordered_node_xy[:, 0],  # x-coordinates
+                ordered_node_xy[:, 1],  # y-coordinates
+                c=ordered_composite_colors,  # Colors
+                s=60,  # Size of the marker
+            )
+            ax.set_aspect("equal")
+            ax.set_facecolor(self.background_color)
+            ax.set_title(
+                f"Domain {ax_count}\n{trimmed_domains_matrix.loc[domain, 'label']}",
+                color=self.foreground_color,
+            )
+            if labels:
+                plot_labels(labels, network, ax)
+            ax_count += 1
 
 
 def plot_composite_network_contours(
@@ -589,7 +589,7 @@ def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
     cmap = cm.get_cmap("hsv")
     # First color, always black
     # Evenly distribute the remaining colors: the -1 gives an excellent color spread
-    color_positions = np.linspace(0, 1, num_colors_to_generate - 1)
+    color_positions = np.linspace(0, 1, num_colors_to_generate)
     random.shuffle(color_positions)
     # Generate colors based on positions
     rgbas = [cmap(pos) for pos in color_positions]
