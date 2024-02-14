@@ -29,3 +29,6 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
 5.
     - More explicit way to remove highly inflated domains (Z-score to remove outliers)
     - By inflated, I mean the vastly inflated number of members in the domain
+6.
+    - Remove nodes from being colored / plotted if they are N STDEV away from their domain's centroid
+
