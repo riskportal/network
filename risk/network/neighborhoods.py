@@ -84,6 +84,7 @@ def define_domains(
     Z = linkage(m, method="average", metric=group_distance_metric)
 
     # Automatically compute a threshold if no threshold is provided
+    warned_user = False
     if not group_distance_threshold:
         # Calculate silhouette scores for a range of thresholds
         thresholds = np.linspace(0.001, 0.999, 999)  # Example range of thresholds
@@ -91,8 +92,16 @@ def define_domains(
         for threshold in thresholds:
             max_d = np.max(Z[:, 2]) * threshold
             clusters = fcluster(Z, max_d, criterion="distance")
-            score = silhouette_score(m, clusters, metric=group_distance_metric)
-            silhouette_scores.append(score)
+            try:
+                score = silhouette_score(m, clusters, metric=group_distance_metric)
+                silhouette_scores.append(score)
+            except ValueError:
+                if not warned_user:
+                    print(
+                        "\t[cyan][red]Warning:[/red] Network predicted to have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
+                    )
+                    warned_user = True
+
         # Find the threshold with the highest silhouette score
         group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
         print(
