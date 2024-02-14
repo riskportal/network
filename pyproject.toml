@@ -1,33 +1,13 @@
 [build-system]
-requires = ["flit_core >=2,<4"]
+requires = ["flit_core >=3.9.0,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "danger"
-version = "attr: danger.__version__"
-author = "Ira Horecka"
-author-email = "ira89@icloud.com"
-home-page = "https://github.com/irahorecka/danger"
-description-file = "README.md"
-classifiers = [
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Bio-Informatics",
-    "Topic :: Scientific/Engineering :: Chemistry",
-    "Topic :: Scientific/Engineering :: Information Analysis",
-    "Topic :: Scientific/Engineering :: Visualization",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Development Status :: 4 - Beta",
+[project]
+name = "danger"
+authors = [
+    {name = "Ira Horecka", email = "ira89@icloud.com"},
 ]
-requires-python = ">=3.7"
-requires = [
+dependencies = [
     "matplotlib",
     "networkx",
     "nltk",
@@ -40,6 +20,20 @@ requires = [
     "scipy",
     "statsmodels",
 ]
-
-[tool.flit.sdist]
-exclude = ["data*"]
+requires-python = ">=3.7"
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Development Status :: 4 - Beta",
+]
+dynamic = ['version', 'description']
