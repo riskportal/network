@@ -24,8 +24,9 @@ def read_default_config():
         "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],
         "network_enrichment_direction": network_config["enrichment"]["direction"],
         "min_cluster_size": network_config["enrichment"]["min-cluster-size"],
-        "enrichment_max_log10_pvalue": network_config["enrichment"]["max-log10-pvalue"],
-        "enrichment_alpha_cutoff": network_config["enrichment"]["alpha-cutoff"],
+        "enrichment_pval_cutoff": network_config["enrichment"]["pval-cutoff"],
+        "enrichment_apply_fdr": network_config["enrichment"]["apply-fdr"],
+        "enrichment_fdr_cutoff": network_config["enrichment"]["fdr-cutoff"],
         "neighborhood_distance_metric": network_config["node"]["neighborhood-distance-metric"],
         "neighborhood_distance_louvaine_resolution": network_config["node"][
             "neighborhood-distance-louvaine-resolution"
@@ -70,7 +71,7 @@ def validate_config(config):
     _assert_user_input_in_valid_keywords(
         "Annotation Attribute Sign",
         user_input=config["network_enrichment_direction"],
-        keywords=["highest", "lowest", "both"],
+        keywords=["highest", "lowest"],
     )
 
     # Check numerical user inputs
@@ -78,11 +79,11 @@ def validate_config(config):
         config["network_enrichment_num_permutations"] > 99
     ), "Number of enrichment permutations must be greater than or equal to 100."
     assert (
-        1 > config["enrichment_alpha_cutoff"] > 0
-    ), "Enrichment alpha cutoff must be between 0 and 1."
-    assert isinstance(
-        config["enrichment_max_log10_pvalue"], (int, float)
-    ), "Maximum enrichment Log10 P-value must be a number."
+        1 >= config["enrichment_pval_cutoff"] > 0
+    ), "Enrichment P-value cutoff must be greater than 0 and less than or equal to 1."
+    assert (
+        1 >= config["enrichment_fdr_cutoff"] > 0
+    ), "Enrichment FDR cutoff must be greater than 0 and less than or equal to 1."
     assert isinstance(
         config["neighborhood_distance_louvaine_resolution"], (int, float)
     ), "Louvaine resolution must be a number."

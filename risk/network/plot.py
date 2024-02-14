@@ -19,9 +19,8 @@ def plot_composite_network(
     trimmed_domains_matrix,
     neighborhood_enrichment_matrix,
     neighborhood_binary_enrichment_matrix_below_alpha,
-    max_log10_pvalue,
     labels=[],
-    show_each_domain=True,
+    show_each_domain=False,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -82,6 +81,7 @@ def plot_composite_network(
     axes = axes.ravel()
 
     plotter = NetworkPlotter(axes, background_color, foreground_color)
+    # Plot node order from highest to lowest intensity
     node_order = np.argsort(np.sum(composite_colors_trimmed, axis=1))
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
     composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
