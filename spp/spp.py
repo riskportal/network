@@ -56,12 +56,12 @@ class SAFE:
         )
 
     def load_cytoscape_network(self, *args, **kwargs):
-        print("[cyan]Loading [blue]Cytoscape[/blue] network...")
+        print("[cyan]Loading [yellow]'cytoscape'[/yellow] [blue]network[/blue]...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
 
     def load_network_annotation(self, network):
-        print("[cyan]Loading [blue]network annotations[/blue]...")
+        print("[cyan]Loading [yellow]'json'[/yellow] [blue]network annotations[/blue]...")
         annotation = load_network_annotation(
             network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
@@ -84,7 +84,7 @@ class SAFE:
         neighborhood_score_metric = self.config["neighborhood_score_metric"]
         network_null_distribution = self.config["network_enrichment_null_distribution"]
         print(
-            f"[cyan]Computing [blue]P-values by randomization[/blue] using the [blue]null distribution[/blue] option: [yellow]'{network_null_distribution}'[/yellow]..."
+            f"[cyan]Computing [blue]P-values by randomization[/blue] using [yellow]'{network_null_distribution}'[/yellow] as the [blue]null distribution[/blue]..."
         )
         print(
             f"[cyan]Computing [blue]test statistics[/blue] using the [yellow]'{neighborhood_score_metric}'[/yellow]-based [blue]neighborhood scoring[/blue] approach..."
