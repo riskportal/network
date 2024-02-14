@@ -56,12 +56,12 @@ class SAFE:
         )
 
     def load_cytoscape_network(self, *args, **kwargs):
-        print("[cyan]Loading [yellow]'cytoscape'[/yellow] [blue]network[/blue]...")
+        print("[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network[/blue]...")
         network_filepath = self.config["network_filepath"]
         return load_cys_network(network_filepath, *args, **kwargs)
 
     def load_network_annotation(self, network):
-        print("[cyan]Loading [yellow]'json'[/yellow] [blue]network annotations[/blue]...")
+        print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
         annotation = load_network_annotation(
             network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
         )
