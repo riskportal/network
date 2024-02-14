@@ -20,7 +20,7 @@ def plot_composite_network(
     neighborhood_enrichment_matrix,
     neighborhood_binary_enrichment_matrix_below_alpha,
     labels=[],
-    show_each_domain=False,
+    show_each_domain=True,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -82,7 +82,7 @@ def plot_composite_network(
 
     plotter = NetworkPlotter(axes, background_color, foreground_color)
     # Plot node order from highest to lowest intensity
-    node_order = np.argsort(np.sum(composite_colors_trimmed, axis=1))
+    node_order = get_refined_node_order(domains_matrix, composite_colors_trimmed)
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
     composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
     plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
@@ -558,6 +558,40 @@ def get_node_coordinates(graph):
     node_xy = np.vstack(list(pos.values()))
 
     return node_xy
+
+
+def get_refined_node_order(domains_matrix, composite_colors):
+    # Ensure the input DataFrame is reindexed to start from 0 to align with composite_colors indices
+    domains_matrix = domains_matrix.reset_index(drop=True)
+    # Calculate the sum of composite_colors values for each entry
+    composite_sums = np.sum(composite_colors, axis=1)
+    # Create a DataFrame to map these sums with their corresponding indices
+    composite_sums_df = pd.DataFrame(
+        {"index": np.arange(len(composite_sums)), "composite_sum": composite_sums}
+    )
+    # Merge this DataFrame with the domains_matrix on the index to align composite sums with their domains
+    merged_df = pd.merge(domains_matrix, composite_sums_df, left_index=True, right_on="index")
+    # Group by 'primary domain' and calculate the necessary sorting metrics: total composite sum and group size
+    group_metrics = (
+        merged_df.groupby("primary domain")
+        .agg(total_composite_sum=("composite_sum", "sum"), group_size=("composite_sum", "size"))
+        .reset_index()
+    )
+    # Sort groups by group size (descending) and then by total composite sum (descending)
+    sorted_groups = group_metrics.sort_values(
+        by=["group_size", "total_composite_sum"], ascending=[True, True]
+    )
+    # Use the sorted group order to determine the order of rows in the merged DataFrame
+    merged_df["group_order"] = pd.Categorical(
+        merged_df["primary domain"], categories=sorted_groups["primary domain"], ordered=True
+    )
+    # Sort the merged DataFrame by this group order and then within groups by composite_sum (descending)
+    final_sorted_df = merged_df.sort_values(
+        by=["group_order", "composite_sum"], ascending=[False, True]
+    )
+
+    # Return the original indices of the rows in their new sorted order
+    return final_sorted_df["index"].values
 
 
 def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
