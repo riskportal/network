@@ -77,7 +77,7 @@ def define_top_annotations(
     return annotation_enrichment_matrix
 
 
-def chop_and_filter(s, top_words_count=5):
+def chop_and_filter(s, top_words_count=6):
     """Process input Series to identify and return the top N frequent, significant words,
     filtering based on stopwords and similarity (Jaccard index)."""
     # Tokenize the concatenated string and filter out stopwords and non-alphabetic words in one step
