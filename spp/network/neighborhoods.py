@@ -1,39 +1,75 @@
 from collections import Counter
 
+import community as community_louvain
 import networkx as nx
 import numpy as np
 import pandas as pd
+from rich import print
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import pdist, squareform
+from sklearn.cluster import AffinityPropagation
+from sklearn.metrics import silhouette_score
 
 from spp.network.annotation import chop_and_filter
 
 
-def get_network_neighborhoods(network, neighborhood_distance_algorithm, neighborhood_radius):
-    all_shortest_paths = {}
-    neighborhoods = np.zeros([network.number_of_nodes(), network.number_of_nodes()], dtype=int)
+def get_network_neighborhoods(
+    network, neighborhood_distance_algorithm, neighborhood_radius, louvain_resolution=1.0
+):
+    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
     all_x = list(dict(network.nodes.data("x")).values())
 
     if neighborhood_distance_algorithm == "euclidean":
         node_radius = neighborhood_radius * (np.max(all_x) - np.min(all_x))
-        x = np.matrix(network.nodes.data("x"))[:, 1]
-        y = np.matrix(network.nodes.data("y"))[:, 1]
-        node_coordinates = np.concatenate([x, y], axis=1)
+        x = np.array(list(dict(network.nodes.data("x")).values()))
+        y = np.array(list(dict(network.nodes.data("y")).values()))
+        node_coordinates = np.stack((x, y), axis=1)
         node_distances = squareform(pdist(node_coordinates, "euclidean"))
         neighborhoods[node_distances < node_radius] = 1
-        return neighborhoods
 
-    if neighborhood_distance_algorithm == "shortpath_weighted_layout":
-        network_radius = neighborhood_radius * (np.max(all_x) - np.min(all_x))
-        all_shortest_paths = dict(
-            nx.all_pairs_dijkstra_path_length(network, weight="length", cutoff=network_radius)
+    elif neighborhood_distance_algorithm in ["shortpath_weighted", "shortpath"]:
+        network_radius = (
+            neighborhood_radius * (np.max(all_x) - np.min(all_x))
+            if neighborhood_distance_algorithm == "shortpath_weighted"
+            else neighborhood_radius
         )
-    if neighborhood_distance_algorithm == "shortpath":
-        network_radius = neighborhood_radius
-        all_shortest_paths = dict(nx.all_pairs_dijkstra_path_length(network, cutoff=network_radius))
-    neighbors = [(s, t) for s in all_shortest_paths for t in all_shortest_paths[s].keys()]
-    for i in neighbors:
-        neighborhoods[i] = 1
+        all_shortest_paths = dict(
+            nx.all_pairs_dijkstra_path_length(
+                network,
+                weight="length"
+                if neighborhood_distance_algorithm == "shortpath_weighted"
+                else None,
+                cutoff=network_radius,
+            )
+        )
+        for source, targets in all_shortest_paths.items():
+            for target, _ in targets.items():
+                neighborhoods[source, target] = 1
+
+    elif neighborhood_distance_algorithm == "louvain":
+        partition = community_louvain.best_partition(network, resolution=louvain_resolution)
+        for node_i, community_i in partition.items():
+            for node_j, community_j in partition.items():
+                if community_i == community_j:
+                    neighborhoods[node_i, node_j] = 1
+
+    elif neighborhood_distance_algorithm == "affinity_propagation":
+        # Convert the network into a distance matrix
+        distance_matrix = nx.floyd_warshall_numpy(network)
+        # Affinity Propagation requires similarities, not distances, hence we negate the distances
+        similarity_matrix = -distance_matrix
+
+        # Apply Affinity Propagation
+        clustering = AffinityPropagation(affinity="precomputed", random_state=5)
+        clustering.fit(similarity_matrix)
+
+        # Update neighborhoods matrix based on Affinity Propagation clustering results
+        labels = clustering.labels_
+        for i, label_i in enumerate(labels):
+            for j, label_j in enumerate(labels):
+                if label_i == label_j:
+                    neighborhoods[i, j] = 1
+
     return neighborhoods
 
 
@@ -42,12 +78,29 @@ def define_domains(
     binary_enrichment_matrix_below_alpha,
     annotation_matrix,
     group_distance_metric,
-    group_distance_threshold,
+    group_distance_threshold=0.0,
 ):
     m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
     Z = linkage(m, method="average", metric=group_distance_metric)
-    max_d = np.max(Z[:, 2] * group_distance_threshold)
-    domains = fcluster(Z, max_d, criterion="distance")
+
+    # Automatically compute a threshold if no threshold is provided
+    if not group_distance_threshold:
+        # Calculate silhouette scores for a range of thresholds
+        thresholds = np.linspace(0.1, 0.9, 9)  # Example range of thresholds
+        silhouette_scores = []
+        for threshold in thresholds:
+            max_d = np.max(Z[:, 2]) * threshold
+            clusters = fcluster(Z, max_d, criterion="distance")
+            score = silhouette_score(m, clusters, metric=group_distance_metric)
+            silhouette_scores.append(score)
+        # Find the threshold with the highest silhouette score
+        group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
+        print(
+            f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 1)}[/red][/yellow]"
+        )
+
+    max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
+    domains = fcluster(Z, max_d_optimal, criterion="distance")
 
     annotation_matrix["domain"] = 0
     annotation_matrix.loc[annotation_matrix["top attributes"], "domain"] = domains
@@ -123,3 +176,13 @@ def find_outlier_domains(data_dict, z_score_threshold=3):
             outlier_keys.append(key)
 
     return outlier_keys
+
+
+def preprocess_network(network, weight_threshold=None):
+    """Remove edges below a certain weight threshold."""
+    if weight_threshold is not None:
+        edges_to_remove = [
+            (u, v) for u, v, d in network.edges(data=True) if d["weight"] < weight_threshold
+        ]
+        network.remove_edges_from(edges_to_remove)
+    return network
