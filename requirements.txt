@@ -1,0 +1,11 @@
+matplotlib
+networkx
+nltk
+numpy
+pandas
+python-louvain
+pyyaml
+rich
+scikit-learn
+scipy
+statsmodels
