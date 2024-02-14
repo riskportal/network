@@ -21,8 +21,8 @@ def compute_neighborhood_score_by_variance_cython(
     np.ndarray[np.int8_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
-    # Convert to float64 for arithmetic operations, if not already
-    cdef np.ndarray[np.float32_t, ndim=2] A = neighborhoods.astype(np.float64)
+    # Convert to float32 for arithmetic operations, if not already
+    cdef np.ndarray[np.float32_t, ndim=2] A = neighborhoods.astype(np.float32)
     cdef np.ndarray[np.float32_t, ndim=2] B = annotation_matrix
     cdef np.ndarray[np.float32_t, ndim=2] neighborhood_score = np.dot(A, B)    
     # Sum across rows for A to get N, reshape for broadcasting
@@ -46,8 +46,8 @@ def compute_neighborhood_score_by_zscore_cython(
     np.ndarray[np.int8_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
-    # Convert to float64 for arithmetic operations, if not already
-    cdef np.ndarray[np.float32_t, ndim=2] A = neighborhoods.astype(np.float64)
+    # Convert to float32 for arithmetic operations, if not already
+    cdef np.ndarray[np.float32_t, ndim=2] A = neighborhoods.astype(np.float32)
     cdef np.ndarray[np.float32_t, ndim=2] B = annotation_matrix
     cdef np.ndarray[np.float32_t, ndim=2] neighborhood_score = np.dot(A, B)
     # Sum across rows for A to get N, reshape for broadcasting
