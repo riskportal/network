@@ -98,7 +98,7 @@ def define_domains(
             except ValueError:
                 if not warned_user:
                     print(
-                        "\t[cyan][red]Warning:[/red] Network predicted to have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
+                        "[cyan][red]Warning:[/red] Network may have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
                     )
                     warned_user = True
 
