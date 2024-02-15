@@ -14,7 +14,7 @@ from scipy.spatial.distance import pdist, squareform
 from xml.dom import minidom
 
 
-def load_cys_network(cys_filepath, view_name=None):
+def load_cys_network(cys_filepath, view_name=None, include_edge_weight=False):
     # Unzip CYS file
     cys_filepath = Path(str(cys_filepath))
     with zipfile.ZipFile(cys_filepath, "r") as zip_ref:
@@ -27,48 +27,21 @@ def load_cys_network(cys_filepath, view_name=None):
         if not view_name
         else [cvf for cvf in cys_view_files if cvf.endswith(view_name + ".xgmml")][0]
     )
-    cys_network_file = [cf for cf in cys_files if "/networks/" in cf][0]
-    # Parse edges
-    cys_network_dom = minidom.parse(cys_network_file)
-    cys_edges = cys_network_dom.getElementsByTagName("edge")
-    edge_list = []
-    for edge in cys_edges:
-        # Only add edges if both 'source' and 'target' keys exist in the edge attribute
-        with contextlib.suppress(KeyError):
-            edge_list.append(
-                (int(edge.attributes["source"].value), int(edge.attributes["target"].value))
-            )
-
     # Parse nodes
     cys_view_dom = minidom.parse(cys_view_file)
     cys_nodes = cys_view_dom.getElementsByTagName("node")
-    node_labels = {}
     node_xs = {}
     node_ys = {}
     for node in cys_nodes:
-        # Node ID is SUID
-        node_id = int(node.attributes["cy:nodeId"].value)
-        node_labels[node_id] = node.attributes["label"].value
+        # Node ID is found in 'label'
+        node_id = str(node.attributes["label"].value)
         for child in node.childNodes:
             if child.nodeType == 1 and child.tagName == "graphics":
                 node_xs[node_id] = float(child.attributes["x"].value)
                 node_ys[node_id] = float(child.attributes["y"].value)
 
-    # Build graph
-    G = nx.Graph()
-    G.add_edges_from(edge_list)
-    # Modify graph to add additional attributes and remove nodes not found in nodelist but in edgelist
-    for node in G.nodes:
-        try:
-            G.nodes[node]["label"] = node_labels[node]
-            G.nodes[node]["x"] = node_xs[node]
-            G.nodes[node]["y"] = node_ys[node]
-        # Node not found in G network - remove node from network
-        except KeyError:
-            G.remove_node(node)
-
     # Read the node attributes (from /tables/)
-    attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "node.cytable"]
+    attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "edge.cytable"]
     attribute_metadata = [
         cf for cf in cys_files if all(keyword in cf for keyword in attribute_metadata_keywords)
     ][0]
@@ -78,17 +51,26 @@ def load_cys_network(cys_filepath, view_name=None):
     attribute_table.columns = attribute_table.iloc[0]
     # Skip first four rows
     attribute_table = attribute_table.iloc[4:, :].reset_index(drop=True)
-    # Maps SUID to the rest of the column headers and values
-    attributes_map = {attr.pop("SUID"): attr for attr in attribute_table.T.to_dict().values()}
-    # Add attributes to graph
-    for node_id, attributes in attributes_map.items():
-        if node_id in G.nodes:
-            for attr_header, attr_value in attributes.items():
-                G.nodes[node_id][attr_header] = attr_value
+
+    # Create a graph
+    G = nx.Graph()
+    # Add edges and nodes with weights
+    for _, row in attribute_table.iterrows():
+        source, target, weight = row["source"], row["target"], float(row["weight"])
+        if source not in G:
+            G.add_node(source)  # Optionally add x, y coordinates here if available
+        if target not in G:
+            G.add_node(target)  # Optionally add x, y coordinates here if available
+        G.add_edge(source, target, weight=weight)
+
+    for node in G.nodes():
+        G.nodes[node]["label"] = node
+        G.nodes[node]["x"] = node_xs[node]  # Assuming you have a dict `node_xs` for x coordinates
+        G.nodes[node]["y"] = node_ys[node]  # Assuming you have a dict `node_ys` for y coordinates
 
     # Relabel the node ids to sequential numbers to make calculations faster
     G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
-    G = calculate_edge_lengths(G)
+    G = calculate_edge_lengths(G, include_edge_weight=include_edge_weight)
     # Remove unzipped files/directories
     cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
     for dirname in cys_dirnames:
@@ -97,29 +79,42 @@ def load_cys_network(cys_filepath, view_name=None):
     return G
 
 
-def calculate_edge_lengths(G):
-    # Extract node coordinates
-    nodes_data = dict(G.nodes(data=True))
-    x = np.array([data["x"] for _, data in nodes_data.items()])
-    y = np.array([data["y"] for _, data in nodes_data.items()])
-    # Calculate node distances
-    node_coordinates = np.column_stack((x, y))
-    node_distances = squareform(pdist(node_coordinates, "euclidean"))
-    # Create an adjacency matrix with NaN for non-adjacent nodes
-    adjacency_matrix = np.array(nx.adjacency_matrix(G).todense(), dtype=float)
-    adjacency_matrix[adjacency_matrix == 0] = np.nan
-    # Multiply node distances by adjacency matrix to get edge lengths
-    edge_lengths = node_distances * adjacency_matrix
-    # Update edge attributes in the graph
-    edge_attr_dict = {
-        (i, j): length
-        for i, row in enumerate(edge_lengths)
-        for j, length in enumerate(row)
-        if ~np.isnan(length)
-    }
-    nx.set_edge_attributes(G, edge_attr_dict, "length")
+def normalize_weights(G):
+    weights = [data["weight"] for _, _, data in G.edges(data=True) if "weight" in data]
+    if weights:  # Ensure there are weighted edges
+        min_weight = min(weights)
+        max_weight = max(weights)
+        # Avoid division by zero in case all weights are the same
+        range_weight = max_weight - min_weight if max_weight > min_weight else 1
+        for u, v, data in G.edges(data=True):
+            if "weight" in data:
+                # Normalize weight to [0, 1]
+                data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 
+
+def calculate_edge_lengths(G, include_edge_weight=False):
+    # Normalize weights
+    normalize_weights(G)
+    for u, v, edge_data in G.edges(data=True):
+        # Use normalized weight if including edge weight in calculations
+        if include_edge_weight and "normalized_weight" in edge_data:
+            # Adjust the length attribute of each edge based on its normalized weight
+            G.edges[u, v]["length"] = weighted_distance(G, u, v, edge_data["normalized_weight"])
+        else:
+            # If no weight, consider the default normalized weight as 0.5
+            G.edges[u, v]["length"] = weighted_distance(
+                G, u, v
+            )  # Default to midpoint of normalized weights
     return G
+
+
+def weighted_distance(G, u, v, weight=0):
+    u_x, u_y = G.nodes[u]["x"], G.nodes[u]["y"]
+    v_x, v_y = G.nodes[v]["x"], G.nodes[v]["y"]
+    spatial_distance = np.sqrt((u_x - v_x) ** 2 + (u_y - v_y) ** 2)
+    # Use a logarithmic adjustment for the weight impact - add 10e-12 to prevent log(0) when weight is 0
+    adjusted_distance = spatial_distance / np.log(1 + 10e-12 + weight)
+    return adjusted_distance
 
 
 def load_network_annotation(network, annotation_filepath, node_colname="label"):
