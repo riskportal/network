@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from rich import print
 
 from risk.config import read_default_config, validate_config
@@ -55,10 +57,21 @@ class SAFE:
             self.trimmed_domains_matrix,
         )
 
-    def load_cytoscape_network(self, *args, **kwargs):
-        print("[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network[/blue]...")
+    def load_cytoscape_network(self):
         network_filepath = self.config["network_filepath"]
-        return load_cys_network(network_filepath, *args, **kwargs)
+        network_enrichment_include_edge_weight = self.config[
+            "network_enrichment_include_edge_weight"
+        ]
+        network_filename = Path(network_filepath).name
+        addl_print_suffix = (
+            "[blue]with[/blue]" if network_enrichment_include_edge_weight else "[red]without[/red]"
+        )
+        print(
+            f"[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network file[/blue]: [yellow]'{network_filename}'[/yellow] {addl_print_suffix} [yellow]edge weights[/yellow]..."
+        )
+        return load_cys_network(
+            network_filepath, include_edge_weight=network_enrichment_include_edge_weight
+        )
 
     def load_network_annotation(self, network):
         print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
