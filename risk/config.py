@@ -19,6 +19,9 @@ def read_default_config():
         "annotation_filepath": input_config["annotation-filepath"],
         "annotation_id_colname": input_config["annotation-id-colname"],
         # Network
+        "network_enrichment_include_edge_weight": network_config["enrichment"][
+            "include-edge-weight"
+        ],
         "network_enrichment_null_distribution": network_config["enrichment"]["null-distribution"],
         "network_enrichment_type": network_config["enrichment"]["type"],
         "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],

@@ -1,17 +1,18 @@
 input:
-  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
-  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
-  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/gene_x_gene_cytoscape.cys
-  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
+  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
+  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
+  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/gene_x_gene_cytoscape.cys
+  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
   annotation-id-colname: label
 
 network:
   enrichment:
+    include-edge-weight: true
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
     num-permutations: 1000
     direction: highest  # OPTIONS: Enrichment direction: highest, lowest
-    min-cluster-size: 15 # Minimum final cluster membership size - suggested to omit small clusters
+    min-cluster-size: 5 # Minimum final cluster membership size - suggested to omit small clusters
     pval-cutoff: 0.01
     apply-fdr: true  # OPTIONS: true, false
     fdr-cutoff: 0.9999
@@ -19,7 +20,7 @@ network:
     neighborhood-distance-metric: shortpath_weighted # OPTIONS: affinity_propagation, euclidean, louvain, shortpath, shortpath_weighted,
     neighborhood-distance-louvaine-resolution: 0.0
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
-    neighborhood-radius: 0.10
+    neighborhood-radius: 0.35
     neighborhood-radius-type: diameter
     # OPTIONS FOR BELOW: braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule.
     group-distance-metric: cosine # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
