@@ -20,7 +20,7 @@ def plot_composite_network(
     neighborhood_enrichment_matrix,
     neighborhood_binary_enrichment_matrix_below_alpha,
     labels=[],
-    show_each_domain=False,
+    show_each_domain=True,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -50,11 +50,9 @@ def plot_composite_network(
     # Identify rows where the fourth element is 1.0
     rows_with_alpha_one = composite_colors[:, 3] == 1
     # Generate random weights in the range [0.80, 1.00] for each color channel of the selected rows
-    random_weights = np.random.uniform(
-        0.80, 1.00, (composite_colors[rows_with_alpha_one, :3].shape)
-    )
-    # Apply the random weights to the first three elements of the selected rows
-    composite_colors[rows_with_alpha_one, :3] *= random_weights
+    random_weights = np.random.uniform(0.80, 1.00, (composite_colors[rows_with_alpha_one].shape))
+    # Apply the random weights to ALL elements of the selected rows
+    composite_colors[rows_with_alpha_one] *= random_weights
 
     node_xy = get_node_coordinates(network)
     # Begin trimming
@@ -84,10 +82,10 @@ def plot_composite_network(
     # Plot node order from highest to lowest intensity
     node_order = get_refined_node_order(domains_matrix, composite_colors_trimmed)
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
-    composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
     # Example usage for one full rotation - plot images and export to ./png
     rotate_and_project(node_xy_trimmed, node_order, composite_colors_trimmed, "./png/rotate")
 
+    composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
     plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
 
     if show_domain_ids:
@@ -630,53 +628,62 @@ def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
     return rgbas
 
 
-def normalize_coordinates(coords, scale=1):
-    """Normalize the coordinates within the range [-scale/2, scale/2] for each axis."""
-    min_vals = np.min(coords, axis=0)
-    max_vals = np.max(coords, axis=0)
-    normalized = scale * ((coords - (max_vals + min_vals) / 2) / (max_vals - min_vals))
-    return normalized
+def map_to_sphere(node_xy, composite_colors):
+    # Normalize the coordinates between [0, 1]
+    min_vals = np.min(node_xy, axis=0)
+    max_vals = np.max(node_xy, axis=0)
+    normalized_xy = (node_xy - min_vals) / (max_vals - min_vals)
 
+    # Map normalized coordinates to theta and phi on a sphere
+    theta = normalized_xy[:, 0] * np.pi * 2
+    phi = normalized_xy[:, 1] * np.pi
 
-def map_nodes_to_initial_positions(node_xy, node_order):
-    """
-    Map nodes to their initial positions in 3D space with z-coordinates,
-    adding a variable random spread to each z-coordinate for more depth variability.
-    """
-    num_nodes = len(node_order)
-    # Generate equidistant z-coordinates
-    equidistant_z = np.linspace(-0.5, 0.5, num_nodes)
+    # Adjust radial distance based on alpha value (opacity) instead of color intensity
+    # Extract alpha values from the last item in each color tuple
+    alphas = composite_colors[:, -1]  # Assuming composite_colors is an array of RGBA values
+    # Scale radial distances using alpha values; adjust this formula as needed
+    r = alphas  # Direct use of alpha values; might adjust scaling based on your needs
 
-    # Generate a variable random spread that increases towards the center of the z-range
-    # This creates more variability in depth for nodes closer to the center
-    mid_point = num_nodes // 2
-    spread_factor = np.linspace(1, 0, mid_point)  # Decreases towards the center
-    random_spread = np.concatenate(
-        (spread_factor, spread_factor[::-1])
-    )  # Symmetric for both halves
-    variable_random_spread = 0.10 * random_spread * np.random.uniform(-1, 1, num_nodes)
+    # Convert spherical coordinates to Cartesian coordinates for 3D sphere
+    x = r * np.sin(phi) * np.cos(theta)
+    y = r * np.sin(phi) * np.sin(theta)
+    z = r * np.cos(phi)
 
-    equidistant_z += variable_random_spread
-
-    normalized_xy = normalize_coordinates(node_xy, scale=1)
-
-    sorted_indices = np.argsort(node_order)
-    sorted_equidistant_z = equidistant_z[sorted_indices.argsort()]
-
-    nodes_3d = np.hstack((normalized_xy, sorted_equidistant_z[:, np.newaxis]))
-    return nodes_3d
+    return np.vstack((x, y, z)).T
 
 
 def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
-    num_angles = 120
+    num_angles = 240
     angles = np.linspace(0, 360, num_angles, endpoint=False)
 
-    nodes_3d = map_nodes_to_initial_positions(node_xy, node_order)
-    plotting_range = np.max(np.abs(nodes_3d)) * 1.1  # Ensure all nodes fit within the plot
+    # Map initial 2D coordinates onto a sphere for the initial 3D coordinates
+    nodes_3d = map_to_sphere(node_xy, composite_colors)
+
+    # Initial tilt downwards: 90 degrees around the X-axis to bring the top face to face the viewer
+    initial_tilt_angle_radians = np.radians(180)
+    initial_tilt_matrix = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(initial_tilt_angle_radians), -np.sin(initial_tilt_angle_radians)],
+            [0, np.sin(initial_tilt_angle_radians), np.cos(initial_tilt_angle_radians)],
+        ]
+    )
+    nodes_3d = np.dot(nodes_3d, initial_tilt_matrix)
+
+    # # Further tilt downwards: An additional 90 degrees around the X-axis to bring the top face downwards
+    # further_tilt_angle_radians = np.radians(90)
+    # further_tilt_matrix = np.array([
+    #     [1, 0, 0],
+    #     [0, np.cos(further_tilt_angle_radians), -np.sin(further_tilt_angle_radians)],
+    #     [0, np.sin(further_tilt_angle_radians), np.cos(further_tilt_angle_radians)]
+    # ])
+    # nodes_3d = np.dot(nodes_3d, further_tilt_matrix)
+
+    plotting_range = np.max(np.abs(nodes_3d)) * 1.1
 
     for angle in angles:
         angle_radians = np.radians(angle)
-        rotation_matrix = np.array(
+        rotation_matrix_y = np.array(
             [
                 [np.cos(angle_radians), 0, np.sin(angle_radians)],
                 [0, 1, 0],
@@ -684,26 +691,21 @@ def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
             ]
         )
 
-        rotated_nodes_3d = np.dot(nodes_3d, rotation_matrix)
-        rotated_nodes_3d *= 0.7
+        rotated_nodes_3d = np.dot(nodes_3d, rotation_matrix_y)
 
-        # Flip the visualization upside down along the y-axis
-        rotated_nodes_3d[:, 1] = -rotated_nodes_3d[:, 1]  # Negate y-coordinates
-
-        rotated_xy = rotated_nodes_3d[:, :2]  # Use x and y for plotting
-
-        # Sorting by z-coordinate after rotation for depth ordering
         depth_order = np.argsort(rotated_nodes_3d[:, 2])
+        ordered_colors = [composite_colors[i] for i in depth_order]
+        rotated_xy = rotated_nodes_3d[:, :2]
 
         plt.figure(figsize=(8, 8))
-        for i in depth_order:
-            plt.scatter(
-                rotated_xy[i, 0],
-                rotated_xy[i, 1],
-                color=composite_colors[i],
-                s=60,
-                edgecolor="none",
-            )
+        plt.scatter(
+            rotated_xy[depth_order, 0],
+            rotated_xy[depth_order, 1],
+            c=ordered_colors,
+            s=60,
+            edgecolor="none",
+            alpha=1,
+        )
         plt.gca().set_aspect("equal", "box")
         plt.gca().set_facecolor("black")
         plt.xlim(-plotting_range, plotting_range)
