@@ -24,6 +24,7 @@ def plot_composite_network(
     show_domain_ids=False,
     background_color="#000000",
 ):
+    network = unfold_sphere_to_plane(network)
     foreground_color = "#ffffff" if background_color == "#000000" else "#000000"
     # Obtain unique domains and assign colors - do this prior to filtering to get some sweet color range
     domains = np.sort(annotation_matrix["domain"].unique())
@@ -49,10 +50,16 @@ def plot_composite_network(
 
     # Identify rows where the fourth element is 1.0
     rows_with_alpha_one = composite_colors[:, 3] == 1
-    # Generate random weights in the range [0.80, 1.00] for each color channel of the selected rows
-    random_weights = np.random.uniform(0.80, 1.00, (composite_colors[rows_with_alpha_one].shape))
+    # Assuming composite_colors is a NumPy array and rows_with_alpha_one is a boolean index or slice
+    # Generate random weights - choose only one value as weight to synchronously change the color
+    random_weights = np.random.uniform(0.80, 1.00, composite_colors[rows_with_alpha_one].shape[0])
+    # For alpha - cuts the intensity of min -> max to half(min) -> max
+    transformed_weights = 1.0 - (1.0 - random_weights) ** 2
+    # Apply the random_weights to the first three columns of composite_colors
+    # `[:, np.newaxis]` enables broadcasting across different dimensions
+    composite_colors[rows_with_alpha_one, :3] *= random_weights[:, np.newaxis]
     # Apply the random weights to ALL elements of the selected rows
-    composite_colors[rows_with_alpha_one] *= random_weights
+    composite_colors[rows_with_alpha_one, 3] *= transformed_weights
 
     node_xy = get_node_coordinates(network)
     # Begin trimming
@@ -60,6 +67,8 @@ def plot_composite_network(
     node_xy_trimmed, composite_colors_trimmed, domains_matrix = remove_node_outliers_subclusters(
         node_xy, composite_colors, domains_matrix, std_dev_factor=2
     )
+    # Plot node order from highest to lowest intensity
+    node_order = get_refined_node_order(domains_matrix, composite_colors_trimmed)
 
     # Prepare figure layout
     num_plots = 2 + show_each_domain * len(domains)
@@ -67,6 +76,7 @@ def plot_composite_network(
     ncols = min(num_plots, 2)
     figsize = (10 * ncols, 10 * nrows)
 
+    # ===== PLOTTING =====
     # Create the subplots dynamically based on the number of plots needed
     fig, axes = plt.subplots(
         nrows=nrows,
@@ -79,8 +89,6 @@ def plot_composite_network(
     axes = axes.ravel()
 
     plotter = NetworkPlotter(axes, background_color, foreground_color)
-    # Plot node order from highest to lowest intensity
-    node_order = get_refined_node_order(domains_matrix, composite_colors_trimmed)
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
     # Example usage for one full rotation - plot images and export to ./png
     rotate_and_project(node_xy_trimmed, node_order, composite_colors_trimmed, "./png/rotate")
@@ -105,7 +113,7 @@ def plot_composite_network(
         )
 
     fig.set_facecolor(background_color)
-    plt.savefig("./data/demo.png", facecolor=background_color, bbox_inches="tight")
+    plt.savefig("./png/demo.png", facecolor=background_color, bbox_inches="tight")
 
 
 def get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
@@ -136,11 +144,13 @@ def get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
             weighted_color_sum += weighted_color
         # Normalize the weighted sum of colors by the number of domains with non-zero counts
         non_zero_domains = np.count_nonzero(normalized_counts)
+        # BUG: THIS CONDITIONAL SHOULD NEVER BE FULFILLED AND WILL CAUSE PLOTTING ISSUES - THIS IS AN UPSTREAM
+        # ISSUE THAT NEEDS TO BE RESOLVED
         if non_zero_domains > 0:
             composite_color = weighted_color_sum / non_zero_domains
         else:
             # Handle the case with no domain associations
-            composite_color = np.array([1, 1, 1, 0])  # Default color, e.g., transparent or black
+            continue
         composite_colors[node_idx] = composite_color
 
     # Handle division by zero or other adjustments as necessary
@@ -652,6 +662,29 @@ def map_to_sphere(node_xy, composite_colors):
     return np.vstack((x, y, z)).T
 
 
+def unfold_sphere_to_plane(G):
+    for node in G.nodes():
+        if "z" in G.nodes[node]:
+            x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
+            # Calculate theta and phi from Cartesian coordinates
+            r = np.sqrt(x**2 + y**2 + z**2)
+            theta = np.arctan2(y, x)
+            phi = np.arccos(z / r)
+
+            # Adjust theta and phi to unfold the sphere
+            unfolded_x = (theta + np.pi) / (2 * np.pi)  # Shift and normalize theta to [0, 1]
+            unfolded_y = (np.pi - phi) / np.pi  # Reflect phi and normalize to [0, 1]
+            unfolded_x = unfolded_x + 0.5 if unfolded_x < 0.5 else unfolded_x - 0.5
+
+            G.nodes[node]["x"] = unfolded_x
+            G.nodes[node]["y"] = -unfolded_y
+
+            # Remove the 'z' coordinate
+            del G.nodes[node]["z"]
+
+    return G
+
+
 def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
     num_angles = 240
     angles = np.linspace(0, 360, num_angles, endpoint=False)
@@ -659,7 +692,7 @@ def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
     # Map initial 2D coordinates onto a sphere for the initial 3D coordinates
     nodes_3d = map_to_sphere(node_xy, composite_colors)
 
-    # Initial tilt downwards: 90 degrees around the X-axis to bring the top face to face the viewer
+    # Initial tilt downwards: 180 degrees around the X-axis to bring the top face to the bottom
     initial_tilt_angle_radians = np.radians(180)
     initial_tilt_matrix = np.array(
         [
@@ -669,15 +702,6 @@ def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
         ]
     )
     nodes_3d = np.dot(nodes_3d, initial_tilt_matrix)
-
-    # # Further tilt downwards: An additional 90 degrees around the X-axis to bring the top face downwards
-    # further_tilt_angle_radians = np.radians(90)
-    # further_tilt_matrix = np.array([
-    #     [1, 0, 0],
-    #     [0, np.cos(further_tilt_angle_radians), -np.sin(further_tilt_angle_radians)],
-    #     [0, np.sin(further_tilt_angle_radians), np.cos(further_tilt_angle_radians)]
-    # ])
-    # nodes_3d = np.dot(nodes_3d, further_tilt_matrix)
 
     plotting_range = np.max(np.abs(nodes_3d)) * 1.1
 
@@ -696,7 +720,6 @@ def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
         depth_order = np.argsort(rotated_nodes_3d[:, 2])
         ordered_colors = [composite_colors[i] for i in depth_order]
         rotated_xy = rotated_nodes_3d[:, :2]
-
         plt.figure(figsize=(8, 8))
         plt.scatter(
             rotated_xy[depth_order, 0],
@@ -712,6 +735,6 @@ def rotate_and_project(node_xy, node_order, composite_colors, filename_prefix):
         plt.ylim(-plotting_range, plotting_range)
         plt.axis("off")
 
-        filename = f"{filename_prefix}_{int(angle):03d}.png"
+        filename = f"./png/for_gif/{filename_prefix}_{int(angle):03d}.png"
         plt.savefig(filename, bbox_inches="tight", facecolor="black")
         plt.close()
