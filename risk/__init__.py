@@ -1,5 +1,5 @@
 """
-RISK: RISK Informs Spatial Kinship
+RISK: RISK Infers Spatial Kinship
 """
 
 from risk.risk import SAFE

@@ -23,6 +23,7 @@ PROJECT NAME IDEA
     Data Analytics for Networked Groups, Efficiencies, and Resiliencies
     Deep Analytic Network Guidance for Enrichment Realization
 - RISK:
+    RISK Infers Spatial Kinship
     RISK Informs Spatial Kinship
     Regional Identification of Significant Kinships
     Regional Identification of Structural Kinships
