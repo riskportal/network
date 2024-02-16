@@ -62,22 +62,30 @@ class SAFE:
         network_enrichment_include_edge_weight = self.config[
             "network_enrichment_include_edge_weight"
         ]
+        network_enrichment_compute_sphere = self.config["network_enrichment_compute_sphere"]
         network_filename = Path(network_filepath).name
-        addl_print_suffix = (
+        for_print_edge_weight = (
             "[blue]with[/blue]" if network_enrichment_include_edge_weight else "[red]without[/red]"
         )
+        for_print_sphere = (
+            "[yellow]3D[/yellow]" if network_enrichment_compute_sphere else "[yellow]2D[/yellow]"
+        )
         print(
-            f"[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network file[/blue]: [yellow]'{network_filename}'[/yellow] {addl_print_suffix} [yellow]edge weights[/yellow]..."
+            f"[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network file[/blue]: [yellow]'{network_filename}'[/yellow]...[/cyan]"
+            f"\n[cyan]Treating the network as {for_print_sphere} {for_print_edge_weight} [yellow]edge weights[/yellow]...[/cyan]"
         )
         return load_cys_network(
-            network_filepath, include_edge_weight=network_enrichment_include_edge_weight
+            network_filepath,
+            self.config["network_source_node_label"],
+            self.config["network_target_node_label"],
+            self.config["network_edge_weight_label"],
+            compute_sphere=network_enrichment_compute_sphere,
+            include_edge_weight=network_enrichment_include_edge_weight,
         )
 
     def load_network_annotation(self, network):
         print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
-        annotation = load_network_annotation(
-            network, self.config["annotation_filepath"], self.config["annotation_id_colname"]
-        )
+        annotation = load_network_annotation(network, self.config["annotation_filepath"])
         return annotation
 
     def load_neighborhoods(self, network):
@@ -88,8 +96,9 @@ class SAFE:
         neighborhoods = get_network_neighborhoods(
             network,
             neighborhood_distance_metric,
-            self.config["neighborhood_radius"],
-            self.config["neighborhood_distance_louvaine_resolution"],
+            self.config["neighborhood_diameter"],
+            compute_sphere=self.config["network_enrichment_compute_sphere"],
+            louvain_resolution=self.config["neighborhood_distance_louvaine_resolution"],
         )
         return neighborhoods
 
@@ -141,16 +150,14 @@ class SAFE:
             "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
         group_distance_metric = self.config["group_distance_metric"]
-        group_distance_threshold = self.config["group_distance_threshold"]
         print(
-            f"[cyan]Defining [blue]domains[/blue] using the [yellow]'{group_distance_metric}'[/yellow] metric with [yellow]{'automatic' if not group_distance_threshold else group_distance_threshold}[/yellow] distance thresholding..."
+            f"[cyan]Defining [blue]domains[/blue] using the [yellow]'{group_distance_metric}'[/yellow] metric with [yellow]automatic[/yellow] distance thresholding..."
         )
         domains_matrix = define_domains(
             neighborhood_enrichment_matrix,
             neighborhood_binary_enrichment_matrix_below_alpha,
             annotation_enrichment_matrix,
             group_distance_metric,
-            group_distance_threshold,
         )
         return domains_matrix
 
