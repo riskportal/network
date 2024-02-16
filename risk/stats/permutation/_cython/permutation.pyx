@@ -7,7 +7,7 @@ cimport cython
 @cython.boundscheck(False)  # Disable bounds checking for entire function
 @cython.wraparound(False)   # Disable negative index wrapping for entire function
 def compute_neighborhood_score_by_sum_cython(
-    np.ndarray[np.int8_t, ndim=2] neighborhoods,
+    np.ndarray[np.float32_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
     # NOTE: `np.dot` is already highly optimized. The smaller the dtype the faster the algorithm!
@@ -18,7 +18,7 @@ def compute_neighborhood_score_by_sum_cython(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def compute_neighborhood_score_by_variance_cython(
-    np.ndarray[np.int8_t, ndim=2] neighborhoods,
+    np.ndarray[np.float32_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
     # Convert to float32 for arithmetic operations, if not already
@@ -43,7 +43,7 @@ def compute_neighborhood_score_by_variance_cython(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def compute_neighborhood_score_by_zscore_cython(
-    np.ndarray[np.int8_t, ndim=2] neighborhoods,
+    np.ndarray[np.float32_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
     # Convert to float32 for arithmetic operations, if not already
