@@ -1,2 +1,2 @@
 # risk
-RISK Informs Spatial Kinship
+RISK Infers Spatial Kinship
