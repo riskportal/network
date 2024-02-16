@@ -14,37 +14,38 @@ from risk.network.annotation import chop_and_filter
 
 
 def get_network_neighborhoods(
-    network, neighborhood_distance_algorithm, neighborhood_radius, louvain_resolution=1.0
+    network,
+    neighborhood_distance_algorithm,
+    neighborhood_diameter,
+    compute_sphere=False,
+    louvain_resolution=1.0,
 ):
+    # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
+    neighborhood_radius = neighborhood_diameter * (np.pi if compute_sphere else 1) / 2
+    # Initialize neighborhoods matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
-    all_x = list(dict(network.nodes.data("x")).values())
 
     if neighborhood_distance_algorithm == "euclidean":
-        node_radius = neighborhood_radius * (np.max(all_x) - np.min(all_x))
         x = np.array(list(dict(network.nodes.data("x")).values()))
         y = np.array(list(dict(network.nodes.data("y")).values()))
         node_coordinates = np.stack((x, y), axis=1)
         node_distances = squareform(pdist(node_coordinates, "euclidean"))
-        neighborhoods[node_distances < node_radius] = 1
+        neighborhoods[node_distances < neighborhood_radius] = 1
 
-    elif neighborhood_distance_algorithm in ["shortpath_weighted", "shortpath"]:
-        network_radius = (
-            neighborhood_radius * (np.max(all_x) - np.min(all_x))
-            if neighborhood_distance_algorithm == "shortpath_weighted"
-            else neighborhood_radius
-        )
+    elif neighborhood_distance_algorithm == "shortpath":
+        # First, compute Djikstra's shortest path
         all_shortest_paths = dict(
             nx.all_pairs_dijkstra_path_length(
                 network,
-                weight=(
-                    "length" if neighborhood_distance_algorithm == "shortpath_weighted" else None
-                ),
-                cutoff=network_radius,
+                weight="length",
+                cutoff=neighborhood_radius,
             )
         )
+        # Serves for better fine tuning... literally incorporate length for neighborhood score
         for source, targets in all_shortest_paths.items():
-            for target, _ in targets.items():
-                neighborhoods[source, target] = 1
+            for target, length in targets.items():
+                # Scale the length of node distance after computing node distances on a normalized network (look at io file)
+                neighborhoods[source, target] = 1 if length == 0 else np.sqrt(1 / length)
 
     elif neighborhood_distance_algorithm == "louvain":
         partition = community_louvain.best_partition(network, resolution=louvain_resolution)
@@ -58,11 +59,9 @@ def get_network_neighborhoods(
         distance_matrix = nx.floyd_warshall_numpy(network)
         # Affinity Propagation requires similarities, not distances, hence we negate the distances
         similarity_matrix = -distance_matrix
-
         # Apply Affinity Propagation
         clustering = AffinityPropagation(affinity="precomputed", random_state=5)
         clustering.fit(similarity_matrix)
-
         # Update neighborhoods matrix based on Affinity Propagation clustering results
         labels = clustering.labels_
         for i, label_i in enumerate(labels):
@@ -78,35 +77,33 @@ def define_domains(
     binary_enrichment_matrix_below_alpha,
     annotation_matrix,
     group_distance_metric,
-    group_distance_threshold=0.0,
 ):
     m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
     Z = linkage(m, method="average", metric=group_distance_metric)
 
     # Automatically compute a threshold if no threshold is provided
     warned_user = False
-    if not group_distance_threshold:
-        # Calculate silhouette scores for a range of thresholds
-        thresholds = np.linspace(0.001, 0.999, 999)  # Example range of thresholds
-        silhouette_scores = []
-        for threshold in thresholds:
-            max_d = np.max(Z[:, 2]) * threshold
-            clusters = fcluster(Z, max_d, criterion="distance")
-            try:
-                score = silhouette_score(m, clusters, metric=group_distance_metric)
-                silhouette_scores.append(score)
-            except ValueError:
-                if not warned_user:
-                    print(
-                        "[cyan][red]Warning:[/red] Network may have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
-                    )
-                    warned_user = True
+    # Calculate silhouette scores for a range of thresholds
+    thresholds = np.linspace(0.001, 0.999, 999)  # Example range of thresholds
+    silhouette_scores = []
+    for threshold in thresholds:
+        max_d = np.max(Z[:, 2]) * threshold
+        clusters = fcluster(Z, max_d, criterion="distance")
+        try:
+            score = silhouette_score(m, clusters, metric=group_distance_metric)
+            silhouette_scores.append(score)
+        except ValueError:
+            if not warned_user:
+                print(
+                    "[cyan][red]Warning:[/red] Network may have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
+                )
+                warned_user = True
 
-        # Find the threshold with the highest silhouette score
-        group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
-        print(
-            f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
-        )
+    # Find the threshold with the highest silhouette score
+    group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
+    print(
+        f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
+    )
 
     max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
     domains = fcluster(Z, max_d_optimal, criterion="distance")
@@ -144,8 +141,6 @@ def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
     domain_counts = domains_matrix["primary domain"].value_counts()
     to_remove = list(domain_counts[domain_counts < min_cluster_size].index)
     to_remove.extend(find_outlier_domains(Counter(domains_matrix["primary domain"])))
-    # annotation_matrix = annotation_matrix[~annotation_matrix["domain"].isin(to_remove)]
-    # domains_matrix = domains_matrix[~domains_matrix["primary domain"].isin(to_remove)]
     annotation_matrix["domain"].replace(to_remove, 888888, inplace=True)
     domains_matrix.loc[
         domains_matrix["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
@@ -185,13 +180,3 @@ def find_outlier_domains(data_dict, z_score_threshold=3):
             outlier_keys.append(key)
 
     return outlier_keys
-
-
-def preprocess_network(network, weight_threshold=None):
-    """Remove edges below a certain weight threshold."""
-    if weight_threshold is not None:
-        edges_to_remove = [
-            (u, v) for u, v, d in network.edges(data=True) if d["weight"] < weight_threshold
-        ]
-        network.remove_edges_from(edges_to_remove)
-    return network
