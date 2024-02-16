@@ -67,3 +67,13 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
         - Affinity propagation
 8. 
     - Automatically compute domain thresholding
+    - This is default now
+9.
+    - Plot the local enrichment finished network on a sphere
+    - Give the sphere ability to rotate, capturing every rotational image to ultimately make an animation
+10. [BIG]
+    - Enable the conversion of the input 2D network to 3D prior to computing neighborhoods
+        - This enables the better spread of tightly packed nodes, allowing for a more optimal scan of local enrichment
+    - When plotting, enable the conversion of the 3D network back to a 2D plane
+11.
+    - Enable the explicit use of edge weights to better refine node distancing prior to neighborhood computation
