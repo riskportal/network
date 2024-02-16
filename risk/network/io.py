@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 """This file contains the code for the SAFE class and command-line access."""
-import contextlib
 import json
 from pathlib import Path
 
@@ -10,11 +9,18 @@ import pandas as pd
 import zipfile
 import shutil
 
-from scipy.spatial.distance import pdist, squareform
 from xml.dom import minidom
 
 
-def load_cys_network(cys_filepath, view_name=None, include_edge_weight=False):
+def load_cys_network(
+    cys_filepath,
+    source_node_label,
+    target_node_label,
+    edge_weight_label,
+    view_name=None,
+    compute_sphere=False,
+    include_edge_weight=False,
+):
     # Unzip CYS file
     cys_filepath = Path(str(cys_filepath))
     with zipfile.ZipFile(cys_filepath, "r") as zip_ref:
@@ -50,13 +56,19 @@ def load_cys_network(cys_filepath, view_name=None, include_edge_weight=False):
     # Set columns
     attribute_table.columns = attribute_table.iloc[0]
     # Skip first four rows
-    attribute_table = attribute_table.iloc[4:, :].reset_index(drop=True)
+    attribute_table = attribute_table.iloc[4:, :]
+    attribute_table = attribute_table[[source_node_label, target_node_label, edge_weight_label]]
+    attribute_table = attribute_table.dropna().reset_index(drop=True)
 
     # Create a graph
     G = nx.Graph()
     # Add edges and nodes with weights
     for _, row in attribute_table.iterrows():
-        source, target, weight = row["source"], row["target"], float(row["weight"])
+        source, target, weight = (
+            row[source_node_label],
+            row[target_node_label],
+            float(row[edge_weight_label]),
+        )
         if source not in G:
             G.add_node(source)  # Optionally add x, y coordinates here if available
         if target not in G:
@@ -70,7 +82,9 @@ def load_cys_network(cys_filepath, view_name=None, include_edge_weight=False):
 
     # Relabel the node ids to sequential numbers to make calculations faster
     G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
-    G = calculate_edge_lengths(G, include_edge_weight=include_edge_weight)
+    G = calculate_edge_lengths(
+        G, compute_sphere=compute_sphere, include_edge_weight=include_edge_weight
+    )
     # Remove unzipped files/directories
     cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
     for dirname in cys_dirnames:
@@ -79,45 +93,95 @@ def load_cys_network(cys_filepath, view_name=None, include_edge_weight=False):
     return G
 
 
+def map_to_sphere(G):
+    # Extract x, y coordinates from the graph nodes
+    xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
+
+    # Normalize the coordinates between [0, 1]
+    min_vals = np.min(xy_coords, axis=0)
+    max_vals = np.max(xy_coords, axis=0)
+    normalized_xy = (xy_coords - min_vals) / (max_vals - min_vals)
+
+    # Map normalized coordinates to theta and phi on a sphere
+    theta = normalized_xy[:, 0] * np.pi * 2
+    phi = normalized_xy[:, 1] * np.pi
+
+    # Convert spherical coordinates to Cartesian coordinates for 3D sphere
+    for i, node in enumerate(G.nodes()):
+        x = np.sin(phi[i]) * np.cos(theta[i])
+        y = np.sin(phi[i]) * np.sin(theta[i])
+        z = np.cos(phi[i])
+        G.nodes[node]["x"] = x
+        G.nodes[node]["y"] = y
+        G.nodes[node]["z"] = z
+
+
+def normalize_graph_coordinates(G):
+    # Extract x, y coordinates from the graph nodes
+    xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
+
+    # Calculate min and max values for x and y
+    min_vals = np.min(xy_coords, axis=0)
+    max_vals = np.max(xy_coords, axis=0)
+
+    # Normalize the coordinates to [0, 1]
+    normalized_xy = (xy_coords - min_vals) / (max_vals - min_vals)
+
+    # Update the node coordinates with the normalized values
+    for i, node in enumerate(G.nodes()):
+        G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
+
+
 def normalize_weights(G):
     weights = [data["weight"] for _, _, data in G.edges(data=True) if "weight" in data]
     if weights:  # Ensure there are weighted edges
         min_weight = min(weights)
         max_weight = max(weights)
-        # Avoid division by zero in case all weights are the same
         range_weight = max_weight - min_weight if max_weight > min_weight else 1
         for u, v, data in G.edges(data=True):
             if "weight" in data:
-                # Normalize weight to [0, 1]
                 data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 
 
-def calculate_edge_lengths(G, include_edge_weight=False):
+def spherical_distance(u_coords, v_coords):
+    distance = np.arccos(np.dot(u_coords, v_coords))
+    return distance
+
+
+def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True):
+    # Normalize graph coordinates
+    normalize_graph_coordinates(G)
     # Normalize weights
     normalize_weights(G)
+    # Conditionally map nodes to a sphere based on `compute_sphere`
+    if compute_sphere:
+        map_to_sphere(G)
+
     for u, v, edge_data in G.edges(data=True):
-        # Use normalized weight if including edge weight in calculations
-        if include_edge_weight and "normalized_weight" in edge_data:
-            # Adjust the length attribute of each edge based on its normalized weight
-            G.edges[u, v]["length"] = weighted_distance(G, u, v, edge_data["normalized_weight"])
+        if compute_sphere:
+            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"], G.nodes[u].get("z", 0)])
+            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"], G.nodes[v].get("z", 0)])
+            # Calculate the spherical distance
+            dist = np.arccos(np.clip(np.dot(u_coords, v_coords), -1.0, 1.0))
         else:
-            # If no weight, consider the default normalized weight as 0.5
-            G.edges[u, v]["length"] = weighted_distance(
-                G, u, v
-            )  # Default to midpoint of normalized weights
+            # If not computing sphere, use only x, y for planar distance
+            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"]])
+            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"]])
+            # Calculate the planar distance
+            dist = np.linalg.norm(u_coords - v_coords)
+
+        if include_edge_weight and "normalized_weight" in edge_data:
+            # Invert the weight influence such that higher weights bring nodes closer
+            G.edges[u, v]["length"] = dist / (
+                edge_data["normalized_weight"] + 10e-12  # Avoid division by zero
+            )
+        else:
+            G.edges[u, v]["length"] = dist  # Use calculated distance directly
+
     return G
 
 
-def weighted_distance(G, u, v, weight=0):
-    u_x, u_y = G.nodes[u]["x"], G.nodes[u]["y"]
-    v_x, v_y = G.nodes[v]["x"], G.nodes[v]["y"]
-    spatial_distance = np.sqrt((u_x - v_x) ** 2 + (u_y - v_y) ** 2)
-    # Use a logarithmic adjustment for the weight impact - add 10e-12 to prevent log(0) when weight is 0
-    adjusted_distance = spatial_distance / np.log(1 + 10e-12 + weight)
-    return adjusted_distance
-
-
-def load_network_annotation(network, annotation_filepath, node_colname="label"):
+def load_network_annotation(network, annotation_filepath):
     # Convert JSON data to a Python dictionary
     with open(annotation_filepath, "r") as file:
         annotation_input = json.load(file)
@@ -133,7 +197,7 @@ def load_network_annotation(network, annotation_filepath, node_colname="label"):
         index="Node", columns="Annotation", values="Is Member", fill_value=0, dropna=False
     )
     # Get list of node labels as ordered in a graph object
-    node_label_order = list(nx.get_node_attributes(network, node_colname).values())
+    node_label_order = list(nx.get_node_attributes(network, "label").values())
     # This will reindex the annotation matrix with node labels as found in annotation file - those that are not found,
     # (i.e., rows) will be set to NaN values
     annotation_pivot = annotation_pivot.reindex(index=node_label_order)
