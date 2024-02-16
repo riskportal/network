@@ -12,13 +12,15 @@ def read_default_config():
     config = _open_yaml(config_filepath)
     input_config = config["input"]
     network_config = config["network"]
-
     return {
         # Input
         "network_filepath": input_config["network-filepath"],
         "annotation_filepath": input_config["annotation-filepath"],
-        "annotation_id_colname": input_config["annotation-id-colname"],
         # Network
+        "network_source_node_label": network_config["properties"]["node"]["source-label"],
+        "network_target_node_label": network_config["properties"]["node"]["target-label"],
+        "network_edge_weight_label": network_config["properties"]["edge"]["weight-label"],
+        "network_enrichment_compute_sphere": network_config["enrichment"]["compute-sphere"],
         "network_enrichment_include_edge_weight": network_config["enrichment"][
             "include-edge-weight"
         ],
@@ -35,10 +37,8 @@ def read_default_config():
             "neighborhood-distance-louvaine-resolution"
         ],
         "neighborhood_score_metric": network_config["node"]["neighborhood-score-metric"],
-        "neighborhood_radius": network_config["node"]["neighborhood-radius"],
-        "neighborhood_radius_type": network_config["node"]["neighborhood-radius-type"],
+        "neighborhood_diameter": network_config["node"]["neighborhood-diameter"],
         "group_distance_metric": network_config["node"]["group-distance-metric"],
-        "group_distance_threshold": network_config["node"]["group-distance-threshold"],
         "unimodality_type": network_config["node"]["unimodality-type"],
     }
 
@@ -61,7 +61,6 @@ def validate_config(config):
         keywords=[
             "euclidean",
             "shortpath",
-            "shortpath_weighted",
             "louvain",
             "affinity_propagation",
         ],
@@ -91,9 +90,6 @@ def validate_config(config):
         config["neighborhood_distance_louvaine_resolution"], (int, float)
     ), "Louvaine resolution must be a number."
     assert config["min_cluster_size"] > 1, "The minimum permitted annotation size is 2."
-    assert (
-        1 >= config["group_distance_threshold"] >= 0
-    ), "Group distance threshold must be between 0 and 1, inclusive."
 
     return config
 

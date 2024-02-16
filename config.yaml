@@ -1,30 +1,39 @@
+# Master configuration file for RISK
+# ==================================
+
 input:
   # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
   # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
-  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/gene_x_gene_cytoscape.cys
+  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/original_gi_network.cys
   annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
-  annotation-id-colname: label
+
 
 network:
+  properties:
+    node:
+      source-label: source_original
+      target-label: target_original
+    edge:
+      weight-label: weight
+
   enrichment:
-    include-edge-weight: true
+    compute-sphere: false # OPTIONS: true, false
+    include-edge-weight: true # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
     num-permutations: 1000
     direction: highest  # OPTIONS: Enrichment direction: highest, lowest
     min-cluster-size: 5 # Minimum final cluster membership size - suggested to omit small clusters
-    pval-cutoff: 0.01
-    apply-fdr: true  # OPTIONS: true, false
+    pval-cutoff: 0.05
+    apply-fdr: false  # OPTIONS: true, false
     fdr-cutoff: 0.9999
+
   node:
-    neighborhood-distance-metric: shortpath_weighted # OPTIONS: affinity_propagation, euclidean, louvain, shortpath, shortpath_weighted,
+    neighborhood-distance-metric: shortpath # OPTIONS: affinity_propagation, euclidean, louvain, shortpath
     neighborhood-distance-louvaine-resolution: 0.0
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
-    neighborhood-radius: 0.35
-    neighborhood-radius-type: diameter
+    neighborhood-diameter: 0.25
     # OPTIONS FOR BELOW: braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule.
     group-distance-metric: cosine # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
-    group-distance-threshold: 0.0 # OPTIONS: Set to 0.0 to automatically compute group distance thresholding
+    # TODO: Fix below to be a bool
     unimodality-type: connectivity
-
-
