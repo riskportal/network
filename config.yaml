@@ -2,37 +2,39 @@
 # ==================================
 
 input:
-  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
-  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
-  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/original_gi_network.cys
-  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
+  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
+  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
+  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/original_gi_network.cys
+  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
 
 
 network:
   properties:
     node:
-      source-label: source_original
-      target-label: target_original
+      source-label: source
+      target-label: target
+      min-edges: 1
     edge:
       weight-label: weight
 
   enrichment:
     compute-sphere: false # OPTIONS: true, false
-    include-edge-weight: true # OPTIONS: true, false
+    dimple-factor: 0 # OPTIONS: Any number - between 0 and 10 is a good starting point
+    include-edge-weight: false # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
     num-permutations: 1000
     direction: highest  # OPTIONS: Enrichment direction: highest, lowest
     min-cluster-size: 5 # Minimum final cluster membership size - suggested to omit small clusters
     pval-cutoff: 0.05
-    apply-fdr: false  # OPTIONS: true, false
+    apply-fdr: true  # OPTIONS: true, false
     fdr-cutoff: 0.9999
 
   node:
     neighborhood-distance-metric: shortpath # OPTIONS: affinity_propagation, euclidean, louvain, shortpath
     neighborhood-distance-louvaine-resolution: 0.0
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
-    neighborhood-diameter: 0.25
+    neighborhood-diameter: 0.20 # NOTE: Recommended to set to 1.0 if using weighted edges!
     # OPTIONS FOR BELOW: braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule.
     group-distance-metric: cosine # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
     # TODO: Fix below to be a bool
