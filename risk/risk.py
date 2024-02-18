@@ -59,19 +59,24 @@ class SAFE:
 
     def load_cytoscape_network(self):
         network_filepath = self.config["network_filepath"]
+        network_filename = Path(network_filepath).name
+        network_enrichment_compute_sphere = self.config["network_enrichment_compute_sphere"]
+        network_enrichment_dimple_factor = self.config["network_enrichment_dimple_factor"]
+        network_min_edges_per_node = self.config["network_min_edges_per_node"]
         network_enrichment_include_edge_weight = self.config[
             "network_enrichment_include_edge_weight"
         ]
-        network_enrichment_compute_sphere = self.config["network_enrichment_compute_sphere"]
-        network_filename = Path(network_filepath).name
         for_print_edge_weight = (
-            "[blue]with[/blue]" if network_enrichment_include_edge_weight else "[red]without[/red]"
+            "[red]with[/red]" if network_enrichment_include_edge_weight else "[red]without[/red]"
         )
         for_print_sphere = (
-            "[yellow]3D[/yellow]" if network_enrichment_compute_sphere else "[yellow]2D[/yellow]"
+            f"[yellow]3D[/yellow] [cyan]with[/cyan] [blue]dimple factor[/blue] [yellow]{network_enrichment_dimple_factor}[/yellow]"
+            if network_enrichment_compute_sphere
+            else "[yellow]2D[/yellow]"
         )
         print(
             f"[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network file[/blue]: [yellow]'{network_filename}'[/yellow]...[/cyan]"
+            f"\n[cyan]Removing [blue]nodes[/blue] with [blue]fewer[/blue] than [red]{network_min_edges_per_node}[/red] [blue]{'edge' if network_min_edges_per_node == 1 else 'edges'}...[/blue][/cyan]"
             f"\n[cyan]Treating the network as {for_print_sphere} {for_print_edge_weight} [yellow]edge weights[/yellow]...[/cyan]"
         )
         return load_cys_network(
@@ -80,6 +85,8 @@ class SAFE:
             self.config["network_target_node_label"],
             self.config["network_edge_weight_label"],
             compute_sphere=network_enrichment_compute_sphere,
+            dimple_factor=network_enrichment_dimple_factor,
+            min_edges_per_node=network_min_edges_per_node,
             include_edge_weight=network_enrichment_include_edge_weight,
         )
 
