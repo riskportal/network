@@ -19,8 +19,10 @@ def read_default_config():
         # Network
         "network_source_node_label": network_config["properties"]["node"]["source-label"],
         "network_target_node_label": network_config["properties"]["node"]["target-label"],
+        "network_min_edges_per_node": network_config["properties"]["node"]["min-edges"],
         "network_edge_weight_label": network_config["properties"]["edge"]["weight-label"],
         "network_enrichment_compute_sphere": network_config["enrichment"]["compute-sphere"],
+        "network_enrichment_dimple_factor": network_config["enrichment"]["dimple-factor"],
         "network_enrichment_include_edge_weight": network_config["enrichment"][
             "include-edge-weight"
         ],
