@@ -45,7 +45,9 @@ def get_network_neighborhoods(
         for source, targets in all_shortest_paths.items():
             for target, length in targets.items():
                 # Scale the length of node distance after computing node distances on a normalized network (look at io file)
-                neighborhoods[source, target] = 1 if length == 0 else np.sqrt(1 / length)
+                neighborhoods[source, target] = (
+                    1 if np.isnan(length) or length == 0 else np.sqrt(1 / length)
+                )
 
     elif neighborhood_distance_algorithm == "louvain":
         partition = community_louvain.best_partition(network, resolution=louvain_resolution)
@@ -101,9 +103,7 @@ def define_domains(
 
     # Find the threshold with the highest silhouette score
     group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
-    print(
-        f"[yellow]Automatically computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
-    )
+    print(f"[yellow]Computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]")
 
     max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
     domains = fcluster(Z, max_d_optimal, criterion="distance")
@@ -159,23 +159,15 @@ def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
 
 
 def find_outlier_domains(data_dict, z_score_threshold=3):
-    import numpy as np
-
     # Extract values from the dictionary
     values = np.array(list(data_dict.values()))
-
     # Calculate mean and standard deviation
     mean = np.mean(values)
     std_dev = np.std(values)
-
-    # Function to calculate Z-score
-    def calculate_z_score(value):
-        return (value - mean) / std_dev
-
     # Identify outliers
     outlier_keys = []
     for key, value in data_dict.items():
-        z_score = calculate_z_score(value)
+        z_score = (value - mean) / std_dev
         if abs(z_score) > z_score_threshold:
             outlier_keys.append(key)
 
