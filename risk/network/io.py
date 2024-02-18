@@ -19,6 +19,8 @@ def load_cys_network(
     edge_weight_label,
     view_name=None,
     compute_sphere=False,
+    dimple_factor=0.0,
+    min_edges_per_node=0,
     include_edge_weight=False,
 ):
     # Unzip CYS file
@@ -75,6 +77,9 @@ def load_cys_network(
             G.add_node(target)  # Optionally add x, y coordinates here if available
         G.add_edge(source, target, weight=weight)
 
+    # Remove invalid graph attributes / properties as soon as edges are added
+    remove_invalid_graph_properties(G, min_edges_per_node=min_edges_per_node)
+
     for node in G.nodes():
         G.nodes[node]["label"] = node
         G.nodes[node]["x"] = node_xs[node]  # Assuming you have a dict `node_xs` for x coordinates
@@ -83,7 +88,10 @@ def load_cys_network(
     # Relabel the node ids to sequential numbers to make calculations faster
     G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
     G = calculate_edge_lengths(
-        G, compute_sphere=compute_sphere, include_edge_weight=include_edge_weight
+        G,
+        compute_sphere=compute_sphere,
+        include_edge_weight=include_edge_weight,
+        dimple_factor=dimple_factor,
     )
     # Remove unzipped files/directories
     cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
@@ -116,6 +124,39 @@ def map_to_sphere(G):
         G.nodes[node]["z"] = z
 
 
+def find_subclusters_with_shortest_path(G, neighborhood_radius):
+    # Compute Djikstra's shortest path for each pair of nodes within a specified cutoff
+    all_shortest_paths = dict(
+        nx.all_pairs_dijkstra_path_length(
+            G,
+            weight="length",
+            cutoff=neighborhood_radius,
+        )
+    )
+    # Identify subclusters based on the shortest path lengths
+    subclusters = {}
+    for source, targets in all_shortest_paths.items():
+        for target, length in targets.items():
+            if length <= neighborhood_radius:
+                if source not in subclusters:
+                    subclusters[source] = set()
+                subclusters[source].add(target)
+    return subclusters
+
+
+def create_dimples(G, subclusters, dimple_factor=0.20):
+    # Create a strength metric for subclusters (here using size)
+    subcluster_strengths = {node: len(neighbors) for node, neighbors in subclusters.items()}
+
+    # Normalize the subcluster strengths and apply dimples
+    max_strength = max(subcluster_strengths.values())
+    for node, strength in subcluster_strengths.items():
+        depth_factor = strength / max_strength * dimple_factor
+        x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
+        norm = np.sqrt(x**2 + y**2 + z**2)
+        G.nodes[node]["z"] -= (z / norm) * depth_factor  # Adjust Z for a dimple
+
+
 def normalize_graph_coordinates(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
@@ -143,19 +184,21 @@ def normalize_weights(G):
                 data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 
 
-def spherical_distance(u_coords, v_coords):
-    distance = np.arccos(np.dot(u_coords, v_coords))
-    return distance
-
-
-def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True):
-    # Normalize graph coordinates
+def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=0.0):
+    # Normalize graph coordinates, dimple_factor=dimple_factor
     normalize_graph_coordinates(G)
     # Normalize weights
     normalize_weights(G)
     # Conditionally map nodes to a sphere based on `compute_sphere`
     if compute_sphere:
         map_to_sphere(G)
+        # Identify subclusters
+        neighborhood_radius = 1.0 * (np.pi if compute_sphere else 1) / 2
+        partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
+        # This is key to offer more dynamic range for the user; dimple factors don't need to be large
+        dimple_factor /= 1000
+        # Create dimples
+        create_dimples(G, partition, dimple_factor=dimple_factor)
 
     for u, v, edge_data in G.edges(data=True):
         if compute_sphere:
@@ -208,3 +251,11 @@ def load_network_annotation(network, annotation_filepath):
         "ordered_column_annotations": ordered_annotations,
         "annotation_matrix": annotation_pivot.to_numpy(),
     }
+
+
+def remove_invalid_graph_properties(G, min_edges_per_node=0):
+    # Remove nodes with 2 or fewer edges
+    nodes_with_few_edges = [node for node in G.nodes() if G.degree(node) <= min_edges_per_node]
+    G.remove_nodes_from(nodes_with_few_edges)
+    self_loops = list(nx.selfloop_edges(G))
+    G.remove_edges_from(self_loops)
