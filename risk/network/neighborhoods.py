@@ -103,7 +103,9 @@ def define_domains(
 
     # Find the threshold with the highest silhouette score
     group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
-    print(f"[yellow]Computed threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]")
+    print(
+        f"[yellow]Optimal distance threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
+    )
 
     max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
     domains = fcluster(Z, max_d_optimal, criterion="distance")
