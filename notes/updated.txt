@@ -1,5 +1,10 @@
 PROJECT NAME IDEA
 =================
+- RISK:
+    RISK Infers Spatial Kinship
+    RISK Informs Spatial Kinship
+    Regional Identification of Significant Kinships
+    Regional Identification of Structural Kinships
 - SPP: SAFE Plus Plus
 - DANGER:
     Discovery Algorithm for Network Group Enrichment Regions
@@ -22,11 +27,6 @@ PROJECT NAME IDEA
     Discovery Algorithms for Network Geographies, Entanglements, and Repatternings
     Data Analytics for Networked Groups, Efficiencies, and Resiliencies
     Deep Analytic Network Guidance for Enrichment Realization
-- RISK:
-    RISK Infers Spatial Kinship
-    RISK Informs Spatial Kinship
-    Regional Identification of Significant Kinships
-    Regional Identification of Structural Kinships
 
 THINGS I UPDATED
 ================
@@ -77,3 +77,7 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
     - When plotting, enable the conversion of the 3D network back to a 2D plane
 11.
     - Enable the explicit use of edge weights to better refine node distancing prior to neighborhood computation
+12.
+    - Enable surface dimpling of spherical network, pushing in / clustering regions of the network with tight connections
+    - Call this the dimpling effect, with the degree of travel towards spherical center dictated by a 'dimple factor'
+    - Automate calculation of optimal dimple factor
