@@ -181,15 +181,13 @@ class SAFE:
         neighborhood_binary_enrichment_matrix_below_alpha = neighborhood_enrichment_map[
             "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
-        group_distance_metric = self.config["group_distance_metric"]
-        print(
-            f"[cyan]Optimizing [blue]distance threshold[/blue] for [blue]domains[/blue] using the [yellow]'{group_distance_metric}'[/yellow] metric..."
-        )
+        print(f"[cyan]Optimizing [blue]distance threshold[/blue] for [blue]domains[/blue]...")
         domains_matrix = define_domains(
             neighborhood_enrichment_matrix,
             neighborhood_binary_enrichment_matrix_below_alpha,
             annotation_enrichment_matrix,
-            group_distance_metric,
+            self.config["group_distance_linkage"],
+            self.config["group_distance_metric"],
         )
         return domains_matrix
 
@@ -228,7 +226,7 @@ class SAFE:
 
     def _get_network_with_best_dimples(self, G, lower_bound=0, upper_bound=500, tolerance=1):
         print(
-            "[cyan][red]Warning:[/red] Optimizing [yellow]dimple factor[/yellow] can be an [red]expensive process[/red]."
+            "[cyan][red]Warning:[/red] [blue]Optimizing[/blue] [yellow]dimple factor[/yellow] can be an [red]expensive process[/red]."
             "[blue] Mark down[/blue] [yellow]optimal dimple factor[/yellow] for future use...[/cyan]"
         )
         max_score = -np.inf
@@ -240,7 +238,7 @@ class SAFE:
         total_iterations = int(np.ceil(np.log2((upper_bound - lower_bound) / tolerance))) + 1
         with Progress() as progress:
             task_id = progress.add_task(
-                f"[cyan]Optimizing[/cyan] [yellow]dimple factor 0/{total_iterations}[/yellow]",
+                f"[cyan]Optimizing [yellow]dimple factor[/yellow]...[/cyan]",
                 total=total_iterations,
             )
             current_iteration = 0
@@ -293,7 +291,7 @@ class SAFE:
                 progress.update(
                     task_id,
                     advance=1,
-                    description=f"[cyan]Optimizing[/cyan] [yellow]dimple factor {current_iteration}/{total_iterations}[/yellow]",
+                    description=f"[cyan]Optimizing [yellow]dimple factor[/yellow]...[/cyan]",
                 )
 
         print(f"[yellow]Optimal dimple factor:[/yellow] [red]{best_dimple_factor}[/red]")
