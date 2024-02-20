@@ -22,24 +22,29 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 def get_network_neighborhoods(
     network,
-    neighborhood_distance_algorithm,
+    neighborhood_distance_metric,
     neighborhood_diameter,
     compute_sphere=False,
     louvain_resolution=1.0,
 ):
-    # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
-    neighborhood_radius = neighborhood_diameter * (np.pi if compute_sphere else 1) / 2
+    if compute_sphere:
+        # Inflate neighborhood radius if specified to 1 (i.e., full coverage) to ensure capture of entire network per radial scan
+        neighborhood_diameter = 1.1 if neighborhood_diameter == 1 else 1
+        # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
+        neighborhood_radius = neighborhood_diameter * (np.pi / 2) / 2
+    else:
+        neighborhood_radius = neighborhood_diameter / 2
     # Initialize neighborhoods matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
-    if neighborhood_distance_algorithm == "euclidean":
+    if neighborhood_distance_metric == "euclidean":
         x = np.array(list(dict(network.nodes.data("x")).values()))
         y = np.array(list(dict(network.nodes.data("y")).values()))
         node_coordinates = np.stack((x, y), axis=1)
         node_distances = squareform(pdist(node_coordinates, "euclidean"))
         neighborhoods[node_distances < neighborhood_radius] = 1
 
-    elif neighborhood_distance_algorithm == "shortpath":
+    elif neighborhood_distance_metric == "shortpath":
         # First, compute Djikstra's shortest path
         all_shortest_paths = dict(
             nx.all_pairs_dijkstra_path_length(
@@ -56,14 +61,14 @@ def get_network_neighborhoods(
                     1 if np.isnan(length) or length == 0 else np.sqrt(1 / length)
                 )
 
-    elif neighborhood_distance_algorithm == "louvain":
+    elif neighborhood_distance_metric == "louvain":
         partition = community_louvain.best_partition(network, resolution=louvain_resolution)
         for node_i, community_i in partition.items():
             for node_j, community_j in partition.items():
                 if community_i == community_j:
                     neighborhoods[node_i, node_j] = 1
 
-    elif neighborhood_distance_algorithm == "affinity_propagation":
+    elif neighborhood_distance_metric == "affinity_propagation":
         # Convert the network into a distance matrix
         distance_matrix = nx.floyd_warshall_numpy(network)
         # Affinity Propagation requires similarities, not distances, hence we negate the distances
@@ -168,7 +173,7 @@ def find_outlier_domains(data_dict, z_score_threshold=3):
 
 
 # Function to perform binary search silhouette for a given metric and linkage method
-def binary_search_silhouette(
+def binary_search_silhouette_metric(
     Z, m, group_distance_metric, lower_bound=0.0, upper_bound=1.0, tolerance=0.01
 ):
     best_threshold = lower_bound
@@ -233,7 +238,7 @@ def optimize_silhouette_across_linkage_and_metrics(
             for metric in group_distance_metrics:
                 try:
                     Z = linkage(m, method=linkage_method, metric=metric)
-                    threshold, score = binary_search_silhouette(Z, m, metric)
+                    threshold, score = binary_search_silhouette_metric(Z, m, metric)
                     if score > best_overall_score:
                         best_overall_score = score
                         best_overall_metric = metric
