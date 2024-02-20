@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def read_default_config():
-    """Reads the default settings from config YAML file and update the attributes in the SAFE class.
+    """Reads the default settings from config YAML file and update the attributes in the RISK class.
 
     Returns:
         dict: Config file.
@@ -47,7 +47,7 @@ def read_default_config():
 
 
 def validate_config(config):
-    """Test the validity of the current settings in the SAFE class before running the analysis.
+    """Test the validity of the current settings in the RISK class before running the analysis.
 
     Returns:
         dict: Config file.

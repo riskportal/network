@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""This file contains the code for the SAFE class and command-line access."""
+"""This file contains the code for the RISK class and command-line access."""
 import json
 from pathlib import Path
 
