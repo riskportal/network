@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from matplotlib import cm
+from rich import print
 from scipy.spatial import ConvexHull
 from scipy.optimize import fmin
 from scipy.stats import gaussian_kde
@@ -20,7 +21,7 @@ def plot_composite_network(
     neighborhood_enrichment_matrix,
     neighborhood_binary_enrichment_matrix_below_alpha,
     labels=[],
-    show_each_domain=True,
+    show_each_domain=False,
     show_domain_ids=False,
     background_color="#000000",
 ):
@@ -91,7 +92,8 @@ def plot_composite_network(
     plotter = NetworkPlotter(axes, background_color, foreground_color)
     # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
     # Example usage for one full rotation - plot images and export to ./png
-    rotate_and_project(node_xy_trimmed, node_order, composite_colors_trimmed, "./png/rotate")
+    # rotate_and_project(node_xy_trimmed, node_order, composite_colors_trimmed, "rotate")
+    # plot_composite_network_contours(network, node_xy_trimmed, annotation_matrix, domains_matrix, trimmed_domains_matrix, node_order)
 
     composite_colors_trimmed[:, 3] = np.where(composite_colors_trimmed[:, 3] > 0, 1.0, 0)
     plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
@@ -113,7 +115,30 @@ def plot_composite_network(
         )
 
     fig.set_facecolor(background_color)
-    plt.savefig("./png/demo.png", facecolor=background_color, bbox_inches="tight")
+    plt.savefig("./png/output/demo.png", facecolor=background_color, bbox_inches="tight")
+
+    # # Prepare figure layout
+    # show_each_domain = False
+    # num_plots = 2 + show_each_domain * len(domains)
+    # nrows = int(np.ceil(num_plots / 2))
+    # ncols = min(num_plots, 2)
+    # figsize = (10 * ncols, 10 * nrows)
+    # fig, axes = plt.subplots(
+    #     nrows=nrows,
+    #     ncols=ncols,
+    #     figsize=figsize,
+    #     sharex=True,
+    #     sharey=True,
+    #     facecolor=background_color,
+    # )
+    # axes = axes.ravel()
+
+    # plotter = NetworkPlotter(axes, background_color, foreground_color)
+    # # NOTE: Ensure Alpha is always 1.0 - do this here to avoid tampering with argsort in line above
+    # # Example usage for one full rotation - plot images and export to ./png
+    # plotter.plot_main_network(network, node_xy_trimmed, node_order, composite_colors_trimmed)
+    # fig.set_facecolor(background_color)
+    # plt.savefig("./png/output/demo1.png", facecolor=background_color, bbox_inches="tight")
 
 
 def get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
@@ -293,72 +318,109 @@ class NetworkPlotter:
             ax_count += 1
 
 
-def plot_composite_network_contours(
-    network,
-    annotation_matrix,
-    domains_matrix,
-    trimmed_domains_matrix,
-    clabels=False,
-    background_color="#000000",
-):
-    foreground_color = "#ffffff"
-    if background_color == "#ffffff":
-        foreground_color = "#000000"
-    unique_domains = np.sort(annotation_matrix["domain"].unique())
-    # Define colors per domain
-    unique_domain_colors = get_colors("viridis", len(unique_domains))
-    # Get node coordinates
-    node_xy = get_node_coordinates(network)
+# def plot_composite_network_contours(
+#     network,
+#     node_xy,
+#     annotation_matrix,
+#     domains_matrix,
+#     trimmed_domains_matrix,
+#     node_order,
+#     clabels=False,
+#     background_color="#000000",
+# ):
+#     unique_domains = np.sort(annotation_matrix["domain"].unique())
+#     # Get node coordinates
 
-    # Figure parameters
-    num_plots = 2
+#     # Figure parameters
+#     num_plots = 2
 
-    nrows = int(np.ceil(num_plots / 2))
-    ncols = np.min([num_plots, 2])
-    figsize = (10 * ncols, 10 * nrows)
+#     nrows = int(np.ceil(num_plots / 2))
+#     ncols = np.min([num_plots, 2])
+#     figsize = (10 * ncols, 10 * nrows)
 
-    [fig, axes] = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
-        figsize=figsize,
-        sharex=True,
-        sharey=True,
-        facecolor=background_color,
-    )
+#     [fig, axes] = plt.subplots(
+#         nrows=nrows,
+#         ncols=ncols,
+#         figsize=figsize,
+#         sharex=True,
+#         sharey=True,
+#         facecolor=background_color,
+#     )
 
-    # Ensure axes is always a 1D array
-    axes = np.array(axes).ravel()
+#     # Ensure axes is always a 1D array
+#     axes = np.array(axes).ravel()
+#     for ax in axes:
+#         ax.set_facecolor(background_color)
 
-    # First, plot the network
-    ax = axes[1]
-    ax = plot_network(network, ax=ax, background_color=background_color)
+#     # First, plot the network
+#     ax = axes[1]
+#     ax = plot_network(network, ax=ax, background_color=background_color)
+#     # ax = axes[0]
+#     # Then, plot the composite network as contours
+#     for domain, terms in zip(trimmed_domains_matrix['id'], trimmed_domains_matrix['label']):
+#         # This line throws key error for domain
+#         # Identify indices where the 'primary domain' matches the current domain
+#         # Identify indices where the 'primary domain' matches the current domain
+#         domains_to_filter = domains_matrix["primary domain"] == domain
+#         filtered_indices = np.where(domains_to_filter)[0]
+#         # Determine the order of these indices as per node_order
+#         # This ensures we only consider nodes in the current domain and follow the specified node_order
+#         ordered_indices = [idx for idx in node_order if idx in filtered_indices]
+#         # Check if there are any nodes to plot for this domain
+#         if not len(ordered_indices):
+#             continue
+#         # Convert to a NumPy array for easier indexing
+#         ordered_indices = np.array(ordered_indices)
+#         draw_contours(axes[0], node_xy, ordered_indices)
+#         # ax.scatter(
+#         #     node_xy[ordered_indices][:, 0],  # x-coordinates
+#         #     node_xy[ordered_indices][:, 1],  # y-coordinates
+#         # )
 
-    # Then, plot the composite network as contours
-    for n_domain, domain in enumerate(trimmed_domains_matrix["label"].values):
-        with contextlib.suppress(KeyError):
-            # This line throws key error for domain
-            nodes_indices = domains_matrix.loc[domains_matrix.loc[:, n_domain] > 0,].index.values
-            pos3 = node_xy[nodes_indices, :]
-            kernel = gaussian_kde(pos3.T)
-            [X, Y] = np.mgrid[
-                np.min(pos3[:, 0]) : np.max(pos3[:, 0]) : 100j,
-                np.min(pos3[:, 1]) : np.max(pos3[:, 1]) : 100j,
-            ]
-            positions = np.vstack([X.ravel(), Y.ravel()])
-            Z = np.reshape(kernel(positions).T, X.shape)
+#         if clabels:
+#             C.levels = [domain + 1]
+#             plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
+#             print("%d -- %s" % (domain + 1, domain))
 
-            # Use ax instead of axes[1], and specify the subplot position
-            C = ax[0].contour(
-                X, Y, Z, [1e-6], colors=[trimmed_domains_matrix.loc[n_domain, "rgba"]], alpha=1
-            )
+#     fig.set_facecolor(background_color)
+#     plt.savefig("test.png", facecolor=background_color)
 
-            if clabels:
-                C.levels = [n_domain + 1]
-                plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
-                print("%d -- %s" % (n_domain + 1, domain))
 
-    fig.set_facecolor(background_color)
-    plt.savefig("demo.png", facecolor=background_color)
+# def draw_contours(ax, node_xy, ordered_indices, color='white', linewidths=1.5, levels=None):
+#     """
+#     Draw smooth contours around clusters of points.
+
+#     Parameters:
+#     - ax: The matplotlib axes to draw on.
+#     - node_xy: A numpy array of node coordinates.
+#     - ordered_indices: Indices of nodes that belong to a cluster.
+#     - color: Color of the contour line.
+#     - linewidths: Width of the contour lines.
+#     - levels: Contour levels to draw.
+#     """
+#     if len(ordered_indices) == 0:
+#         return  # No points to create a contour for.
+
+#     pos = node_xy[ordered_indices, :]
+#     kernel = gaussian_kde(pos.T)
+#     xmin, xmax = np.min(pos[:, 0]), np.max(pos[:, 0])
+#     ymin, ymax = np.min(pos[:, 1]), np.max(pos[:, 1])
+
+#     # Create a grid of points where we want to evaluate the KDE
+#     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+#     positions = np.vstack([X.ravel(), Y.ravel()])
+#     Z = np.reshape(kernel(positions).T, X.shape)
+
+#     # If levels are not provided, determine them automatically
+#     if levels is None:
+#         Z_flattened_sorted = np.sort(Z.ravel())
+#         # Take the value at the 90th percentile as the contour level
+#         levels = [Z_flattened_sorted[int(0.9 * len(Z_flattened_sorted))]]
+
+#     # Draw the contour around the cluster
+#     contour = ax.contour(X, Y, Z, levels=levels, colors=color, linewidths=linewidths)
+
+#     return contour
 
 
 def plot_network(G, ax=None, background_color="#000000"):
@@ -418,12 +480,15 @@ def draw_network_perimeter(graph, ax, background_color="#000000"):
     # Extract x and y coordinates from the graph nodes
     x = nx.get_node_attributes(graph, "x")
     y = nx.get_node_attributes(graph, "y")
-
-    pos = {k: np.array([x[k], y[k]]) for k in x}
+    # Ensure positions do not contain NaN by filtering
+    pos = {k: np.array([x[k], y[k]]) for k in x if not np.isnan(x[k]) and not np.isnan(y[k])}
+    if len(pos) < 3:
+        # ConvexHull requires at least 3 points to compute
+        print("[red]ERROR: Could not compute graph...[/red]")
+        return
 
     # Compute the convex hull to delineate the network
     hull = ConvexHull(np.array(list(pos.values())))
-
     # Extract the vertices of the hull to define the perimeter
     vertices_x = np.array([pos[v][0] for v in hull.vertices])
     vertices_y = np.array([pos[v][1] for v in hull.vertices])
@@ -463,65 +528,6 @@ def draw_network_perimeter(graph, ax, background_color="#000000"):
     ax.set_facecolor(background_color)  # Set the background color of the plot
 
     return xf, yf, rf
-
-
-def plot_costanzo2016_network_annotations(
-    graph, ax, path_to_data, colors=True, clabels=False, background_color="#000000"
-):
-    foreground_color = "#ffffff"
-    if background_color == "#ffffff":
-        foreground_color = "#000000"
-
-    path_to_network_annotations = (
-        "other/Data File S5_SAFE analysis_Gene cluster identity and functional enrichments.xlsx"
-    )
-    filename = os.path.join(path_to_data, path_to_network_annotations)
-
-    costanzo2016 = pd.read_excel(filename, sheet_name="Global net. cluster gene list")
-    processes = costanzo2016["Global Similarity Network Region name"].unique()
-    processes = processes[pd.notnull(processes)]
-
-    process_colors = pd.read_csv(
-        os.path.join(path_to_data, "other/costanzo_2016_colors.txt"), sep="\t"
-    )
-    if colors:
-        process_colors = process_colors[["R", "G", "B"]].values / 256
-    else:
-        if foreground_color == "#ffffff":
-            process_colors = np.ones((process_colors.shape[0], 3))
-        else:
-            process_colors = np.zeros((process_colors.shape[0], 3))
-
-    labels = nx.get_node_attributes(graph, "label")
-    labels_dict = {k: v for v, k in labels.items()}
-
-    x = list(dict(graph.nodes.data("x")).values())
-    y = list(dict(graph.nodes.data("y")).values())
-
-    pos = {}
-    for idx, k in enumerate(x):
-        pos[idx] = np.array([x[idx], y[idx]])
-
-    for n_process, process in enumerate(processes):
-        nodes = costanzo2016.loc[
-            costanzo2016["Global Similarity Network Region name"] == process, "Gene/Allele"
-        ]
-        nodes_indices = [labels_dict[node] for node in nodes if node in labels_dict.keys()]
-
-        pos3 = {idx: pos[node_index] for idx, node_index in enumerate(nodes_indices)}
-        pos3 = np.vstack(list(pos3.values()))
-
-        kernel = gaussian_kde(pos3.T)
-        [X, Y] = np.mgrid[np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j]
-        positions = np.vstack([X.ravel(), Y.ravel()])
-        Z = np.reshape(kernel(positions).T, X.shape)
-
-        C = ax.contour(X, Y, Z, [1e-6], colors=[tuple(process_colors[n_process, :])], alpha=1)
-
-        if clabels:
-            C.levels = [n_process + 1]
-            plt.clabel(C, C.levels, inline=True, fmt="%d", fontsize=16)
-            print("%d -- %s" % (n_process + 1, process))
 
 
 def plot_labels(labels, graph, ax):
