@@ -2,10 +2,10 @@
 # ==================================
 
 input:
-  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
-  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
-  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/original_gi_network.cys
-  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
+  # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
+  # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
+  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/gene_x_gene_cytoscape.cys
+  annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
 
 
 network:
@@ -19,8 +19,8 @@ network:
 
   enrichment:
     compute-sphere: true # OPTIONS: true, false
-    dimple-factor: auto # OPTIONS: auto | any integer from 0 to 1000
-    include-edge-weight: true # OPTIONS: true, false
+    dimple-factor: 20 # OPTIONS: auto || Any integer from 0 to 1000
+    include-edge-weight: false # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
     num-permutations: 1000
@@ -34,10 +34,9 @@ network:
     neighborhood-distance-metric: shortpath # OPTIONS: affinity_propagation, euclidean, louvain, shortpath
     neighborhood-distance-louvaine-resolution: 0.1
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
-    neighborhood-diameter: 1.00 # NOTE: Recommended to set to 1.0 if using weighted edges!
-    group-distance-linkage: auto # OPTIONS: single, complete, average, weighted, centroid, median, ward
-    # OPTIONS FOR BELOW: braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard, jensenshannon,
-    # kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule
-    group-distance-metric: auto # OPTIONS: see scipy.spatial.distance.pdist for a list of valid values
+    neighborhood-diameter: 0.5 # OPTIONS: Any value between 0 to 1
+    group-distance-linkage: auto # OPTIONS: auto || single, complete, average, weighted, centroid, median, ward
+    group-distance-metric: auto # OPTIONS: auto || braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard,
+    # jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule
     # TODO: Fix below to be a bool
     unimodality-type: connectivity
