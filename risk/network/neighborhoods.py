@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 
 import community as community_louvain
@@ -5,12 +6,18 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from rich import print
+from rich.progress import Progress
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import AffinityPropagation
+from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics import silhouette_score
 
 from risk.network.annotation import chop_and_filter
+from risk.network.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
+
+# Suppress DataConversionWarning
+warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 
 def get_network_neighborhoods(
@@ -78,36 +85,20 @@ def define_domains(
     neighborhood_enrichment_matrix,
     binary_enrichment_matrix_below_alpha,
     annotation_matrix,
+    group_distance_linkage,
     group_distance_metric,
 ):
     m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
-    Z = linkage(m, method="average", metric=group_distance_metric)
-
-    # Automatically compute a threshold if no threshold is provided
-    warned_user = False
-    # Calculate silhouette scores for a range of thresholds
-    thresholds = np.linspace(0.001, 0.999, 999)  # Example range of thresholds
-    silhouette_scores = []
-    for threshold in thresholds:
-        max_d = np.max(Z[:, 2]) * threshold
-        clusters = fcluster(Z, max_d, criterion="distance")
-        try:
-            score = silhouette_score(m, clusters, metric=group_distance_metric)
-            silhouette_scores.append(score)
-        except ValueError:
-            if not warned_user:
-                print(
-                    "[cyan][red]Warning:[/red] Network may have [yellow]poor annotation enrichment[/yellow]...[/cyan]"
-                )
-                warned_user = True
-
-    # Find the threshold with the highest silhouette score
-    group_distance_threshold = thresholds[np.argmax(silhouette_scores)]
-    print(
-        f"[yellow]Optimal distance threshold: [red]{round(group_distance_threshold, 3)}[/red][/yellow]"
+    best_linkage, best_metric, best_threshold, _ = optimize_silhouette_across_linkage_and_metrics(
+        m, group_distance_linkage, group_distance_metric
     )
+    Z = linkage(m, method=best_linkage, metric=best_metric)
+    print(
+        f"[cyan]Using [blue]distance linkage[/blue] [yellow]'{best_linkage}'[/yellow] with [blue]distance metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
+    )
+    print(f"[yellow]Optimal distance threshold: [red]{round(best_threshold, 3)}[/red][/yellow]")
 
-    max_d_optimal = np.max(Z[:, 2]) * group_distance_threshold
+    max_d_optimal = np.max(Z[:, 2]) * best_threshold
     domains = fcluster(Z, max_d_optimal, criterion="distance")
 
     annotation_matrix["domain"] = 0
@@ -174,3 +165,84 @@ def find_outlier_domains(data_dict, z_score_threshold=3):
             outlier_keys.append(key)
 
     return outlier_keys
+
+
+# Function to perform binary search silhouette for a given metric and linkage method
+def binary_search_silhouette(
+    Z, m, group_distance_metric, lower_bound=0.0, upper_bound=1.0, tolerance=0.01
+):
+    best_threshold = lower_bound
+    best_score = -np.inf
+
+    while upper_bound - lower_bound > tolerance:
+        mid = (lower_bound + upper_bound) / 2
+        max_d_mid = np.max(Z[:, 2]) * mid
+        clusters_mid = fcluster(Z, max_d_mid, criterion="distance")
+
+        max_d_high = np.max(Z[:, 2]) * (mid + tolerance)
+        clusters_high = fcluster(Z, max_d_high, criterion="distance")
+
+        try:
+            score_mid = silhouette_score(m, clusters_mid, metric=group_distance_metric)
+        except ValueError:
+            score_mid = -np.inf
+
+        try:
+            score_high = silhouette_score(m, clusters_high, metric=group_distance_metric)
+        except ValueError:
+            score_high = -np.inf
+
+        if score_mid > best_score:
+            best_score = score_mid
+            best_threshold = mid
+
+        if score_high > best_score:
+            best_score = score_high
+            best_threshold = mid + tolerance
+
+        if score_high > score_mid:
+            lower_bound = mid
+        else:
+            upper_bound = mid
+
+    return best_threshold, best_score
+
+
+def optimize_silhouette_across_linkage_and_metrics(
+    m, group_distance_linkage, group_distance_metric
+):
+    best_overall_score = -np.inf
+    best_overall_metric = None
+    best_overall_threshold = None
+    best_overall_linkage = None
+    group_linkage_methods = (
+        GROUP_LINKAGE_METHODS if group_distance_linkage == "auto" else [group_distance_linkage]
+    )
+    group_distance_metrics = (
+        GROUP_DISTANCE_METRICS if group_distance_metric == "auto" else [group_distance_metric]
+    )
+    total = len(group_linkage_methods) * len(group_distance_metrics)
+
+    with Progress() as progress:
+        task = progress.add_task(
+            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]distance linkage[/blue] and [blue]distance metric[/blue]...",
+            total=total,
+        )
+
+        for linkage_method in group_linkage_methods:
+            for metric in group_distance_metrics:
+                try:
+                    Z = linkage(m, method=linkage_method, metric=metric)
+                    threshold, score = binary_search_silhouette(Z, m, metric)
+                    if score > best_overall_score:
+                        best_overall_score = score
+                        best_overall_metric = metric
+                        best_overall_threshold = threshold
+                        best_overall_linkage = linkage_method
+                except Exception as e:
+                    # Ignoring exceptions that arise due to incompatibility between metrics and linkage methods
+                    pass
+                finally:
+                    progress.update(task, advance=1)
+
+    return best_overall_linkage, best_overall_metric, best_overall_threshold, best_overall_score
