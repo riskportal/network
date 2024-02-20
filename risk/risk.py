@@ -13,36 +13,36 @@ from risk.network.annotation import define_top_annotations
 from risk.network.graph import calculate_edge_lengths
 from risk.network.io import load_cys_network, load_network_annotation
 from risk.network.neighborhoods import (
-    get_network_neighborhoods,
     define_domains,
+    get_network_neighborhoods,
     trim_domains,
 )
 from risk.network.plot import plot_composite_network
 from risk.stats.stats import compute_pvalues_by_randomization
 
+from scipy.stats import mode
+from sklearn.metrics import silhouette_score
+from scipy.spatial.distance import pdist, squareform
+import numpy as np
+import networkx as nx
+from scipy.ndimage import label
 
-class SAFE:
-    """SAFE"""
+
+class RISK:
+    """RISK API"""
 
     def __init__(self, network_filepath="", annotation_filepath="", **kwargs):
-        """
-        Initiate a SAFE instance and define the main settings for analysis.
-        The settings are automatically extracted from the specified (or default) INI configuration file.
-        Alternatively, each setting can be changed manually after initiation.
-
-        :param path_to_ini_file (str): Path to the configuration file. If not specified, safe_default.ini will be used.
-        :param verbose (bool): Defines whether or not intermediate output will be printed out.
-
-        """
         user_input = {
             **kwargs,
             "network_filepath": network_filepath,
             "annotation_filepath": annotation_filepath,
         }
         self.config = validate_config(merge_configs(read_default_config(), user_input))
-        # TODO: What if the API is something like twosafe.load_cytoscape_network --> SAFE object
+        # TODO: What if the API is something like twosafe.load_cytoscape_network --> RISK object
         self.network = self.load_cytoscape_network()
         self.annotation_map = self.load_network_annotation(self.network)
+        self.tune_diameter_in_config(self.network)
+        # ==========
         self.network, self.neighborhoods = self.tune_graph_and_get_neighborhoods(self.network)
         self.neighborhood_enrichment_map = self.get_pvalues(self.neighborhoods, self.annotation_map)
         self.annotation_enrichment_matrix = self.define_top_annotations(
@@ -56,6 +56,7 @@ class SAFE:
             self.domains_matrix,
             self.trimmed_domains_matrix,
         ) = self.trim_domains(self.annotation_enrichment_matrix, self.domains_matrix)
+        # ==========
         self.plot_composite_network(
             self.network,
             self.neighborhood_enrichment_map,
@@ -119,6 +120,12 @@ class SAFE:
         print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
         annotation = load_network_annotation(network, self.config["annotation_filepath"])
         return annotation
+
+    def tune_diameter_in_config(self, network):
+        if self.config["neighborhood_diameter"] == "auto":
+            optimal_diameter = self.find_optimal_diameter(network)
+            print(f"[yellow]Optimal search diameter:[/yellow] [red]{optimal_diameter}[/red]")
+            self.config["neighborhood_diameter"] = optimal_diameter
 
     def load_neighborhoods(self, network):
         neighborhood_distance_metric = self.config["neighborhood_distance_metric"]
@@ -296,6 +303,102 @@ class SAFE:
 
         print(f"[yellow]Optimal dimple factor:[/yellow] [red]{best_dimple_factor}[/red]")
         return best_graph
+
+    def compute_silhouette_for_diameter(self, network, diameter):
+        neighborhoods_matrix = get_network_neighborhoods(
+            network,
+            self.config["neighborhood_distance_metric"],
+            diameter,
+            compute_sphere=self.config["network_enrichment_compute_sphere"],
+            louvain_resolution=self.config["neighborhood_distance_louvaine_resolution"],
+        )
+
+        # Apply ndimage.label to get the connected components
+        labels, num_features = label(neighborhoods_matrix)
+
+        # modes.mode contains the most frequent values
+        labels_1d = np.amax(labels, axis=1)
+
+        # Initialize the distance matrix with the same shape as the neighborhoods matrix
+        distance_matrix = np.zeros_like(neighborhoods_matrix, dtype=float)
+
+        # Iterate over each row to compute the distance per row
+        for i, row in enumerate(neighborhoods_matrix):
+            max_value_row = np.max(row)  # Max value in this row
+            distance_matrix[i] = (
+                max_value_row - row
+            )  # Convert similarities to distances for this row
+
+        # Ensure diagonal values are 0 (distance to itself)
+        np.fill_diagonal(distance_matrix, 0)
+
+        # Ensure all values are non-negative
+        distance_matrix = np.maximum(distance_matrix, 0)
+
+        # The silhouette_score function expects a 1D distance matrix when metric is 'precomputed'
+        score = abs(silhouette_score(distance_matrix, labels_1d, metric="cosine"))
+        print(diameter, score)
+        return score
+
+    def find_optimal_diameter(self, network):
+        lower_bound = 0.01
+        upper_bound = 1.00
+        tolerance = 0.01
+
+        best_score = float("inf")
+        best_diameter = lower_bound
+
+        G_test = calculate_edge_lengths(
+            network.copy(),
+            compute_sphere=self.config["network_enrichment_compute_sphere"],
+            include_edge_weight=self.config["network_enrichment_include_edge_weight"],
+            dimple_factor=0,
+        )
+
+        # Evaluate scores at the explicit starting points
+        score_at_lower_bound = self.compute_silhouette_for_diameter(G_test, lower_bound)
+        score_at_upper_bound = self.compute_silhouette_for_diameter(G_test, upper_bound)
+
+        # Initialize best scores and diameters based on initial evaluations
+        if score_at_lower_bound < score_at_upper_bound:
+            best_score = score_at_lower_bound
+            best_diameter = lower_bound
+        else:
+            best_score = score_at_upper_bound
+            best_diameter = upper_bound
+
+        # Adjust initial bounds if lower_bound performs better
+        if best_diameter == lower_bound:
+            upper_bound = (lower_bound + upper_bound) / 2
+        else:
+            lower_bound = (lower_bound + upper_bound) / 2
+
+        best_score = float("inf")
+        best_diameter = lower_bound
+        while upper_bound - lower_bound > tolerance:
+            midpoint = (lower_bound + upper_bound) / 2
+            midpoint_score = self.compute_silhouette_for_diameter(G_test, midpoint)
+
+            if midpoint_score < best_score:
+                best_score = midpoint_score
+                best_diameter = midpoint
+
+            # Adjust bounds based on comparison with the midpoint
+            if midpoint_score < score_at_lower_bound or midpoint_score < score_at_upper_bound:
+                if midpoint > best_diameter:
+                    upper_bound = midpoint
+                else:
+                    lower_bound = midpoint
+            else:
+                if score_at_lower_bound < score_at_upper_bound:
+                    upper_bound = midpoint
+                else:
+                    lower_bound = midpoint
+
+        print(
+            f"Optimal diameter: {best_diameter} with a silhouette score closest to 0: {best_score}"
+        )
+        return best_diameter
 
 
 def merge_configs(default_config, user_input):
