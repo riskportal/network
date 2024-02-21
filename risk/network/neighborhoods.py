@@ -27,13 +27,8 @@ def get_network_neighborhoods(
     compute_sphere=False,
     louvain_resolution=1.0,
 ):
-    if compute_sphere:
-        # Inflate neighborhood radius if specified to 1 (i.e., full coverage) to ensure capture of entire network per radial scan
-        neighborhood_diameter = 1.1 if neighborhood_diameter == 1 else 1
-        # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
-        neighborhood_radius = neighborhood_diameter * (np.pi / 2) / 2
-    else:
-        neighborhood_radius = neighborhood_diameter / 2
+    # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
+    neighborhood_radius = neighborhood_diameter * (4 if compute_sphere else 1) / 2
     # Initialize neighborhoods matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 

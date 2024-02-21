@@ -4,22 +4,22 @@
 input:
   # network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metabolic-fm-enrichment-network-apr-1m.cys
   # annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/metab_fm_x_fm_annotation.json
-  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/original_gi_network.cys
+  network-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/gene_x_gene_cytoscape.cys
   annotation-filepath: /Users/irahorecka/Desktop/Harddrive_Desktop/PhD/University of Toronto/Rost Lab/GitHub/risk/data/500_modules_annotation_file.json
 
 
 network:
   properties:
     node:
-      source-label: source_original
-      target-label: target_original
+      source-label: source
+      target-label: target
       min-edges: 0
     edge:
       weight-label: weight
 
   enrichment:
     compute-sphere: true # OPTIONS: true, false
-    dimple-factor: 256 # OPTIONS: auto || Any integer from 0 to 1000
+    dimple-factor: 20 # OPTIONS: auto || Any integer from 0 to 1000
     include-edge-weight: true # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
