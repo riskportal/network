@@ -1,4 +1,3 @@
-# Define the group distance metrics available for silhouette scoring
 GROUP_DISTANCE_METRICS = [
     "braycurtis",
     "canberra",
@@ -24,5 +23,4 @@ GROUP_DISTANCE_METRICS = [
     "yule",
 ]
 
-# Define the linkage methods
 GROUP_LINKAGE_METHODS = ["single", "complete", "average", "weighted", "centroid", "median", "ward"]
