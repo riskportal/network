@@ -85,23 +85,22 @@ def define_domains(
     neighborhood_enrichment_matrix,
     binary_enrichment_matrix_below_alpha,
     annotation_matrix,
+    group_distance_criterion,
     group_distance_linkage,
     group_distance_metric,
 ):
     m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
-    best_linkage, best_metric, best_threshold, best_criterion = (
-        optimize_silhouette_across_linkage_and_metrics(
-            m, group_distance_linkage, group_distance_metric
-        )
+    best_linkage, best_metric, best_threshold = optimize_silhouette_across_linkage_and_metrics(
+        m, group_distance_criterion, group_distance_linkage, group_distance_metric
     )
     Z = linkage(m, method=best_linkage, metric=best_metric)
     print(
-        f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{best_criterion}'[/yellow] with [blue]distance linkage[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]distance metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
+        f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{group_distance_criterion}'[/yellow] with [blue]distance linkage[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]distance metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
     )
     print(f"[yellow]Optimal distance threshold: [red]{round(best_threshold, 3)}[/red][/yellow]")
 
     max_d_optimal = np.max(Z[:, 2]) * best_threshold
-    domains = fcluster(Z, max_d_optimal, criterion=best_criterion)
+    domains = fcluster(Z, max_d_optimal, criterion=group_distance_criterion)
 
     annotation_matrix["domain"] = 0
     annotation_matrix.loc[annotation_matrix["top attributes"], "domain"] = domains
@@ -238,13 +237,12 @@ def find_best_silhouette_score(
 
 
 def optimize_silhouette_across_linkage_and_metrics(
-    m, group_distance_linkage, group_distance_metric
+    m, group_distance_criterion, group_distance_linkage, group_distance_metric
 ):
     best_overall_score = -np.inf
     best_overall_metric = None
     best_overall_threshold = None
     best_overall_linkage = None
-    best_overall_criterion = None
     group_linkage_methods = (
         GROUP_LINKAGE_METHODS if group_distance_linkage == "auto" else [group_distance_linkage]
     )
@@ -258,28 +256,27 @@ def optimize_silhouette_across_linkage_and_metrics(
             "[cyan]Evaluating [yellow]optimal[/yellow] [blue]distance linkage[/blue] and [blue]distance metric[/blue]...",
             total=total,
         )
+        for linkage_method in group_linkage_methods:
+            for metric in group_distance_metrics:
+                try:
+                    Z = linkage(m, method=linkage_method, metric=metric)
+                    if len(group_linkage_methods) == 1 or len(group_distance_metrics) == 1:
+                        threshold, score = find_best_silhouette_score(
+                            Z, m, metric, group_distance_criterion
+                        )
+                    else:
+                        threshold, score = binary_search_silhouette_metric(
+                            Z, m, metric, group_distance_criterion
+                        )
+                    if score > best_overall_score:
+                        best_overall_score = score
+                        best_overall_metric = metric
+                        best_overall_threshold = threshold
+                        best_overall_linkage = linkage_method
+                except Exception as e:
+                    # Ignoring exceptions that arise due to incompatibility between metrics and linkage methods
+                    pass
+                finally:
+                    progress.update(task, advance=1)
 
-        for criterion in ["distance", "maxclust"]:
-            for linkage_method in group_linkage_methods:
-                for metric in group_distance_metrics:
-                    try:
-                        Z = linkage(m, method=linkage_method, metric=metric)
-                        if len(group_linkage_methods) == 1 or len(group_distance_metrics) == 1:
-                            threshold, score = find_best_silhouette_score(Z, m, metric, criterion)
-                        else:
-                            threshold, score = binary_search_silhouette_metric(
-                                Z, m, metric, criterion
-                            )
-                        if score > best_overall_score:
-                            best_overall_score = score
-                            best_overall_metric = metric
-                            best_overall_threshold = threshold
-                            best_overall_linkage = linkage_method
-                            best_overall_criterion = criterion
-                    except Exception as e:
-                        # Ignoring exceptions that arise due to incompatibility between metrics and linkage methods
-                        pass
-                    finally:
-                        progress.update(task, advance=1)
-
-    return best_overall_linkage, best_overall_metric, best_overall_threshold, best_overall_criterion
+    return best_overall_linkage, best_overall_metric, best_overall_threshold
