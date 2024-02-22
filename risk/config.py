@@ -40,6 +40,7 @@ def read_default_config():
         ],
         "neighborhood_score_metric": network_config["node"]["neighborhood-score-metric"],
         "neighborhood_diameter": network_config["node"]["neighborhood-diameter"],
+        "group_distance_criterion": network_config["node"]["group-distance-criterion"],
         "group_distance_linkage": network_config["node"]["group-distance-linkage"],
         "group_distance_metric": network_config["node"]["group-distance-metric"],
         "unimodality_type": network_config["node"]["unimodality-type"],
