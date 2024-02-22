@@ -2,6 +2,47 @@ import networkx as nx
 import numpy as np
 
 
+def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=0.0):
+    # Normalize graph coordinates, dimple_factor=dimple_factor
+    normalize_graph_coordinates(G)
+    # Normalize weights
+    normalize_weights(G)
+    # Conditionally map nodes to a sphere based on `compute_sphere`
+    if compute_sphere:
+        map_to_sphere(G)
+        # Identify subclusters
+        neighborhood_radius = 4.0  # (4 * 1.0 (normalized diameter))
+        # neighborhood_radius = 1.0 * (4 if compute_sphere else 1) / 2
+        partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
+        # This is key to offer more dynamic range for the user; dimple factors don't need to be large
+        dimple_factor /= 1000
+        # Create dimples
+        create_dimples(G, partition, dimple_factor=dimple_factor)
+
+    for u, v, edge_data in G.edges(data=True):
+        if compute_sphere:
+            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"], G.nodes[u].get("z", 0)])
+            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"], G.nodes[v].get("z", 0)])
+            # Calculate the spherical distance
+            dist = np.arccos(np.clip(np.dot(u_coords, v_coords), -1.0, 1.0))
+        else:
+            # If not computing sphere, use only x, y for planar distance
+            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"]])
+            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"]])
+            # Calculate the planar distance
+            dist = np.linalg.norm(u_coords - v_coords)
+
+        if include_edge_weight and "normalized_weight" in edge_data:
+            # Invert the weight influence such that higher weights bring nodes closer
+            G.edges[u, v]["length"] = dist / (
+                edge_data["normalized_weight"] + 10e-12  # Avoid division by zero
+            )
+        else:
+            G.edges[u, v]["length"] = dist  # Use calculated distance directly
+
+    return G
+
+
 def map_to_sphere(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
@@ -73,6 +114,13 @@ def normalize_graph_coordinates(G):
     for i, node in enumerate(G.nodes()):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
 
+    # # Add edges between every pair of nodes with weight 0
+    # for node1 in G.nodes():
+    #     for node2 in G.nodes():
+    #         if node1 != node2:  # Avoid adding self-loops
+    #             if not G.has_edge(node1, node2):  # Check if the edge already exists
+    #                 G.add_edge(node1, node2, weight=0)
+
 
 def normalize_weights(G):
     weights = [data["weight"] for _, _, data in G.edges(data=True) if "weight" in data]
@@ -83,43 +131,3 @@ def normalize_weights(G):
         for u, v, data in G.edges(data=True):
             if "weight" in data:
                 data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
-
-
-def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=0.0):
-    # Normalize graph coordinates, dimple_factor=dimple_factor
-    normalize_graph_coordinates(G)
-    # Normalize weights
-    normalize_weights(G)
-    # Conditionally map nodes to a sphere based on `compute_sphere`
-    if compute_sphere:
-        map_to_sphere(G)
-        # Identify subclusters
-        neighborhood_radius = 1.0 * (np.pi if compute_sphere else 1) / 2
-        partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
-        # This is key to offer more dynamic range for the user; dimple factors don't need to be large
-        dimple_factor /= 1000
-        # Create dimples
-        create_dimples(G, partition, dimple_factor=dimple_factor)
-
-    for u, v, edge_data in G.edges(data=True):
-        if compute_sphere:
-            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"], G.nodes[u].get("z", 0)])
-            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"], G.nodes[v].get("z", 0)])
-            # Calculate the spherical distance
-            dist = np.arccos(np.clip(np.dot(u_coords, v_coords), -1.0, 1.0))
-        else:
-            # If not computing sphere, use only x, y for planar distance
-            u_coords = np.array([G.nodes[u]["x"], G.nodes[u]["y"]])
-            v_coords = np.array([G.nodes[v]["x"], G.nodes[v]["y"]])
-            # Calculate the planar distance
-            dist = np.linalg.norm(u_coords - v_coords)
-
-        if include_edge_weight and "normalized_weight" in edge_data:
-            # Invert the weight influence such that higher weights bring nodes closer
-            G.edges[u, v]["length"] = dist / (
-                edge_data["normalized_weight"] + 10e-12  # Avoid division by zero
-            )
-        else:
-            G.edges[u, v]["length"] = dist  # Use calculated distance directly
-
-    return G
