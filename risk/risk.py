@@ -338,7 +338,6 @@ def compute_silhouette_with_validation(distance_matrix, linkage_method="average"
     Z = linkage(pdist(distance_matrix), method=linkage_method)
     # Initialize variables
     best_score = None
-    best_labels = None
     num_clusters = 2
 
     # Try different numbers of clusters until a valid clustering configuration is found
@@ -350,7 +349,6 @@ def compute_silhouette_with_validation(distance_matrix, linkage_method="average"
                 # Update best score and labels if this configuration is better
                 if best_score is None or score > best_score:
                     best_score = score
-                    best_labels = labels
                 # Break the loop if a valid clustering has been found
                 break
             except ValueError:
