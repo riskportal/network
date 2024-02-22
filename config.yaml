@@ -18,9 +18,9 @@ network:
       weight-label: weight
 
   enrichment:
-    compute-sphere: true # OPTIONS: true, false
-    dimple-factor: 20 # OPTIONS: auto || Any integer from 0 to 1000
-    include-edge-weight: true # OPTIONS: true, false
+    compute-sphere: false # OPTIONS: true, false
+    dimple-factor: 0 # OPTIONS: auto || Any integer from 0 to 1000
+    include-edge-weight: false # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
     num-permutations: 1000
@@ -34,7 +34,8 @@ network:
     neighborhood-distance-metric: shortpath # OPTIONS: affinity_propagation, euclidean, louvain, shortpath
     neighborhood-distance-louvaine-resolution: 0.1
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
-    neighborhood-diameter: 1.00 # OPTIONS: Any value between 0 to 1
+    neighborhood-diameter: 0.25 # OPTIONS: Any value between 0 to 1
+    group-distance-criterion: distance # OPTIONS: distance, maxclust
     group-distance-linkage: auto # OPTIONS: auto || single, complete, average, weighted, centroid, median, ward
     group-distance-metric: auto # OPTIONS: auto || braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard,
     # jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule

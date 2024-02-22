@@ -184,6 +184,7 @@ class RISK:
             neighborhood_enrichment_matrix,
             neighborhood_binary_enrichment_matrix_below_alpha,
             annotation_enrichment_matrix,
+            self.config["group_distance_criterion"],
             self.config["group_distance_linkage"],
             self.config["group_distance_metric"],
         )
