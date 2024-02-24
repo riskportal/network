@@ -3,17 +3,15 @@ import numpy as np
 
 
 def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=0.0):
-    # Normalize graph coordinates, dimple_factor=dimple_factor
+    # Normalize graph coordinates
     normalize_graph_coordinates(G)
     # Normalize weights
     normalize_weights(G)
     # Conditionally map nodes to a sphere based on `compute_sphere`
     if compute_sphere:
         map_to_sphere(G)
-        # adjust_edges_based_on_connectivity(G)
-        # Identify subclusters
-        neighborhood_radius = 4.0  # (4 * 1.0 (normalized diameter))
-        # neighborhood_radius = 1.0 * (4 if compute_sphere else 1) / 2
+        # Identify subclusters - TODO: play with this value and research optimal radius! So far, 1 works best
+        neighborhood_radius = np.pi / 2  # (4 * 1.0 (normalized diameter))
         partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
         # This is key to offer more dynamic range for the user; dimple factors don't need to be large
         dimple_factor /= 1000
@@ -114,42 +112,6 @@ def normalize_graph_coordinates(G):
     # Update the node coordinates with the normalized values
     for i, node in enumerate(G.nodes()):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
-
-    # # Add edges between every pair of nodes with weight 0
-    # for node1 in G.nodes():
-    #     for node2 in G.nodes():
-    #         if node1 != node2:  # Avoid adding self-loops
-    #             if not G.has_edge(node1, node2):  # Check if the edge already exists
-    #                 G.add_edge(node1, node2, weight=0)
-
-
-def adjust_edges_based_on_connectivity(G):
-    # Extract x, y coordinates from the graph nodes
-    xy_coords = {node: np.array([G.nodes[node]["x"], G.nodes[node]["y"]]) for node in G.nodes()}
-
-    total_nodes = len(G.nodes())
-
-    # Iterate through each node to calculate and add new edges
-    for node1 in G.nodes():
-        existing_edges_count = len(list(G.edges(node1)))
-
-        # Calculate new edges to add as 10% of existing connections
-        new_edges_to_add = max(1, int(np.ceil(existing_edges_count * 0.10)))
-
-        distances = []
-        for node2 in G.nodes():
-            if node1 != node2 and not G.has_edge(node1, node2):
-                distance = np.linalg.norm(xy_coords[node1] - xy_coords[node2])
-                distances.append((distance, node2))
-
-        # Sort by distance to find the closest nodes
-        distances.sort(key=lambda x: x[0])
-
-        # Add edges to the closest nodes, based on the calculated number of new edges to add
-        for _, closest_node in distances[:new_edges_to_add]:
-            G.add_edge(node1, closest_node, weight=0)
-
-    return G
 
 
 def normalize_weights(G):

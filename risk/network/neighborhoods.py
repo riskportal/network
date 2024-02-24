@@ -28,7 +28,7 @@ def get_network_neighborhoods(
     louvain_resolution=1.0,
 ):
     # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
-    neighborhood_radius = neighborhood_diameter * (4 if compute_sphere else 1) / 2
+    neighborhood_radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
     # Initialize neighborhoods matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 

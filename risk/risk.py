@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 from rich import print
 from rich.progress import Progress
-from scipy import ndimage
 
 from risk.config import read_default_config, validate_config
 from risk.network.annotation import define_top_annotations
@@ -89,10 +88,7 @@ class RISK:
             self.config["network_source_node_label"],
             self.config["network_target_node_label"],
             self.config["network_edge_weight_label"],
-            compute_sphere=network_enrichment_compute_sphere,
-            dimple_factor=network_enrichment_dimple_factor,
             min_edges_per_node=network_min_edges_per_node,
-            include_edge_weight=network_enrichment_include_edge_weight,
         )
 
     def tune_graph_and_get_neighborhoods(self, G):

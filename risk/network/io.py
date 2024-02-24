@@ -17,10 +17,7 @@ def load_cys_network(
     target_node_label,
     edge_weight_label,
     view_name=None,
-    compute_sphere=False,
-    dimple_factor=0.0,
     min_edges_per_node=0,
-    include_edge_weight=False,
 ):
     # Unzip CYS file
     cys_filepath = Path(str(cys_filepath))
@@ -112,8 +109,6 @@ def load_network_annotation(network, annotation_filepath):
     ]
     # Create a DataFrame
     annotation = pd.DataFrame(flattened_annotation, columns=["Node", "Annotation"])
-    # annotation_to_node_id_map = dict(zip(annotation['Node'], annotation.index))
-    # add_edges_within_annotations(network, annotation_input, annotation_to_node_id_map)
     annotation["Is Member"] = 1
     # Pivot the DataFrame to achieve the desired format
     annotation_pivot = annotation.pivot_table(
@@ -131,16 +126,3 @@ def load_network_annotation(network, annotation_filepath):
         "ordered_column_annotations": ordered_annotations,
         "annotation_matrix": annotation_pivot.to_numpy(),
     }
-
-
-# def add_edges_within_annotations(G, annotation_input, annotation_to_node_id_map):
-#     for _, values in annotation_input.items():
-#         # Generate all unique pairs of values to add as edges
-#         for i in range(len(values)):
-#             for j in range(i + 1, len(values)):
-#                 node_id_1 = annotation_to_node_id_map.get(values[i])
-#                 node_id_2 = annotation_to_node_id_map.get(values[j])
-
-#                 # Check if both nodes exist in the graph before adding the edge
-#                 if node_id_1 and node_id_2 and G.has_node(node_id_1) and G.has_node(node_id_2):
-#                     G.add_edge(node_id_1, node_id_2, weight=0)
