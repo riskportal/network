@@ -35,31 +35,6 @@ class RISK:
             "annotation_filepath": annotation_filepath,
         }
         self.config = validate_config(merge_configs(read_default_config(), user_input))
-        # TODO: What if the API is something like twosafe.load_cytoscape_network --> SAFE object
-        self.network = self.load_cytoscape_network()
-        self.annotation_map = self.load_network_annotation(self.network)
-        # ==========
-        self.network, self.neighborhoods = self.tune_graph_and_get_neighborhoods(self.network)
-        self.neighborhood_enrichment_map = self.get_pvalues(self.neighborhoods, self.annotation_map)
-        self.annotation_enrichment_matrix = self.define_top_annotations(
-            self.network, self.annotation_map, self.neighborhood_enrichment_map
-        )
-        self.domains_matrix = self.define_domains(
-            self.neighborhood_enrichment_map, self.annotation_enrichment_matrix
-        )
-        (
-            self.annotation_enrichment_matrix,
-            self.domains_matrix,
-            self.trimmed_domains_matrix,
-        ) = self.trim_domains(self.annotation_enrichment_matrix, self.domains_matrix)
-        # ==========
-        self.plot_composite_network(
-            self.network,
-            self.neighborhood_enrichment_map,
-            self.annotation_enrichment_matrix,
-            self.domains_matrix,
-            self.trimmed_domains_matrix,
-        )
 
     def load_cytoscape_network(self):
         network_filepath = self.config["network_filepath"]
