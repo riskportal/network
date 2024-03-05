@@ -59,15 +59,15 @@ def define_top_annotations(
             size_connected_components = np.array([len(c) for c in connected_components])
             num_large_connected_components = np.sum(size_connected_components >= min_cluster_size)
 
-            annotation_enrichment_matrix.loc[attribute, "num connected components"] = (
-                num_connected_components
-            )
-            annotation_enrichment_matrix.at[attribute, "size connected components"] = (
-                size_connected_components
-            )
-            annotation_enrichment_matrix.loc[attribute, "num large connected components"] = (
-                num_large_connected_components
-            )
+            annotation_enrichment_matrix.loc[
+                attribute, "num connected components"
+            ] = num_connected_components
+            annotation_enrichment_matrix.at[
+                attribute, "size connected components"
+            ] = size_connected_components
+            annotation_enrichment_matrix.loc[
+                attribute, "num large connected components"
+            ] = num_large_connected_components
 
         # Exclude attributes that have more than 1 connected component
         annotation_enrichment_matrix.loc[
