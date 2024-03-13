@@ -1,5 +1,3 @@
-import contextlib
-import os
 import random
 
 import matplotlib.pyplot as plt
@@ -13,42 +11,112 @@ from scipy.optimize import fmin
 from scipy.stats import gaussian_kde
 
 
-def plot_composite_network(
+class NetworkGraph:
+    def __init__(
+        self,
+        network,
+        annotation_matrix,
+        domains_matrix,
+        trimmed_domains_matrix,
+        neighborhood_binary_enrichment_matrix_below_alpha,
+    ):
+        self.network = unfold_sphere_to_plane(network)
+        self.node_coordinates = get_node_coordinates(self.network)
+        self.annotation_matrix = self._remove_ivalid_domains_with_id(
+            annotation_matrix, "domain", 888888
+        )
+        self.domains_matrix = self._remove_ivalid_domains_with_id(
+            domains_matrix, "primary domain", 888888
+        )
+        self.trimmed_domains_matrix = self._remove_ivalid_domains_with_id(
+            trimmed_domains_matrix, "id", 888888
+        )
+        self.neighborhood_binary_enrichment_matrix_below_alpha = (
+            neighborhood_binary_enrichment_matrix_below_alpha
+        )
+        self.colors = self._get_node_colors()
+        self.node_order = get_refined_node_order(domains_matrix, self.colors)
+
+    def trim_outliers(self):
+        self.node_coordinates, self.colors, self.domains_matrix = remove_node_outliers_subclusters(
+            self.node_coordinates, self.colors, self.domains_matrix, std_dev_factor=2
+        )
+        # Plot node order from highest to lowest intensity
+        self.node_order = get_refined_node_order(self.domains_matrix, self.colors)
+
+    def _get_node_colors(self):
+        # Create DataFrame mappings for node to enrichment score and binary presence
+        node2nes_binary = pd.DataFrame(
+            data=self.neighborhood_binary_enrichment_matrix_below_alpha[
+                :, self.annotation_matrix.index.values
+            ],
+            columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
+        )
+        node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
+        domains = np.sort(node2domain_count.columns.unique())
+        domain2rgb = get_colors("hsv", len(domains))  # Assuming get_colors is pre-defined.
+        composite_colors = get_composite_node_colors(
+            domain2rgb, node2domain_count
+        )  # Composite colors based on domain count.
+        # Apply transformations to colors based on certain conditions.
+        # Identify rows where the fourth element is 1.0
+        rows_with_alpha_one = composite_colors[:, 3] == 1
+        # Assuming composite_colors is a NumPy array and rows_with_alpha_one is a boolean index or slice
+        # Generate random weights - choose only one value as weight to synchronously change the color
+        random_weights = np.random.uniform(
+            0.80, 1.00, composite_colors[rows_with_alpha_one].shape[0]
+        )
+        # For alpha - cuts the intensity of min -> max to half(min) -> max
+        transformed_weights = 1.0 - (1.0 - random_weights) ** 2
+        # Apply the random_weights to the first three columns of composite_colors
+        # `[:, np.newaxis]` enables broadcasting across different dimensions
+        composite_colors[rows_with_alpha_one, :3] *= random_weights[:, np.newaxis]
+        # Apply the random weights to ALL elements of the selected rows
+        composite_colors[rows_with_alpha_one, 3] *= transformed_weights
+
+        return composite_colors
+
+    @staticmethod
+    def _remove_ivalid_domains_with_id(df, column, domain_id=888888):
+        return df[df[column] != domain_id]
+
+
+def process_network_data(
     network,
     annotation_matrix,
     domains_matrix,
     trimmed_domains_matrix,
-    neighborhood_enrichment_matrix,
     neighborhood_binary_enrichment_matrix_below_alpha,
-    labels=[],
-    show_each_domain=False,
-    show_domain_ids=False,
-    background_color="#000000",
 ):
-    network = unfold_sphere_to_plane(network)
-    foreground_color = "#ffffff" if background_color == "#000000" else "#000000"
-    # Obtain unique domains and assign colors - do this prior to filtering to get some sweet color range
-    domains = np.sort(annotation_matrix["domain"].unique())
-    domain2rgb = get_colors("hsv", len(domains))
-    # Omit bad group
-    annotation_matrix = annotation_matrix[annotation_matrix["domain"] != 888888]
-    domains_matrix = domains_matrix[domains_matrix["primary domain"] != 888888]
-    trimmed_domains_matrix = trimmed_domains_matrix[trimmed_domains_matrix["id"] != 888888]
+    network = unfold_sphere_to_plane(network)  # Assuming this is a pre-defined function.
+    # Clean the data by removing unwanted domains (e.g., 888888)
+    cleaned_annotation_matrix = annotation_matrix[annotation_matrix["domain"] != 888888]
+    cleaned_domains_matrix = domains_matrix[domains_matrix["primary domain"] != 888888]
+    cleaned_trimmed_domains_matrix = trimmed_domains_matrix[trimmed_domains_matrix["id"] != 888888]
     # Create DataFrame mappings for node to enrichment score and binary presence
-    neighborhood_enrichment_matrix = neighborhood_enrichment_matrix[
-        :, annotation_matrix.index.values
-    ]
-    neighborhood_binary_enrichment_matrix_below_alpha = (
-        neighborhood_binary_enrichment_matrix_below_alpha[:, annotation_matrix.index.values]
-    )
     node2nes_binary = pd.DataFrame(
-        data=neighborhood_binary_enrichment_matrix_below_alpha,
-        columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
+        data=neighborhood_binary_enrichment_matrix_below_alpha[
+            :, cleaned_annotation_matrix.index.values
+        ],
+        columns=[cleaned_annotation_matrix.index.values, cleaned_annotation_matrix["domain"]],
     )
     node2domain_count = node2nes_binary.groupby(level="domain", axis=1).sum()
-    # Order nodes by brightness for plotting
-    composite_colors = get_composite_node_colors(domain2rgb, node2domain_count)
+    return (
+        network,
+        cleaned_annotation_matrix,
+        cleaned_domains_matrix,
+        cleaned_trimmed_domains_matrix,
+        node2domain_count,
+    )
 
+
+def generate_network_colors(node2domain_count):
+    domains = np.sort(node2domain_count.columns.unique())
+    domain2rgb = get_colors("hsv", len(domains))  # Assuming get_colors is pre-defined.
+    composite_colors = get_composite_node_colors(
+        domain2rgb, node2domain_count
+    )  # Composite colors based on domain count.
+    # Apply transformations to colors based on certain conditions.
     # Identify rows where the fourth element is 1.0
     rows_with_alpha_one = composite_colors[:, 3] == 1
     # Assuming composite_colors is a NumPy array and rows_with_alpha_one is a boolean index or slice
@@ -62,6 +130,20 @@ def plot_composite_network(
     # Apply the random weights to ALL elements of the selected rows
     composite_colors[rows_with_alpha_one, 3] *= transformed_weights
 
+    return composite_colors
+
+
+def plot_composite_network(
+    network,
+    annotation_matrix,
+    domains_matrix,
+    trimmed_domains_matrix,
+    composite_colors,
+    labels=[],
+    show_each_domain=False,
+    show_domain_ids=False,
+    background_color="#000000",
+):
     node_xy = get_node_coordinates(network)
     # Begin trimming
     # Remove nodes that are very far away from their domain's hub
@@ -71,14 +153,15 @@ def plot_composite_network(
     # Plot node order from highest to lowest intensity
     node_order = get_refined_node_order(domains_matrix, composite_colors_trimmed)
 
+    # ===== PLOTTING =====
     # Prepare figure layout
+    domains = np.sort(annotation_matrix["domain"].unique())
     num_plots = 2 + show_each_domain * len(domains)
     nrows = int(np.ceil(num_plots / 2))
     ncols = min(num_plots, 2)
     figsize = (10 * ncols, 10 * nrows)
-
-    # ===== PLOTTING =====
     # Create the subplots dynamically based on the number of plots needed
+    foreground_color = "#ffffff" if background_color == "#000000" else "#000000"
     fig, axes = plt.subplots(
         nrows=nrows,
         ncols=ncols,
@@ -613,25 +696,25 @@ def get_refined_node_order(domains_matrix, composite_colors):
 
 def get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
     # Updated colormap keywords with diverse colormaps and removed less distinct ones
-    colormap_keywords = {
-        "viridis",
-        "plasma",
-        "inferno",
-        "hsv",
-        "magma",
-        "cividis",
-        "rainbow",
-        "jet",
-        # Adding more diverse colormaps
-        "twilight",
-        "nipy_spectral",
-        "ocean",
-        "gist_earth",
-        "terrain",
-        "gist_ncar",
-        "Spectral",
-        "coolwarm",
-    }
+    # colormap_keywords = {
+    #     "viridis",
+    #     "plasma",
+    #     "inferno",
+    #     "hsv",
+    #     "magma",
+    #     "cividis",
+    #     "rainbow",
+    #     "jet",
+    #     # Adding more diverse colormaps
+    #     "twilight",
+    #     "nipy_spectral",
+    #     "ocean",
+    #     "gist_earth",
+    #     "terrain",
+    #     "gist_ncar",
+    #     "Spectral",
+    #     "coolwarm",
+    # }
     random.seed(random_seed)
     cmap = cm.get_cmap("hsv")
     # First color, always black
