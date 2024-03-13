@@ -16,7 +16,12 @@ from risk.network.neighborhoods import (
     get_network_neighborhoods,
     trim_domains,
 )
-from risk.network.plot import plot_composite_network
+from risk.network.plot import (
+    process_network_data,
+    generate_network_colors,
+    plot_composite_network,
+    NetworkGraph,
+)
 from risk.stats.stats import compute_pvalues_by_randomization
 
 from scipy.cluster.hierarchy import linkage, fcluster
@@ -170,7 +175,7 @@ class RISK:
         )
         return trimmed_domains
 
-    def plot_composite_network(
+    def process_network_data_for_plotting(
         self,
         network,
         neighborhood_enrichment_map,
@@ -178,20 +183,62 @@ class RISK:
         domains_matrix,
         trimmed_domains_matrix,
     ):
-        print("[cyan]Plotting [blue]composite network contours[/blue]...")
-        neighborhood_enrichment_matrix = neighborhood_enrichment_map[
-            "neighborhood_enrichment_matrix"
-        ]
         neighborhood_binary_enrichment_matrix_below_alpha = neighborhood_enrichment_map[
             "neighborhood_binary_enrichment_matrix_below_alpha"
         ]
+        return process_network_data(
+            network,
+            annotation_matrix,
+            domains_matrix,
+            trimmed_domains_matrix,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+        )
+
+    def get_network_graph(
+        self,
+        network,
+        neighborhood_enrichment_map,
+        annotation_matrix,
+        domains_matrix,
+        trimmed_domains_matrix,
+    ):
+        neighborhood_binary_enrichment_matrix_below_alpha = neighborhood_enrichment_map[
+            "neighborhood_binary_enrichment_matrix_below_alpha"
+        ]
+        return NetworkGraph(
+            network,
+            annotation_matrix,
+            domains_matrix,
+            trimmed_domains_matrix,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+        )
+
+    def generate_network_colors_for_plotting(self, node2domain_count):
+        return generate_network_colors(node2domain_count)
+
+    def plot_composite_network(
+        self,
+        network,
+        annotation_matrix,
+        domains_matrix,
+        trimmed_domains_matrix,
+        composite_colors,
+        labels=[],
+        show_each_domain=False,
+        show_domain_ids=False,
+        background_color="#000000",
+    ):
+        print("[cyan]Plotting [blue]composite network contours[/blue]...")
         return plot_composite_network(
             network,
             annotation_matrix,
             domains_matrix,
             trimmed_domains_matrix,
-            neighborhood_enrichment_matrix,
-            neighborhood_binary_enrichment_matrix_below_alpha,
+            composite_colors,
+            labels=labels,
+            show_each_domain=show_each_domain,
+            show_domain_ids=show_domain_ids,
+            background_color=background_color,
         )
 
     def _get_network_with_best_dimples(self, G, lower_bound=0, upper_bound=500, tolerance=1):
