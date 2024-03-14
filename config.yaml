@@ -10,6 +10,7 @@ input:
 
 network:
   properties:
+    random-seed: 888
     node:
       source-label: source
       target-label: target

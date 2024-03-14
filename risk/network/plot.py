@@ -19,6 +19,7 @@ class NetworkGraph:
         domains_matrix,
         trimmed_domains_matrix,
         neighborhood_binary_enrichment_matrix_below_alpha,
+        random_seed=888,
     ):
         self.network = unfold_sphere_to_plane(network)
         self.node_coordinates = get_node_coordinates(self.network)
@@ -34,6 +35,7 @@ class NetworkGraph:
         self.neighborhood_binary_enrichment_matrix_below_alpha = (
             neighborhood_binary_enrichment_matrix_below_alpha
         )
+        self.random_seed = random_seed
         self.colors = self._get_node_colors()
         self.node_order = get_refined_node_order(domains_matrix, self.colors)
 
@@ -56,7 +58,7 @@ class NetworkGraph:
         domains = np.sort(node2domain_count.columns.unique())
         domain2rgb = get_colors("hsv", len(domains))  # Assuming get_colors is pre-defined.
         composite_colors = get_composite_node_colors(
-            domain2rgb, node2domain_count
+            domain2rgb, node2domain_count, random_seed=self.random_seed
         )  # Composite colors based on domain count.
         # Apply transformations to colors based on certain conditions.
         # Identify rows where the fourth element is 1.0
@@ -110,11 +112,11 @@ def process_network_data(
     )
 
 
-def generate_network_colors(node2domain_count):
+def generate_network_colors(node2domain_count, random_seed=888):
     domains = np.sort(node2domain_count.columns.unique())
     domain2rgb = get_colors("hsv", len(domains))  # Assuming get_colors is pre-defined.
     composite_colors = get_composite_node_colors(
-        domain2rgb, node2domain_count
+        domain2rgb, node2domain_count, random_seed=random_seed
     )  # Composite colors based on domain count.
     # Apply transformations to colors based on certain conditions.
     # Identify rows where the fourth element is 1.0
