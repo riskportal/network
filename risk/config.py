@@ -17,6 +17,7 @@ def read_default_config():
         "network_filepath": input_config["network-filepath"],
         "annotation_filepath": input_config["annotation-filepath"],
         # Network
+        "random_seed": network_config["properties"]["random-seed"],
         "network_source_node_label": network_config["properties"]["node"]["source-label"],
         "network_target_node_label": network_config["properties"]["node"]["target-label"],
         "network_min_edges_per_node": network_config["properties"]["node"]["min-edges"],
@@ -81,6 +82,7 @@ def validate_config(config):
     )
 
     # Check numerical user inputs
+    assert config["random_seed"] > 0, "Random seed must be a positive integer greater than 0."
     assert (
         config["network_enrichment_num_permutations"] > 99
     ), "Number of enrichment permutations must be greater than or equal to 100."

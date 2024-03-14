@@ -128,7 +128,7 @@ class RISK:
             self.config["enrichment_fdr_cutoff"],
             null_distribution=network_null_distribution,
             num_permutations=self.config["network_enrichment_num_permutations"],
-            random_seed=888,
+            random_seed=self.config["random_seed"],
         )
         return neighborhood_enrichment_map
 
