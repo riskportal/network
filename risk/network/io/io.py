@@ -6,6 +6,7 @@ This file contains the code for the RISK class and command-line access.
 """
 
 from pathlib import Path
+import pickle
 import shutil
 import zipfile
 
@@ -13,17 +14,27 @@ import networkx as nx
 import pandas as pd
 from xml.dom import minidom
 
-from .tidy import remove_invalid_graph_properties
+from .tidy import remove_invalid_graph_properties, validate_graph
+
+
+def load_gpickle_network(
+    gpickle_path,
+    min_edges_per_node=0,
+):
+    with open(gpickle_path, "rb") as f:
+        G = pickle.load(f)
+    return load_networkx_network(G, min_edges_per_node=min_edges_per_node)
 
 
 def load_networkx_network(
     G,
     min_edges_per_node=0,
 ):
-    # Remove invalid graph attributes / properties as soon as edges are added
+    # Remove invalid graph attributes / properties as soon as possible
     remove_invalid_graph_properties(G, min_edges_per_node=min_edges_per_node)
     # Relabel the node ids to sequential numbers to make calculations faster
     G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
+    validate_graph(G)
     return G
 
 
@@ -99,6 +110,7 @@ def load_cys_network(
 
     # Relabel the node ids to sequential numbers to make calculations faster
     G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
+    validate_graph(G)
     # Remove unzipped files/directories
     cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
     for dirname in cys_dirnames:

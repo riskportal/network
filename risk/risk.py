@@ -15,7 +15,12 @@ from rich.progress import Progress
 from risk.config import read_default_config, validate_config
 from risk.network.annotation import define_top_annotations
 from risk.network.graph import calculate_edge_lengths
-from risk.network.io import load_cys_network, load_network_annotation
+from risk.network.io import (
+    load_cys_network,
+    load_gpickle_network,
+    load_networkx_network,
+    load_network_annotation,
+)
 from risk.network.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
@@ -45,6 +50,12 @@ class RISK:
             "annotation_filepath": annotation_filepath,
         }
         self.config = validate_config(merge_configs(read_default_config(), user_input))
+
+    def load_gpickle_network(self, gpickle_path):
+        return load_gpickle_network(gpickle_path, self.config["network_min_edges_per_node"])
+
+    def load_networkx_network(self, G):
+        return load_networkx_network(G, self.config["network_min_edges_per_node"])
 
     def load_cytoscape_network(self):
         network_filepath = self.config["network_filepath"]
