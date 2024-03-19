@@ -1,3 +1,8 @@
+"""
+risk/stats/permutation/_cython/setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 # setup.py
 from setuptools import setup
 from Cython.Build import cythonize
