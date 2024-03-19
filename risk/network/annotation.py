@@ -1,3 +1,8 @@
+"""
+risk/network/annotation
+~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 from collections import Counter
 from itertools import compress
 

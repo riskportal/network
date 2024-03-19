@@ -1,3 +1,8 @@
+"""
+risk/network/neighborhoods
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 import warnings
 from collections import Counter
 

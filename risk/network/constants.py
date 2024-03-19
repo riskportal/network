@@ -1,3 +1,8 @@
+"""
+risk/network/constants
+~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 GROUP_DISTANCE_METRICS = [
     "braycurtis",
     "canberra",
