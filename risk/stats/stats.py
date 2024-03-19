@@ -1,3 +1,8 @@
+"""
+risk/stats/stats
+~~~~~~~~~~~~~~~~
+"""
+
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
 from rich.progress import Progress

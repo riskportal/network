@@ -1,3 +1,8 @@
+"""
+risk/stats/permutation/_python/permutation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 import numpy as np
 
 

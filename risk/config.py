@@ -1,3 +1,8 @@
+"""
+risk/config
+~~~~~~~~~~~
+"""
+
 import yaml
 from pathlib import Path
 
