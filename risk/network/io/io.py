@@ -1,14 +1,30 @@
-#! /usr/bin/env python
-"""This file contains the code for the RISK class and command-line access."""
-import json
+"""
+risk/network/io/io
+~~~~~~~~~~~~~~~~~~
+
+This file contains the code for the RISK class and command-line access.
+"""
+
 from pathlib import Path
+import shutil
+import zipfile
 
 import networkx as nx
 import pandas as pd
-import zipfile
-import shutil
-
 from xml.dom import minidom
+
+from .tidy import remove_invalid_graph_properties
+
+
+def load_networkx_network(
+    G,
+    min_edges_per_node=0,
+):
+    # Remove invalid graph attributes / properties as soon as edges are added
+    remove_invalid_graph_properties(G, min_edges_per_node=min_edges_per_node)
+    # Relabel the node ids to sequential numbers to make calculations faster
+    G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
+    return G
 
 
 def load_cys_network(
@@ -89,40 +105,3 @@ def load_cys_network(
         shutil.rmtree(dirname)
 
     return G
-
-
-def remove_invalid_graph_properties(G, min_edges_per_node=0):
-    # Remove nodes with `min_edges_per_node` or fewer edges
-    nodes_with_few_edges = [node for node in G.nodes() if G.degree(node) <= min_edges_per_node]
-    G.remove_nodes_from(nodes_with_few_edges)
-    self_loops = list(nx.selfloop_edges(G))
-    G.remove_edges_from(self_loops)
-
-
-def load_network_annotation(network, annotation_filepath):
-    # Convert JSON data to a Python dictionary
-    with open(annotation_filepath, "r") as file:
-        annotation_input = json.load(file)
-    # Flatten the dictionary for easier DataFrame creation
-    flattened_annotation = [
-        (node, annotation) for annotation, nodes in annotation_input.items() for node in nodes
-    ]
-    # Create a DataFrame
-    annotation = pd.DataFrame(flattened_annotation, columns=["Node", "Annotation"])
-    annotation["Is Member"] = 1
-    # Pivot the DataFrame to achieve the desired format
-    annotation_pivot = annotation.pivot_table(
-        index="Node", columns="Annotation", values="Is Member", fill_value=0, dropna=False
-    )
-    # Get list of node labels as ordered in a graph object
-    node_label_order = list(nx.get_node_attributes(network, "label").values())
-    # This will reindex the annotation matrix with node labels as found in annotation file - those that are not found,
-    # (i.e., rows) will be set to NaN values
-    annotation_pivot = annotation_pivot.reindex(index=node_label_order)
-    ordered_nodes = tuple(annotation_pivot.index)
-    ordered_annotations = tuple(annotation_pivot.columns)
-    return {
-        "ordered_row_nodes": ordered_nodes,
-        "ordered_column_annotations": ordered_annotations,
-        "annotation_matrix": annotation_pivot.to_numpy(),
-    }
