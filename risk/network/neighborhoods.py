@@ -135,10 +135,11 @@ def define_domains(
     return node2domain
 
 
-def trim_domains(annotation_matrix, domains_matrix, min_cluster_size):
+def trim_domains(annotation_matrix, domains_matrix, min_cluster_size, max_cluster_size):
     # Remove domains that are the top choice for less than a certain number of neighborhoods
     domain_counts = domains_matrix["primary domain"].value_counts()
     to_remove = list(domain_counts[domain_counts < min_cluster_size].index)
+    to_remove.extend(list(domain_counts[domain_counts > max_cluster_size].index))
     to_remove.extend(find_outlier_domains(Counter(domains_matrix["primary domain"])))
     annotation_matrix["domain"].replace(to_remove, 888888, inplace=True)
     domains_matrix.loc[
@@ -245,9 +246,9 @@ def optimize_silhouette_across_linkage_and_metrics(
     m, group_distance_criterion, group_distance_linkage, group_distance_metric
 ):
     best_overall_score = -np.inf
-    best_overall_metric = None
-    best_overall_threshold = None
-    best_overall_linkage = None
+    best_overall_metric = "cosine"
+    best_overall_threshold = 1
+    best_overall_linkage = "average"
     group_linkage_methods = (
         GROUP_LINKAGE_METHODS if group_distance_linkage == "auto" else [group_distance_linkage]
     )
