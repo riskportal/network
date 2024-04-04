@@ -160,6 +160,7 @@ class RISK:
             neighborhood_enrichment_sums,
             neighborhood_binary_enrichment_matrix_below_alpha,
             self.config["min_cluster_size"],
+            self.config["max_cluster_size"],
             self.config["unimodality_type"],
         )
         return top_attributes
@@ -188,6 +189,7 @@ class RISK:
             annotation_matrix,
             domains_matrix,
             self.config["min_cluster_size"],
+            self.config["max_cluster_size"],
         )
         return trimmed_domains
 

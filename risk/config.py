@@ -37,6 +37,7 @@ def read_default_config():
         "network_enrichment_num_permutations": network_config["enrichment"]["num-permutations"],
         "network_enrichment_direction": network_config["enrichment"]["direction"],
         "min_cluster_size": network_config["enrichment"]["min-cluster-size"],
+        "max_cluster_size": network_config["enrichment"]["max-cluster-size"],
         "enrichment_pval_cutoff": network_config["enrichment"]["pval-cutoff"],
         "enrichment_apply_fdr": network_config["enrichment"]["apply-fdr"],
         "enrichment_fdr_cutoff": network_config["enrichment"]["fdr-cutoff"],
@@ -101,6 +102,7 @@ def validate_config(config):
         config["neighborhood_distance_louvaine_resolution"], (int, float)
     ), "Louvaine resolution must be a number."
     assert config["min_cluster_size"] > 1, "The minimum permitted annotation size is 2."
+    assert config["max_cluster_size"] < 100_000, "The maximum permitted annotation size is 99,999."
 
     return config
 
