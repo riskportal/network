@@ -27,6 +27,7 @@ network:
     num-permutations: 1000
     direction: highest  # OPTIONS: Enrichment direction: highest, lowest
     min-cluster-size: 5 # Minimum final cluster membership size - suggested to omit small clusters
+    max-cluster-size: 1000 # Maximum final cluster membership size - suggested to omit large clusters
     pval-cutoff: 0.01
     apply-fdr: true  # OPTIONS: true, false
     fdr-cutoff: 0.9999
@@ -38,7 +39,7 @@ network:
     neighborhood-diameter: 1.00 # OPTIONS: Any value between 0 to 1
     group-distance-criterion: distance # OPTIONS: distance, maxclust
     group-distance-linkage: average # OPTIONS: auto || single, complete, average, weighted, centroid, median, ward
-    group-distance-metric: cosine # OPTIONS: auto || braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard,
+    group-distance-metric: yule # OPTIONS: auto || braycurtis, canberra, chebyshev, cityblock, correlation, cosine, dice, euclidean, hamming, jaccard,
     # jensenshannon, kulczynski1, mahalanobis, matching, minkowski, rogerstanimoto, russellrao, seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule
     # TODO: Fix below to be a bool
     unimodality-type: connectivity
