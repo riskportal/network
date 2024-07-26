@@ -82,3 +82,5 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
     - Enable surface dimpling of spherical network, pushing in / clustering regions of the network with tight connections
     - Call this the dimpling effect, with the degree of travel towards spherical center dictated by a 'dimple factor'
     - Automate calculation of optimal dimple factor
+13.
+    - Add contours to network, providing a simpler way to view regions of enrichment on the network
