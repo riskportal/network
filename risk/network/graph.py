@@ -9,19 +9,19 @@ import numpy as np
 
 def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=None):
     # Normalize graph coordinates
-    normalize_graph_coordinates(G)
+    _normalize_graph_coordinates(G)
     # Normalize weights
-    normalize_weights(G)
+    _normalize_weights(G)
     # Conditionally map nodes to a sphere based on `compute_sphere`
     if compute_sphere:
-        map_to_sphere(G)
+        _map_to_sphere(G)
         # Identify subclusters - TODO: play with this value and research optimal radius! So far, 1 works best
         neighborhood_radius = np.pi / 2  # (4 * 1.0 (normalized diameter))
-        partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
+        partition = _find_subclusters_with_shortest_path(G, neighborhood_radius)
         # This is key to offer more dynamic range for the user; dimple factors don't need to be large
         dimple_factor = 0.0 if dimple_factor is None else dimple_factor / 1000
         # Create dimples
-        create_dimples(G, partition, dimple_factor=dimple_factor)
+        _create_dimples(G, partition, dimple_factor=dimple_factor)
 
     for u, v, edge_data in G.edges(data=True):
         if compute_sphere:
@@ -47,7 +47,7 @@ def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, di
     return G
 
 
-def map_to_sphere(G):
+def _map_to_sphere(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
 
@@ -70,7 +70,7 @@ def map_to_sphere(G):
         G.nodes[node]["z"] = z
 
 
-def find_subclusters_with_shortest_path(G, neighborhood_radius):
+def _find_subclusters_with_shortest_path(G, neighborhood_radius):
     # Compute Djikstra's shortest path for each pair of nodes within a specified cutoff
     all_shortest_paths = dict(
         nx.all_pairs_dijkstra_path_length(
@@ -90,7 +90,7 @@ def find_subclusters_with_shortest_path(G, neighborhood_radius):
     return subclusters
 
 
-def create_dimples(G, subclusters, dimple_factor=0.20):
+def _create_dimples(G, subclusters, dimple_factor=0.20):
     # Create a strength metric for subclusters (here using size)
     subcluster_strengths = {node: len(neighbors) for node, neighbors in subclusters.items()}
 
@@ -103,7 +103,7 @@ def create_dimples(G, subclusters, dimple_factor=0.20):
         G.nodes[node]["z"] -= (z / norm) * depth_factor  # Adjust Z for a dimple
 
 
-def normalize_graph_coordinates(G):
+def _normalize_graph_coordinates(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
 
@@ -119,7 +119,7 @@ def normalize_graph_coordinates(G):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
 
 
-def normalize_weights(G):
+def _normalize_weights(G):
     weights = [data["weight"] for _, _, data in G.edges(data=True) if "weight" in data]
     if weights:  # Ensure there are weighted edges
         min_weight = min(weights)
