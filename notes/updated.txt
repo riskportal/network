@@ -64,7 +64,7 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
     - Remove nodes from being colored / plotted if they are N STDEV away from their domain's centroid
 7.
     - Add new domain selection algorithms
-        - Louvaine
+        - louvain
         - Affinity propagation
 8. 
     - Automatically compute domain thresholding across different linkages and metrics
