@@ -7,7 +7,7 @@ import networkx as nx
 import numpy as np
 
 
-def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=0.0):
+def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=None):
     # Normalize graph coordinates
     normalize_graph_coordinates(G)
     # Normalize weights
@@ -19,7 +19,7 @@ def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, di
         neighborhood_radius = np.pi / 2  # (4 * 1.0 (normalized diameter))
         partition = find_subclusters_with_shortest_path(G, neighborhood_radius)
         # This is key to offer more dynamic range for the user; dimple factors don't need to be large
-        dimple_factor /= 1000
+        dimple_factor = 0.0 if dimple_factor is None else dimple_factor / 1000
         # Create dimples
         create_dimples(G, partition, dimple_factor=dimple_factor)
 
