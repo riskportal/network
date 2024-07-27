@@ -89,43 +89,32 @@ class NetworkPlotter:
         )
         return node_colors, node_sizes
 
-    def plot_network(
+    def plot_background(
         self,
         figsize=(10, 10),
-        node_sizes=50,
-        edge_widths=1.0,
-        node_colors="white",
-        edge_colors="black",
-        node_edge_colors="black",
         perimeter_color="black",
         background_color="white",
+        plot_perimeter=True,
     ):
-        """Plots a network graph with customizable node colors, sizes, edge widths, and figure properties."""
+        """Set up the plot background with figure size, optional circle perimeter, and background color.
+
+        Args:
+            figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
+            perimeter_color (str, optional): Color of the perimeter circle. Defaults to "black".
+            background_color (str, optional): Background color of the plot. Defaults to "white".
+            plot_perimeter (bool, optional): Whether to plot the perimeter circle. Defaults to True.
+        """
         node_coordinates = self.network_graph.node_coordinates
         center, radius = self._calculate_bounding_box(node_coordinates)
 
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
 
-        nx.draw_networkx_nodes(
-            self.network_graph.network,
-            pos=node_coordinates,
-            node_size=node_sizes,
-            node_color=node_colors,
-            alpha=1.00,
-            edgecolors=node_edge_colors,
-        )
-        nx.draw_networkx_edges(
-            self.network_graph.network,
-            pos=node_coordinates,
-            width=edge_widths,
-            edge_color=edge_colors,
-        )
-
-        circle = plt.Circle(
-            center, radius, linestyle="--", color=perimeter_color, fill=False, linewidth=1.5
-        )
-        ax.add_artist(circle)
+        if plot_perimeter:
+            circle = plt.Circle(
+                center, radius, linestyle="--", color=perimeter_color, fill=False, linewidth=1.5
+            )
+            ax.add_artist(circle)
 
         ax.set_xlim([center[0] - radius - 0.3, center[0] + radius + 0.3])
         ax.set_ylim([center[1] - radius - 0.3, center[1] + radius + 0.3])
@@ -141,6 +130,35 @@ class NetworkPlotter:
         ax.patch.set_visible(False)
 
         self.ax = ax
+        return fig, ax
+
+    def plot_network(
+        self,
+        node_sizes=50,
+        edge_widths=1.0,
+        node_colors="white",
+        edge_colors="black",
+        node_edge_colors="black",
+    ):
+        """Plot the network graph with customizable node colors, sizes, and edge widths."""
+        node_coordinates = self.network_graph.node_coordinates
+
+        nx.draw_networkx_nodes(
+            self.network_graph.network,
+            pos=node_coordinates,
+            node_size=node_sizes,
+            node_color=node_colors,
+            alpha=1.00,
+            edgecolors=node_edge_colors,
+            ax=self.ax,
+        )
+        nx.draw_networkx_edges(
+            self.network_graph.network,
+            pos=node_coordinates,
+            width=edge_widths,
+            edge_color=edge_colors,
+            ax=self.ax,
+        )
 
     def plot_contours(self, levels=5, bandwidth=0.8, grid_size=200, alpha=0.5):
         """Draws KDE contours for nodes in various domains of a network graph, highlighting areas of high density."""
@@ -326,5 +344,10 @@ class NetworkPlotter:
         )
         return self._calculate_total_distance(swapped_positions, domain_centroids)
 
-    def show(self):
-        plt.show()
+    def savefig(self, *args, **kwargs):
+        """Save the current plot to a file."""
+        plt.savefig(*args, bbox_inches="tight", **kwargs)
+
+    def show(self, *args, **kwargs):
+        """Display the current plot."""
+        plt.show(*args, **kwargs)
