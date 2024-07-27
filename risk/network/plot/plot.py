@@ -56,16 +56,10 @@ class NetworkPlotter:
             np.array([[1.0, 1.0, 1.0, 1.0]]),
             self.network_graph.colors,
         )
-        node_sizes = self._adjust_node_sizes(
+        node_sizes = _adjust_node_sizes(
             adjusted_network_colors, enriched_nodesize, nonenriched_nodesize
         )
         return adjusted_network_colors, node_sizes
-
-    def _adjust_node_sizes(self, array, enriched_nodesize=30, nonenriched_nodesize=10):
-        """Adjusts node sizes based on whether a row has been enriched (converted from all zeros)."""
-        is_nonenriched = np.all(array[:, :-1] == 1, axis=1) & (array[:, -1] == 1)
-        node_sizes = np.where(is_nonenriched, nonenriched_nodesize, enriched_nodesize)
-        return node_sizes
 
     def calculate_domain_centroids(self):
         """Calculates the most centrally located node within each domain based on the node positions."""
@@ -105,7 +99,7 @@ class NetworkPlotter:
             plot_network_perimeter (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
         """
         node_coordinates = self.network_graph.node_coordinates
-        center, radius = self._calculate_bounding_box(node_coordinates)
+        center, radius = _calculate_bounding_box(node_coordinates)
 
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
@@ -205,8 +199,8 @@ class NetworkPlotter:
                 xmin : xmax : complex(0, grid_size), ymin : ymax : complex(0, grid_size)
             ]
             z = kde(np.vstack([x.ravel(), y.ravel()])).reshape(x.shape)
-            thresholded_grid = self._generate_thresholded_grid(z)
-            connected = self._is_connected(thresholded_grid)
+            thresholded_grid = _generate_thresholded_grid(z)
+            connected = _is_connected(thresholded_grid)
             if not connected:
                 bandwidth += 0.05
 
@@ -230,15 +224,6 @@ class NetworkPlotter:
         for i in range(1, len(contour_levels)):
             c.collections[i].set_linewidth(0)
 
-    def _is_connected(self, thresholded_grid):
-        """Determines if a thresholded grid represents a single, connected component."""
-        labeled_array, num_features = label(thresholded_grid)
-        return num_features == 1
-
-    def _generate_thresholded_grid(self, z, threshold=0.05):
-        """Generates a thresholded grid from a KDE grid by applying a threshold value."""
-        return z > threshold
-
     def plot_labels(
         self,
         radius_margin=1.05,
@@ -254,12 +239,12 @@ class NetworkPlotter:
             raise RuntimeError("Network must be plotted before plotting labels.")
 
         domain_centroids = self.calculate_domain_centroids()
-        center, radius = self._calculate_bounding_box(
+        center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=radius_margin
         )
-        label_positions = self._determine_label_positions(domain_centroids, center, radius, offset)
+        label_positions = _determine_label_positions(domain_centroids, center, radius, offset)
         num_domains = len(domain_centroids)
-        equidistant_positions = self._equidistant_angles_around_center(
+        equidistant_positions = _equidistant_angles_around_center(
             center, radius, offset, num_domains
         )
         label_positions = {
@@ -284,31 +269,6 @@ class NetworkPlotter:
                 arrowprops=dict(arrowstyle="->", color=color, linewidth=arrow_linewidth),
             )
 
-    def _calculate_bounding_box(self, node_coordinates, radius_margin=1.05):
-        """Calculates the bounding box of the network based on node coordinates."""
-        x_min, y_min = np.min(node_coordinates, axis=0)
-        x_max, y_max = np.max(node_coordinates, axis=0)
-        center = np.array([(x_min + x_max) / 2, (y_min + y_max) / 2])
-        radius = max(x_max - x_min, y_max - y_min) / 2 * radius_margin
-        return center, radius
-
-    def _determine_label_positions(self, domain_centroids, center, radius, label_offset):
-        """Determines the label positions around the circle perimeter based on domain centroids."""
-        label_positions = {}
-        for domain, centroid in domain_centroids.items():
-            direction = centroid - center
-            direction /= np.linalg.norm(direction)
-            label_positions[domain] = center + direction * (radius + label_offset)
-        return label_positions
-
-    def _equidistant_angles_around_center(self, center, radius, label_offset, num_domains):
-        """Calculates positions around a center at equidistant angles."""
-        angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
-        return [
-            center + (radius + label_offset) * np.array([np.cos(angle), np.sin(angle)])
-            for angle in angles
-        ]
-
     def _optimize_label_positions(self, best_label_positions, domain_centroids):
         """Optimizes label positions around the perimeter to minimize total distance to centroids."""
         improvement = True
@@ -316,10 +276,10 @@ class NetworkPlotter:
             improvement = False
             for i in range(len(domain_centroids)):
                 for j in range(i + 1, len(domain_centroids)):
-                    current_distance = self._calculate_total_distance(
+                    current_distance = _calculate_total_distance(
                         best_label_positions, domain_centroids
                     )
-                    swapped_distance = self._swap_and_evaluate(
+                    swapped_distance = _swap_and_evaluate(
                         best_label_positions, i, j, domain_centroids
                     )
                     if swapped_distance < current_distance:
@@ -331,28 +291,78 @@ class NetworkPlotter:
                         improvement = True
         return best_label_positions
 
-    def _calculate_total_distance(self, label_positions, domain_centroids):
-        """Calculates the total distance from label positions to their domain centroids."""
-        total_distance = 0
-        for domain, pos in label_positions.items():
-            centroid = domain_centroids[domain]
-            total_distance += np.linalg.norm(centroid - pos)
-        return total_distance
-
-    def _swap_and_evaluate(self, label_positions, i, j, domain_centroids):
-        """Swaps two labels and evaluates the total distance after the swap."""
-        labels = list(label_positions.keys())
-        swapped_positions = label_positions.copy()
-        swapped_positions[labels[i]], swapped_positions[labels[j]] = (
-            swapped_positions[labels[j]],
-            swapped_positions[labels[i]],
-        )
-        return self._calculate_total_distance(swapped_positions, domain_centroids)
-
-    def savefig(self, *args, **kwargs):
+    @staticmethod
+    def savefig(*args, **kwargs):
         """Save the current plot to a file."""
         plt.savefig(*args, bbox_inches="tight", **kwargs)
 
-    def show(self, *args, **kwargs):
+    @staticmethod
+    def show(*args, **kwargs):
         """Display the current plot."""
         plt.show(*args, **kwargs)
+
+
+def _adjust_node_sizes(array, enriched_nodesize=30, nonenriched_nodesize=10):
+    """Adjusts node sizes based on whether a row has been enriched (converted from all zeros)."""
+    is_nonenriched = np.all(array[:, :-1] == 1, axis=1) & (array[:, -1] == 1)
+    node_sizes = np.where(is_nonenriched, nonenriched_nodesize, enriched_nodesize)
+    return node_sizes
+
+
+def _is_connected(thresholded_grid):
+    """Determines if a thresholded grid represents a single, connected component."""
+    _, num_features = label(thresholded_grid)
+    return num_features == 1
+
+
+def _generate_thresholded_grid(z, threshold=0.05):
+    """Generates a thresholded grid from a KDE grid by applying a threshold value."""
+    return z > threshold
+
+
+def _calculate_bounding_box(node_coordinates, radius_margin=1.05):
+    """Calculates the bounding box of the network based on node coordinates."""
+    x_min, y_min = np.min(node_coordinates, axis=0)
+    x_max, y_max = np.max(node_coordinates, axis=0)
+    center = np.array([(x_min + x_max) / 2, (y_min + y_max) / 2])
+    radius = max(x_max - x_min, y_max - y_min) / 2 * radius_margin
+    return center, radius
+
+
+def _determine_label_positions(domain_centroids, center, radius, label_offset):
+    """Determines the label positions around the circle perimeter based on domain centroids."""
+    label_positions = {}
+    for domain, centroid in domain_centroids.items():
+        direction = centroid - center
+        direction /= np.linalg.norm(direction)
+        label_positions[domain] = center + direction * (radius + label_offset)
+    return label_positions
+
+
+def _equidistant_angles_around_center(center, radius, label_offset, num_domains):
+    """Calculates positions around a center at equidistant angles."""
+    angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
+    return [
+        center + (radius + label_offset) * np.array([np.cos(angle), np.sin(angle)])
+        for angle in angles
+    ]
+
+
+def _calculate_total_distance(label_positions, domain_centroids):
+    """Calculates the total distance from label positions to their domain centroids."""
+    total_distance = 0
+    for domain, pos in label_positions.items():
+        centroid = domain_centroids[domain]
+        total_distance += np.linalg.norm(centroid - pos)
+    return total_distance
+
+
+def _swap_and_evaluate(label_positions, i, j, domain_centroids):
+    """Swaps two labels and evaluates the total distance after the swap."""
+    labels = list(label_positions.keys())
+    swapped_positions = label_positions.copy()
+    swapped_positions[labels[i]], swapped_positions[labels[j]] = (
+        swapped_positions[labels[j]],
+        swapped_positions[labels[i]],
+    )
+    return _calculate_total_distance(swapped_positions, domain_centroids)
