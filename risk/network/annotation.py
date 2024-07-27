@@ -100,7 +100,7 @@ def chop_and_filter(s, top_words_count=6):
     ]
 
     # Simplify the word list to remove similar words based on the Jaccard index
-    simplified_words = simplify_word_list(words, threshold=0.90)
+    simplified_words = _simplify_word_list(words, threshold=0.90)
 
     # Count the occurrences of each word and sort them by frequency in descending order
     word_counts = Counter(simplified_words)
@@ -111,19 +111,19 @@ def chop_and_filter(s, top_words_count=6):
     return ", ".join(top_words)
 
 
-def simplify_word_list(words, threshold=0.90):
+def _simplify_word_list(words, threshold=0.90):
     """Filter out words that are too similar based on the Jaccard index."""
     filtered_words = []
     for word in words:
         word_set = set(word)
         if all(
-            jaccard_index(word_set, set(other_word)) < threshold for other_word in filtered_words
+            _jaccard_index(word_set, set(other_word)) < threshold for other_word in filtered_words
         ):
             filtered_words.append(word)
     return filtered_words
 
 
-def jaccard_index(set1, set2):
+def _jaccard_index(set1, set2):
     """Calculate the Jaccard Index of two sets."""
     intersection = len(set1.intersection(set2))
     union = len(set1.union(set2))
