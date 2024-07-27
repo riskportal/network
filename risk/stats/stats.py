@@ -21,24 +21,24 @@ DISPATCH_PERMUTATION_TABLE = {
 
 
 def compute_pvalues_by_randomization(
-    neighborhoods_matrix,
-    annotation_matrix,
-    neighborhood_score_metric,
-    network_enrichment_direction,
+    neighborhoods,
+    annotations,
+    score_metric="sum",
+    null_distribution="network",
+    tail="right",
+    num_permutations=1000,
     pval_cutoff=1.00,
     apply_fdr=False,
     fdr_cutoff=1.00,
-    null_distribution="network",
-    num_permutations=1000,
     random_seed=888,
 ):
-    # NOTE: Both `neighborhoods_matrix` and `annotation_matrix` are binary matrices and must NOT have any NaN values
-    neighborhoods_matrix = neighborhoods_matrix.astype(np.float32)
-    annotation_matrix = annotation_matrix.astype(np.float32)
-    neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[neighborhood_score_metric]
+    # NOTE: Both `neighborhoods` and `annotations` are binary matrices and must NOT have any NaN values
+    neighborhoods = neighborhoods.astype(np.float32)
+    annotations = annotations.astype(np.float32)
+    neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[score_metric]
     counts_neg, counts_pos = run_permutation_test(
-        neighborhoods_matrix,
-        annotation_matrix,
+        neighborhoods,
+        annotations,
         neighborhood_score_func,
         null_distribution,
         num_permutations,
@@ -70,7 +70,7 @@ def compute_pvalues_by_randomization(
     nes_neg = -np.log10(neg_enrichment_score)
     nes_pos = -np.log10(pos_enrichment_score)
 
-    if network_enrichment_direction == "lowest":
+    if tail == "left":
         # These two matrices should have the same shape
         nes = nes_neg
         alpha_threshold_matrix = neg_alpha_threshold_matrix
@@ -85,36 +85,36 @@ def compute_pvalues_by_randomization(
     nes_binary[valid_idxs] = alpha_threshold_matrix[valid_idxs]
     sum_enriched_neighborhoods = np.sum(nes_binary, axis=0)
     return {
-        "neighborhood_enrichment_matrix": nes,
-        "neighborhood_binary_enrichment_matrix_below_alpha": nes_binary,
-        "neighborhood_enrichment_sums": sum_enriched_neighborhoods,
+        "enrichment_sums": sum_enriched_neighborhoods,
+        "enrichment_matrix": nes,
+        "binary_enrichment_matrix_below_alpha": nes_binary,
     }
 
 
 def run_permutation_test(
-    neighborhoods_matrix,
-    annotation_matrix,
+    neighborhoods,
+    annotations,
     neighborhood_score_func,
     null_distribution="network",
     num_permutations=1000,
     random_seed=888,
 ):
     np.random.seed(random_seed)
-    # NOTE: `annotation_matrix` is a Numpy 2D matrix of type float.64 WITH NaN values!
-    # NOTE: Prior to introducing `annotation_matrix` to ANY permuation test, all NaN values must be set to 0
+    # NOTE: `annotations` is a Numpy 2D matrix of type float.64 WITH NaN values!
+    # NOTE: Prior to introducing `annotations` to ANY permuation test, all NaN values must be set to 0
     # First capture which distribution we want to assess enrichment: 1) Network - checks if neighborhood of
     # nodes enriched for an annotation compared to all nodes in a network or 2) Annotation file - checks if
     # neighborhood of nodes enriched for an annotation compared to all nodes found in the annotation
     if null_distribution == "network":
-        idxs = range(annotation_matrix.shape[0])
+        idxs = range(annotations.shape[0])
     else:
-        idxs = np.nonzero(np.sum(~np.isnan(annotation_matrix), axis=1))[0]
+        idxs = np.nonzero(np.sum(~np.isnan(annotations), axis=1))[0]
     # Setting all NaN values to 0 AFTER capturing appropriate permutation indices
-    annotation_matrix[np.isnan(annotation_matrix)] = 0
-    # The observed test statistic indices for `annotation_matrix`
-    annotation_matrix_obsv = annotation_matrix[idxs]
+    annotations[np.isnan(annotations)] = 0
+    # The observed test statistic indices for `annotations`
+    annotation_matrix_obsv = annotations[idxs]
     # `neighborhoods_matrix_obsv` must match in column number to `annotation_matrix_obsv` row number
-    neighborhoods_matrix_obsv = neighborhoods_matrix.T[idxs].T
+    neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
     # This is the observed test statistic
     with np.errstate(invalid="ignore", divide="ignore"):
         N_in_neighborhood_in_group_obsv = neighborhood_score_func(
@@ -131,7 +131,7 @@ def run_permutation_test(
         # We are computing the permuted test statistics
         for i in range(num_permutations):
             # `annotation_matrix_permut` must match in row number to `neighborhoods_matrix_obsv` column number
-            annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs)]
+            annotation_matrix_permut = annotations[np.random.permutation(idxs)]
             # Below is NOT the bottleneck...
             with np.errstate(invalid="ignore", divide="ignore"):
                 N_in_neighborhood_in_group_perm = neighborhood_score_func(
