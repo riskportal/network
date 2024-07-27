@@ -4,8 +4,8 @@ risk/network/neighborhoods
 """
 
 import warnings
-from collections import Counter
 
+from collections import Counter
 import community as community_louvain
 import networkx as nx
 import numpy as np
@@ -26,176 +26,289 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 
 def get_network_neighborhoods(
-    network,
-    neighborhood_distance_metric,
-    neighborhood_diameter,
-    compute_sphere=False,
-    louvain_resolution=1.0,
+    network, distance_metric, neighborhood_diameter, compute_sphere=False, louvain_resolution=1.0
 ):
-    # Take account the curvature of a sphere to sync neighborhood radius between 2D and 3D graphs
-    neighborhood_radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
-    # Initialize neighborhoods matrix
+    """Calculate the neighborhoods for each node in the network based on the specified distance metric.
+
+    Args:
+        network (nx.Graph): The network graph.
+        distance_metric (str): The distance metric to use ('euclidean', 'shortpath', 'louvain', 'affinity_propagation').
+        neighborhood_diameter (float): The neighborhood_diameter of the neighborhoods.
+        compute_sphere (bool, optional): Whether to compute the neighborhoods considering a spherical surface. Defaults to False.
+        louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
+
+    Returns:
+        np.ndarray: Neighborhood matrix.
+    """
+    radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
-    if neighborhood_distance_metric == "euclidean":
-        x = np.array(list(dict(network.nodes.data("x")).values()))
-        y = np.array(list(dict(network.nodes.data("y")).values()))
-        node_coordinates = np.stack((x, y), axis=1)
-        node_distances = squareform(pdist(node_coordinates, "euclidean"))
-        neighborhoods[node_distances < neighborhood_radius] = 1
-
-    elif neighborhood_distance_metric == "shortpath":
-        # First, compute Djikstra's shortest path
-        all_shortest_paths = dict(
-            nx.all_pairs_dijkstra_path_length(
-                network,
-                weight="length",
-                cutoff=neighborhood_radius,
-            )
-        )
-        # Serves for better fine tuning... literally incorporate length for neighborhood score
-        for source, targets in all_shortest_paths.items():
-            for target, length in targets.items():
-                # Scale the length of node distance after computing node distances on a normalized network (look at io file)
-                neighborhoods[source, target] = (
-                    1 if np.isnan(length) or length == 0 else np.sqrt(1 / length)
-                )
-
-    elif neighborhood_distance_metric == "louvain":
-        partition = community_louvain.best_partition(network, resolution=louvain_resolution)
-        for node_i, community_i in partition.items():
-            for node_j, community_j in partition.items():
-                if community_i == community_j:
-                    neighborhoods[node_i, node_j] = 1
-
-    elif neighborhood_distance_metric == "affinity_propagation":
-        # Convert the network into a distance matrix
-        distance_matrix = nx.floyd_warshall_numpy(network)
-        # Affinity Propagation requires similarities, not distances, hence we negate the distances
-        similarity_matrix = -distance_matrix
-        # Apply Affinity Propagation
-        clustering = AffinityPropagation(affinity="precomputed", random_state=5)
-        clustering.fit(similarity_matrix)
-        # Update neighborhoods matrix based on Affinity Propagation clustering results
-        labels = clustering.labels_
-        for i, label_i in enumerate(labels):
-            for j, label_j in enumerate(labels):
-                if label_i == label_j:
-                    neighborhoods[i, j] = 1
+    if distance_metric == "euclidean":
+        neighborhoods = _calculate_euclidean_neighborhoods(network, radius)
+    elif distance_metric == "shortpath":
+        neighborhoods = _calculate_shortest_path_neighborhoods(network, radius)
+    elif distance_metric == "louvain":
+        neighborhoods = _calculate_louvain_neighborhoods(network, louvain_resolution)
+    elif distance_metric == "affinity_propagation":
+        neighborhoods = _calculate_affinity_propagation_neighborhoods(network)
 
     return neighborhoods
 
 
+def _calculate_euclidean_neighborhoods(network, radius):
+    """Helper function to calculate neighborhoods using Euclidean distances.
+
+    Args:
+        network (nx.Graph): The network graph.
+        radius (float): The radius for neighborhood calculation.
+
+    Returns:
+        np.ndarray: Neighborhood matrix based on Euclidean distances.
+    """
+    # Extract x and y coordinates from the network nodes
+    x = np.array(list(dict(network.nodes.data("x")).values()))
+    y = np.array(list(dict(network.nodes.data("y")).values()))
+    node_coordinates = np.stack((x, y), axis=1)
+
+    # Calculate Euclidean distances between all node pairs
+    node_distances = squareform(pdist(node_coordinates, "euclidean"))
+
+    # Determine neighborhoods based on the radius
+    neighborhoods = np.zeros_like(node_distances, dtype=int)
+    neighborhoods[node_distances < radius] = 1
+    return neighborhoods
+
+
+def _calculate_shortest_path_neighborhoods(network, radius):
+    """Helper function to calculate neighborhoods using shortest path distances.
+
+    Args:
+        network (nx.Graph): The network graph.
+        radius (float): The radius for neighborhood calculation.
+
+    Returns:
+        np.ndarray: Neighborhood matrix based on shortest path distances.
+    """
+    # Compute shortest paths within the specified radius
+    all_shortest_paths = dict(
+        nx.all_pairs_dijkstra_path_length(network, weight="length", cutoff=radius)
+    )
+    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
+
+    # Populate neighborhoods matrix based on shortest paths
+    for source, targets in all_shortest_paths.items():
+        for target, length in targets.items():
+            neighborhoods[source, target] = (
+                1 if np.isnan(length) or length == 0 else np.sqrt(1 / length)
+            )
+    return neighborhoods
+
+
+def _calculate_louvain_neighborhoods(network, resolution):
+    """Helper function to calculate neighborhoods using the Louvain method.
+
+    Args:
+        network (nx.Graph): The network graph.
+        resolution (float): Resolution parameter for the Louvain method.
+
+    Returns:
+        np.ndarray: Neighborhood matrix based on the Louvain method.
+    """
+    # Apply Louvain method to partition the network
+    partition = community_louvain.best_partition(network, resolution=resolution)
+    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
+
+    # Assign neighborhoods based on community partitions
+    for node_i, community_i in partition.items():
+        for node_j, community_j in partition.items():
+            if community_i == community_j:
+                neighborhoods[node_i, node_j] = 1
+    return neighborhoods
+
+
+def _calculate_affinity_propagation_neighborhoods(network):
+    """Helper function to calculate neighborhoods using Affinity Propagation.
+
+    Args:
+        network (nx.Graph): The network graph.
+
+    Returns:
+        np.ndarray: Neighborhood matrix based on Affinity Propagation clustering.
+    """
+    # Compute shortest paths to form a distance matrix
+    distance_matrix = nx.floyd_warshall_numpy(network)
+
+    # Convert distances to similarities
+    similarity_matrix = -distance_matrix
+
+    # Apply Affinity Propagation clustering
+    clustering = AffinityPropagation(affinity="precomputed", random_state=5)
+    clustering.fit(similarity_matrix)
+    labels = clustering.labels_
+    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
+
+    # Assign neighborhoods based on clustering results
+    for i, label_i in enumerate(labels):
+        for j, label_j in enumerate(labels):
+            if label_i == label_j:
+                neighborhoods[i, j] = 1
+    return neighborhoods
+
+
 def define_domains(
-    neighborhood_enrichment_matrix,
-    binary_enrichment_matrix_below_alpha,
-    annotation_matrix,
-    group_distance_criterion,
-    group_distance_linkage,
-    group_distance_metric,
+    top_annotations,
+    neighborhoods_enrichment,
+    significant_neighborhoods_enrichment,
+    linkage_criterion,
+    linkage_method,
+    linkage_metric,
 ):
-    m = binary_enrichment_matrix_below_alpha[:, annotation_matrix["top attributes"]].T
-    best_linkage, best_metric, best_threshold = optimize_silhouette_across_linkage_and_metrics(
-        m, group_distance_criterion, group_distance_linkage, group_distance_metric
+    """Define domains and assign nodes to these domains based on their enrichment scores and clustering.
+
+    Args:
+        neighborhoods (np.ndarray): The neighborhood enrichment matrix.
+        top_annotations (pd.DataFrame): DataFrame of top annotation data for the network nodes.
+        significant_enrichment (np.ndarray): The binary enrichment matrix below alpha.
+        linkage_criterion (str): The clustering criterion for defining groups.
+        linkage_method (str): The linkage method for clustering.
+        linkage_metric (str): The linkage metric for clustering.
+
+    Returns:
+        pd.DataFrame: DataFrame with primary domain and primary NES for each node.
+    """
+    # Perform hierarchical clustering on the binary enrichment matrix
+    m = significant_neighborhoods_enrichment[:, top_annotations["top attributes"]].T
+    best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
+        m, linkage_criterion, linkage_method, linkage_metric
     )
     Z = linkage(m, method=best_linkage, metric=best_metric)
+
     print(
-        f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{group_distance_criterion}'[/yellow] with [blue]distance linkage[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]distance metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
+        f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{linkage_criterion}'[/yellow] with [blue]linkage method[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]linkage metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
     )
-    print(f"[yellow]Optimal distance threshold: [red]{round(best_threshold, 3)}[/red][/yellow]")
+    print(f"[yellow]Optimal linkage threshold: [red]{round(best_threshold, 3)}[/red][/yellow]")
 
     max_d_optimal = np.max(Z[:, 2]) * best_threshold
-    domains = fcluster(Z, max_d_optimal, criterion=group_distance_criterion)
+    domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
 
-    annotation_matrix["domain"] = 0
-    annotation_matrix.loc[annotation_matrix["top attributes"], "domain"] = domains
+    # Assign domains to annotation matrix
+    top_annotations["domain"] = 0
+    top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
 
-    # Assign nodes to domains
+    # Create DataFrames to store domain information
     node2nes = pd.DataFrame(
-        data=neighborhood_enrichment_matrix,
-        columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
+        data=neighborhoods_enrichment,
+        columns=[top_annotations.index.values, top_annotations["domain"]],
     )
     node2nes_binary = pd.DataFrame(
-        data=binary_enrichment_matrix_below_alpha,
-        columns=[annotation_matrix.index.values, annotation_matrix["domain"]],
+        data=significant_neighborhoods_enrichment,
+        columns=[top_annotations.index.values, top_annotations["domain"]],
     )
     node2domain = node2nes_binary.groupby(level="domain", axis=1).sum()
+
     t_max = node2domain.loc[:, 1:].max(axis=1)
     t_idxmax = node2domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
 
+    # Assign primary domain and NES
     node2domain["primary domain"] = t_idxmax
-    # Get the max NES for the primary domain
     o = node2nes.groupby(level="domain", axis=1).max()
     i = pd.Series(t_idxmax)
-    # Extract values from 'o' at the indices specified by 'i'
-    # Subtrace i.values - 1, as i.values starts with 1 and we are looking at a 0-based index
     node2domain["primary nes"] = o.values[i.index, i.values - 1]
 
     return node2domain
 
 
-def trim_domains(annotation_matrix, domains_matrix, min_cluster_size, max_cluster_size):
-    # Remove domains that are the top choice for less than a certain number of neighborhoods
-    domain_counts = domains_matrix["primary domain"].value_counts()
+def trim_domains_and_top_annotations(
+    domains, top_annotations, min_cluster_size=5, max_cluster_size=1000
+):
+    """Trim domains and top annotations that do not meet size criteria and find outliers.
+
+    Args:
+        domains (pd.DataFrame): DataFrame of domain data for the network nodes.
+        top_annotations (pd.DataFrame): DataFrame of top annotation data for the network nodes.
+        min_cluster_size (int): Minimum size of a cluster to be retained.
+        max_cluster_size (int): Maximum size of a cluster to be retained.
+
+    Returns:
+        tuple: Trimmed annotations, domains, and a DataFrame with domain labels.
+    """
+    # Identify domains to remove based on size criteria
+    domain_counts = domains["primary domain"].value_counts()
     to_remove = list(domain_counts[domain_counts < min_cluster_size].index)
     to_remove.extend(list(domain_counts[domain_counts > max_cluster_size].index))
-    to_remove.extend(find_outlier_domains(Counter(domains_matrix["primary domain"])))
-    annotation_matrix["domain"].replace(to_remove, 888888, inplace=True)
-    domains_matrix.loc[
-        domains_matrix["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
+    to_remove.extend(_find_outlier_domains(Counter(domains["primary domain"])))
+
+    # Mark domains to be removed
+    top_annotations["domain"].replace(to_remove, 888888, inplace=True)
+    domains.loc[
+        domains["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
     ] = 888888
 
-    # Make labels for each domain
-    domains_labels = (
-        annotation_matrix.groupby("domain")["name"].apply(chop_and_filter).reset_index()
-    )
+    # Generate domain labels
+    domains_labels = top_annotations.groupby("domain")["name"].apply(chop_and_filter).reset_index()
     trimmed_domains_matrix = pd.DataFrame(domains_labels).rename(
         columns={"domain": "id", "name": "label"}
     )
     trimmed_domains_matrix.set_index("id", drop=False, inplace=True)
 
-    return annotation_matrix, domains_matrix, trimmed_domains_matrix
+    return top_annotations, domains, trimmed_domains_matrix
 
 
-def find_outlier_domains(data_dict, z_score_threshold=3):
-    # Extract values from the dictionary
+def _find_outlier_domains(data_dict, z_score_threshold=3):
+    """Identify outlier domains based on z-score.
+
+    Args:
+        data_dict (dict): Dictionary with domain counts.
+        z_score_threshold (float, optional): Z-score threshold for identifying outliers. Defaults to 3.
+
+    Returns:
+        list: List of outlier domain keys.
+    """
     values = np.array(list(data_dict.values()))
-    # Calculate mean and standard deviation
     mean = np.mean(values)
     std_dev = np.std(values)
-    # Identify outliers
-    outlier_keys = []
-    for key, value in data_dict.items():
-        z_score = (value - mean) / std_dev
-        if abs(z_score) > z_score_threshold:
-            outlier_keys.append(key)
-
+    outlier_keys = [
+        key for key, value in data_dict.items() if abs((value - mean) / std_dev) > z_score_threshold
+    ]
     return outlier_keys
 
 
-# Function to perform binary search silhouette for a given metric and linkage method
-def binary_search_silhouette_metric(
-    Z, m, group_distance_metric, criterion, lower_bound=0.0, upper_bound=1.0, tolerance=0.01
+def _binary_search_silhouette_metric(
+    Z, m, metric, linkage_criterion, lower_bound=0.0, upper_bound=1.0, tolerance=0.01
 ):
+    """Perform binary search for the best silhouette score with a given metric and linkage method.
+
+    Args:
+        Z (np.ndarray): Linkage matrix.
+        m (np.ndarray): Data matrix.
+        metric (str): Distance metric for silhouette score calculation.
+        linkage_criterion (str): Clustering criterion.
+        lower_bound (float, optional): Lower bound for search. Defaults to 0.0.
+        upper_bound (float, optional): Upper bound for search. Defaults to 1.0.
+        tolerance (float, optional): Tolerance for search. Defaults to 0.01.
+
+    Returns:
+        tuple: Best threshold and best silhouette score.
+    """
     best_threshold = lower_bound
     best_score = -np.inf
 
     while upper_bound - lower_bound > tolerance:
         mid = (lower_bound + upper_bound) / 2
         max_d_mid = np.max(Z[:, 2]) * mid
-        clusters_mid = fcluster(Z, max_d_mid, criterion=criterion)
+        clusters_mid = fcluster(Z, max_d_mid, criterion=linkage_criterion)
 
         max_d_high = np.max(Z[:, 2]) * (mid + tolerance)
-        clusters_high = fcluster(Z, max_d_high, criterion=criterion)
+        clusters_high = fcluster(Z, max_d_high, criterion=linkage_criterion)
 
         try:
-            score_mid = silhouette_score(m, clusters_mid, metric=group_distance_metric)
+            score_mid = silhouette_score(m, clusters_mid, metric=metric)
         except ValueError:
             score_mid = -np.inf
 
         try:
-            score_high = silhouette_score(m, clusters_high, metric=group_distance_metric)
+            score_high = silhouette_score(m, clusters_high, metric=metric)
         except ValueError:
             score_high = -np.inf
 
@@ -215,72 +328,122 @@ def binary_search_silhouette_metric(
     return best_threshold, best_score
 
 
-def find_best_silhouette_score(
-    Z, m, group_distance_metric, criterion, lower_bound=0.0, upper_bound=1.0, step=0.01
+def _find_best_silhouette_score(
+    Z, m, linkage_metric, linkage_criterion, lower_bound=0.001, upper_bound=1.0, resolution=0.001
 ):
-    best_score = -np.inf  # Starting with -1, as silhouette scores can be negative
+    """Find the best silhouette score using binary search.
+
+    Args:
+        Z (np.ndarray): Linkage matrix.
+        m (np.ndarray): Data matrix.
+        linkage_metric (str): Linkage metric for silhouette score calculation.
+        linkage_criterion (str): Clustering criterion.
+        lower_bound (float, optional): Lower bound for search. Defaults to 0.001.
+        upper_bound (float, optional): Upper bound for search. Defaults to 1.0.
+        resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.01.
+
+    Returns:
+        tuple: Best threshold and best silhouette score.
+    """
+    best_score = -np.inf
     best_threshold = None
 
-    # Iterate over the range of potential thresholds
-    for threshold in np.arange(lower_bound, upper_bound, step):
-        max_d = np.max(Z[:, 2]) * threshold
-        # Generate clusters at the current threshold
-        clusters = fcluster(Z, max_d, criterion=criterion)
+    # Test lower bound
+    max_d_lower = np.max(Z[:, 2]) * lower_bound
+    clusters_lower = fcluster(Z, max_d_lower, criterion=linkage_criterion)
+    try:
+        score_lower = silhouette_score(m, clusters_lower, metric=linkage_metric)
+    except ValueError:
+        score_lower = -np.inf
 
-        # Calculate the silhouette score for the current clustering
+    # Test upper bound
+    max_d_upper = np.max(Z[:, 2]) * upper_bound
+    clusters_upper = fcluster(Z, max_d_upper, criterion=linkage_criterion)
+    try:
+        score_upper = silhouette_score(m, clusters_upper, metric=linkage_metric)
+    except ValueError:
+        score_upper = -np.inf
+
+    # Determine initial bounds for binary search
+    if score_lower > score_upper:
+        best_score = score_lower
+        best_threshold = lower_bound
+        upper_bound = (lower_bound + upper_bound) / 2
+    else:
+        best_score = score_upper
+        best_threshold = upper_bound
+        lower_bound = (lower_bound + upper_bound) / 2
+
+    # Binary search loop
+    while upper_bound - lower_bound > resolution:
+        mid_threshold = (upper_bound + lower_bound) / 2
+
+        max_d_mid = np.max(Z[:, 2]) * mid_threshold
+        clusters_mid = fcluster(Z, max_d_mid, criterion=linkage_criterion)
         try:
-            score = silhouette_score(m, clusters, metric=group_distance_metric)
-            # Check if we got the best score so far
-            if score > best_score:
-                best_score = score
-                best_threshold = threshold
-        except ValueError as e:
-            # If an error occurs during silhouette score calculation, handle it here
-            # For example, you can print a warning message and continue to the next iteration
-            score = -np.inf
+            score_mid = silhouette_score(m, clusters_mid, metric=linkage_metric)
+        except ValueError:
+            score_mid = -np.inf
+        # Update best score and threshold if mid-point is better
+        if score_mid > best_score:
+            best_score = score_mid
+            best_threshold = mid_threshold
+
+        # Adjust bounds based on the scores
+        if score_lower > score_upper:
+            upper_bound = mid_threshold
+        else:
+            lower_bound = mid_threshold
 
     return best_threshold, best_score
 
 
-def optimize_silhouette_across_linkage_and_metrics(
-    m, group_distance_criterion, group_distance_linkage, group_distance_metric
+def _optimize_silhouette_across_linkage_and_metrics(
+    m, linkage_criterion, linkage_method, linkage_metric
 ):
+    """Optimize silhouette score across different linkage methods and distance metrics.
+
+    Args:
+        m (np.ndarray): Data matrix.
+        linkage_criterion (str): Clustering criterion.
+        linkage_method (str): Linkage method for clustering.
+        linkage_metric (str): Linkage metric for clustering.
+
+    Returns:
+        tuple: Best linkage method, linkage metric, and threshold.
+    """
     best_overall_score = -np.inf
     best_overall_metric = "cosine"
     best_overall_threshold = 1
     best_overall_linkage = "average"
-    group_linkage_methods = (
-        GROUP_LINKAGE_METHODS if group_distance_linkage == "auto" else [group_distance_linkage]
-    )
-    group_distance_metrics = (
-        GROUP_DISTANCE_METRICS if group_distance_metric == "auto" else [group_distance_metric]
-    )
-    total = len(group_linkage_methods) * len(group_distance_metrics)
+
+    linkage_methods = GROUP_LINKAGE_METHODS if linkage_method == "auto" else [linkage_method]
+    linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric == "auto" else [linkage_metric]
+    total = len(linkage_methods) * len(linkage_metrics)
 
     with Progress() as progress:
         task = progress.add_task(
-            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]distance linkage[/blue] and [blue]distance metric[/blue]...",
+            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage method[/blue] and [blue]linkage metric[/blue]...",
             total=total,
         )
-        for linkage_method in group_linkage_methods:
-            for metric in group_distance_metrics:
+        for method in linkage_methods:
+            for metric in linkage_metrics:
                 try:
-                    Z = linkage(m, method=linkage_method, metric=metric)
-                    if len(group_linkage_methods) == 1 or len(group_distance_metrics) == 1:
-                        threshold, score = find_best_silhouette_score(
-                            Z, m, metric, group_distance_criterion
+                    Z = linkage(m, method=method, metric=metric)
+                    if len(linkage_methods) == 1 or len(linkage_metrics) == 1:
+                        threshold, score = _find_best_silhouette_score(
+                            Z, m, metric, linkage_criterion
                         )
                     else:
-                        threshold, score = binary_search_silhouette_metric(
-                            Z, m, metric, group_distance_criterion
+                        threshold, score = _binary_search_silhouette_metric(
+                            Z, m, metric, linkage_criterion
                         )
                     if score > best_overall_score:
                         best_overall_score = score
                         best_overall_metric = metric
                         best_overall_threshold = threshold
-                        best_overall_linkage = linkage_method
-                except Exception as e:
-                    # Ignoring exceptions that arise due to incompatibility between metrics and linkage methods
+                        best_overall_linkage = method
+                except Exception:
                     pass
                 finally:
                     progress.update(task, advance=1)
