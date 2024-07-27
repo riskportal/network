@@ -89,20 +89,20 @@ class NetworkPlotter:
         )
         return node_colors, node_sizes
 
-    def plot_background(
+    def initialize_plot(
         self,
         figsize=(10, 10),
-        perimeter_color="black",
         background_color="white",
-        plot_perimeter=True,
+        network_perimeter_color="black",
+        plot_network_perimeter=True,
     ):
-        """Set up the plot background with figure size, optional circle perimeter, and background color.
+        """Initialize the plot with figure size, optional circle perimeter, and background color.
 
         Args:
             figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
-            perimeter_color (str, optional): Color of the perimeter circle. Defaults to "black".
             background_color (str, optional): Background color of the plot. Defaults to "white".
-            plot_perimeter (bool, optional): Whether to plot the perimeter circle. Defaults to True.
+            network_perimeter_color (str, optional): Color of the network perimeter circle. Defaults to "black".
+            plot_network_perimeter (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
         """
         node_coordinates = self.network_graph.node_coordinates
         center, radius = self._calculate_bounding_box(node_coordinates)
@@ -110,9 +110,14 @@ class NetworkPlotter:
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
 
-        if plot_perimeter:
+        if plot_network_perimeter:
             circle = plt.Circle(
-                center, radius, linestyle="--", color=perimeter_color, fill=False, linewidth=1.5
+                center,
+                radius,
+                linestyle="--",
+                color=network_perimeter_color,
+                fill=False,
+                linewidth=1.5,
             )
             ax.add_artist(circle)
 
