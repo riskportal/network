@@ -9,7 +9,7 @@ import networkx as nx
 import pandas as pd
 
 
-def load_network_annotation(network, annotation_filepath):
+def load_annotation(network, annotation_filepath):
     # Convert JSON data to a Python dictionary
     with open(annotation_filepath, "r") as file:
         annotation_input = json.load(file)
@@ -37,7 +37,7 @@ def load_network_annotation(network, annotation_filepath):
     ordered_nodes = tuple(annotation_pivot.index)
     ordered_annotations = tuple(annotation_pivot.columns)
     return {
-        "ordered_row_nodes": ordered_nodes,
-        "ordered_column_annotations": ordered_annotations,
-        "annotation_matrix": annotation_pivot.to_numpy(),
+        "ordered_nodes": ordered_nodes,
+        "ordered_annotations": ordered_annotations,
+        "matrix": annotation_pivot.to_numpy(),
     }
