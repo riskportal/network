@@ -24,7 +24,7 @@ network:
     include-edge-weight: true # OPTIONS: true, false
     null-distribution: network # OPTIONS: network, annotation
     type: permutation
-    num-permutations: 1000
+    num-permutations: 200
     direction: highest  # OPTIONS: Enrichment direction: highest, lowest
     min-cluster-size: 5 # Minimum final cluster membership size - suggested to omit small clusters
     max-cluster-size: 1000 # Maximum final cluster membership size - suggested to omit large clusters
@@ -34,7 +34,7 @@ network:
 
   node:
     neighborhood-distance-metric: shortpath # OPTIONS: affinity_propagation, euclidean, louvain, shortpath
-    neighborhood-distance-louvaine-resolution: 0.1
+    neighborhood-distance-louvain-resolution: 0.1
     neighborhood-score-metric: variance  # OPTIONS: sum, variance, zscore
     neighborhood-diameter: 1.00 # OPTIONS: Any value between 0 to 1
     group-distance-criterion: distance # OPTIONS: distance, maxclust
