@@ -34,7 +34,7 @@ class NetworkGraph:
             neighborhood_binary_enrichment_matrix_below_alpha
         )
         self.random_seed = random_seed
-        # NOTE: self.network, self.node_coordinates, self.colors, self.node_order declared in _initialize_network
+        # NOTE: self.network, self.node_coordinates, self.node_order declared in _initialize_network
         self._initialize_network(network)
         self._clean_matrices()
 
@@ -44,8 +44,6 @@ class NetworkGraph:
         self.network = _unfold_sphere_to_plane(network)
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(self.network)
-        # Generate composite colors for nodes
-        self.colors = self._generate_node_colors()
         # Remove outlier nodes from the network
         # self._trim_outliers()
 
@@ -65,8 +63,8 @@ class NetworkGraph:
             self.trimmed_domains_matrix, "id", invalid_domain_id
         )
 
-    def _generate_node_colors(self):
-        """Generate composite colors for nodes.
+    def get_domain_colors(self, colormap="hsv"):
+        """Generate composite colors for domains.
 
         This method generates composite colors for nodes based on their enrichment scores and transforms
         them to ensure proper alpha values and intensity. For nodes with alpha == 0, it assigns new colors
@@ -81,7 +79,9 @@ class NetworkGraph:
         node_to_domain_count = self._calculate_node_to_domain_count(node_to_enrichment_score_binary)
         # Generate composite colors for nodes
         composite_colors = _get_composite_node_colors(
-            self._get_domain_colors(), node_to_domain_count, random_seed=self.random_seed
+            self._get_domain_colors(colormap=colormap),
+            node_to_domain_count,
+            random_seed=self.random_seed,
         )
         # Transform colors to ensure proper alpha values and intensity
         transformed_colors = self._transform_colors(composite_colors)
@@ -101,14 +101,14 @@ class NetworkGraph:
         """Calculate the count of nodes per domain."""
         return node_to_enrichment_score_binary.groupby(level="domain", axis=1).sum()
 
-    def _get_domain_colors(self):
+    def _get_domain_colors(self, colormap="hsv"):
         """Get colors for each domain."""
         # Exclude non-numeric domain columns
         numeric_domains = [
             col for col in self.domains_matrix.columns if isinstance(col, (int, np.integer))
         ]
         domains = np.sort(numeric_domains)
-        domain_colors = _get_colors("hsv", len(domains))
+        domain_colors = _get_colors(colormap=colormap, num_colors_to_generate=len(domains))
         return domain_colors
 
     def _transform_colors(self, colors):
@@ -126,8 +126,8 @@ class NetworkGraph:
     def _trim_outliers(self):
         """Trim outlier nodes from the network."""
         # Remove outlier nodes based on their distance from the centroid of their domain subcluster
-        self.node_coordinates, self.colors, self.domains_matrix = _remove_outlier_nodes(
-            self.node_coordinates, self.colors, self.domains_matrix, std_dev_factor=2
+        self.node_coordinates, self.domains_matrix = _remove_outlier_nodes(
+            self.node_coordinates, self.domains_matrix, std_dev_factor=2
         )
         # Refine the order of nodes based on domain and composite color values
         self.node_order = _refine_node_order(self.domains_matrix, self.colors)
@@ -261,7 +261,7 @@ def _refine_node_order(domain_matrix, composite_colors):
     return final_sorted_df["index"].values
 
 
-def _remove_outlier_nodes(node_coordinates, composite_colors, domain_matrix, std_dev_factor=2):
+def _remove_outlier_nodes(node_coordinates, domain_matrix, std_dev_factor=2):
     """Remove outlier nodes based on their distance from the centroid of their domain subcluster.
 
     Args: node_coordinates: Array of node coordinates. composite_colors: Array of composite color values for each node. domain_matrix: DataFrame with domain information for each node. std_dev_factor: Standard deviation factor to determine outliers.
@@ -285,7 +285,6 @@ def _remove_outlier_nodes(node_coordinates, composite_colors, domain_matrix, std
 
     # Filter node positions, composite colors, and the domain matrix
     filtered_node_coordinates = node_coordinates[non_outlier_indices]
-    filtered_composite_colors = composite_colors[non_outlier_indices]
     filtered_domain_matrix = domain_matrix.loc[non_outlier_indices].copy()
     return filtered_node_coordinates, filtered_composite_colors, filtered_domain_matrix
 
