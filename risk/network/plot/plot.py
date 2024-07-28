@@ -1,5 +1,7 @@
+import random
 from collections import defaultdict
 
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -41,16 +43,17 @@ class NetworkPlotter:
             )
         )
 
-    def get_annotated_node_colors(self):
+    def get_annotated_node_colors(self, colormap="hsv"):
         """Adjusts the colors of nodes in the network graph.
 
         Returns:
             Tuple of two elements (adjusted colors array, node sizes array).
         """
+        network_colors = self.network_graph.get_domain_colors(colormap=colormap)
         adjusted_network_colors = np.where(
-            np.all(self.network_graph.colors == 0, axis=1, keepdims=True),
+            np.all(network_colors == 0, axis=1, keepdims=True),
             np.array([[1.0, 1.0, 1.0, 1.0]]),
-            self.network_graph.colors,
+            network_colors,
         )
         return adjusted_network_colors
 
@@ -154,15 +157,15 @@ class NetworkPlotter:
             ax=self.ax,
         )
 
-    def plot_contours(self, levels=5, bandwidth=0.8, grid_size=200, alpha=0.5):
+    def plot_contours(self, levels=5, bandwidth=0.8, grid_size=200, alpha=0.5, colormap="hsv"):
         """Draws KDE contours for nodes in various domains of a network graph, highlighting areas of high density."""
         if self.ax is None:
             raise RuntimeError("Network must be plotted before plotting contours.")
 
         node_coordinates = self.network_graph.node_coordinates
-        node_colors = self.network_graph.colors
+        node_colors = self.network_graph.get_domain_colors(colormap=colormap)
 
-        for domain, nodes in self.domain_to_nodes.items():
+        for _, nodes in self.domain_to_nodes.items():
             if len(nodes) > 1:
                 domain_colors = np.array([node_colors[node] for node in nodes])
                 brightest_color = domain_colors[np.argmax(domain_colors.sum(axis=1))]
@@ -310,13 +313,6 @@ class NetworkPlotter:
     def show(*args, **kwargs):
         """Display the current plot."""
         plt.show(*args, **kwargs)
-
-
-def _adjust_node_sizes(array, enriched_nodesize=30, nonenriched_nodesize=10):
-    """Adjusts node sizes based on whether a row has been enriched (converted from all zeros)."""
-    is_nonenriched = np.all(array[:, :-1] == 1, axis=1) & (array[:, -1] == 1)
-    node_sizes = np.where(is_nonenriched, nonenriched_nodesize, enriched_nodesize)
-    return node_sizes
 
 
 def _is_connected(thresholded_grid):
