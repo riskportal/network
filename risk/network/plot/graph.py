@@ -44,8 +44,6 @@ class NetworkGraph:
         self.network = _unfold_sphere_to_plane(network)
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(self.network)
-        # Remove outlier nodes from the network
-        # self._trim_outliers()
 
     def _clean_matrices(self):
         """Remove invalid domains from matrices."""
@@ -122,15 +120,6 @@ class NetworkGraph:
         colors[rows_with_alpha_one, :3] *= random_weights[:, np.newaxis]
         colors[rows_with_alpha_one, 3] *= transformed_weights
         return colors
-
-    def _trim_outliers(self):
-        """Trim outlier nodes from the network."""
-        # Remove outlier nodes based on their distance from the centroid of their domain subcluster
-        self.node_coordinates, self.domains_matrix = _remove_outlier_nodes(
-            self.node_coordinates, self.domains_matrix, std_dev_factor=2
-        )
-        # Refine the order of nodes based on domain and composite color values
-        self.node_order = _refine_node_order(self.domains_matrix, self.colors)
 
 
 def _unfold_sphere_to_plane(network):
@@ -225,68 +214,6 @@ def _extract_node_coordinates(graph):
     }
     node_coordinates = np.vstack(list(node_positions.values()))
     return node_coordinates
-
-
-def _refine_node_order(domain_matrix, composite_colors):
-    """Refine the order of nodes based on their domain and composite color values.
-
-    Args: domain_matrix: DataFrame with domain information for each node. composite_colors: Array of composite color values for each node.
-    Returns: sorted_indices: Array of node indices sorted by domain and composite color values.
-    """
-    domain_matrix = domain_matrix.reset_index(drop=True)
-    composite_sums = np.sum(composite_colors, axis=1)
-    composite_sums_df = pd.DataFrame(
-        {"index": np.arange(len(composite_sums)), "composite_sum": composite_sums}
-    )
-    merged_df = pd.merge(domain_matrix, composite_sums_df, left_index=True, right_on="index")
-    # Group by 'primary domain' and calculate total composite sum and group size
-    group_metrics = (
-        merged_df.groupby("primary domain")
-        .agg(total_composite_sum=("composite_sum", "sum"), group_size=("composite_sum", "size"))
-        .reset_index()
-    )
-    # Sort groups by group size and total composite sum
-    sorted_groups = group_metrics.sort_values(
-        by=["group_size", "total_composite_sum"], ascending=[True, True]
-    )
-    # Determine the order of rows in the merged DataFrame based on sorted group order
-    merged_df["group_order"] = pd.Categorical(
-        merged_df["primary domain"], categories=sorted_groups["primary domain"], ordered=True
-    )
-    # Sort the merged DataFrame by group order and composite sum within groups
-    final_sorted_df = merged_df.sort_values(
-        by=["group_order", "composite_sum"], ascending=[False, True]
-    )
-    # Return the original indices of the rows in their new sorted order
-    return final_sorted_df["index"].values
-
-
-def _remove_outlier_nodes(node_coordinates, domain_matrix, std_dev_factor=2):
-    """Remove outlier nodes based on their distance from the centroid of their domain subcluster.
-
-    Args: node_coordinates: Array of node coordinates. composite_colors: Array of composite color values for each node. domain_matrix: DataFrame with domain information for each node. std_dev_factor: Standard deviation factor to determine outliers.
-    Returns: filtered_node_coordinates: Array of node coordinates without outliers. filtered_composite_colors: Array of composite colors without outliers. filtered_domain_matrix: DataFrame of domain information without outliers.
-    """
-    non_outlier_indices = []
-    for domain in domain_matrix["primary domain"].unique():
-        # Get indices of nodes in the current domain
-        domain_indices = domain_matrix[domain_matrix["primary domain"] == domain].index
-        subcluster_coordinates = node_coordinates[domain_indices]
-        # Calculate the centroid of the subcluster
-        centroid = np.mean(subcluster_coordinates, axis=0)
-        # Calculate distances of nodes from the centroid
-        distances = np.linalg.norm(subcluster_coordinates - centroid, axis=1)
-        # Determine distance threshold for outliers
-        distance_threshold = np.mean(distances) + std_dev_factor * np.std(distances)
-        # Get indices of non-outlier nodes
-        non_outlier_domain_indices = domain_indices[distances <= distance_threshold]
-        # Collect all non-outlier indices
-        non_outlier_indices.extend(non_outlier_domain_indices)
-
-    # Filter node positions, composite colors, and the domain matrix
-    filtered_node_coordinates = node_coordinates[non_outlier_indices]
-    filtered_domain_matrix = domain_matrix.loc[non_outlier_indices].copy()
-    return filtered_node_coordinates, filtered_composite_colors, filtered_domain_matrix
 
 
 def _get_colors(colormap="plasma", num_colors_to_generate=10, random_seed=888):
