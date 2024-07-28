@@ -1,10 +1,7 @@
 from rich import print
 
-from risk.network.annotation import define_top_annotations
-from risk.network.io import (
-    load_annotation,
-    NetworkIO,
-)
+from risk.network.annotations import define_top_annotations, load_annotations
+from risk.network.io import NetworkIO
 from risk.network.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
@@ -33,7 +30,7 @@ class RISK(NetworkIO):
 
         Args:
             network_filepath (str): Path to the network file.
-            annotation_filepath (str): Path to the annotation file.
+            annotation_filepath (str): Path to the annotations file.
             **kwargs: Additional configuration parameters.
         """
         super().__init__(
@@ -55,13 +52,7 @@ class RISK(NetworkIO):
         self.min_cluster_size = min_cluster_size
         self.max_cluster_size = max_cluster_size
 
-        # print(
-        #     f"[cyan]Loading [yellow]Cytoscape[/yellow] [blue]network file[/blue]: [yellow]'{network_filename}'[/yellow]...[/cyan]"
-        #     f"\n[cyan]Removing [blue]nodes[/blue] with [blue]fewer[/blue] than [red]{network_min_edges_per_node}[/red] [blue]{'edge' if network_min_edges_per_node == 1 else 'edges'}...[/blue][/cyan]"
-        #     f"\n[cyan]Treating the network as {for_print_sphere} {for_print_edge_weight} [yellow]edge weights[/yellow]...[/cyan]"
-        # )
-
-    def load_annotation(self, filepath, network):
+    def load_annotations(self, filepath, network):
         """Load network annotations from a file.
 
         Args:
@@ -71,7 +62,7 @@ class RISK(NetworkIO):
             dict: Annotations for the network.
         """
         print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
-        return load_annotation(network, filepath)
+        return load_annotations(network, filepath)
 
     def load_significant_neighborhoods(
         self,
@@ -81,6 +72,8 @@ class RISK(NetworkIO):
         null_distribution="network",
         tail="right",
         num_permutations=1000,
+        impute_neighbors=False,
+        imputation_depth=1,
         pval_cutoff=1.00,
         apply_fdr=False,
         fdr_cutoff=1.00,
@@ -94,8 +87,13 @@ class RISK(NetworkIO):
         Returns:
             dict: Neighborhoods of the network.
         """
+        for_print_distance_metric = (
+            f"louvain (resolution={self.louvain_resolution})"
+            if self.distance_metric == "louvain"
+            else self.distance_metric
+        )
         print(
-            f"[cyan]Computing [blue]network neighborhoods[/blue] using [yellow]'{self.distance_metric}'[/yellow] as the metric..."
+            f"[cyan]Computing [blue]network neighborhoods[/blue] using [yellow]'{for_print_distance_metric}'[/yellow] as the [blue]distance metric[/blue]..."
         )
         neighborhoods = get_network_neighborhoods(
             network,
@@ -111,11 +109,14 @@ class RISK(NetworkIO):
             f"[cyan]Computing [blue]test statistics[/blue] using the [yellow]'{score_metric}'[/yellow]-based [blue]neighborhood scoring[/blue] approach...[/cyan]"
         )
         significant_neighborhoods = compute_pvalues_by_randomization(
+            network=network,
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
             score_metric=score_metric,
             tail=tail,
             num_permutations=num_permutations,
+            impute_neighbors=impute_neighbors,
+            imputation_depth=imputation_depth,
             pval_cutoff=pval_cutoff,
             apply_fdr=apply_fdr,
             fdr_cutoff=fdr_cutoff,
@@ -184,7 +185,7 @@ class RISK(NetworkIO):
         Args:
             network (NetworkX graph): The network graph.
             neighborhoods (dict): Neighborhood enrichment data.
-            annotations (pd.DataFrame): Annotation matrix.
+            annotations (pd.DataFrame): Annotations matrix.
             domains (pd.DataFrame): Domains matrix.
             trimmed_domains_matrix (pd.DataFrame): Trimmed domains matrix.
 
