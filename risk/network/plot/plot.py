@@ -87,16 +87,16 @@ class NetworkPlotter:
         self,
         figsize=(10, 10),
         background_color="white",
-        network_perimeter_color="black",
         plot_network_perimeter=True,
+        network_perimeter_color="black",
     ):
         """Initialize the plot with figure size, optional circle perimeter, and background color.
 
         Args:
             figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
-            network_perimeter_color (str, optional): Color of the network perimeter circle. Defaults to "black".
             plot_network_perimeter (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
+            network_perimeter_color (str, optional): Color of the network perimeter circle. Defaults to "black".
         """
         node_coordinates = self.network_graph.node_coordinates
         center, radius = _calculate_bounding_box(node_coordinates)
@@ -255,9 +255,9 @@ class NetworkPlotter:
 
         for domain, pos in best_label_positions.items():
             centroid = domain_centroids[domain]
-            annotation = "\n".join(self.domain_to_term[domain].split(",")[:max_words_per_label])
+            annotations = "\n".join(self.domain_to_term[domain].split(",")[:max_words_per_label])
             self.ax.annotate(
-                annotation,
+                annotations,
                 xy=centroid,
                 xytext=pos,
                 textcoords="data",

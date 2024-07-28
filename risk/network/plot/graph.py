@@ -21,7 +21,7 @@ class NetworkGraph:
 
         Args:
             network: The network graph.
-            annotation_matrix: DataFrame of annotation data for the network nodes.
+            annotation_matrix: DataFrame of annotations data for the network nodes.
             domains_matrix: DataFrame of domain data for the network nodes.
             trimmed_domains_matrix: DataFrame of trimmed domain data for the network nodes.
             neighborhood_binary_enrichment_matrix_below_alpha: Matrix of neighborhood binary enrichment data.
@@ -54,7 +54,7 @@ class NetworkGraph:
     def _clean_matrices(self):
         """Remove invalid domains from matrices."""
         invalid_domain_id = 888888
-        # Remove invalid domains from annotation matrix
+        # Remove invalid domains from annotations matrix
         self.annotation_matrix = _remove_invalid_domains_with_id(
             self.annotation_matrix, "domain", invalid_domain_id
         )
@@ -67,92 +67,30 @@ class NetworkGraph:
             self.trimmed_domains_matrix, "id", invalid_domain_id
         )
 
-    def _generate_node_colors(self, neighbor_distance=2, distance_percentile=95):
+    def _generate_node_colors(self):
         """Generate composite colors for nodes.
 
         This method generates composite colors for nodes based on their enrichment scores and transforms
         them to ensure proper alpha values and intensity. For nodes with alpha == 0, it assigns new colors
         based on the closest valid neighbors within a specified distance.
 
-        Args:
-            neighbor_distance (int): The maximum distance (in nodes) to consider for annotating a node that is 0.
-            distance_percentile (float): The percentile of the edge distances to use as the distance threshold.
-
         Returns:
             np.ndarray: Array of transformed colors.
         """
         # Create a DataFrame of node to enrichment score binary values
-        node2nes_binary = self._create_node2nes_binary()
+        node_to_enrichment_score_binary = self._create_node_to_enrichment_score_binary()
         # Calculate the count of nodes per domain
-        node2domain_count = self._calculate_node2domain_count(node2nes_binary)
-
+        node_to_domain_count = self._calculate_node_to_domain_count(node_to_enrichment_score_binary)
         # Generate composite colors for nodes
         composite_colors = _get_composite_node_colors(
-            self._get_domain_colors(), node2domain_count, random_seed=self.random_seed
+            self._get_domain_colors(), node_to_domain_count, random_seed=self.random_seed
         )
         # Transform colors to ensure proper alpha values and intensity
         transformed_colors = self._transform_colors(composite_colors)
 
-        # Calculate Euclidean distances between all nodes in the network
-        all_distances = []
-        for u, v in self.network.edges():
-            pos_u = self.node_coordinates[u]
-            pos_v = self.node_coordinates[v]
-            distance = np.linalg.norm(pos_u - pos_v)
-            all_distances.append(distance)
-        distance_threshold = np.percentile(all_distances, distance_percentile)
-
-        # Create a DataFrame to hold domain information
-        domain_info = pd.DataFrame(
-            {
-                "node": np.arange(len(transformed_colors)),
-                "domain": node2domain_count.idxmax(axis=1),
-                "alpha": transformed_colors[:, 3],
-            }
-        )
-
-        # Find nodes with alpha == 0
-        alpha_zero_nodes = domain_info[domain_info["alpha"] == 0].index
-
-        # Dictionary to store the new colors and distances for nodes
-        new_colors = {}
-        # Iterate over nodes with alpha == 0
-        for node in alpha_zero_nodes:
-            closest_color = None
-            closest_distance = float("inf")
-            node_distances = {}
-
-            for neighbor, distance in nx.single_source_shortest_path_length(
-                self.network, node, cutoff=neighbor_distance
-            ).items():
-                if neighbor != node:
-                    pos_node = self.node_coordinates[node]
-                    pos_neighbor = self.node_coordinates[neighbor]
-                    euclidean_distance = np.linalg.norm(pos_node - pos_neighbor)
-                    if (
-                        transformed_colors[neighbor, 3] != 0
-                        and euclidean_distance <= distance_threshold
-                    ):
-                        if euclidean_distance < closest_distance:
-                            closest_color = transformed_colors[neighbor]
-                            closest_distance = euclidean_distance
-                            node_distances[node] = distance
-
-            # Store the color to be assigned and its distance
-            if closest_color is not None:
-                new_colors[node] = (closest_color, node_distances[node])
-
-        # Assign the new colors to the nodes and adjust opacity based on distance
-        for node, (color, distance) in new_colors.items():
-            # Adjust the new color based on the distance
-            adjustment_factor = np.sqrt(1 + distance)
-            new_color = color[:3] / adjustment_factor
-            transformed_colors[node, :3] = new_color
-            transformed_colors[node, 3] = color[3]  # Keep the original alpha value
-
         return transformed_colors
 
-    def _create_node2nes_binary(self):
+    def _create_node_to_enrichment_score_binary(self):
         """Create a DataFrame of node to enrichment score binary values."""
         return pd.DataFrame(
             data=self.neighborhood_binary_enrichment_matrix_below_alpha[
@@ -161,9 +99,9 @@ class NetworkGraph:
             columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
         )
 
-    def _calculate_node2domain_count(self, node2nes_binary):
+    def _calculate_node_to_domain_count(self, node_to_enrichment_score_binary):
         """Calculate the count of nodes per domain."""
-        return node2nes_binary.groupby(level="domain", axis=1).sum()
+        return node_to_enrichment_score_binary.groupby(level="domain", axis=1).sum()
 
     def _get_domain_colors(self):
         """Get colors for each domain."""
@@ -236,10 +174,10 @@ def _remove_invalid_domains_with_id(df, column, domain_id):
     return df[df[column] != domain_id]
 
 
-def _get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
+def _get_composite_node_colors(domain2rgb, node_to_domain_count, random_seed=888):
     """Generate composite colors for nodes based on domain colors and counts.
 
-    Args: domain2rgb: Array of colors corresponding to each domain. node2domain_count: DataFrame of domain counts for each node. random_seed: Seed for random number generation.
+    Args: domain2rgb: Array of colors corresponding to each domain. node_to_domain_count: DataFrame of domain counts for each node. random_seed: Seed for random number generation.
     Returns: composite_colors: Array of composite colors for each node.
     """
     random.seed(random_seed)
@@ -248,10 +186,10 @@ def _get_composite_node_colors(domain2rgb, node2domain_count, random_seed=888):
         domain2rgb = np.array(domain2rgb)
 
     # Initialize composite colors array
-    composite_colors = np.zeros((node2domain_count.shape[0], 4))  # Assuming RGBA
-    for node_idx in range(node2domain_count.shape[0]):
+    composite_colors = np.zeros((node_to_domain_count.shape[0], 4))  # Assuming RGBA
+    for node_idx in range(node_to_domain_count.shape[0]):
         # Get domain counts for the current node
-        domain_counts = node2domain_count.values[node_idx, :]
+        domain_counts = node_to_domain_count.values[node_idx, :]
         max_count = np.max(domain_counts)
         # Normalize domain counts to avoid division by zero
         normalized_counts = domain_counts / max_count if max_count > 0 else domain_counts

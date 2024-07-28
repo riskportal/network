@@ -18,7 +18,7 @@ from sklearn.cluster import AffinityPropagation
 from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics import silhouette_score
 
-from risk.network.annotation import chop_and_filter
+from risk.network.annotations import chop_and_filter
 from risk.network.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
 
 # Suppress DataConversionWarning
@@ -41,18 +41,19 @@ def get_network_neighborhoods(
         np.ndarray: Neighborhood matrix.
     """
     radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
-    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
     if distance_metric == "euclidean":
-        neighborhoods = _calculate_euclidean_neighborhoods(network, radius)
-    elif distance_metric == "shortpath":
-        neighborhoods = _calculate_shortest_path_neighborhoods(network, radius)
-    elif distance_metric == "louvain":
-        neighborhoods = _calculate_louvain_neighborhoods(network, louvain_resolution)
-    elif distance_metric == "affinity_propagation":
-        neighborhoods = _calculate_affinity_propagation_neighborhoods(network)
+        return _calculate_euclidean_neighborhoods(network, radius)
+    if distance_metric == "shortpath":
+        return _calculate_shortest_path_neighborhoods(network, radius)
+    if distance_metric == "louvain":
+        return _calculate_louvain_neighborhoods(network, louvain_resolution)
+    if distance_metric == "affinity_propagation":
+        return _calculate_affinity_propagation_neighborhoods(network)
 
-    return neighborhoods
+    raise ValueError(
+        "Incorrect distance metric specified. Please choose from 'euclidean', 'shortpath', 'louvain', or 'affinity_propagation'."
+    )
 
 
 def _calculate_euclidean_neighborhoods(network, radius):
@@ -167,7 +168,7 @@ def define_domains(
 
     Args:
         neighborhoods (np.ndarray): The neighborhood enrichment matrix.
-        top_annotations (pd.DataFrame): DataFrame of top annotation data for the network nodes.
+        top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         significant_enrichment (np.ndarray): The binary enrichment matrix below alpha.
         linkage_criterion (str): The clustering criterion for defining groups.
         linkage_method (str): The linkage method for clustering.
@@ -181,7 +182,10 @@ def define_domains(
     best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
         m, linkage_criterion, linkage_method, linkage_metric
     )
-    Z = linkage(m, method=best_linkage, metric=best_metric)
+    try:
+        Z = linkage(m, method=best_linkage, metric=best_metric)
+    except ValueError as e:
+        raise ValueError("No significant annotations found.") from e
 
     print(
         f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{linkage_criterion}'[/yellow] with [blue]linkage method[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]linkage metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
@@ -191,7 +195,7 @@ def define_domains(
     max_d_optimal = np.max(Z[:, 2]) * best_threshold
     domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
 
-    # Assign domains to annotation matrix
+    # Assign domains to annotations matrix
     top_annotations["domain"] = 0
     top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
 
@@ -226,7 +230,7 @@ def trim_domains_and_top_annotations(
 
     Args:
         domains (pd.DataFrame): DataFrame of domain data for the network nodes.
-        top_annotations (pd.DataFrame): DataFrame of top annotation data for the network nodes.
+        top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         min_cluster_size (int): Minimum size of a cluster to be retained.
         max_cluster_size (int): Maximum size of a cluster to be retained.
 
