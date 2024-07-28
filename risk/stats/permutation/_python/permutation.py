@@ -19,7 +19,7 @@ def compute_neighborhood_score_by_variance_python(neighborhoods_matrix, annotati
     # Convert to float64 for arithmetic operations, if not already
     A = neighborhoods_matrix.astype(np.float64)
     B = annotation_matrix
-    # Calculate neighborhood score (dot product of neighborhoods and annotation matrix)
+    # Calculate neighborhood score (dot product of neighborhoods and annotations matrix)
     neighborhood_score = np.dot(A, B)
     # Sum across rows for A to get N, reshape for broadcasting
     N = np.sum(A, axis=1)
