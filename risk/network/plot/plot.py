@@ -41,12 +41,8 @@ class NetworkPlotter:
             )
         )
 
-    def adjust_colors_and_sizes(self, enriched_nodesize=50, nonenriched_nodesize=25):
-        """Adjusts the colors and sizes of nodes in the network graph.
-
-        Args:
-            enriched_nodesize: Size for enriched nodes.
-            nonenriched_nodesize: Size for non-enriched nodes.
+    def get_annotated_node_colors(self):
+        """Adjusts the colors of nodes in the network graph.
 
         Returns:
             Tuple of two elements (adjusted colors array, node sizes array).
@@ -56,32 +52,31 @@ class NetworkPlotter:
             np.array([[1.0, 1.0, 1.0, 1.0]]),
             self.network_graph.colors,
         )
-        node_sizes = _adjust_node_sizes(
-            adjusted_network_colors, enriched_nodesize, nonenriched_nodesize
-        )
-        return adjusted_network_colors, node_sizes
+        return adjusted_network_colors
 
-    def calculate_domain_centroids(self):
-        """Calculates the most centrally located node within each domain based on the node positions."""
-        domain_central_nodes = {}
-        for domain, nodes in self.domain_to_nodes.items():
-            if not nodes:  # Skip if the domain has no nodes
-                continue
-            node_positions = self.network_graph.node_coordinates[nodes, :]
-            distances_matrix = np.linalg.norm(
-                node_positions[:, np.newaxis] - node_positions, axis=2
-            )
-            sum_distances = np.sum(distances_matrix, axis=1)
-            central_node_idx = np.argmin(sum_distances)
-            domain_central_nodes[domain] = node_positions[central_node_idx]
-        return domain_central_nodes
+    def get_annotated_node_sizes(self, enriched_nodesize=50, nonenriched_nodesize=25):
+        """Adjusts the sizes of nodes in the network graph based on whether they are enriched or not.
 
-    def get_annotated_node_colors_and_sizes(self, enriched_nodesize=50, nonenriched_nodesize=25):
-        """Get annotated node colors and sizes based on the network graph."""
-        node_colors, node_sizes = self.adjust_colors_and_sizes(
-            enriched_nodesize=enriched_nodesize, nonenriched_nodesize=nonenriched_nodesize
-        )
-        return node_colors, node_sizes
+        Args:
+            enriched_nodesize (int): Size for enriched nodes. Default is 50.
+            nonenriched_nodesize (int): Size for non-enriched nodes. Default is 25.
+
+        Returns:
+            np.ndarray: Array of node sizes.
+        """
+        # Merge all enriched nodes from the domain_to_nodes dictionary
+        enriched_nodes = set()
+        for _, nodes in self.domain_to_nodes.items():
+            enriched_nodes.update(nodes)
+
+        # Initialize node sizes array
+        node_sizes = np.full(len(self.network_graph.network.nodes), nonenriched_nodesize)
+        # Set sizes for enriched nodes
+        for node in enriched_nodes:
+            if node in self.network_graph.network.nodes:
+                node_sizes[node] = enriched_nodesize
+
+        return node_sizes
 
     def initialize_plot(
         self,
@@ -238,7 +233,7 @@ class NetworkPlotter:
         if self.ax is None:
             raise RuntimeError("Network must be plotted before plotting labels.")
 
-        domain_centroids = self.calculate_domain_centroids()
+        domain_centroids = self._calculate_domain_centroids()
         center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=radius_margin
         )
@@ -268,6 +263,21 @@ class NetworkPlotter:
                 color=color,
                 arrowprops=dict(arrowstyle="->", color=color, linewidth=arrow_linewidth),
             )
+
+    def _calculate_domain_centroids(self):
+        """Calculates the most centrally located node within each domain based on the node positions."""
+        domain_central_nodes = {}
+        for domain, nodes in self.domain_to_nodes.items():
+            if not nodes:  # Skip if the domain has no nodes
+                continue
+            node_positions = self.network_graph.node_coordinates[nodes, :]
+            distances_matrix = np.linalg.norm(
+                node_positions[:, np.newaxis] - node_positions, axis=2
+            )
+            sum_distances = np.sum(distances_matrix, axis=1)
+            central_node_idx = np.argmin(sum_distances)
+            domain_central_nodes[domain] = node_positions[central_node_idx]
+        return domain_central_nodes
 
     def _optimize_label_positions(self, best_label_positions, domain_centroids):
         """Optimizes label positions around the perimeter to minimize total distance to centroids."""

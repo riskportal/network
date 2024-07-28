@@ -27,13 +27,14 @@ class NetworkGraph:
             neighborhood_binary_enrichment_matrix_below_alpha: Matrix of neighborhood binary enrichment data.
             random_seed: Seed for random number generation.
         """
-        self.random_seed = random_seed
         self.annotation_matrix = annotation_matrix
         self.domains_matrix = domains_matrix
         self.trimmed_domains_matrix = trimmed_domains_matrix
         self.neighborhood_binary_enrichment_matrix_below_alpha = (
             neighborhood_binary_enrichment_matrix_below_alpha
         )
+        self.random_seed = random_seed
+        # NOTE: self.network, self.node_coordinates, self.colors, self.node_order declared in _initialize_network
         self._initialize_network(network)
         self._clean_matrices()
 
@@ -45,11 +46,8 @@ class NetworkGraph:
         self.node_coordinates = _extract_node_coordinates(self.network)
         # Generate composite colors for nodes
         self.colors = self._generate_node_colors()
-
-    def _process_network(self):
-        """Process the network to refine node order and remove outliers."""
         # Remove outlier nodes from the network
-        self._trim_outliers()
+        # self._trim_outliers()
 
     def _clean_matrices(self):
         """Remove invalid domains from matrices."""
