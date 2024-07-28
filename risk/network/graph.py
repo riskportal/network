@@ -3,8 +3,104 @@ risk/network/graph
 ~~~~~~~~~~~~~~~~~~
 """
 
+import os
+import sys
+from contextlib import contextmanager
+
 import networkx as nx
 import numpy as np
+from rich import print
+from rich.progress import Progress
+from scipy.cluster.hierarchy import linkage, fcluster
+from sklearn.metrics import silhouette_score
+from scipy.spatial.distance import pdist
+
+from risk.network.neighborhoods import get_network_neighborhoods
+
+
+def get_best_dimple_factor(
+    G,
+    include_edge_weight=True,
+    compute_sphere=True,
+    distance_metric="euclidean",
+    neighborhood_diameter=0.5,
+    louvain_resolution=None,
+    lower_bound=0,
+    upper_bound=1024,
+    tolerance=4,
+):
+    """Find the optimal dimple factor for the network.
+
+    Args:
+        G (NetworkX graph): The network graph.
+        lower_bound (int): Lower bound for dimple factor.
+        upper_bound (int): Upper bound for dimple factor.
+        tolerance (int): Tolerance for dimple factor optimization.
+
+    Returns:
+        int: The best dimple factor.
+    """
+    print(
+        "[cyan][red]Warning:[/red] [blue]Optimizing[/blue] [yellow]dimple factor[/yellow] can be an [red]expensive process[/red]. "
+        "[blue]Mark down[/blue] [yellow]optimal dimple factor[/yellow] for future use...[/cyan]"
+    )
+
+    # Initialize variables to keep track of the best score and corresponding dimple factor
+    max_score = -np.inf
+    best_dimple_factor = lower_bound
+    # Calculate the total number of iterations for progress tracking
+    total_iterations = int(np.ceil(np.log2((upper_bound - lower_bound) / tolerance)))
+    # Start the progress tracking
+    with Progress() as progress:
+        task = progress.add_task(
+            "[cyan]Optimizing [yellow]dimple factor[/yellow]...[/cyan]", total=total_iterations
+        )
+
+        while upper_bound - lower_bound > tolerance:
+            # Compute the midpoint of the current search interval
+            mid_dimple_factor = (lower_bound + upper_bound) / 2
+            # Generate dimple factors to test (midpoint and midpoint + tolerance)
+            dimple_factors_to_test = [mid_dimple_factor, mid_dimple_factor + tolerance]
+
+            for dimple_factor in map(int, dimple_factors_to_test):
+                # Calculate edge lengths with the current dimple factor
+                G_test = calculate_edge_lengths(
+                    G,
+                    include_edge_weight=include_edge_weight,
+                    compute_sphere=compute_sphere,
+                    dimple_factor=dimple_factor,
+                )
+
+                # Suppress print output for loading neighborhoods
+                with _suppress_print():
+                    neighborhoods_test = get_network_neighborhoods(
+                        network=G_test,
+                        distance_metric=distance_metric,
+                        neighborhood_diameter=neighborhood_diameter,
+                        compute_sphere=compute_sphere,
+                        louvain_resolution=louvain_resolution,
+                    )
+
+                # Compute the silhouette score for the test graph
+                score_test = _compute_silhouette_score(neighborhoods_test)
+
+                # Update the best score and dimple factor if the current score is better
+                if score_test > max_score:
+                    max_score = score_test
+                    best_dimple_factor = dimple_factor
+
+            # Adjust the search interval based on the test results
+            if best_dimple_factor == mid_dimple_factor + tolerance:
+                lower_bound = mid_dimple_factor
+            else:
+                upper_bound = mid_dimple_factor
+
+            # Update the progress tracker
+            progress.update(task, advance=1)
+
+    # Print the optimal dimple factor
+    print(f"[yellow]Optimal dimple factor:[/yellow] [red]{best_dimple_factor}[/red]")
+    return best_dimple_factor
 
 
 def calculate_edge_lengths(G, include_edge_weight=False, compute_sphere=True, dimple_factor=None):
@@ -128,3 +224,83 @@ def _normalize_weights(G):
         for u, v, data in G.edges(data=True):
             if "weight" in data:
                 data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
+
+
+def _compute_silhouette_score(neighborhoods, linkage_method="average"):
+    """Compute the silhouette score for a given graph and neighborhoods.
+
+    Args:
+        neighborhoods (numpy.ndarray): Neighborhood matrix.
+        linkage_method (str): The linkage method to use for clustering.
+
+    Returns:
+        float: The silhouette score.
+    """
+    # Calculate the maximum value in the neighborhoods matrix
+    max_value = np.max(neighborhoods)
+    # Compute the distance matrix by subtracting neighborhoods from the max value
+    distance_matrix = max_value - neighborhoods
+    # Ensure the diagonal elements are zero (distance to itself is zero)
+    np.fill_diagonal(distance_matrix, 0)
+    # Ensure all distance values are non-negative
+    distance_matrix = np.maximum(distance_matrix, 0)
+    # Compute the silhouette score using hierarchical clustering
+    return _compute_silhouette_with_validation(distance_matrix, linkage_method)
+
+
+def _compute_silhouette_with_validation(distance_matrix, linkage_method="average"):
+    """Compute the silhouette score for hierarchical clustering.
+
+    Args:
+        distance_matrix (np.ndarray): The distance matrix.
+        linkage_method (str): The linkage method to use for hierarchical clustering.
+
+    Returns:
+        float: The best silhouette score found.
+    """
+    # Ensure all values in the distance matrix are non-negative
+    distance_matrix = np.maximum(distance_matrix, 0)
+
+    # Perform hierarchical clustering
+    Z = linkage(pdist(distance_matrix), method=linkage_method)
+
+    # Initialize variables to keep track of the best score
+    best_score = float("-inf")
+    num_clusters = 2
+
+    while num_clusters < len(distance_matrix):
+        # Generate cluster labels for the current number of clusters
+        labels = fcluster(Z, t=num_clusters, criterion="maxclust")
+
+        # Ensure there is more than one cluster
+        if len(set(labels)) > 1:
+            try:
+                # Compute the silhouette score for the current clustering
+                score = silhouette_score(distance_matrix, labels, metric="precomputed")
+                # Update the best score if the current score is better
+                if score > best_score:
+                    best_score = score
+                break
+            except ValueError:
+                pass  # Continue to the next iteration if an error occurs
+
+        num_clusters += 1
+
+    # Assign a default score if no valid clustering is found
+    if best_score == float("-inf"):
+        best_score = 0.0
+        print("Valid clustering could not be achieved. Returning default score of 0.0.")
+
+    return best_score
+
+
+@contextmanager
+def _suppress_print():
+    """Context manager to suppress print statements."""
+    original_stdout = sys.stdout
+    try:
+        with open(os.devnull, "w") as devnull:
+            sys.stdout = devnull
+            yield
+    finally:
+        sys.stdout = original_stdout
