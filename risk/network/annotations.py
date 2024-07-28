@@ -1,8 +1,9 @@
 """
-risk/network/annotation
+risk/network/annotations
 ~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import json
 from collections import Counter
 from itertools import compress
 
@@ -18,6 +19,40 @@ from nltk.corpus import stopwords
 # nltk.download("stopwords")
 
 
+def load_annotations(network, annotations_filepath):
+    # Convert JSON data to a Python dictionary
+    with open(annotations_filepath, "r") as file:
+        annotations_input = json.load(file)
+    # Flatten the dictionary for easier DataFrame creation
+    flattened_annotations = [
+        (node, annotations) for annotations, nodes in annotations_input.items() for node in nodes
+    ]
+    # Create a DataFrame
+    annotations = pd.DataFrame(flattened_annotations, columns=["Node", "Annotations"])
+    annotations["Is Member"] = 1
+    # Pivot the DataFrame to achieve the desired format
+    annotations_pivot = annotations.pivot_table(
+        index="Node", columns="Annotations", values="Is Member", fill_value=0, dropna=False
+    )
+    # Get list of node labels as ordered in a graph object
+    node_label_order = list(nx.get_node_attributes(network, "label").values())
+    # This will reindex the annotations matrix with node labels as found in annotations file - those that are not found,
+    # (i.e., rows) will be set to NaN values
+    annotations_pivot = annotations_pivot.reindex(index=node_label_order)
+    if annotations_pivot.notnull().sum().sum() == 0:
+        raise ValueError(
+            "No annotations found in the annotations file for the nodes in the network."
+        )
+
+    ordered_nodes = tuple(annotations_pivot.index)
+    ordered_annotations = tuple(annotations_pivot.columns)
+    return {
+        "ordered_nodes": ordered_nodes,
+        "ordered_annotations": ordered_annotations,
+        "matrix": annotations_pivot.to_numpy(),
+    }
+
+
 def define_top_annotations(
     network,
     ordered_annotation_labels,
@@ -26,32 +61,32 @@ def define_top_annotations(
     min_cluster_size=5,
     max_cluster_size=1000,
 ):
-    annotation_enrichment_matrix = pd.DataFrame(
+    annotations_enrichment_matrix = pd.DataFrame(
         {
             "id": range(len(ordered_annotation_labels)),
             "name": ordered_annotation_labels,
             "num enriched neighborhoods": neighborhood_enrichment_sums,
         }
     )
-    annotation_enrichment_matrix["top attributes"] = False
+    annotations_enrichment_matrix["top attributes"] = False
     # Requirement 1: a minimum and maximum number of enriched neighborhoods
     # Combining both conditions with a logical AND
-    annotation_enrichment_matrix.loc[
-        (annotation_enrichment_matrix["num enriched neighborhoods"] >= min_cluster_size)
-        & (annotation_enrichment_matrix["num enriched neighborhoods"] <= max_cluster_size),
+    annotations_enrichment_matrix.loc[
+        (annotations_enrichment_matrix["num enriched neighborhoods"] >= min_cluster_size)
+        & (annotations_enrichment_matrix["num enriched neighborhoods"] <= max_cluster_size),
         "top attributes",
     ] = True
 
     # Requirement 2: 1 connected component in the subnetwork of enriched neighborhoods:
-    annotation_enrichment_matrix["num connected components"] = 0
-    annotation_enrichment_matrix["size connected components"] = None
-    annotation_enrichment_matrix["size connected components"] = annotation_enrichment_matrix[
+    annotations_enrichment_matrix["num connected components"] = 0
+    annotations_enrichment_matrix["size connected components"] = None
+    annotations_enrichment_matrix["size connected components"] = annotations_enrichment_matrix[
         "size connected components"
     ].astype(object)
-    annotation_enrichment_matrix["num large connected components"] = 0
+    annotations_enrichment_matrix["num large connected components"] = 0
 
-    for attribute in annotation_enrichment_matrix.index.values[
-        annotation_enrichment_matrix["top attributes"]
+    for attribute in annotations_enrichment_matrix.index.values[
+        annotations_enrichment_matrix["top attributes"]
     ]:
         enriched_neighborhoods = list(
             compress(list(network), binary_enrichment_matrix_below_alpha[:, attribute] > 0)
@@ -70,22 +105,22 @@ def define_top_annotations(
             )
         )
 
-        annotation_enrichment_matrix.loc[
+        annotations_enrichment_matrix.loc[
             attribute, "num connected components"
         ] = num_connected_components
-        annotation_enrichment_matrix.at[
+        annotations_enrichment_matrix.at[
             attribute, "size connected components"
         ] = size_connected_components
-        annotation_enrichment_matrix.loc[
+        annotations_enrichment_matrix.loc[
             attribute, "num large connected components"
         ] = num_large_connected_components
 
     # Exclude attributes that have more than 1 connected component
-    annotation_enrichment_matrix.loc[
-        annotation_enrichment_matrix["num connected components"] > 1, "top attributes"
+    annotations_enrichment_matrix.loc[
+        annotations_enrichment_matrix["num connected components"] > 1, "top attributes"
     ] = False
 
-    return annotation_enrichment_matrix
+    return annotations_enrichment_matrix
 
 
 def chop_and_filter(s, top_words_count=6):
