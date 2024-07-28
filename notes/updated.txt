@@ -53,7 +53,7 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
     - Permutation test
     - Much faster (build metrics to quantify this)
 3.
-    - Accepts more intuitive filetypes (JSON annotation file)
+    - Accepts more intuitive filetypes (JSON annotations file)
 4.
     - Improved domain description generation using NLTK
 5.
