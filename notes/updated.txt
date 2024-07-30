@@ -1,7 +1,7 @@
 PROJECT NAME IDEA
 =================
 - RISK:
-    RISK Infers Spatial Kinship
+    ** RISK Infers Spatial Kinship **
     RISK Informs Spatial Kinship
     Regional Identification of Significant Kinships
     Regional Identification of Structural Kinships
@@ -31,7 +31,7 @@ PROJECT NAME IDEA
 THINGS I UPDATED
 ================
 1. 
-    - No longer using matrix multiplication to multiply colors (array of 4 floats (rgba)) with enrichment of domain per node (domain also is 4 floats (value unknown)).
+    - Replaced matrix multiplication for color computation with an element-wise approach.
     - ChatGPT:
 """
 Refactoring the given code block to implement an alternative to matrix multiplication for creating node colors that signify importance or enrichment involves a few steps. Given your description, it seems like you want to aggregate domain associations for each node and then apply a color mapping based on these associations. Since matmul may not be the most intuitive choice here, especially for custom logic involving color intensity or shading based on domain counts, we'll proceed with an element-wise approach that provides more control.
@@ -47,40 +47,43 @@ Since you've already aggregated domain associations (node2domain_count) and comp
 
 Assuming domain2rgb contains base colors for domains and you want to generate a composite color for each node based on its associations, here is how you can refactor the existing code block to apply a custom color mapping without using np.matmul:
 """
-    - Notable improvement in coloring with appropriate shading of less enriched nodes
-
+    - Improved coloring with appropriate shading for less enriched nodes.
 2. 
-    - Permutation test
-    - Much faster (build metrics to quantify this)
+    - Permutation test: now significantly faster (metrics needed to quantify this improvement).
 3.
-    - Accepts more intuitive filetypes (JSON annotations file)
+    - Accepts more intuitive file types (JSON annotations file).
 4.
-    - Improved domain description generation using NLTK
+    - Enhanced domain description generation using NLTK.
 5.
-    - More explicit way to remove highly inflated domains (Z-score to remove outliers)
-    - By inflated, I mean the vastly inflated number of members in the domain
-    - For example, extremely large and spatially expansive clusters are usually a result of noisy data
+    - More explicit method for removing highly inflated domains (using Z-score to identify outliers).
+    - By inflated, I mean domains with an excessively high number of members.
+    - Extremely large and spatially expansive clusters are usually the result of noisy data.
 6.
-    - Remove nodes from being colored / plotted if they are N STDEV away from their domain's centroid
+    - Remove node significance if its closest edge with an enriched neighbor is greater than N STDEV of all edge lengths.
 7.
-    - Add new domain selection algorithms
-        - louvain
+    - Added new domain selection algorithms:
+        - Louvain
         - Affinity propagation
 8. 
-    - Automatically compute domain thresholding across different linkages and metrics
-    - This is default now
+    - Automatically compute domain thresholding across different linkages and metrics (default behavior).
 9.
-    - Plot the local enrichment finished network on a sphere
-    - Give the sphere ability to rotate, capturing every rotational image to ultimately make an animation
+    - Plot the local enrichment-finished network on a sphere.
+    - Enable the sphere to rotate, capturing every rotational image to ultimately make an animation.
 10. [BIG]
-    - Enable the conversion of the input 2D network to 3D prior to computing neighborhoods
-        - This enables the better spread of tightly packed nodes, allowing for a more optimal scan of local enrichment
-    - When plotting, enable the conversion of the 3D network back to a 2D plane
+    - Enable the conversion of the input 2D network to 3D prior to computing neighborhoods.
+        - This allows for a better spread of tightly packed nodes, facilitating a more optimal scan for local enrichment.
+    - When plotting, enable the conversion of the 3D network back to a 2D plane.
 11.
-    - Enable the explicit use of edge weights to better refine node distancing prior to neighborhood computation
+    - Explicitly use edge weights to better refine node distancing prior to neighborhood computation.
 12.
-    - Enable surface dimpling of spherical network, pushing in / clustering regions of the network with tight connections
-    - Call this the dimpling effect, with the degree of travel towards spherical center dictated by a 'dimple factor'
-    - Automate calculation of optimal dimple factor
+    - Enable surface dimpling of the spherical network, clustering regions of the network with tight connections.
+    - Call this the dimpling effect, with the degree of travel towards the spherical center dictated by a 'dimple factor'.
+    - Automate calculation of the optimal dimple factor.
 13.
-    - Add contours to network, providing a simpler way to view regions of enrichment on the network
+    - Add contours to the network, providing a simpler way to view regions of enrichment.
+14.
+    - Impute non-significant nodes' significance to their closest significant node.
+15.
+    - Automatically generate and position labels around the network, with arrows pointing from the labels to their respective clusters.
+16.
+    - Seamlessly interface with the plotter class, enabling graph instantiation, display, and export.
