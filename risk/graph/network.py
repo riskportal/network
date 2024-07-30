@@ -16,7 +16,7 @@ class NetworkGraph:
         annotation_matrix,
         domains_matrix,
         trimmed_domains_matrix,
-        neighborhood_binary_enrichment_matrix_below_alpha,
+        neighborhoods_significant_binary_enrichment_matrix,
     ):
         """Initialize the NetworkGraph object.
 
@@ -25,15 +25,15 @@ class NetworkGraph:
             annotation_matrix: DataFrame of annotations data for the network nodes.
             domains_matrix: DataFrame of domain data for the network nodes.
             trimmed_domains_matrix: DataFrame of trimmed domain data for the network nodes.
-            neighborhood_binary_enrichment_matrix_below_alpha: Matrix of neighborhood binary enrichment data.
+            neighborhoods_significant_binary_enrichment_matrix: Matrix of neighborhood binary enrichment data.
         """
         self.annotation_matrix = annotation_matrix
         self.domain_to_nodes = self._create_domain_to_nodes_map(domains_matrix)
         self.domains_matrix = domains_matrix
         self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains_matrix)
         self.trimmed_domains_matrix = trimmed_domains_matrix
-        self.neighborhood_binary_enrichment_matrix_below_alpha = (
-            neighborhood_binary_enrichment_matrix_below_alpha
+        self.neighborhoods_significant_binary_enrichment_matrix = (
+            neighborhoods_significant_binary_enrichment_matrix
         )
         # NOTE: self.network and self.node_coordinates declared in _initialize_network
         self.network = None
@@ -92,7 +92,7 @@ class NetworkGraph:
     def _create_node_to_enrichment_score_binary(self):
         """Create a DataFrame of node to enrichment score binary values."""
         return pd.DataFrame(
-            data=self.neighborhood_binary_enrichment_matrix_below_alpha[
+            data=self.neighborhoods_significant_binary_enrichment_matrix[
                 :, self.annotation_matrix.index.values
             ],
             columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
