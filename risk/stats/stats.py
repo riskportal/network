@@ -30,14 +30,14 @@ def compute_pvalues_by_permutation(
     null_distribution="network",
     tail="right",
     num_permutations=1000,
+    pval_cutoff=1.00,
+    apply_fdr=False,
+    fdr_cutoff=1.00,
     impute_neighbors=False,
     impute_depth=1,
     impute_threshold=0.9,
     prune_neighbors=False,
     prune_threshold=0.1,
-    pval_cutoff=1.00,
-    apply_fdr=False,
-    fdr_cutoff=1.00,
     random_seed=888,
 ):
     # NOTE: Both `neighborhoods` and `annotations` are binary matrices and must NOT have any NaN values
