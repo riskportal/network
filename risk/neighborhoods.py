@@ -26,7 +26,12 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 
 def get_network_neighborhoods(
-    network, distance_metric, neighborhood_diameter, compute_sphere=False, louvain_resolution=1.0
+    network,
+    distance_metric,
+    neighborhood_diameter,
+    compute_sphere=False,
+    louvain_resolution=1.0,
+    random_seed=888,
 ):
     """Calculate the neighborhoods for each node in the network based on the specified distance metric.
 
@@ -47,9 +52,11 @@ def get_network_neighborhoods(
     if distance_metric == "dijkstra":
         return _calculate_dijkstra_neighborhoods(network, radius)
     if distance_metric == "louvain":
-        return _calculate_louvain_neighborhoods(network, louvain_resolution)
+        return _calculate_louvain_neighborhoods(
+            network, louvain_resolution, random_seed=random_seed
+        )
     if distance_metric == "affinity_propagation":
-        return _calculate_affinity_propagation_neighborhoods(network)
+        return _calculate_affinity_propagation_neighborhoods(network, random_seed=random_seed)
 
     raise ValueError(
         "Incorrect distance metric specified. Please choose from 'euclidean', 'dijkstra', 'louvain', or 'affinity_propagation'."
@@ -106,7 +113,7 @@ def _calculate_dijkstra_neighborhoods(network, radius):
     return neighborhoods
 
 
-def _calculate_louvain_neighborhoods(network, resolution):
+def _calculate_louvain_neighborhoods(network, resolution, random_seed=888):
     """Helper function to calculate neighborhoods using the Louvain method.
 
     Args:
@@ -117,7 +124,9 @@ def _calculate_louvain_neighborhoods(network, resolution):
         np.ndarray: Neighborhood matrix based on the Louvain method.
     """
     # Apply Louvain method to partition the network
-    partition = community_louvain.best_partition(network, resolution=resolution)
+    partition = community_louvain.best_partition(
+        network, resolution=resolution, random_state=random_seed
+    )
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
     # Assign neighborhoods based on community partitions
@@ -129,7 +138,7 @@ def _calculate_louvain_neighborhoods(network, resolution):
     return neighborhoods
 
 
-def _calculate_affinity_propagation_neighborhoods(network):
+def _calculate_affinity_propagation_neighborhoods(network, random_seed=888):
     """Helper function to calculate neighborhoods using Affinity Propagation.
 
     Args:
@@ -145,7 +154,7 @@ def _calculate_affinity_propagation_neighborhoods(network):
     similarity_matrix = -distance_matrix
 
     # Apply Affinity Propagation clustering
-    clustering = AffinityPropagation(affinity="precomputed", random_state=5)
+    clustering = AffinityPropagation(affinity="precomputed", random_state=random_seed)
     clustering.fit(similarity_matrix)
     labels = clustering.labels_
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
