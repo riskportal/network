@@ -159,6 +159,147 @@ def _calculate_affinity_propagation_neighborhoods(network):
     return neighborhoods
 
 
+def impute_neighbors(
+    network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9, max_depth=3
+):
+    """
+    Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
+
+    Args:
+        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
+        enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
+        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        distance_threshold (float): Percentile threshold for omitting annotations based on distance.
+        max_depth (int): Maximum depth of nodes to traverse for imputing values.
+
+    Returns:
+        tuple: The imputed enrichment matrix and the imputed alpha threshold matrix.
+    """
+    zero_row_indices = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
+
+    # Calculate shortest distances for each node and determine the distance threshold
+    shortest_distances = []
+    for node in network.nodes():
+        neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
+        if neighbors:
+            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
+            shortest_distances.append(shortest_distance)
+
+    distance_threshold_value = _calculate_ranked_percentile(shortest_distances, distance_threshold)
+
+    def impute_recursive(zero_row_indices, depth):
+        if depth > max_depth:
+            return
+
+        rows_to_impute = []
+
+        for row_index in zero_row_indices:
+            neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
+            valid_neighbors = [
+                n
+                for n in neighbors
+                if n != row_index
+                and binary_enrichment_matrix[n].sum() != 0
+                and enrichment_matrix[n].sum() != 0
+                and _get_euclidean_distance(row_index, n, network) <= distance_threshold_value
+            ]
+
+            if valid_neighbors:
+                closest_neighbor = min(
+                    valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
+                )
+                enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor] / np.sqrt(
+                    depth + 1
+                )
+                binary_enrichment_matrix[row_index] = binary_enrichment_matrix[closest_neighbor]
+            else:
+                rows_to_impute.append(row_index)
+
+        if rows_to_impute:
+            impute_recursive(rows_to_impute, depth + 1)
+
+    impute_recursive(zero_row_indices, 1)
+
+    return enrichment_matrix, binary_enrichment_matrix
+
+
+def prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9):
+    """
+    Remove outliers based on their rank for edge lengths.
+
+    Args:
+        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
+        enrichment_matrix (np.ndarray): The enrichment matrix.
+        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
+        distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
+
+    Returns:
+        tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
+    """
+    non_zero_indices = np.where(binary_enrichment_matrix.sum(axis=1) != 0)[0]
+
+    shortest_distances = []
+    for node in non_zero_indices:
+        neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
+        if neighbors:
+            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
+            shortest_distances.append(shortest_distance)
+
+    distance_threshold_value = _calculate_ranked_percentile(
+        shortest_distances, 1 - distance_threshold
+    )
+
+    for row_index in non_zero_indices:
+        neighbors = [
+            n for n in network.neighbors(row_index) if binary_enrichment_matrix[n].sum() != 0
+        ]
+
+        if neighbors:
+            closest_neighbor = min(
+                neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
+            )
+            closest_distance = _get_euclidean_distance(row_index, closest_neighbor, network)
+
+            if closest_distance >= distance_threshold_value:
+                enrichment_matrix[row_index] = 0
+                binary_enrichment_matrix[row_index] = 0
+
+    return enrichment_matrix, binary_enrichment_matrix
+
+
+def _get_euclidean_distance(node1, node2, network):
+    pos1 = np.array(
+        [
+            network.nodes[node1].get(coord, 0)
+            for coord in ["x", "y", "z"]
+            if coord in network.nodes[node1]
+        ]
+    )
+    pos2 = np.array(
+        [
+            network.nodes[node2].get(coord, 0)
+            for coord in ["x", "y", "z"]
+            if coord in network.nodes[node2]
+        ]
+    )
+    return np.linalg.norm(pos1 - pos2)
+
+
+def _calculate_ranked_percentile(all_distances, distance_threshold):
+    """Calculate the ranked percentile value based on rank order.
+
+    Args:
+        all_distances (list): List of all distances.
+        distance_threshold (float): The percentile threshold (between 0 and 1).
+
+    Returns:
+        float: The value at the specified percentile.
+    """
+    sorted_distances = np.sort(all_distances)
+    threshold_index = int(np.ceil(distance_threshold * len(sorted_distances))) - 1
+    return sorted_distances[threshold_index]
+
+
 def define_domains(
     top_annotations,
     neighborhoods_enrichment,

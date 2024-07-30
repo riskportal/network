@@ -33,11 +33,6 @@ def compute_pvalues_by_permutation(
     pval_cutoff=1.00,
     apply_fdr=False,
     fdr_cutoff=1.00,
-    impute_neighbors=False,
-    impute_depth=1,
-    impute_threshold=0.9,
-    prune_neighbors=False,
-    prune_threshold=0.1,
     random_seed=888,
 ):
     # NOTE: Both `neighborhoods` and `annotations` are binary matrices and must NOT have any NaN values
@@ -62,71 +57,50 @@ def compute_pvalues_by_permutation(
         neg_alpha_threshold_matrix = _compute_threshold_matrix(
             neg_pvals, neg_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
         )
-        neg_enrichment_score = (neg_qvals**2) * (neg_pvals**0.5)
+        neg_enrichment_matrix = (neg_qvals**2) * (neg_pvals**0.5)
         pos_qvals = np.apply_along_axis(fdrcorrection, 1, pos_pvals)[:, 1, :]
         pos_alpha_threshold_matrix = _compute_threshold_matrix(
             pos_pvals, pos_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
         )
-        pos_enrichment_score = (pos_qvals**2) * (pos_pvals**0.5)
+        pos_enrichment_matrix = (pos_qvals**2) * (pos_pvals**0.5)
     else:
         neg_alpha_threshold_matrix = _compute_threshold_matrix(neg_pvals, pval_cutoff=pval_cutoff)
-        neg_enrichment_score = neg_pvals
+        neg_enrichment_matrix = neg_pvals
         pos_alpha_threshold_matrix = _compute_threshold_matrix(pos_pvals, pval_cutoff=pval_cutoff)
-        pos_enrichment_score = pos_pvals
+        pos_enrichment_matrix = pos_pvals
 
     # Negative log10 transformation for visualization
-    log_neg_enrichment_score = -np.log10(neg_enrichment_score)
-    log_pos_enrichment_score = -np.log10(pos_enrichment_score)
+    log_neg_enrichment_matrix = -np.log10(neg_enrichment_matrix)
+    log_pos_enrichment_matrix = -np.log10(pos_enrichment_matrix)
 
     if tail not in {"left", "right", "both"}:
         raise ValueError("Invalid value for 'tail'. Must be 'left', 'right', or 'both'.")
 
     if tail == "left":
-        enrichment_score = -log_neg_enrichment_score
+        enrichment_matrix = -log_neg_enrichment_matrix
         alpha_threshold_matrix = neg_alpha_threshold_matrix
     elif tail == "right":
-        enrichment_score = log_pos_enrichment_score
+        enrichment_matrix = log_pos_enrichment_matrix
         alpha_threshold_matrix = pos_alpha_threshold_matrix
     elif tail == "both":
         # Determine the highest absolute enrichment while preserving signs
-        combined_enrichment_score = np.where(
-            np.abs(log_neg_enrichment_score) >= np.abs(log_pos_enrichment_score),
-            -log_neg_enrichment_score,
-            log_pos_enrichment_score,
+        enrichment_matrix = np.where(
+            np.abs(log_neg_enrichment_matrix) >= np.abs(log_pos_enrichment_matrix),
+            -log_neg_enrichment_matrix,
+            log_pos_enrichment_matrix,
         )
-        enrichment_score = combined_enrichment_score
         alpha_threshold_matrix = np.logical_or(
             neg_alpha_threshold_matrix, pos_alpha_threshold_matrix
         )
 
-    if impute_neighbors:
-        # Impute zero rows with nearest enriched neighbors
-        enrichment_score, alpha_threshold_matrix = _impute_zero_rows(
-            network,
-            enrichment_score,
-            alpha_threshold_matrix,
-            distance_threshold=impute_threshold,
-            max_depth=impute_depth,
-        )
-
-    if prune_neighbors:
-        # Remove outliers based on the z-score threshold
-        enrichment_score, alpha_threshold_matrix = _remove_outliers(
-            network,
-            enrichment_score,
-            alpha_threshold_matrix,
-            distance_threshold=prune_threshold,
-        )
-
     valid_idxs = ~np.isnan(alpha_threshold_matrix)
-    enrichment_score_binary = np.zeros(alpha_threshold_matrix.shape)
+    binary_enrichment_matrix = np.zeros(alpha_threshold_matrix.shape)
     # Filter for alpha cutoff here
-    enrichment_score_binary[valid_idxs] = alpha_threshold_matrix[valid_idxs]
-    sum_enriched_neighborhoods = np.sum(enrichment_score_binary, axis=0)
+    binary_enrichment_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
+
     return {
-        "enrichment_sums": sum_enriched_neighborhoods,
-        "enrichment_matrix": enrichment_score,
-        "binary_enrichment_matrix_below_alpha": enrichment_score_binary,
+        "enrichment_matrix": enrichment_matrix,
+        "binary_enrichment_matrix": binary_enrichment_matrix,
     }
 
 
@@ -213,144 +187,3 @@ def _compute_threshold_matrix(pvals, fdr_pvals=None, pval_cutoff=0.05, fdr_cutof
         # Compute the threshold matrix based only on p-value cutoff
         threshold_matrix = (pvals <= pval_cutoff).astype(int)
     return threshold_matrix
-
-
-def _impute_zero_rows(
-    network, enrichment_matrix, alpha_threshold_matrix, distance_threshold=0.9, max_depth=3
-):
-    """
-    Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
-
-    Args:
-        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
-        enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
-        alpha_threshold_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
-        distance_threshold (float): Percentile threshold for omitting annotations based on distance.
-        max_depth (int): Maximum depth of nodes to traverse for imputing values.
-
-    Returns:
-        tuple: The imputed enrichment matrix and the imputed alpha threshold matrix.
-    """
-    zero_row_indices = np.where(alpha_threshold_matrix.sum(axis=1) == 0)[0]
-
-    # Calculate shortest distances for each node and determine the distance threshold
-    shortest_distances = []
-    for node in network.nodes():
-        neighbors = [n for n in network.neighbors(node) if alpha_threshold_matrix[n].sum() != 0]
-        if neighbors:
-            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
-            shortest_distances.append(shortest_distance)
-
-    distance_threshold_value = _calculate_ranked_percentile(shortest_distances, distance_threshold)
-
-    def impute_recursive(zero_row_indices, depth):
-        if depth > max_depth:
-            return
-
-        rows_to_impute = []
-
-        for row_index in zero_row_indices:
-            neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
-            valid_neighbors = [
-                n
-                for n in neighbors
-                if n != row_index
-                and alpha_threshold_matrix[n].sum() != 0
-                and enrichment_matrix[n].sum() != 0
-                and _get_euclidean_distance(row_index, n, network) <= distance_threshold_value
-            ]
-
-            if valid_neighbors:
-                closest_neighbor = min(
-                    valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
-                )
-                enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor] / np.sqrt(
-                    depth + 1
-                )
-                alpha_threshold_matrix[row_index] = alpha_threshold_matrix[closest_neighbor]
-            else:
-                rows_to_impute.append(row_index)
-
-        if rows_to_impute:
-            impute_recursive(rows_to_impute, depth + 1)
-
-    impute_recursive(zero_row_indices, 1)
-
-    return enrichment_matrix, alpha_threshold_matrix
-
-
-def _remove_outliers(network, enrichment_matrix, alpha_threshold_matrix, distance_threshold=0.9):
-    """
-    Remove outliers based on their rank for edge lengths.
-
-    Args:
-        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
-        enrichment_matrix (np.ndarray): The enrichment matrix.
-        alpha_threshold_matrix (np.ndarray): The alpha threshold matrix.
-        distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
-
-    Returns:
-        tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
-    """
-    non_zero_indices = np.where(alpha_threshold_matrix.sum(axis=1) != 0)[0]
-
-    shortest_distances = []
-    for node in non_zero_indices:
-        neighbors = [n for n in network.neighbors(node) if alpha_threshold_matrix[n].sum() != 0]
-        if neighbors:
-            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
-            shortest_distances.append(shortest_distance)
-
-    distance_threshold_value = _calculate_ranked_percentile(
-        shortest_distances, 1 - distance_threshold
-    )
-
-    for row_index in non_zero_indices:
-        neighbors = [
-            n for n in network.neighbors(row_index) if alpha_threshold_matrix[n].sum() != 0
-        ]
-
-        if neighbors:
-            closest_neighbor = min(
-                neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
-            )
-            closest_distance = _get_euclidean_distance(row_index, closest_neighbor, network)
-
-            if closest_distance >= distance_threshold_value:
-                enrichment_matrix[row_index] = 0
-                alpha_threshold_matrix[row_index] = 0
-
-    return enrichment_matrix, alpha_threshold_matrix
-
-
-def _get_euclidean_distance(node1, node2, network):
-    pos1 = np.array(
-        [
-            network.nodes[node1].get(coord, 0)
-            for coord in ["x", "y", "z"]
-            if coord in network.nodes[node1]
-        ]
-    )
-    pos2 = np.array(
-        [
-            network.nodes[node2].get(coord, 0)
-            for coord in ["x", "y", "z"]
-            if coord in network.nodes[node2]
-        ]
-    )
-    return np.linalg.norm(pos1 - pos2)
-
-
-def _calculate_ranked_percentile(all_distances, distance_threshold):
-    """Calculate the ranked percentile value based on rank order.
-
-    Args:
-        all_distances (list): List of all distances.
-        distance_threshold (float): The percentile threshold (between 0 and 1).
-
-    Returns:
-        float: The value at the specified percentile.
-    """
-    sorted_distances = np.sort(all_distances)
-    threshold_index = int(np.ceil(distance_threshold * len(sorted_distances))) - 1
-    return sorted_distances[threshold_index]
