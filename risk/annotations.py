@@ -65,7 +65,7 @@ def define_top_annotations(
     network,
     ordered_annotation_labels,
     neighborhood_enrichment_sums,
-    binary_enrichment_matrix_below_alpha,
+    significant_binary_enrichment_matrix,
     min_cluster_size=5,
     max_cluster_size=1000,
 ):
@@ -76,7 +76,7 @@ def define_top_annotations(
         network (NetworkX graph): The network graph.
         ordered_annotation_labels (list): List of ordered annotation labels.
         neighborhood_enrichment_sums (list): List of neighborhood enrichment sums.
-        binary_enrichment_matrix_below_alpha (np.ndarray): Binary enrichment matrix below alpha threshold.
+        significant_binary_enrichment_matrix (np.ndarray): Binary enrichment matrix below alpha threshold.
         min_cluster_size (int, optional): Minimum cluster size. Defaults to 5.
         max_cluster_size (int, optional): Maximum cluster size. Defaults to 1000.
 
@@ -111,7 +111,7 @@ def define_top_annotations(
         annotations_enrichment_matrix["top attributes"]
     ]:
         enriched_neighborhoods = list(
-            compress(list(network), binary_enrichment_matrix_below_alpha[:, attribute] > 0)
+            compress(list(network), significant_binary_enrichment_matrix[:, attribute] > 0)
         )
         enriched_network = nx.subgraph(network, enriched_neighborhoods)
 
