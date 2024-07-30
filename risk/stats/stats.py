@@ -3,9 +3,7 @@ risk/stats/stats
 ~~~~~~~~~~~~~~~~
 """
 
-import networkx as nx
 import numpy as np
-from scipy.stats import rankdata
 from statsmodels.stats.multitest import fdrcorrection
 from rich.progress import Progress
 
@@ -23,7 +21,6 @@ DISPATCH_PERMUTATION_TABLE = {
 
 
 def compute_pvalues_by_permutation(
-    network,
     neighborhoods,
     annotations,
     score_metric="sum",
