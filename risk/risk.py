@@ -1,25 +1,26 @@
 from rich import print
 
-from risk.network.annotations import define_top_annotations, load_annotations
-from risk.network.io import NetworkIO
-from risk.network.neighborhoods import (
+from risk.annotations import define_top_annotations
+from risk.graph import NetworkGraph
+from risk.io import AnnotationsIO, NetworkIO
+from risk.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
     trim_domains_and_top_annotations,
 )
-from risk.network.plot import NetworkGraph, NetworkPlotter
-from risk.stats.stats import compute_pvalues_by_randomization
+from risk.plot import NetworkPlotter
+from risk.stats import compute_pvalues_by_permutation
 
 
-class RISK(NetworkIO):
+class RISK(NetworkIO, AnnotationsIO):
     """RISK: A class for network analysis and visualization."""
 
     def __init__(
         self,
         compute_sphere=True,
-        dimple_factor=None,
+        surface_depth=None,
         neighborhood_diameter=0.5,
-        distance_metric="shortpath",
+        distance_metric="dijkstra",
         louvain_resolution=0.1,
         include_edge_weight=True,
         min_edges_per_node=0,
@@ -33,17 +34,19 @@ class RISK(NetworkIO):
             annotation_filepath (str): Path to the annotations file.
             **kwargs: Additional configuration parameters.
         """
-        super().__init__(
+        NetworkIO.__init__(
+            self,
             compute_sphere=compute_sphere,
-            dimple_factor=dimple_factor,
+            surface_depth=surface_depth,
             include_edge_weight=include_edge_weight,
             distance_metric=distance_metric,
             neighborhood_diameter=neighborhood_diameter,
             louvain_resolution=louvain_resolution,
             min_edges_per_node=min_edges_per_node,
         )
+        AnnotationsIO.__init__(self)
         self.compute_sphere = compute_sphere
-        self.dimple_factor = dimple_factor
+        self.surface_depth = surface_depth
         self.include_edge_weight = include_edge_weight
         self.distance_metric = distance_metric
         self.neighborhood_diameter = neighborhood_diameter
@@ -52,19 +55,7 @@ class RISK(NetworkIO):
         self.min_cluster_size = min_cluster_size
         self.max_cluster_size = max_cluster_size
 
-    def load_annotations(self, filepath, network):
-        """Load network annotations from a file.
-
-        Args:
-            network (NetworkX graph): The network graph.
-
-        Returns:
-            dict: Annotations for the network.
-        """
-        print("[cyan]Loading [yellow]JSON[/yellow] [blue]network annotations[/blue]...")
-        return load_annotations(network, filepath)
-
-    def load_significant_neighborhoods(
+    def load_neighborhoods(
         self,
         network,
         annotations,
@@ -72,11 +63,14 @@ class RISK(NetworkIO):
         null_distribution="network",
         tail="right",
         num_permutations=1000,
-        impute_neighbors=False,
-        imputation_depth=1,
         pval_cutoff=1.00,
         apply_fdr=False,
         fdr_cutoff=1.00,
+        impute_neighbors=False,
+        impute_depth=1,
+        impute_threshold=0.9,
+        prune_neighbors=False,
+        prune_threshold=0.1,
         random_seed=888,
     ):
         """Load significant neighborhoods for the network.
@@ -108,23 +102,88 @@ class RISK(NetworkIO):
         print(
             f"[cyan]Computing [blue]test statistics[/blue] using the [yellow]'{score_metric}'[/yellow]-based [blue]neighborhood scoring[/blue] approach...[/cyan]"
         )
-        significant_neighborhoods = compute_pvalues_by_randomization(
+        significant_neighborhoods = compute_pvalues_by_permutation(
             network=network,
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
             score_metric=score_metric,
             tail=tail,
             num_permutations=num_permutations,
-            impute_neighbors=impute_neighbors,
-            imputation_depth=imputation_depth,
             pval_cutoff=pval_cutoff,
             apply_fdr=apply_fdr,
             fdr_cutoff=fdr_cutoff,
+            impute_neighbors=impute_neighbors,
+            impute_depth=impute_depth,
+            impute_threshold=impute_threshold,
+            prune_neighbors=prune_neighbors,
+            prune_threshold=prune_threshold,
             random_seed=random_seed,
         )
         return significant_neighborhoods
 
-    def define_top_annotations(self, network, annotations, neighborhoods):
+    def load_graph(
+        self,
+        network,
+        annotations,
+        neighborhoods,
+        linkage_criterion="distance",
+        linkage_method="average",
+        linkage_metric="yule",
+    ):
+        """Get a NetworkGraph object for plotting.
+
+        Args:
+            network (NetworkX graph): The network graph.
+            annotations (pd.DataFrame): Annotations matrix.
+            neighborhoods (dict): Neighborhood enrichment data.
+
+        Returns:
+            NetworkGraph: A NetworkGraph object.
+        """
+        # Define top annotations based on the network and neighborhoods
+        top_annotations = self._define_top_annotations(
+            network=network,
+            annotations=annotations,
+            neighborhoods=neighborhoods,
+        )
+        # Define domains in the network
+        domains = self._define_domains(
+            neighborhoods=neighborhoods,
+            top_annotations=top_annotations,
+            linkage_criterion=linkage_criterion,
+            linkage_method=linkage_method,
+            linkage_metric=linkage_metric,
+        )
+        neighborhood_binary_enrichment_matrix_below_alpha = neighborhoods[
+            "binary_enrichment_matrix_below_alpha"
+        ]
+        print("[cyan]Trimming [blue]domains[/blue]...")
+        top_annotations, domains, trimmed_domains = trim_domains_and_top_annotations(
+            domains=domains,
+            top_annotations=top_annotations,
+            min_cluster_size=self.min_cluster_size,
+            max_cluster_size=self.max_cluster_size,
+        )
+        return NetworkGraph(
+            network,
+            top_annotations,
+            domains,
+            trimmed_domains,
+            neighborhood_binary_enrichment_matrix_below_alpha,
+        )
+
+    def load_plotter(self, network_graph):
+        """Get a NetworkPlotter object for plotting.
+
+        Args:
+            network_graph (NetworkGraph): A NetworkGraph object.
+
+        Returns:
+            NetworkPlotter: A NetworkPlotter object.
+        """
+        return NetworkPlotter(network_graph)
+
+    def _define_top_annotations(self, network, annotations, neighborhoods):
         """Define top annotations for the network.
 
         Args:
@@ -149,7 +208,7 @@ class RISK(NetworkIO):
             max_cluster_size=self.max_cluster_size,
         )
 
-    def define_domains(
+    def _define_domains(
         self, neighborhoods, top_annotations, linkage_criterion, linkage_method, linkage_metric
     ):
         """Define domains in the network based on enrichment data.
@@ -172,51 +231,3 @@ class RISK(NetworkIO):
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,
         )
-
-    def get_network_graph(
-        self,
-        network,
-        neighborhoods,
-        top_annotations,
-        domains,
-    ):
-        """Get a NetworkGraph object for plotting.
-
-        Args:
-            network (NetworkX graph): The network graph.
-            neighborhoods (dict): Neighborhood enrichment data.
-            annotations (pd.DataFrame): Annotations matrix.
-            domains (pd.DataFrame): Domains matrix.
-            trimmed_domains_matrix (pd.DataFrame): Trimmed domains matrix.
-
-        Returns:
-            NetworkGraph: A NetworkGraph object.
-        """
-        neighborhood_binary_enrichment_matrix_below_alpha = neighborhoods[
-            "binary_enrichment_matrix_below_alpha"
-        ]
-        print("[cyan]Trimming [blue]domains[/blue]...")
-        top_annotations, domains, trimmed_domains = trim_domains_and_top_annotations(
-            domains=domains,
-            top_annotations=top_annotations,
-            min_cluster_size=self.min_cluster_size,
-            max_cluster_size=self.max_cluster_size,
-        )
-        return NetworkGraph(
-            network,
-            top_annotations,
-            domains,
-            trimmed_domains,
-            neighborhood_binary_enrichment_matrix_below_alpha,
-        )
-
-    def get_network_plotter(self, network_graph):
-        """Get a NetworkPlotter object for plotting.
-
-        Args:
-            network_graph (NetworkGraph): A NetworkGraph object.
-
-        Returns:
-            NetworkPlotter: A NetworkPlotter object.
-        """
-        return NetworkPlotter(network_graph)
