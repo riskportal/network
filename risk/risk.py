@@ -1,4 +1,5 @@
 import numpy as np
+
 from rich import print
 
 from risk.annotations import define_top_annotations
@@ -11,7 +12,7 @@ from risk.neighborhoods import (
     trim_domains_and_top_annotations,
 )
 from risk.plot import NetworkPlotter
-from risk.stats import compute_pvalues_by_permutation
+from risk.stats import calculate_significance_matrices, compute_permutation
 
 
 class RISK(NetworkIO, AnnotationsIO):
@@ -26,8 +27,6 @@ class RISK(NetworkIO, AnnotationsIO):
         louvain_resolution=0.1,
         include_edge_weight=True,
         min_edges_per_node=0,
-        min_cluster_size=5,
-        max_cluster_size=1000,
     ):
         """Initialize RISK with configuration settings.
 
@@ -54,8 +53,6 @@ class RISK(NetworkIO, AnnotationsIO):
         self.neighborhood_diameter = neighborhood_diameter
         self.louvain_resolution = louvain_resolution
         self.min_edges_per_node = min_edges_per_node
-        self.min_cluster_size = min_cluster_size
-        self.max_cluster_size = max_cluster_size
 
     def load_neighborhoods(
         self,
@@ -63,11 +60,7 @@ class RISK(NetworkIO, AnnotationsIO):
         annotations,
         score_metric="sum",
         null_distribution="network",
-        tail="right",
         num_permutations=1000,
-        pval_cutoff=1.00,
-        apply_fdr=False,
-        fdr_cutoff=1.00,
         random_seed=888,
     ):
         """Load significant neighborhoods for the network.
@@ -100,30 +93,33 @@ class RISK(NetworkIO, AnnotationsIO):
         print(
             f"[cyan]Computing [blue]test statistics[/blue] using the [yellow]'{score_metric}'[/yellow]-based [blue]neighborhood scoring[/blue] approach...[/cyan]"
         )
-        significant_neighborhoods = compute_pvalues_by_permutation(
+        neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
             score_metric=score_metric,
-            tail=tail,
+            null_distribution=null_distribution,
             num_permutations=num_permutations,
-            pval_cutoff=pval_cutoff,
-            apply_fdr=apply_fdr,
-            fdr_cutoff=fdr_cutoff,
             random_seed=random_seed,
         )
-        return significant_neighborhoods
+        return neighborhood_significance
 
     def load_graph(
         self,
         network,
         annotations,
         neighborhoods,
+        tail="right",  # OPTIONS: right (enrichment), left (depletion), both
+        pval_cutoff=0.01,  # OPTIONS: Any value between 0 to 1
+        apply_fdr=False,
+        fdr_cutoff=0.9999,  # OPTIONS: Any value between 0 to 1
         impute_threshold=0.0,
         impute_depth=1,
         prune_threshold=0.0,
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        min_cluster_size=5,
+        max_cluster_size=1000,
     ):
         """Get a NetworkGraph object for plotting.
 
@@ -135,10 +131,18 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             NetworkGraph: A NetworkGraph object.
         """
+        significant_neighborhoods = calculate_significance_matrices(
+            neighborhoods["depletion_pvals"],
+            neighborhoods["enrichment_pvals"],
+            tail=tail,
+            pval_cutoff=pval_cutoff,
+            apply_fdr=apply_fdr,
+            fdr_cutoff=fdr_cutoff,
+        )
         # Process neighborhoods based on the imputation and pruning settings
         processed_neighborhoods = self._process_neighborhoods(
             network,
-            neighborhoods,
+            significant_neighborhoods,
             impute_depth=impute_depth,
             impute_threshold=impute_threshold,
             prune_threshold=prune_threshold,
@@ -148,6 +152,8 @@ class RISK(NetworkIO, AnnotationsIO):
             network=network,
             annotations=annotations,
             neighborhoods=processed_neighborhoods,
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
         )
         # Define domains in the network
         domains = self._define_domains(
@@ -162,17 +168,17 @@ class RISK(NetworkIO, AnnotationsIO):
         top_annotations, domains, trimmed_domains = trim_domains_and_top_annotations(
             domains=domains,
             top_annotations=top_annotations,
-            min_cluster_size=self.min_cluster_size,
-            max_cluster_size=self.max_cluster_size,
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
         )
         # Get the significant binary enrichment matrix for neighborhoods
-        neighborhoods_binary_enrichment_matrix = processed_neighborhoods["binary_enrichment_matrix"]
+        neighborhoods_enrichment_matrix = processed_neighborhoods["binary_significance_matrix"]
         return NetworkGraph(
             network,
             top_annotations,
             domains,
             trimmed_domains,
-            neighborhoods_binary_enrichment_matrix,
+            neighborhoods_enrichment_matrix,
         )
 
     def load_plotter(
@@ -220,8 +226,8 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             dict: Adjusted neighborhoods data.
         """
-        enrichment_matrix = neighborhoods["enrichment_matrix"]
-        binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+        enrichment_matrix = neighborhoods["significance_matrix"]
+        binary_enrichment_matrix = neighborhoods["binary_significance_matrix"]
         return process_neighborhoods(
             network=network,
             enrichment_matrix=enrichment_matrix,
@@ -231,7 +237,9 @@ class RISK(NetworkIO, AnnotationsIO):
             prune_threshold=prune_threshold,
         )
 
-    def _define_top_annotations(self, network, annotations, neighborhoods):
+    def _define_top_annotations(
+        self, network, annotations, neighborhoods, min_cluster_size=5, max_cluster_size=1000
+    ):
         """Define top annotations for the network.
 
         Args:
@@ -244,14 +252,14 @@ class RISK(NetworkIO, AnnotationsIO):
         """
         ordered_annotations = annotations["ordered_annotations"]
         neighborhood_enrichment_sums = neighborhoods["enrichment_sums"]
-        neighborhoods_binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+        neighborhoods_binary_enrichment_matrix = neighborhoods["binary_significance_matrix"]
         return define_top_annotations(
             network=network,
             ordered_annotation_labels=ordered_annotations,
             neighborhood_enrichment_sums=neighborhood_enrichment_sums,
             binary_enrichment_matrix=neighborhoods_binary_enrichment_matrix,
-            min_cluster_size=self.min_cluster_size,
-            max_cluster_size=self.max_cluster_size,
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
         )
 
     def _define_domains(
@@ -266,8 +274,8 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             pd.DataFrame: Domains matrix.
         """
-        neighborhoods_enrichment = neighborhoods["enrichment_matrix"]
-        significant_neighborhoods_enrichment = neighborhoods["binary_enrichment_matrix"]
+        neighborhoods_enrichment = neighborhoods["significance_matrix"]
+        significant_neighborhoods_enrichment = neighborhoods["binary_significance_matrix"]
         print(f"[cyan]Optimizing [blue]distance threshold[/blue] for [blue]domains[/blue]...")
         return define_domains(
             top_annotations=top_annotations,
