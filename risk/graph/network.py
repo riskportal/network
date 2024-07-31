@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import matplotlib
 import matplotlib.cm as cm
+from scipy.stats import zscore
 
 
 class NetworkGraph:
@@ -16,7 +17,7 @@ class NetworkGraph:
         annotation_matrix,
         domains_matrix,
         trimmed_domains_matrix,
-        neighborhoods_binary_enrichment_matrix,
+        neighborhoods_enrichment_matrix,
     ):
         """Initialize the NetworkGraph object.
 
@@ -25,14 +26,14 @@ class NetworkGraph:
             annotation_matrix: DataFrame of annotations data for the network nodes.
             domains_matrix: DataFrame of domain data for the network nodes.
             trimmed_domains_matrix: DataFrame of trimmed domain data for the network nodes.
-            neighborhoods_binary_enrichment_matrix: Matrix of neighborhood binary enrichment data.
+            neighborhoods_enrichment_matrix: Matrix of neighborhood binary enrichment data.
         """
         self.annotation_matrix = annotation_matrix
         self.domain_to_nodes = self._create_domain_to_nodes_map(domains_matrix)
         self.domains_matrix = domains_matrix
         self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains_matrix)
         self.trimmed_domains_matrix = trimmed_domains_matrix
-        self.neighborhoods_binary_enrichment_matrix = neighborhoods_binary_enrichment_matrix
+        self.neighborhoods_enrichment_matrix = neighborhoods_enrichment_matrix
         # NOTE: self.network and self.node_coordinates declared in _initialize_network
         self.network = None
         self.node_coordinates = None
@@ -63,7 +64,9 @@ class NetworkGraph:
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(self.network)
 
-    def get_domain_colors(self, random_seed=888, **kwargs):
+    def get_domain_colors(
+        self, min_color=0.8, max_color=1.0, outlier_threshold=2.0, random_seed=888, **kwargs
+    ):
         """Generate composite colors for domains.
 
         This method generates composite colors for nodes based on their enrichment scores and transforms
@@ -82,17 +85,22 @@ class NetworkGraph:
             self._get_domain_colors(**kwargs, random_seed=random_seed),
             node_to_domain_count,
         )
+        enrichment_sums = node_to_enrichment_score_binary.sum(axis=1)
         # Transform colors to ensure proper alpha values and intensity
-        transformed_colors = self._transform_colors(composite_colors)
+        transformed_colors = self._transform_colors(
+            composite_colors,
+            enrichment_sums,
+            min_color=min_color,
+            max_color=max_color,
+            z_score_threshold=abs(outlier_threshold),  # Two-tailed test - use absolute value
+        )
 
         return transformed_colors
 
     def _create_node_to_enrichment_score_binary(self):
         """Create a DataFrame of node to enrichment score binary values."""
         return pd.DataFrame(
-            data=self.neighborhoods_binary_enrichment_matrix[
-                :, self.annotation_matrix.index.values
-            ],
+            data=self.neighborhoods_enrichment_matrix[:, self.annotation_matrix.index.values],
             columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
         )
 
@@ -110,16 +118,40 @@ class NetworkGraph:
         domain_colors = _get_colors(**kwargs, num_colors_to_generate=len(domains))
         return domain_colors
 
-    def _transform_colors(self, colors):
-        """Transform colors to ensure proper alpha values and intensity."""
-        # Identify rows where alpha is 1.0
-        rows_with_alpha_one = colors[:, 3] == 1
-        # Generate random weights for color transformation
-        random_weights = np.random.uniform(0.80, 1.00, colors[rows_with_alpha_one].shape[0])
-        transformed_weights = 1.0 - (1.0 - random_weights) ** 2
+    def _transform_colors(
+        self, colors, enrichment_sums, min_color=0.8, max_color=1.0, z_score_threshold=2.0
+    ):
+        """Transform colors to ensure proper alpha values and intensity based on enrichment sums."""
+        # Calculate z-scores for the enrichment sums
+        z_scores = zscore(enrichment_sums)
+
+        # Identify the threshold values corresponding to z-scores of -z_score_threshold and z_score_threshold
+        threshold_min = np.min(enrichment_sums[z_scores <= -z_score_threshold])
+        threshold_max = np.max(enrichment_sums[z_scores >= z_score_threshold])
+
+        # Cap the enrichment sums at the threshold values
+        capped_sums = np.where(z_scores <= -z_score_threshold, threshold_min, enrichment_sums)
+        capped_sums = np.where(z_scores >= z_score_threshold, threshold_max, capped_sums)
+
+        # Normalize the capped enrichment sums to the range [0, 1]
+        normalized_sums = (capped_sums - np.min(capped_sums)) / (
+            np.max(capped_sums) - np.min(capped_sums)
+        )
+
+        # Scale normalized sums to the specified color range [min_color, max_color]
+        scaled_sums = min_color + (max_color - min_color) * normalized_sums
+
+        # Apply log transformation and scale to 0-1 range
+        log_scaled_sums = np.log1p(scaled_sums - min_color)  # Use log1p to avoid log(0)
+        log_scaled_sums = (log_scaled_sums - np.min(log_scaled_sums)) / (
+            np.max(log_scaled_sums) - np.min(log_scaled_sums)
+        )
+        log_scaled_sums = min_color + (max_color - min_color) * log_scaled_sums
+
         # Apply transformations to colors
-        colors[rows_with_alpha_one, :3] *= random_weights[:, np.newaxis]
-        colors[rows_with_alpha_one, 3] *= transformed_weights
+        for i in range(3):  # Only adjust RGB values
+            colors[:, i] = log_scaled_sums * colors[:, i]
+
         return colors
 
 
