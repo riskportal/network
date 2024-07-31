@@ -36,7 +36,7 @@ def compute_neighborhood_score_by_variance_python(neighborhoods_matrix, annotati
     return variance
 
 
-def compute_neighborhood_score_by_zscore_python(neighborhoods_matrix, annotation_matrix):
+def compute_neighborhood_score_by_z_score_python(neighborhoods_matrix, annotation_matrix):
     # Since there are no NaN values, we can directly use the annotation_matrix
     A = neighborhoods_matrix
     B = annotation_matrix

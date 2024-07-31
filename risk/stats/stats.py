@@ -10,33 +10,29 @@ from rich.progress import Progress
 from risk.stats.permutation import (
     compute_neighborhood_score_by_sum_cython,
     compute_neighborhood_score_by_variance_cython,
-    compute_neighborhood_score_by_zscore_cython,
+    compute_neighborhood_score_by_z_score_cython,
 )
 
 DISPATCH_PERMUTATION_TABLE = {
     "sum": compute_neighborhood_score_by_sum_cython,
     "variance": compute_neighborhood_score_by_variance_cython,
-    "zscore": compute_neighborhood_score_by_zscore_cython,
+    "z_score": compute_neighborhood_score_by_z_score_cython,
 }
 
 
-def compute_pvalues_by_permutation(
+def compute_permutation(
     neighborhoods,
     annotations,
     score_metric="sum",
     null_distribution="network",
-    tail="right",
     num_permutations=1000,
-    pval_cutoff=1.00,
-    apply_fdr=False,
-    fdr_cutoff=1.00,
     random_seed=888,
 ):
     # NOTE: Both `neighborhoods` and `annotations` are binary matrices and must NOT have any NaN values
     neighborhoods = neighborhoods.astype(np.float32)
     annotations = annotations.astype(np.float32)
     neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[score_metric]
-    counts_neg, counts_pos = _run_permutation_test(
+    counts_depletion, counts_enrichment = _run_permutation_test(
         neighborhoods,
         annotations,
         neighborhood_score_func,
@@ -46,58 +42,12 @@ def compute_pvalues_by_permutation(
     )
     # Compute P-values
     # Necessary conservative adjustment: when p-value = 0, set it to 1/num_permutations
-    neg_pvals = np.maximum(counts_neg, 1) / num_permutations
-    pos_pvals = np.maximum(counts_pos, 1) / num_permutations
-    # Correct for multiple testing
-    if apply_fdr:
-        neg_qvals = np.apply_along_axis(fdrcorrection, 1, neg_pvals)[:, 1, :]
-        neg_alpha_threshold_matrix = _compute_threshold_matrix(
-            neg_pvals, neg_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
-        )
-        neg_enrichment_matrix = (neg_qvals**2) * (neg_pvals**0.5)
-        pos_qvals = np.apply_along_axis(fdrcorrection, 1, pos_pvals)[:, 1, :]
-        pos_alpha_threshold_matrix = _compute_threshold_matrix(
-            pos_pvals, pos_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
-        )
-        pos_enrichment_matrix = (pos_qvals**2) * (pos_pvals**0.5)
-    else:
-        neg_alpha_threshold_matrix = _compute_threshold_matrix(neg_pvals, pval_cutoff=pval_cutoff)
-        neg_enrichment_matrix = neg_pvals
-        pos_alpha_threshold_matrix = _compute_threshold_matrix(pos_pvals, pval_cutoff=pval_cutoff)
-        pos_enrichment_matrix = pos_pvals
-
-    # Negative log10 transformation for visualization
-    log_neg_enrichment_matrix = -np.log10(neg_enrichment_matrix)
-    log_pos_enrichment_matrix = -np.log10(pos_enrichment_matrix)
-
-    if tail not in {"left", "right", "both"}:
-        raise ValueError("Invalid value for 'tail'. Must be 'left', 'right', or 'both'.")
-
-    if tail == "left":
-        enrichment_matrix = -log_neg_enrichment_matrix
-        alpha_threshold_matrix = neg_alpha_threshold_matrix
-    elif tail == "right":
-        enrichment_matrix = log_pos_enrichment_matrix
-        alpha_threshold_matrix = pos_alpha_threshold_matrix
-    elif tail == "both":
-        # Determine the highest absolute enrichment while preserving signs
-        enrichment_matrix = np.where(
-            np.abs(log_neg_enrichment_matrix) >= np.abs(log_pos_enrichment_matrix),
-            -log_neg_enrichment_matrix,
-            log_pos_enrichment_matrix,
-        )
-        alpha_threshold_matrix = np.logical_or(
-            neg_alpha_threshold_matrix, pos_alpha_threshold_matrix
-        )
-
-    valid_idxs = ~np.isnan(alpha_threshold_matrix)
-    binary_enrichment_matrix = np.zeros(alpha_threshold_matrix.shape)
-    # Filter for alpha cutoff here
-    binary_enrichment_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
+    depletion_pvals = np.maximum(counts_depletion, 1) / num_permutations
+    enrichment_pvals = np.maximum(counts_enrichment, 1) / num_permutations
 
     return {
-        "enrichment_matrix": enrichment_matrix,
-        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "depletion_pvals": depletion_pvals,
+        "enrichment_pvals": enrichment_pvals,
     }
 
 
@@ -111,7 +61,7 @@ def _run_permutation_test(
 ):
     np.random.seed(random_seed)
     # NOTE: `annotations` is a Numpy 2D matrix of type float.64 WITH NaN values!
-    # NOTE: Prior to introducing `annotations` to ANY permuation test, all NaN values must be set to 0
+    # NOTE: Prior to introducing `annotations` to ANY permutation test, all NaN values must be set to 0
     # First capture which distribution we want to assess enrichment: 1) Network - checks if neighborhood of
     # nodes enriched for an annotation compared to all nodes in a network or 2) Annotations file - checks if
     # neighborhood of nodes enriched for an annotation compared to all nodes found in the annotations
@@ -127,15 +77,15 @@ def _run_permutation_test(
     neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
     # This is the observed test statistic
     with np.errstate(invalid="ignore", divide="ignore"):
-        N_in_neighborhood_in_group_obsv = neighborhood_score_func(
+        observed_neighborhood_scores = neighborhood_score_func(
             neighborhoods_matrix_obsv, annotation_matrix_obsv
         )
     # Make two empty matrices to track which permuted test statistics fell below or exceeded the observed test statistic
-    counts_neg = np.zeros(N_in_neighborhood_in_group_obsv.shape)
-    counts_pos = np.zeros(N_in_neighborhood_in_group_obsv.shape)
+    counts_depletion = np.zeros(observed_neighborhood_scores.shape)
+    counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
     with Progress() as progress:
         task = progress.add_task(
-            f"[cyan]Running[/cyan] [yellow]{num_permutations} permutation 0/{num_permutations}[/yellow]",
+            f"[cyan]Running[/cyan] [yellow]{num_permutations} permutations 0/{num_permutations}[/yellow]",
             total=num_permutations,
         )
         # We are computing the permuted test statistics
@@ -144,14 +94,14 @@ def _run_permutation_test(
             annotation_matrix_permut = annotations[np.random.permutation(idxs)]
             # Below is NOT the bottleneck...
             with np.errstate(invalid="ignore", divide="ignore"):
-                N_in_neighborhood_in_group_perm = neighborhood_score_func(
+                permuted_neighborhood_scores = neighborhood_score_func(
                     neighborhoods_matrix_obsv, annotation_matrix_permut
                 )
-            counts_neg = np.add(
-                counts_neg, N_in_neighborhood_in_group_perm <= N_in_neighborhood_in_group_obsv
+            counts_depletion = np.add(
+                counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
             )
-            counts_pos = np.add(
-                counts_pos, N_in_neighborhood_in_group_perm >= N_in_neighborhood_in_group_obsv
+            counts_enrichment = np.add(
+                counts_enrichment, permuted_neighborhood_scores >= observed_neighborhood_scores
             )
             progress.update(
                 task,
@@ -159,7 +109,115 @@ def _run_permutation_test(
                 description=f"[cyan]Running[/cyan] [yellow]permutation {i+1}/{num_permutations}",
             )
 
-    return counts_neg, counts_pos
+    return counts_depletion, counts_enrichment
+
+
+def calculate_significance_matrices(
+    depletion_pvals,
+    enrichment_pvals,
+    tail="right",
+    pval_cutoff=0.05,
+    apply_fdr=False,
+    fdr_cutoff=0.05,
+):
+    """
+    Calculate significance matrices based on the specified tail.
+
+    Args:
+        tail (str): The tail type ('left', 'right', 'both').
+        apply_fdr (bool): Whether to apply FDR correction.
+        depletion_pvals (np.ndarray): Depletion p-values matrix.
+        enrichment_pvals (np.ndarray): Enrichment p-values matrix.
+        pval_cutoff (float): p-value cutoff for significance.
+        fdr_cutoff (float): FDR cutoff for significance.
+
+    Returns:
+        dict: Dictionary containing the significance matrix and binary significance matrix.
+    """
+    if apply_fdr:
+        depletion_qvals = np.apply_along_axis(fdrcorrection, 1, depletion_pvals)[:, 1, :]
+        depletion_alpha_threshold_matrix = _compute_threshold_matrix(
+            depletion_pvals, depletion_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
+        )
+        depletion_matrix = (depletion_qvals**2) * (depletion_pvals**0.5)
+        enrichment_qvals = np.apply_along_axis(fdrcorrection, 1, enrichment_pvals)[:, 1, :]
+        enrichment_alpha_threshold_matrix = _compute_threshold_matrix(
+            enrichment_pvals, enrichment_qvals, pval_cutoff=pval_cutoff, fdr_cutoff=fdr_cutoff
+        )
+        enrichment_matrix = (enrichment_qvals**2) * (enrichment_pvals**0.5)
+    else:
+        depletion_alpha_threshold_matrix = _compute_threshold_matrix(
+            depletion_pvals, pval_cutoff=pval_cutoff
+        )
+        depletion_matrix = depletion_pvals
+        enrichment_alpha_threshold_matrix = _compute_threshold_matrix(
+            enrichment_pvals, pval_cutoff=pval_cutoff
+        )
+        enrichment_matrix = enrichment_pvals
+
+    # Negative log10 transformation for visualization
+    log_depletion_matrix = -np.log10(depletion_matrix)
+    log_enrichment_matrix = -np.log10(enrichment_matrix)
+
+    significance_matrix, binary_significance_matrix = _select_significance_matrices(
+        tail,
+        log_depletion_matrix,
+        depletion_alpha_threshold_matrix,
+        log_enrichment_matrix,
+        enrichment_alpha_threshold_matrix,
+    )
+    return {
+        "significance_matrix": significance_matrix,
+        "binary_significance_matrix": binary_significance_matrix,
+    }
+
+
+def _select_significance_matrices(
+    tail,
+    log_depletion_matrix,
+    depletion_alpha_threshold_matrix,
+    log_enrichment_matrix,
+    enrichment_alpha_threshold_matrix,
+):
+    """
+    Select significance matrices based on the specified tail.
+
+    Args:
+        tail (str): The tail type ('left', 'right', 'both').
+        log_depletion_matrix (np.ndarray): Log depletion matrix.
+        depletion_alpha_threshold_matrix (np.ndarray): Alpha threshold matrix for depletion.
+        log_enrichment_matrix (np.ndarray): Log enrichment matrix.
+        enrichment_alpha_threshold_matrix (np.ndarray): Alpha threshold matrix for enrichment.
+
+    Returns:
+        dict: Dictionary containing the significance matrix and binary significance matrix.
+    """
+    if tail not in {"left", "right", "both"}:
+        raise ValueError("Invalid value for 'tail'. Must be 'left', 'right', or 'both'.")
+
+    if tail == "left":
+        significance_matrix = -log_depletion_matrix
+        alpha_threshold_matrix = depletion_alpha_threshold_matrix
+    elif tail == "right":
+        significance_matrix = log_enrichment_matrix
+        alpha_threshold_matrix = enrichment_alpha_threshold_matrix
+    elif tail == "both":
+        # Determine the highest absolute enrichment while preserving signs
+        significance_matrix = np.where(
+            np.abs(log_depletion_matrix) >= np.abs(log_enrichment_matrix),
+            -log_depletion_matrix,
+            log_enrichment_matrix,
+        )
+        alpha_threshold_matrix = np.logical_or(
+            depletion_alpha_threshold_matrix, enrichment_alpha_threshold_matrix
+        )
+
+    valid_idxs = ~np.isnan(alpha_threshold_matrix)
+    binary_significance_matrix = np.zeros(alpha_threshold_matrix.shape)
+    # Filter for alpha cutoff here
+    binary_significance_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
+
+    return significance_matrix, binary_significance_matrix
 
 
 def _compute_threshold_matrix(pvals, fdr_pvals=None, pval_cutoff=0.05, fdr_cutoff=0.05):
