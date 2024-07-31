@@ -10,6 +10,7 @@ import community as community_louvain
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from rich import print
 from rich.progress import Progress
 from scipy.cluster.hierarchy import linkage, fcluster
@@ -212,8 +213,8 @@ def process_neighborhoods(
 
     return {
         "enrichment_sums": sum_enriched_binary,
-        "enrichment_matrix": enrichment_matrix,
-        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "significance_matrix": enrichment_matrix,
+        "binary_significance_matrix": binary_enrichment_matrix,
     }
 
 
@@ -499,60 +500,6 @@ def _find_outlier_domains(data_dict, z_score_threshold=3):
     return outlier_keys
 
 
-def _binary_search_silhouette_metric(
-    Z, m, metric, linkage_criterion, lower_bound=0.0, upper_bound=1.0, tolerance=0.01
-):
-    """Perform binary search for the best silhouette score with a given metric and linkage method.
-
-    Args:
-        Z (np.ndarray): Linkage matrix.
-        m (np.ndarray): Data matrix.
-        metric (str): Distance metric for silhouette score calculation.
-        linkage_criterion (str): Clustering criterion.
-        lower_bound (float, optional): Lower bound for search. Defaults to 0.0.
-        upper_bound (float, optional): Upper bound for search. Defaults to 1.0.
-        tolerance (float, optional): Tolerance for search. Defaults to 0.01.
-
-    Returns:
-        tuple: Best threshold and best silhouette score.
-    """
-    best_threshold = lower_bound
-    best_score = -np.inf
-
-    while upper_bound - lower_bound > tolerance:
-        mid = (lower_bound + upper_bound) / 2
-        max_d_mid = np.max(Z[:, 2]) * mid
-        clusters_mid = fcluster(Z, max_d_mid, criterion=linkage_criterion)
-
-        max_d_high = np.max(Z[:, 2]) * (mid + tolerance)
-        clusters_high = fcluster(Z, max_d_high, criterion=linkage_criterion)
-
-        try:
-            score_mid = silhouette_score(m, clusters_mid, metric=metric)
-        except ValueError:
-            score_mid = -np.inf
-
-        try:
-            score_high = silhouette_score(m, clusters_high, metric=metric)
-        except ValueError:
-            score_high = -np.inf
-
-        if score_mid > best_score:
-            best_score = score_mid
-            best_threshold = mid
-
-        if score_high > best_score:
-            best_score = score_high
-            best_threshold = mid + tolerance
-
-        if score_high > score_mid:
-            lower_bound = mid
-        else:
-            upper_bound = mid
-
-    return best_threshold, best_score
-
-
 def _find_best_silhouette_score(
     Z, m, linkage_metric, linkage_criterion, lower_bound=0.001, upper_bound=1.0, resolution=0.001
 ):
@@ -637,40 +584,57 @@ def _optimize_silhouette_across_linkage_and_metrics(
     Returns:
         tuple: Best linkage method, linkage metric, and threshold.
     """
+    default_metric = "euclidean"
     best_overall_score = -np.inf
-    best_overall_metric = "cosine"
+    best_overall_metric = default_metric
     best_overall_threshold = 1
     best_overall_linkage = "average"
 
     linkage_methods = GROUP_LINKAGE_METHODS if linkage_method is None else [linkage_method]
     linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric is None else [linkage_metric]
-    total = len(linkage_methods) * len(linkage_metrics)
+    total_methods = len(linkage_methods)
+    total_metrics = len(linkage_metrics)
+    total = total_methods + total_metrics
 
     with Progress() as progress:
         task = progress.add_task(
-            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage method[/blue] and [blue]linkage metric[/blue]...",
+            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage method[/blue]...",
             total=total,
         )
+
         for method in linkage_methods:
-            for metric in linkage_metrics:
-                try:
-                    Z = linkage(m, method=method, metric=metric)
-                    if len(linkage_methods) == 1 or len(linkage_metrics) == 1:
-                        threshold, score = _find_best_silhouette_score(
-                            Z, m, metric, linkage_criterion
-                        )
-                    else:
-                        threshold, score = _binary_search_silhouette_metric(
-                            Z, m, metric, linkage_criterion
-                        )
-                    if score > best_overall_score:
-                        best_overall_score = score
-                        best_overall_metric = metric
-                        best_overall_threshold = threshold
-                        best_overall_linkage = method
-                except Exception:
-                    pass
-                finally:
-                    progress.update(task, advance=1)
+            try:
+                Z = linkage(m, method=method, metric=default_metric)
+                threshold, score = _find_best_silhouette_score(
+                    Z, m, default_metric, linkage_criterion
+                )
+                if score > best_overall_score:
+                    best_overall_score = score
+                    best_overall_threshold = threshold
+                    best_overall_linkage = method
+            except Exception:
+                pass
+            finally:
+                progress.update(task, advance=1)
+
+        best_overall_score = -np.inf  # Reset score to evaluate metrics for the best method
+
+        task = progress.add_task(
+            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage metric[/blue]...",
+            total=total_metrics,
+        )
+
+        for metric in linkage_metrics:
+            try:
+                Z = linkage(m, method=best_overall_linkage, metric=metric)
+                threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+                if score > best_overall_score:
+                    best_overall_score = score
+                    best_overall_metric = metric
+                    best_overall_threshold = threshold
+            except Exception:
+                pass
+            finally:
+                progress.update(task, advance=1)
 
     return best_overall_linkage, best_overall_metric, best_overall_threshold
