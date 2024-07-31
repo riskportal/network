@@ -107,9 +107,6 @@ class NetworkPlotter:
         color="white",
     ):
         """Draws KDE contours for nodes in various domains of a network graph, highlighting areas of high density."""
-        if self.ax is None:
-            raise RuntimeError("Network must be plotted before plotting contours.")
-
         # Check if color is a list of colors or a single color string
         if isinstance(color, str):
             color = self.get_annotated_contour_colors(color=color)
@@ -184,9 +181,6 @@ class NetworkPlotter:
         min_words=1,
     ):
         """Annotates a network graph with labels for different domains, positioned around the network for clarity."""
-        if self.ax is None:
-            raise RuntimeError("Network must be plotted before plotting labels.")
-
         # Check if color is a list of colors or a single color string
         if isinstance(fontcolor, str):
             fontcolor = self.get_annotated_contour_colors(color=fontcolor)
@@ -197,24 +191,28 @@ class NetworkPlotter:
         center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=perimeter_scale
         )
-        label_positions = _determine_label_positions(domain_centroids, center, radius, offset)
-        num_domains = len(domain_centroids)
+
+        # Filter out domains with insufficient words
+        filtered_domains = {
+            domain: centroid
+            for domain, centroid in domain_centroids.items()
+            if len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words])
+            >= min_words
+        }
+
+        num_domains = len(filtered_domains)
         equidistant_positions = _equidistant_angles_around_center(
             center, radius, offset, num_domains
         )
         label_positions = {
             domain: position
-            for domain, position in zip(domain_centroids.keys(), equidistant_positions)
+            for domain, position in zip(filtered_domains.keys(), equidistant_positions)
         }
-        best_label_positions = self._optimize_label_positions(label_positions, domain_centroids)
-
-        domain_centroids = self._calculate_domain_centroids()
+        best_label_positions = self._optimize_label_positions(label_positions, filtered_domains)
 
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
-            centroid = domain_centroids[domain]
+            centroid = filtered_domains[domain]
             annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words]
-            if len(annotations) < min_words:
-                continue
 
             self.ax.annotate(
                 "\n".join(annotations),
