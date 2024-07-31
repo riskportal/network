@@ -5,10 +5,9 @@ from risk.annotations import define_top_annotations
 from risk.graph import NetworkGraph
 from risk.io import AnnotationsIO, NetworkIO
 from risk.neighborhoods import (
-    impute_neighbors,
-    prune_neighbors,
     define_domains,
     get_network_neighborhoods,
+    process_neighborhoods,
     trim_domains_and_top_annotations,
 )
 from risk.plot import NetworkPlotter
@@ -136,8 +135,8 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             NetworkGraph: A NetworkGraph object.
         """
-        # Adjust neighborhoods based on the imputation and pruning settings
-        adjusted_neighborhoods = self._adjust_neighborhoods(
+        # Process neighborhoods based on the imputation and pruning settings
+        processed_neighborhoods = self._process_neighborhoods(
             network,
             neighborhoods,
             impute_depth=impute_depth,
@@ -148,11 +147,11 @@ class RISK(NetworkIO, AnnotationsIO):
         top_annotations = self._define_top_annotations(
             network=network,
             annotations=annotations,
-            neighborhoods=adjusted_neighborhoods,
+            neighborhoods=processed_neighborhoods,
         )
         # Define domains in the network
         domains = self._define_domains(
-            neighborhoods=adjusted_neighborhoods,
+            neighborhoods=processed_neighborhoods,
             top_annotations=top_annotations,
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
@@ -167,7 +166,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=self.max_cluster_size,
         )
         # Get the significant binary enrichment matrix for neighborhoods
-        neighborhoods_binary_enrichment_matrix = adjusted_neighborhoods["binary_enrichment_matrix"]
+        neighborhoods_binary_enrichment_matrix = processed_neighborhoods["binary_enrichment_matrix"]
         return NetworkGraph(
             network,
             top_annotations,
@@ -176,18 +175,33 @@ class RISK(NetworkIO, AnnotationsIO):
             neighborhoods_binary_enrichment_matrix,
         )
 
-    def load_plotter(self, network_graph):
+    def load_plotter(
+        self,
+        graph,
+        figsize=(10, 10),
+        background_color="white",
+        plot_outline=True,
+        outline_color="black",
+        outline_scale=1.00,
+    ):
         """Get a NetworkPlotter object for plotting.
 
         Args:
-            network_graph (NetworkGraph): A NetworkGraph object.
+            graph (NetworkGraph): A NetworkGraph object.
 
         Returns:
             NetworkPlotter: A NetworkPlotter object.
         """
-        return NetworkPlotter(network_graph)
+        return NetworkPlotter(
+            graph,
+            figsize=figsize,
+            background_color=background_color,
+            plot_outline=plot_outline,
+            outline_color=outline_color,
+            outline_scale=outline_scale,
+        )
 
-    def _adjust_neighborhoods(
+    def _process_neighborhoods(
         self,
         network,
         neighborhoods,
@@ -195,7 +209,7 @@ class RISK(NetworkIO, AnnotationsIO):
         impute_depth=1,
         prune_threshold=0.0,
     ):
-        """Adjust neighborhoods based on the imputation and pruning settings.
+        """Process neighborhoods based on the imputation and pruning settings.
 
         Args:
             neighborhoods (dict): Neighborhoods data.
@@ -208,35 +222,14 @@ class RISK(NetworkIO, AnnotationsIO):
         """
         enrichment_matrix = neighborhoods["enrichment_matrix"]
         binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
-        if impute_threshold:
-            print(
-                f"[cyan]Imputing [blue]neighborhoods[/blue] to threshold of [yellow]{impute_threshold}[/yellow]..."
-            )
-            enrichment_matrix, binary_enrichment_matrix = impute_neighbors(
-                network,
-                enrichment_matrix,
-                binary_enrichment_matrix,
-                distance_threshold=impute_threshold,
-                max_depth=impute_depth,
-            )
-        if prune_neighbors:
-            print(
-                f"[cyan]Pruning [blue]neighborhoods[/blue] to threshold of [yellow]{prune_threshold}[/yellow]..."
-            )
-            enrichment_matrix, binary_enrichment_matrix = prune_neighbors(
-                network,
-                enrichment_matrix,
-                binary_enrichment_matrix,
-                distance_threshold=prune_threshold,
-            )
-
-        sum_enriched_binary = np.sum(binary_enrichment_matrix, axis=0)
-
-        return {
-            "enrichment_sums": sum_enriched_binary,
-            "enrichment_matrix": enrichment_matrix,
-            "binary_enrichment_matrix": binary_enrichment_matrix,
-        }
+        return process_neighborhoods(
+            network=network,
+            enrichment_matrix=enrichment_matrix,
+            binary_enrichment_matrix=binary_enrichment_matrix,
+            impute_threshold=impute_threshold,
+            impute_depth=impute_depth,
+            prune_threshold=prune_threshold,
+        )
 
     def _define_top_annotations(self, network, annotations, neighborhoods):
         """Define top annotations for the network.
