@@ -9,32 +9,33 @@ from scipy.stats import gaussian_kde
 class NetworkPlotter:
     """A class to handle plotting of network graphs."""
 
-    def __init__(self, network_graph):
-        """Initialize the NetworkPlotter with a NetworkGraph object.
-
-        Args:
-            network_graph: A NetworkGraph object containing the network's data and attributes.
-        """
-        self.network_graph = network_graph
-        self.ax = None
-
-    def initialize_plot(
+    def __init__(
         self,
+        network_graph,
         figsize=(10, 10),
         background_color="white",
         plot_outline=True,
         outline_color="black",
         outline_scale=1.0,
     ):
-        """Initialize the plot with figure size, optional circle perimeter, and background color.
+        """Initialize the NetworkPlotter with a NetworkGraph object.
 
         Args:
+            network_graph: A NetworkGraph object containing the network's data and attributes.
             figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
             plot_outline (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
             outline_color (str, optional): Color of the network perimeter circle. Defaults to "black".
             outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
         """
+        self.network_graph = network_graph
+        self.ax = None
+        self._initialize_plot(figsize, background_color, plot_outline, outline_color, outline_scale)
+
+    def _initialize_plot(
+        self, figsize, background_color, plot_outline, outline_color, outline_scale
+    ):
+        """Initialize the plot with figure size, optional circle perimeter, and background color."""
         node_coordinates = self.network_graph.node_coordinates
         center, radius = _calculate_bounding_box(node_coordinates)
         scaled_radius = radius * outline_scale
