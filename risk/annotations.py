@@ -50,14 +50,17 @@ def load_annotations(network, annotations_input):
             "No annotations found in the annotations file for the nodes in the network."
         )
 
+    # NOTE: Big boost in performance - slim down the matrix by removing columns with all zeros
+    annotations_pivot = annotations_pivot.loc[:, annotations_pivot.sum(axis=0) != 0]
     # Extract ordered nodes and annotations
     ordered_nodes = tuple(annotations_pivot.index)
     ordered_annotations = tuple(annotations_pivot.columns)
+    annotations_pivot_numpy = annotations_pivot.fillna(0).to_numpy()
 
     return {
         "ordered_nodes": ordered_nodes,
         "ordered_annotations": ordered_annotations,
-        "matrix": annotations_pivot.to_numpy(),
+        "matrix": annotations_pivot_numpy,
     }
 
 
