@@ -13,6 +13,7 @@ from xml.dom import minidom
 
 import networkx as nx
 import pandas as pd
+
 from rich import print
 
 from risk.graph.metrics import calculate_edge_lengths, get_best_surface_depth
