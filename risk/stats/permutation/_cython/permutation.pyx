@@ -42,7 +42,7 @@ def compute_neighborhood_score_by_variance_cython(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def compute_neighborhood_score_by_zscore_cython(
+def compute_neighborhood_score_by_z_score_cython(
     np.ndarray[np.float32_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
