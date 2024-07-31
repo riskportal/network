@@ -168,7 +168,56 @@ def _calculate_affinity_propagation_neighborhoods(network, random_seed=888):
     return neighborhoods
 
 
-def impute_neighbors(
+def process_neighborhoods(
+    network,
+    enrichment_matrix,
+    binary_enrichment_matrix,
+    impute_threshold=0.0,
+    impute_depth=1,
+    prune_threshold=0.0,
+):
+    """Process neighborhoods based on the imputation and pruning settings.
+
+    Args:
+        network: The network data structure used for imputing and pruning neighbors.
+        enrichment_matrix (numpy.ndarray): Enrichment matrix data.
+        binary_enrichment_matrix (numpy.ndarray): Binary enrichment matrix data.
+        impute_threshold (float): Distance threshold for imputing neighbors.
+        impute_depth (int): Depth for imputing neighbors.
+        prune_threshold (float): Distance threshold for pruning neighbors.
+
+    Returns:
+        dict: Processed neighborhoods data.
+    """
+    if impute_threshold:
+        print(f"Imputing neighborhoods to threshold of {impute_threshold}...")
+        enrichment_matrix, binary_enrichment_matrix = _impute_neighbors(
+            network,
+            enrichment_matrix,
+            binary_enrichment_matrix,
+            distance_threshold=impute_threshold,
+            max_depth=impute_depth,
+        )
+
+    if prune_threshold:
+        print(f"Pruning neighborhoods to threshold of {prune_threshold}...")
+        enrichment_matrix, binary_enrichment_matrix = _prune_neighbors(
+            network,
+            enrichment_matrix,
+            binary_enrichment_matrix,
+            distance_threshold=prune_threshold,
+        )
+
+    sum_enriched_binary = np.sum(binary_enrichment_matrix, axis=0)
+
+    return {
+        "enrichment_sums": sum_enriched_binary,
+        "enrichment_matrix": enrichment_matrix,
+        "binary_enrichment_matrix": binary_enrichment_matrix,
+    }
+
+
+def _impute_neighbors(
     network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9, max_depth=3
 ):
     """
@@ -232,7 +281,7 @@ def impute_neighbors(
     return enrichment_matrix, binary_enrichment_matrix
 
 
-def prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9):
+def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9):
     """
     Remove outliers based on their rank for edge lengths.
 
