@@ -4,15 +4,13 @@ risk/network/neighborhoods
 """
 
 import warnings
-
 from collections import Counter
+from tqdm import tqdm
+
 import community as community_louvain
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-from rich import print
-from rich.progress import Progress
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import AffinityPropagation
@@ -173,7 +171,6 @@ def process_neighborhoods(
     network,
     enrichment_matrix,
     binary_enrichment_matrix,
-    impute_threshold=0.0,
     impute_depth=1,
     prune_threshold=0.0,
 ):
@@ -190,18 +187,17 @@ def process_neighborhoods(
     Returns:
         dict: Processed neighborhoods data.
     """
-    if impute_threshold:
-        print(f"Imputing neighborhoods to threshold of {impute_threshold}...")
+    print(f"Imputation depth: {impute_depth}")
+    if impute_depth:
         enrichment_matrix, binary_enrichment_matrix = _impute_neighbors(
             network,
             enrichment_matrix,
             binary_enrichment_matrix,
-            distance_threshold=impute_threshold,
             max_depth=impute_depth,
         )
 
+    print(f"Pruning threshold: {prune_threshold}")
     if prune_threshold:
-        print(f"Pruning neighborhoods to threshold of {prune_threshold}...")
         enrichment_matrix, binary_enrichment_matrix = _prune_neighbors(
             network,
             enrichment_matrix,
@@ -209,18 +205,16 @@ def process_neighborhoods(
             distance_threshold=prune_threshold,
         )
 
-    sum_enriched_binary = np.sum(binary_enrichment_matrix, axis=0)
+    neighborhood_sum_enriched_binary = np.sum(binary_enrichment_matrix, axis=0)
 
     return {
-        "enrichment_sums": sum_enriched_binary,
+        "neighborhood_enrichment_sums": neighborhood_sum_enriched_binary,
         "significance_matrix": enrichment_matrix,
         "binary_significance_matrix": binary_enrichment_matrix,
     }
 
 
-def _impute_neighbors(
-    network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9, max_depth=3
-):
+def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_depth=3):
     """
     Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
 
@@ -228,15 +222,12 @@ def _impute_neighbors(
         network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
         binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
-        distance_threshold (float): Percentile threshold for omitting annotations based on distance.
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
         tuple: The imputed enrichment matrix and the imputed alpha threshold matrix.
     """
-    zero_row_indices = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
-
-    # Calculate shortest distances for each node and determine the distance threshold
+    # Calculate shortest instances for each node and determine the distance threshold
     shortest_distances = []
     for node in network.nodes():
         neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
@@ -244,15 +235,13 @@ def _impute_neighbors(
             shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
             shortest_distances.append(shortest_distance)
 
-    distance_threshold_value = _calculate_ranked_percentile(shortest_distances, distance_threshold)
+    depth = 1
+    rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
 
-    def impute_recursive(zero_row_indices, depth):
-        if depth > max_depth:
-            return
+    while len(rows_to_impute) and depth <= max_depth:
+        next_rows_to_impute = []
 
-        rows_to_impute = []
-
-        for row_index in zero_row_indices:
+        for row_index in rows_to_impute:
             neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
             valid_neighbors = [
                 n
@@ -260,24 +249,19 @@ def _impute_neighbors(
                 if n != row_index
                 and binary_enrichment_matrix[n].sum() != 0
                 and enrichment_matrix[n].sum() != 0
-                and _get_euclidean_distance(row_index, n, network) <= distance_threshold_value
             ]
 
             if valid_neighbors:
                 closest_neighbor = min(
                     valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
                 )
-                enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor] / np.sqrt(
-                    depth + 1
-                )
+                enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor]
                 binary_enrichment_matrix[row_index] = binary_enrichment_matrix[closest_neighbor]
             else:
-                rows_to_impute.append(row_index)
+                next_rows_to_impute.append(row_index)
 
-        if rows_to_impute:
-            impute_recursive(rows_to_impute, depth + 1)
-
-    impute_recursive(zero_row_indices, 1)
+        rows_to_impute = next_rows_to_impute
+        depth += 1
 
     return enrichment_matrix, binary_enrichment_matrix
 
@@ -295,18 +279,30 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
     Returns:
         tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
     """
+    """
+    Remove outliers based on their rank for edge lengths.
+
+    Args:
+        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
+        enrichment_matrix (np.ndarray): The enrichment matrix.
+        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
+        distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
+
+    Returns:
+        tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
+    """
     non_zero_indices = np.where(binary_enrichment_matrix.sum(axis=1) != 0)[0]
 
-    shortest_distances = []
+    average_distances = []
     for node in non_zero_indices:
         neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
         if neighbors:
-            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
-            shortest_distances.append(shortest_distance)
+            average_distance = np.mean(
+                [_get_euclidean_distance(node, n, network) for n in neighbors]
+            )
+            average_distances.append(average_distance)
 
-    distance_threshold_value = _calculate_ranked_percentile(
-        shortest_distances, 1 - distance_threshold
-    )
+    distance_threshold_value = _calculate_threshold(average_distances, 1 - distance_threshold)
 
     for row_index in non_zero_indices:
         neighbors = [
@@ -314,12 +310,11 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
         ]
 
         if neighbors:
-            closest_neighbor = min(
-                neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
+            average_distance = np.mean(
+                [_get_euclidean_distance(row_index, n, network) for n in neighbors]
             )
-            closest_distance = _get_euclidean_distance(row_index, closest_neighbor, network)
 
-            if closest_distance >= distance_threshold_value:
+            if average_distance >= distance_threshold_value:
                 enrichment_matrix[row_index] = 0
                 binary_enrichment_matrix[row_index] = 0
 
@@ -327,41 +322,31 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
 
 
 def _get_euclidean_distance(node1, node2, network):
-    pos1 = np.array(
-        [
-            network.nodes[node1].get(coord, 0)
-            for coord in ["x", "y", "z"]
-            if coord in network.nodes[node1]
-        ]
-    )
-    pos2 = np.array(
-        [
-            network.nodes[node2].get(coord, 0)
-            for coord in ["x", "y", "z"]
-            if coord in network.nodes[node2]
-        ]
-    )
+    pos1 = _get_node_position(network, node1)
+    pos2 = _get_node_position(network, node2)
     return np.linalg.norm(pos1 - pos2)
 
 
-def _calculate_ranked_percentile(all_distances, distance_threshold):
-    """Calculate the ranked percentile value based on rank order.
+def _get_node_position(network, node):
+    return np.array(
+        [
+            network.nodes[node].get(coord, 0)
+            for coord in ["x", "y", "z"]
+            if coord in network.nodes[node]
+        ]
+    )
 
-    Args:
-        all_distances (list): List of all distances.
-        distance_threshold (float): The percentile threshold (between 0 and 1).
 
-    Returns:
-        float: The value at the specified percentile.
-    """
-    sorted_distances = np.sort(all_distances)
-    threshold_index = int(np.ceil(distance_threshold * len(sorted_distances))) - 1
-    return sorted_distances[threshold_index]
+def _calculate_threshold(average_distances, distance_threshold):
+    min_distance = np.min(average_distances)
+    max_distance = np.max(average_distances)
+    threshold_values = np.linspace(min_distance, max_distance, 1000)
+    threshold_index = int(np.ceil(distance_threshold * len(threshold_values))) - 1
+    return threshold_values[threshold_index]
 
 
 def define_domains(
     top_annotations,
-    neighborhoods_enrichment,
     significant_neighborhoods_enrichment,
     linkage_criterion,
     linkage_method,
@@ -378,7 +363,7 @@ def define_domains(
         linkage_metric (str): The linkage metric for clustering.
 
     Returns:
-        pd.DataFrame: DataFrame with primary domain and primary NES for each node.
+        pd.DataFrame: DataFrame with primary domain for each node.
     """
     # Perform hierarchical clustering on the binary enrichment matrix
     m = significant_neighborhoods_enrichment[:, top_annotations["top attributes"]].T
@@ -391,9 +376,9 @@ def define_domains(
         raise ValueError("No significant annotations found.") from e
 
     print(
-        f"[cyan]Using [blue]clustering criterion[/blue] [yellow]'{linkage_criterion}'[/yellow] with [blue]linkage method[/blue] [yellow]'{best_linkage}'[/yellow] and [blue]linkage metric[/blue] [yellow]'{best_metric}'[/yellow]...[/cyan]"
+        f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'"
     )
-    print(f"[yellow]Optimal linkage threshold: [red]{round(best_threshold, 3)}[/red][/yellow]")
+    print(f"Optimal linkage threshold: {round(best_threshold, 3)}")
 
     max_d_optimal = np.max(Z[:, 2]) * best_threshold
     domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
@@ -402,10 +387,6 @@ def define_domains(
     top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
 
     # Create DataFrames to store domain information
-    node2nes = pd.DataFrame(
-        data=neighborhoods_enrichment,
-        columns=[top_annotations.index.values, top_annotations["domain"]],
-    )
     node2nes_binary = pd.DataFrame(
         data=significant_neighborhoods_enrichment,
         columns=[top_annotations.index.values, top_annotations["domain"]],
@@ -418,9 +399,6 @@ def define_domains(
 
     # Assign primary domain and NES
     node2domain["primary domain"] = t_idxmax
-    o = node2nes.groupby(level="domain", axis=1).max()
-    i = pd.Series(t_idxmax)
-    node2domain["primary nes"] = o.values[i.index, i.values - 1]
 
     return node2domain
 
@@ -444,16 +422,12 @@ def trim_domains_and_top_annotations(
     to_remove = set(
         domain_counts[(domain_counts < min_cluster_size) | (domain_counts > max_cluster_size)].index
     )
-    to_remove.update(_find_outlier_domains(Counter(domains["primary domain"])))
     # Add invalid domain IDs
     invalid_domain_id = 888888
     invalid_domain_ids = {0, invalid_domain_id}
-    to_remove.update(invalid_domain_ids)
     # Mark domains to be removed
     top_annotations["domain"].replace(to_remove, invalid_domain_id, inplace=True)
-    domains.loc[
-        domains["primary domain"].isin(to_remove), ["primary domain", "primary nes"]
-    ] = invalid_domain_id
+    domains.loc[domains["primary domain"].isin(to_remove), ["primary domain"]] = invalid_domain_id
     # Normalize "num enriched neighborhoods" by percentile for each domain and scale to 0-10
     top_annotations["normalized_value"] = top_annotations.groupby("domain")[
         "num enriched neighborhoods"
@@ -470,34 +444,15 @@ def trim_domains_and_top_annotations(
     ).set_index("id")
 
     # Remove invalid domains
-    valid_annotations = top_annotations[top_annotations["domain"] != invalid_domain_id].drop(
+    valid_annotations = top_annotations[~top_annotations["domain"].isin(invalid_domain_ids)].drop(
         columns=["normalized_value"]
     )
-    valid_domains = domains[domains["primary domain"] != invalid_domain_id]
+    valid_domains = domains[~domains["primary domain"].isin(invalid_domain_ids)]
     valid_trimmed_domains_matrix = trimmed_domains_matrix[
         ~trimmed_domains_matrix.index.isin(invalid_domain_ids)
     ]
 
     return valid_annotations, valid_domains, valid_trimmed_domains_matrix
-
-
-def _find_outlier_domains(data_dict, z_score_threshold=3):
-    """Identify outlier domains based on z-score.
-
-    Args:
-        data_dict (dict): Dictionary with domain counts.
-        z_score_threshold (float, optional): Z-score threshold for identifying outliers. Defaults to 3.
-
-    Returns:
-        list: List of outlier domain keys.
-    """
-    values = np.array(list(data_dict.values()))
-    mean = np.mean(values)
-    std_dev = np.std(values)
-    outlier_keys = [
-        key for key, value in data_dict.items() if abs((value - mean) / std_dev) > z_score_threshold
-    ]
-    return outlier_keys
 
 
 def _find_best_silhouette_score(
@@ -590,51 +545,45 @@ def _optimize_silhouette_across_linkage_and_metrics(
     best_overall_threshold = 1
     best_overall_linkage = "average"
 
-    linkage_methods = GROUP_LINKAGE_METHODS if linkage_method is None else [linkage_method]
-    linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric is None else [linkage_metric]
+    linkage_methods = GROUP_LINKAGE_METHODS if linkage_method == "auto" else [linkage_method]
+    linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric == "auto" else [linkage_metric]
     total_methods = len(linkage_methods)
     total_metrics = len(linkage_metrics)
-    total = total_methods + total_metrics
 
-    with Progress() as progress:
-        task = progress.add_task(
-            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage method[/blue]...",
-            total=total,
-        )
+    # Evaluating optimal linkage method
+    for method in tqdm(
+        linkage_methods,
+        desc="Evaluating optimal linkage method",
+        total=total_methods,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+    ):
+        try:
+            Z = linkage(m, method=method, metric=default_metric)
+            threshold, score = _find_best_silhouette_score(Z, m, default_metric, linkage_criterion)
+            if score > best_overall_score:
+                best_overall_score = score
+                best_overall_threshold = threshold
+                best_overall_linkage = method
+        except Exception:
+            pass
 
-        for method in linkage_methods:
-            try:
-                Z = linkage(m, method=method, metric=default_metric)
-                threshold, score = _find_best_silhouette_score(
-                    Z, m, default_metric, linkage_criterion
-                )
-                if score > best_overall_score:
-                    best_overall_score = score
-                    best_overall_threshold = threshold
-                    best_overall_linkage = method
-            except Exception:
-                pass
-            finally:
-                progress.update(task, advance=1)
+    best_overall_score = -np.inf  # Reset score to evaluate metrics for the best method
 
-        best_overall_score = -np.inf  # Reset score to evaluate metrics for the best method
-
-        task = progress.add_task(
-            "[cyan]Evaluating [yellow]optimal[/yellow] [blue]linkage metric[/blue]...",
-            total=total_metrics,
-        )
-
-        for metric in linkage_metrics:
-            try:
-                Z = linkage(m, method=best_overall_linkage, metric=metric)
-                threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
-                if score > best_overall_score:
-                    best_overall_score = score
-                    best_overall_metric = metric
-                    best_overall_threshold = threshold
-            except Exception:
-                pass
-            finally:
-                progress.update(task, advance=1)
+    # Evaluating optimal linkage metric
+    for metric in tqdm(
+        linkage_metrics,
+        desc="Evaluating optimal linkage metric",
+        total=total_metrics,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+    ):
+        try:
+            Z = linkage(m, method=best_overall_linkage, metric=metric)
+            threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+            if score > best_overall_score:
+                best_overall_score = score
+                best_overall_metric = metric
+                best_overall_threshold = threshold
+        except Exception:
+            pass
 
     return best_overall_linkage, best_overall_metric, best_overall_threshold
