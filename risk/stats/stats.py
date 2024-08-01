@@ -3,9 +3,10 @@ risk/stats/stats
 ~~~~~~~~~~~~~~~~
 """
 
+from tqdm import tqdm
+
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
-from rich.progress import Progress
 
 from risk.stats.permutation import (
     compute_neighborhood_score_by_sum_cython,
@@ -83,31 +84,26 @@ def _run_permutation_test(
     # Make two empty matrices to track which permuted test statistics fell below or exceeded the observed test statistic
     counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
-    with Progress() as progress:
-        task = progress.add_task(
-            f"[cyan]Running[/cyan] [yellow]{num_permutations} permutations 0/{num_permutations}[/yellow]",
-            total=num_permutations,
+    # Running permutations
+    for i in tqdm(
+        range(num_permutations),
+        desc=f"Running {num_permutations} permutations",
+        total=num_permutations,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+    ):
+        # `annotation_matrix_permut` must match in row number to `neighborhoods_matrix_obsv` column number
+        annotation_matrix_permut = annotations[np.random.permutation(idxs)]
+        # Below is NOT the bottleneck...
+        with np.errstate(invalid="ignore", divide="ignore"):
+            permuted_neighborhood_scores = neighborhood_score_func(
+                neighborhoods_matrix_obsv, annotation_matrix_permut
+            )
+        counts_depletion = np.add(
+            counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
         )
-        # We are computing the permuted test statistics
-        for i in range(num_permutations):
-            # `annotation_matrix_permut` must match in row number to `neighborhoods_matrix_obsv` column number
-            annotation_matrix_permut = annotations[np.random.permutation(idxs)]
-            # Below is NOT the bottleneck...
-            with np.errstate(invalid="ignore", divide="ignore"):
-                permuted_neighborhood_scores = neighborhood_score_func(
-                    neighborhoods_matrix_obsv, annotation_matrix_permut
-                )
-            counts_depletion = np.add(
-                counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
-            )
-            counts_enrichment = np.add(
-                counts_enrichment, permuted_neighborhood_scores >= observed_neighborhood_scores
-            )
-            progress.update(
-                task,
-                advance=1,
-                description=f"[cyan]Running[/cyan] [yellow]permutation {i+1}/{num_permutations}",
-            )
+        counts_enrichment = np.add(
+            counts_enrichment, permuted_neighborhood_scores >= observed_neighborhood_scores
+        )
 
     return counts_depletion, counts_enrichment
 
