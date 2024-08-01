@@ -1,4 +1,5 @@
 import matplotlib
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -69,6 +70,9 @@ class NetworkPlotter:
 
         self.ax = ax
         return fig, ax
+
+    def add_domain(self, key, nodes, color="chartreuse"):
+        ...
 
     def plot_network(
         self,
@@ -264,18 +268,22 @@ class NetworkPlotter:
                         improvement = True
         return best_label_positions
 
-    def get_annotated_node_colors(self, random_seed=888, **kwargs):
+    def get_annotated_node_colors(self, nonenriched_color="white", random_seed=888, **kwargs):
         """Adjusts the colors of nodes in the network graph.
 
         Returns:
             Tuple of two elements (adjusted colors array, node sizes array).
         """
         network_colors = self.network_graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        if isinstance(nonenriched_color, str):
+            nonenriched_color = mcolors.to_rgba(nonenriched_color)
+
         adjusted_network_colors = np.where(
             np.all(network_colors == 0, axis=1, keepdims=True),
-            np.array([[1.0, 1.0, 1.0, 1.0]]),
+            np.array([nonenriched_color]),
             network_colors,
         )
+
         return adjusted_network_colors
 
     def get_annotated_node_sizes(self, enriched_nodesize=50, nonenriched_nodesize=25):
