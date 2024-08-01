@@ -6,11 +6,10 @@ risk/network/graph
 import os
 import sys
 from contextlib import contextmanager
+from tqdm import tqdm
 
 import networkx as nx
 import numpy as np
-from rich import print
-from rich.progress import Progress
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.metrics import silhouette_score
 from scipy.spatial.distance import pdist
@@ -40,22 +39,18 @@ def get_best_surface_depth(
     Returns:
         int: The best surface depth.
     """
-    print(
-        "[cyan][red]Warning:[/red] [blue]Optimizing[/blue] [yellow]surface depth[/yellow] can be an [red]expensive process[/red]. "
-        "[blue]Mark down[/blue] [yellow]optimal surface depth[/yellow] for future use...[/cyan]"
-    )
-
+    print("Warning: Optimizing surface depth is an expensive process...")
     # Initialize variables to keep track of the best score and corresponding surface depth
     max_score = -np.inf
     best_surface_depth = lower_bound
     # Calculate the total number of iterations for progress tracking
     total_iterations = int(np.ceil(np.log2((upper_bound - lower_bound) / tolerance)))
-    # Start the progress tracking
-    with Progress() as progress:
-        task = progress.add_task(
-            "[cyan]Optimizing [yellow]surface depth[/yellow]...[/cyan]", total=total_iterations
-        )
-
+    # Initialize the progress bar
+    with tqdm(
+        total=total_iterations,
+        desc="Optimizing surface depth",
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+    ) as pbar:
         while upper_bound - lower_bound > tolerance:
             # Compute the midpoint of the current search interval
             mid_surface_depth = (lower_bound + upper_bound) / 2
@@ -95,11 +90,10 @@ def get_best_surface_depth(
             else:
                 upper_bound = mid_surface_depth
 
-            # Update the progress tracker
-            progress.update(task, advance=1)
+            # Update the progress bar
+            pbar.update(1)
 
-    # Print the optimal surface depth
-    print(f"[yellow]Optimal surface depth:[/yellow] [red]{best_surface_depth}[/red]")
+    print(f"Optimal surface depth: {best_surface_depth}")
     return best_surface_depth
 
 
