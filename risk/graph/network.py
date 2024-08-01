@@ -42,10 +42,11 @@ class NetworkGraph:
     def _create_domain_to_nodes_map(self, domains_matrix):
         """Creates a mapping from domains to the list of nodes belonging to each domain."""
         cleaned_domains_matrix = domains_matrix.reset_index()[["index", "primary domain"]]
-        node_domain_map = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
+        node_to_domains = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
         domain_to_nodes = defaultdict(list)
-        for k, v in node_domain_map.items():
+        for k, v in node_to_domains.items():
             domain_to_nodes[v].append(k)
+
         return domain_to_nodes
 
     def _create_domain_to_term_map(self, trimmed_domains_matrix):
@@ -57,6 +58,9 @@ class NetworkGraph:
             )
         )
 
+    def _add_domain(self, key, node_labels, domain_label):
+        ...
+
     def _initialize_network(self, network):
         """Initialize the network by unfolding it and extracting node coordinates."""
         # Unfold the network's 3D coordinates to 2D
@@ -65,7 +69,7 @@ class NetworkGraph:
         self.node_coordinates = _extract_node_coordinates(self.network)
 
     def get_domain_colors(
-        self, min_color=0.8, max_color=1.0, outlier_threshold=2.0, random_seed=888, **kwargs
+        self, min_scale=0.8, max_scale=1.0, outlier_threshold=2.0, random_seed=888, **kwargs
     ):
         """Generate composite colors for domains.
 
@@ -76,26 +80,45 @@ class NetworkGraph:
         Returns:
             np.ndarray: Array of transformed colors.
         """
+        # Get colors for each domain
+        domain_colors = self._get_domain_colors(**kwargs, random_seed=random_seed)
+        # Generate composite colors for nodes
+        node_colors = self._get_composite_node_colors(domain_colors)
         # Create a DataFrame of node to enrichment score binary values
         node_to_enrichment_score_binary = self._create_node_to_enrichment_score_binary()
-        # Calculate the count of nodes per domain
-        node_to_domain_count = self._calculate_node_to_domain_count(node_to_enrichment_score_binary)
-        # Generate composite colors for nodes
-        composite_colors = _get_composite_node_colors(
-            self._get_domain_colors(**kwargs, random_seed=random_seed),
-            node_to_domain_count,
-        )
         enrichment_sums = node_to_enrichment_score_binary.sum(axis=1)
         # Transform colors to ensure proper alpha values and intensity
         transformed_colors = self._transform_colors(
-            composite_colors,
+            node_colors,
             enrichment_sums,
-            min_color=min_color,
-            max_color=max_color,
+            min_scale=min_scale,
+            max_scale=max_scale,
             z_score_threshold=abs(outlier_threshold),  # Two-tailed test - use absolute value
         )
 
         return transformed_colors
+
+    def _get_composite_node_colors(self, domain_colors):
+        """Generate composite colors for nodes based on domain colors and counts.
+
+        Args:
+            domain_colors: Array of colors corresponding to each domain.
+
+        Returns:
+            composite_colors: Array of composite colors for each node.
+        """
+        # Determine the number of nodes
+        num_nodes = len(self.node_coordinates)
+        # Initialize composite colors array with shape (number of nodes, 4) for RGBA
+        composite_colors = np.zeros((num_nodes, 4))
+
+        # Assign colors to nodes based on domain_colors
+        for domain_idx, nodes in self.domain_to_nodes.items():
+            color = domain_colors[domain_idx]
+            for node in nodes:
+                composite_colors[node] = color
+
+        return composite_colors
 
     def _create_node_to_enrichment_score_binary(self):
         """Create a DataFrame of node to enrichment score binary values."""
@@ -103,10 +126,6 @@ class NetworkGraph:
             data=self.neighborhoods_enrichment_matrix[:, self.annotation_matrix.index.values],
             columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
         )
-
-    def _calculate_node_to_domain_count(self, node_to_enrichment_score_binary):
-        """Calculate the count of nodes per domain."""
-        return node_to_enrichment_score_binary.groupby(level="domain", axis=1).sum()
 
     def _get_domain_colors(self, **kwargs):
         """Get colors for each domain."""
@@ -116,12 +135,14 @@ class NetworkGraph:
         ]
         domains = np.sort(numeric_domains)
         domain_colors = _get_colors(**kwargs, num_colors_to_generate=len(domains))
-        return domain_colors
+        return dict(zip(self.domain_to_nodes.keys(), domain_colors))
 
     def _transform_colors(
-        self, colors, enrichment_sums, min_color=0.8, max_color=1.0, z_score_threshold=2.0
+        self, colors, enrichment_sums, min_scale=0.8, max_scale=1.0, z_score_threshold=2.0
     ):
         """Transform colors to ensure proper alpha values and intensity based on enrichment sums."""
+        if min_scale == max_scale:
+            min_scale = max_scale - 0.001  # Avoid division by zero
         # Calculate z-scores for the enrichment sums
         z_scores = zscore(enrichment_sums)
 
@@ -138,15 +159,15 @@ class NetworkGraph:
             np.max(capped_sums) - np.min(capped_sums)
         )
 
-        # Scale normalized sums to the specified color range [min_color, max_color]
-        scaled_sums = min_color + (max_color - min_color) * normalized_sums
+        # Scale normalized sums to the specified color range [min_scale, max_scale]
+        scaled_sums = min_scale + (max_scale - min_scale) * normalized_sums
 
         # Apply log transformation and scale to 0-1 range
-        log_scaled_sums = np.log1p(scaled_sums - min_color)  # Use log1p to avoid log(0)
+        log_scaled_sums = np.log1p(scaled_sums - min_scale)  # Use log1p to avoid log(0)
         log_scaled_sums = (log_scaled_sums - np.min(log_scaled_sums)) / (
             np.max(log_scaled_sums) - np.min(log_scaled_sums)
         )
-        log_scaled_sums = min_color + (max_color - min_color) * log_scaled_sums
+        log_scaled_sums = min_scale + (max_scale - min_scale) * log_scaled_sums
 
         # Apply transformations to colors
         for i in range(3):  # Only adjust RGB values
@@ -183,42 +204,6 @@ def _unfold_sphere_to_plane(network):
             del network.nodes[node]["z"]
 
     return network
-
-
-def _get_composite_node_colors(domain2rgb, node_to_domain_count):
-    """Generate composite colors for nodes based on domain colors and counts.
-
-    Args: domain2rgb: Array of colors corresponding to each domain. node_to_domain_count: DataFrame of domain counts for each node.
-    Returns: composite_colors: Array of composite colors for each node.
-    """
-    # Ensure domain2rgb is a numpy array
-    if not isinstance(domain2rgb, np.ndarray):
-        domain2rgb = np.array(domain2rgb)
-
-    # Initialize composite colors array
-    composite_colors = np.zeros((node_to_domain_count.shape[0], 4))  # Assuming RGBA
-    for node_idx in range(node_to_domain_count.shape[0]):
-        # Get domain counts for the current node
-        domain_counts = node_to_domain_count.values[node_idx, :]
-        max_count = np.max(domain_counts)
-        # Normalize domain counts to avoid division by zero
-        normalized_counts = domain_counts / max_count if max_count > 0 else domain_counts
-        weighted_color_sum = np.zeros(4)
-        # Compute the weighted sum of colors
-        for domain_idx, count in enumerate(normalized_counts):
-            color = domain2rgb[domain_idx]
-            weighted_color = color * count
-            weighted_color_sum += weighted_color
-
-        # Average the colors if there are non-zero domains
-        non_zero_domains = np.count_nonzero(normalized_counts)
-        if non_zero_domains > 0:
-            composite_color = weighted_color_sum / non_zero_domains
-            composite_colors[node_idx] = composite_color
-
-    # Replace NaNs with zeros
-    composite_colors = np.nan_to_num(composite_colors)
-    return composite_colors
 
 
 def _extract_node_coordinates(graph):
