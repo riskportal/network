@@ -14,8 +14,7 @@ from xml.dom import minidom
 import networkx as nx
 import pandas as pd
 
-from rich import print
-
+from risk.io import print_header
 from risk.graph.metrics import calculate_edge_lengths, get_best_surface_depth
 
 
@@ -23,14 +22,13 @@ class NetworkIO:
     def __init__(
         self,
         compute_sphere=True,
-        surface_depth=None,
+        surface_depth="auto",
         include_edge_weight=True,
         distance_metric="dijkstra",
         neighborhood_diameter=0.5,
         louvain_resolution=0.1,
         min_edges_per_node=0,
     ):
-        _log_initialization(compute_sphere, surface_depth, include_edge_weight)
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
         self.include_edge_weight = include_edge_weight
@@ -48,7 +46,14 @@ class NetworkIO:
         Returns:
             NetworkX graph: Loaded network.
         """
-        _log_network_loading("GPickle", filepath)
+        _log_loading(
+            "GPickle",
+            compute_sphere=self.compute_sphere,
+            surface_depth=self.surface_depth,
+            include_edge_weight=self.include_edge_weight,
+            neighborhood_diameter=self.neighborhood_diameter,
+            filepath=filepath,
+        )
         with open(filepath, "rb") as f:
             G = pickle.load(f)
         return self._load_networkx(G)
@@ -62,7 +67,13 @@ class NetworkIO:
         Returns:
             NetworkX graph: Processed network.
         """
-        _log_network_loading("NetworkX")
+        _log_loading(
+            "NetworkX",
+            compute_sphere=self.compute_sphere,
+            surface_depth=self.surface_depth,
+            include_edge_weight=self.include_edge_weight,
+            neighborhood_diameter=self.neighborhood_diameter,
+        )
         return self._load_networkx(G)
 
     def load_cytoscape_network(
@@ -86,7 +97,14 @@ class NetworkIO:
         Returns:
             NetworkX graph: Loaded and processed network.
         """
-        _log_network_loading("Cytoscape", filepath)
+        _log_loading(
+            "Cytoscape",
+            compute_sphere=self.compute_sphere,
+            surface_depth=self.surface_depth,
+            include_edge_weight=self.include_edge_weight,
+            neighborhood_diameter=self.neighborhood_diameter,
+            filepath=filepath,
+        )
         # Unzip CYS file
         with zipfile.ZipFile(filepath, "r") as zip_ref:
             cys_files = zip_ref.namelist()
@@ -184,9 +202,7 @@ class NetworkIO:
             G (NetworkX graph): A NetworkX graph object.
             min_edges_per_node (int): Minimum number of edges per node.
         """
-        print(
-            f"[cyan]Removing [blue]nodes[/blue] with [blue]fewer[/blue] than [red]{self.min_edges_per_node}[/red] [blue]edge(s)...[/blue][/cyan]"
-        )
+        print(f"Minimum edges per node: {self.min_edges_per_node}")
         nodes_with_few_edges = [
             node for node in G.nodes() if G.degree(node) <= self.min_edges_per_node
         ]
@@ -222,7 +238,7 @@ class NetworkIO:
         Returns:
             Tuple: Processed network and neighborhoods.
         """
-        if self.surface_depth is None and self.compute_sphere:
+        if self.surface_depth == "auto" and self.compute_sphere:
             self.surface_depth = get_best_surface_depth(
                 G.copy(),
                 compute_sphere=self.compute_sphere,
@@ -241,33 +257,21 @@ class NetworkIO:
         return G
 
 
-def _log_initialization(compute_sphere, surface_depth, include_edge_weight):
+def _log_loading(
+    filetype,
+    compute_sphere,
+    surface_depth,
+    include_edge_weight,
+    neighborhood_diameter,
+    filepath=None,
+):
     """Log the initialization of the RISK class."""
-    for_print_sphere = "[yellow]spherical[/yellow]" if compute_sphere else "[yellow]planar[/yellow]"
-    for_print_surface_depth = (
-        f"with a [yellow]surface depth[/yellow] of [red]{surface_depth}[/red]"
-        if surface_depth and compute_sphere
-        else "without a [yellow]surface depth[/yellow]"
-    )
-    for_print_edge_weight = (
-        "with [yellow]edge weights[/yellow]"
-        if include_edge_weight
-        else "without [yellow]edge weights[/yellow]"
-    )
-    print(
-        f"[cyan]Treating the network as {for_print_sphere} {for_print_surface_depth} {for_print_edge_weight}...[/cyan]"
-    )
-
-
-def _log_network_loading(filetype, filepath=None):
-    """Log information about the network file being loaded.
-
-    Args:
-        filetype (str): The type of the file being loaded (e.g., 'Cytoscape').
-        filepath (str, optional): The path to the file being loaded.
-    """
+    print_header("Loading network")
+    print(f"Filetype: {filetype}")
     if filepath:
-        message = f"[cyan]Loading [yellow]{filetype}[/yellow] [blue]network file[/blue]: [yellow]'{filepath}'[/yellow]...[/cyan]"
-    else:
-        message = f"[cyan]Loading [yellow]{filetype}[/yellow] [blue]network file[/blue]...[/cyan]"
-    print(message)
+        print(f"Filepath: {filepath}")
+    print(f"Project to sphere: {compute_sphere}")
+    if compute_sphere:
+        print(f"Surface depth: {surface_depth}")
+    print(f"Neighborhood diameter: {neighborhood_diameter}")
+    print(f"Including edge weights: {include_edge_weight}")
