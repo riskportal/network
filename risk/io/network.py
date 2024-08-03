@@ -115,6 +115,7 @@ class NetworkIO:
             neighborhood_diameter=self.neighborhood_diameter,
             filepath=filepath,
         )
+        cys_files = []
         # Try / finally to remove unzipped files
         try:
             # Unzip CYS file
