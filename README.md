@@ -17,7 +17,7 @@ RISK is a software tool for visualizing spatial relationships in networks. It ai
 
 ## Example
 
-*Saccharomyces cerevisiae* proteins oriented by protein domain similarities
+*Saccharomyces cerevisiae* proteins oriented by physical interactions discovered through affinity enrichment and mass spectrometry (Michaelis et al., 2023).
 
 ![Metabolic Network Demo](./docs/20240801_michaelis_2023.png)
 
@@ -31,4 +31,4 @@ Coming soon...
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GPL-3.0 license.
