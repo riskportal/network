@@ -222,13 +222,12 @@ class RISK(NetworkIO, AnnotationsIO):
         # Get the significant binary enrichment matrix for neighborhoods
         neighborhoods_enrichment_matrix = processed_neighborhoods["binary_significance_matrix"]
         return NetworkGraph(
-            network,
-            top_annotations,
-            domains,
-            trimmed_domains,
-            # node_label_to_id_map,
-            neighborhoods_enrichment_matrix,
-            # neighborhoods_enrichment_sums,
+            network=network,
+            top_annotations=top_annotations,
+            domains=domains,
+            trimmed_domains=trimmed_domains,
+            node_label_to_id_map=node_label_to_id,
+            neighborhoods_enrichment_matrix=neighborhoods_enrichment_matrix,
         )
 
     def load_plotter(
