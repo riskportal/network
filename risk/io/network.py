@@ -14,8 +14,8 @@ from xml.dom import minidom
 import networkx as nx
 import pandas as pd
 
-from risk.io import print_header
 from risk.graph.metrics import calculate_edge_lengths, get_best_surface_depth
+from risk.log import params, print_header
 
 
 class NetworkIO:
@@ -27,6 +27,8 @@ class NetworkIO:
         distance_metric="dijkstra",
         neighborhood_diameter=0.5,
         louvain_resolution=0.1,
+        random_walk_length=3,
+        random_walk_num=250,
         min_edges_per_node=0,
     ):
         self.compute_sphere = compute_sphere
@@ -35,6 +37,8 @@ class NetworkIO:
         self.distance_metric = distance_metric
         self.neighborhood_diameter = neighborhood_diameter
         self.louvain_resolution = louvain_resolution
+        self.random_walk_length = random_walk_length
+        self.random_walk_num = random_walk_num
         self.min_edges_per_node = min_edges_per_node
 
     def load_gpickle_network(self, filepath):
@@ -46,8 +50,10 @@ class NetworkIO:
         Returns:
             NetworkX graph: Loaded network.
         """
+        filetype = "GPickle"
+        params.log_network(filepath=filepath, filetype=filetype)
         _log_loading(
-            "GPickle",
+            filetype,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
             include_edge_weight=self.include_edge_weight,
@@ -67,8 +73,10 @@ class NetworkIO:
         Returns:
             NetworkX graph: Processed network.
         """
+        filetype = "NetworkX"
+        params.log_network(filetype=filetype)
         _log_loading(
-            "NetworkX",
+            filetype,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
             include_edge_weight=self.include_edge_weight,
@@ -97,87 +105,94 @@ class NetworkIO:
         Returns:
             NetworkX graph: Loaded and processed network.
         """
+        filetype = "Cytoscape"
+        params.log_network(filepath=filepath, filetype=filetype)
         _log_loading(
-            "Cytoscape",
+            filetype,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
             include_edge_weight=self.include_edge_weight,
             neighborhood_diameter=self.neighborhood_diameter,
             filepath=filepath,
         )
-        # Unzip CYS file
-        with zipfile.ZipFile(filepath, "r") as zip_ref:
-            cys_files = zip_ref.namelist()
-            zip_ref.extractall("./")
-        # Get first view and network instances
-        cys_view_files = [cf for cf in cys_files if "/views/" in cf]
-        cys_view_file = (
-            cys_view_files[0]
-            if not view_name
-            else [cvf for cvf in cys_view_files if cvf.endswith(view_name + ".xgmml")][0]
-        )
-        # Parse nodes
-        cys_view_dom = minidom.parse(cys_view_file)
-        cys_nodes = cys_view_dom.getElementsByTagName("node")
-        node_xs = {}
-        node_ys = {}
-        for node in cys_nodes:
-            # Node ID is found in 'label'
-            node_id = str(node.attributes["label"].value)
-            for child in node.childNodes:
-                if child.nodeType == 1 and child.tagName == "graphics":
-                    node_xs[node_id] = float(child.attributes["x"].value)
-                    node_ys[node_id] = float(child.attributes["y"].value)
-
-        # Read the node attributes (from /tables/)
-        attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "edge.cytable"]
-        attribute_metadata = [
-            cf for cf in cys_files if all(keyword in cf for keyword in attribute_metadata_keywords)
-        ][0]
-        # Load attributes file from Cytoscape as pandas data frame
-        attribute_table = pd.read_csv(attribute_metadata, sep=",", header=None, skiprows=1)
-        # Set columns
-        attribute_table.columns = attribute_table.iloc[0]
-        # Skip first four rows
-        attribute_table = attribute_table.iloc[4:, :]
-        attribute_table = attribute_table[[source_label, target_label, weight_label]]
-        attribute_table = attribute_table.dropna().reset_index(drop=True)
-
-        # Create a graph
-        G = nx.Graph()
-        # Add edges and nodes with weights
-        for _, row in attribute_table.iterrows():
-            source, target, weight = (
-                row[source_label],
-                row[target_label],
-                float(row[weight_label]),
+        # Try / finally to remove unzipped files
+        try:
+            # Unzip CYS file
+            with zipfile.ZipFile(filepath, "r") as zip_ref:
+                cys_files = zip_ref.namelist()
+                zip_ref.extractall("./")
+            # Get first view and network instances
+            cys_view_files = [cf for cf in cys_files if "/views/" in cf]
+            cys_view_file = (
+                cys_view_files[0]
+                if not view_name
+                else [cvf for cvf in cys_view_files if cvf.endswith(view_name + ".xgmml")][0]
             )
-            if source not in G:
-                G.add_node(source)  # Optionally add x, y coordinates here if available
-            if target not in G:
-                G.add_node(target)  # Optionally add x, y coordinates here if available
-            G.add_edge(source, target, weight=weight)
+            # Parse nodes
+            cys_view_dom = minidom.parse(cys_view_file)
+            cys_nodes = cys_view_dom.getElementsByTagName("node")
+            node_xs = {}
+            node_ys = {}
+            for node in cys_nodes:
+                # Node ID is found in 'label'
+                node_id = str(node.attributes["label"].value)
+                for child in node.childNodes:
+                    if child.nodeType == 1 and child.tagName == "graphics":
+                        node_xs[node_id] = float(child.attributes["x"].value)
+                        node_ys[node_id] = float(child.attributes["y"].value)
 
-        # Remove invalid graph attributes / properties as soon as edges are added
-        self._remove_invalid_graph_properties(G)
+            # Read the node attributes (from /tables/)
+            attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "edge.cytable"]
+            attribute_metadata = [
+                cf
+                for cf in cys_files
+                if all(keyword in cf for keyword in attribute_metadata_keywords)
+            ][0]
+            # Load attributes file from Cytoscape as pandas data frame
+            attribute_table = pd.read_csv(attribute_metadata, sep=",", header=None, skiprows=1)
+            # Set columns
+            attribute_table.columns = attribute_table.iloc[0]
+            # Skip first four rows
+            attribute_table = attribute_table.iloc[4:, :]
+            attribute_table = attribute_table[[source_label, target_label, weight_label]]
+            attribute_table = attribute_table.dropna().reset_index(drop=True)
 
-        for node in G.nodes():
-            G.nodes[node]["label"] = node
-            G.nodes[node]["x"] = node_xs[
-                node
-            ]  # Assuming you have a dict `node_xs` for x coordinates
-            G.nodes[node]["y"] = node_ys[
-                node
-            ]  # Assuming you have a dict `node_ys` for y coordinates
+            # Create a graph
+            G = nx.Graph()
+            # Add edges and nodes with weights
+            for _, row in attribute_table.iterrows():
+                source, target, weight = (
+                    row[source_label],
+                    row[target_label],
+                    float(row[weight_label]),
+                )
+                if source not in G:
+                    G.add_node(source)  # Optionally add x, y coordinates here if available
+                if target not in G:
+                    G.add_node(target)  # Optionally add x, y coordinates here if available
+                G.add_edge(source, target, weight=weight)
 
-        # Relabel the node ids to sequential numbers to make calculations faster
-        G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
-        self._validate_graph(G)
-        G = self._process_graph(G)
-        # Remove unzipped files/directories
-        cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
-        for dirname in cys_dirnames:
-            shutil.rmtree(dirname)
+            # Remove invalid graph attributes / properties as soon as edges are added
+            self._remove_invalid_graph_properties(G)
+
+            for node in G.nodes():
+                G.nodes[node]["label"] = node
+                G.nodes[node]["x"] = node_xs[
+                    node
+                ]  # Assuming you have a dict `node_xs` for x coordinates
+                G.nodes[node]["y"] = node_ys[
+                    node
+                ]  # Assuming you have a dict `node_ys` for y coordinates
+
+            # Relabel the node ids to sequential numbers to make calculations faster
+            G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
+            self._validate_graph(G)
+            G = self._process_graph(G)
+        finally:
+            # Remove unzipped files/directories
+            cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
+            for dirname in cys_dirnames:
+                shutil.rmtree(dirname)
 
         return G
 
@@ -246,6 +261,8 @@ class NetworkIO:
                 distance_metric=self.distance_metric,
                 neighborhood_diameter=self.neighborhood_diameter,
                 louvain_resolution=self.louvain_resolution,
+                random_walk_length=self.random_walk_length,
+                random_walk_num=self.random_walk_num,
             )
 
         G = calculate_edge_lengths(
