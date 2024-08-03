@@ -1,6 +1,7 @@
 from risk.annotations import define_top_annotations
 from risk.graph import NetworkGraph
-from risk.io import print_header, AnnotationsIO, NetworkIO
+from risk.io import AnnotationsIO, NetworkIO
+from risk.log import params, print_header
 from risk.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
@@ -21,6 +22,8 @@ class RISK(NetworkIO, AnnotationsIO):
         neighborhood_diameter=0.5,
         distance_metric="dijkstra",
         louvain_resolution=0.1,
+        random_walk_length=3,
+        random_walk_num=250,
         include_edge_weight=True,
         min_edges_per_node=0,
     ):
@@ -31,6 +34,19 @@ class RISK(NetworkIO, AnnotationsIO):
             annotation_filepath (str): Path to the annotations file.
             **kwargs: Additional configuration parameters.
         """
+        # Always clear / initialize all logged parameters upon RISK instantiation
+        params.initialize()
+        params.log_network(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            include_edge_weight=include_edge_weight,
+            distance_metric=distance_metric,
+            neighborhood_diameter=neighborhood_diameter,
+            louvain_resolution=louvain_resolution,
+            random_walk_length=random_walk_length,
+            random_walk_num=random_walk_num,
+            min_edges_per_node=min_edges_per_node,
+        )
         NetworkIO.__init__(
             self,
             compute_sphere=compute_sphere,
@@ -39,6 +55,8 @@ class RISK(NetworkIO, AnnotationsIO):
             distance_metric=distance_metric,
             neighborhood_diameter=neighborhood_diameter,
             louvain_resolution=louvain_resolution,
+            random_walk_length=random_walk_length,
+            random_walk_num=random_walk_num,
             min_edges_per_node=min_edges_per_node,
         )
         AnnotationsIO.__init__(self)
@@ -48,7 +66,13 @@ class RISK(NetworkIO, AnnotationsIO):
         self.distance_metric = distance_metric
         self.neighborhood_diameter = neighborhood_diameter
         self.louvain_resolution = louvain_resolution
+        self.random_walk_length = random_walk_length
+        self.random_walk_num = random_walk_num
         self.min_edges_per_node = min_edges_per_node
+
+    @property
+    def params(self):
+        return params
 
     def load_neighborhoods(
         self,
@@ -68,9 +92,17 @@ class RISK(NetworkIO, AnnotationsIO):
             dict: Neighborhoods of the network.
         """
         print_header("Running permutation test")
+        params.log_neighborhoods(
+            score_metric=score_metric,
+            null_distribution=null_distribution,
+            num_permutations=num_permutations,
+            random_seed=random_seed,
+        )
         for_print_distance_metric = (
             f"louvain (resolution={self.louvain_resolution})"
             if self.distance_metric == "louvain"
+            else f"random walk (length={self.random_walk_length}, num={self.random_walk_num})"
+            if self.distance_metric == "random_walk"
             else self.distance_metric
         )
         print(f"Distance metric: '{for_print_distance_metric}'")
@@ -80,6 +112,8 @@ class RISK(NetworkIO, AnnotationsIO):
             self.neighborhood_diameter,
             compute_sphere=self.compute_sphere,
             louvain_resolution=self.louvain_resolution,
+            random_walk_length=self.random_walk_length,
+            random_walk_num=self.random_walk_num,
             random_seed=random_seed,
         )
         print(f"Null distribution: '{null_distribution}'")
@@ -122,6 +156,19 @@ class RISK(NetworkIO, AnnotationsIO):
             NetworkGraph: A NetworkGraph object.
         """
         print_header("Finding significant neighborhoods")
+        params.log_graph(
+            tail=tail,
+            pval_cutoff=pval_cutoff,
+            apply_fdr=apply_fdr,
+            fdr_cutoff=fdr_cutoff,
+            impute_depth=impute_depth,
+            prune_threshold=prune_threshold,
+            linkage_criterion=linkage_criterion,
+            linkage_method=linkage_method,
+            linkage_metric=linkage_metric,
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
+        )
         print(f"P-value cutoff: {pval_cutoff}")
         print(f"FDR cutoff: {'N/A' if not apply_fdr else apply_fdr}")
         print(
@@ -202,6 +249,13 @@ class RISK(NetworkIO, AnnotationsIO):
             NetworkPlotter: A NetworkPlotter object.
         """
         print_header("Loading plotter")
+        params.log_plotter(
+            figsize=figsize,
+            background_color=background_color,
+            plot_outline=plot_outline,
+            outline_color=outline_color,
+            outline_scale=outline_scale,
+        )
         return NetworkPlotter(
             graph,
             figsize=figsize,
