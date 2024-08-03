@@ -6,6 +6,8 @@ import numpy as np
 from scipy.ndimage import label
 from scipy.stats import gaussian_kde
 
+from risk.log import params
+
 
 class NetworkPlotter:
     """A class to handle plotting of network graphs."""
@@ -83,8 +85,14 @@ class NetworkPlotter:
         node_edgecolor="black",
     ):
         """Plot the network graph with customizable node colors, sizes, and edge widths."""
+        params.log_plotter(
+            network_node_size=node_size,
+            network_edge_width=edge_width,
+            network_node_color=node_color,
+            network_edge_color=edge_color,
+            network_node_edgecolor=node_edgecolor,
+        )
         node_coordinates = self.network_graph.node_coordinates
-
         nx.draw_networkx_nodes(
             self.network_graph.network,
             pos=node_coordinates,
@@ -111,6 +119,13 @@ class NetworkPlotter:
         color="white",
     ):
         """Draws KDE contours for nodes in various domains of a network graph, highlighting areas of high density."""
+        params.log_plotter(
+            contour_levels=levels,
+            contour_bandwidth=bandwidth,
+            contour_grid_size=grid_size,
+            contour_alpha=alpha,
+            contour_color=color,
+        )
         # Check if color is a list of colors or a single color string
         if isinstance(color, str):
             color = self.get_annotated_contour_colors(color=color)
@@ -185,6 +200,17 @@ class NetworkPlotter:
         min_words=1,
     ):
         """Annotates a network graph with labels for different domains, positioned around the network for clarity."""
+        params.log_plotter(
+            label_perimeter_scale=perimeter_scale,
+            label_offset=offset,
+            label_font=font,
+            label_fontsize=fontsize,
+            label_fontcolor=fontcolor,
+            label_arrow_linewidth=arrow_linewidth,
+            label_arrow_color=arrow_color,
+            label_num_words=num_words,
+            label_min_words=min_words,
+        )
         # Check if color is a list of colors or a single color string
         if isinstance(fontcolor, str):
             fontcolor = self.get_annotated_contour_colors(color=fontcolor)
@@ -381,16 +407,6 @@ def _calculate_bounding_box(node_coordinates, radius_margin=1.05):
     center = np.array([(x_min + x_max) / 2, (y_min + y_max) / 2])
     radius = max(x_max - x_min, y_max - y_min) / 2 * radius_margin
     return center, radius
-
-
-def _determine_label_positions(domain_centroids, center, radius, label_offset):
-    """Determines the label positions around the circle perimeter based on domain centroids."""
-    label_positions = {}
-    for domain, centroid in domain_centroids.items():
-        direction = centroid - center
-        direction /= np.linalg.norm(direction)
-        label_positions[domain] = center + direction * (radius + label_offset)
-    return label_positions
 
 
 def _equidistant_angles_around_center(center, radius, label_offset, num_domains):
