@@ -137,6 +137,8 @@ def _permutation_process_subset(
     local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
 
+    # This line is the strange hack
+    print(" ", end="", flush=True)
     text = f"Worker {worker_id + 1} Progress"
     if use_lock:
         with lock:
