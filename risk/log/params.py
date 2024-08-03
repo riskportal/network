@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 import json
 
 import numpy as np
@@ -9,6 +10,7 @@ from .console import print_header
 class Params:
     def __init__(self):
         self.initialize()
+        self.datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def initialize(self):
         self.network = {}
@@ -87,6 +89,7 @@ class Params:
         print_header("Loading parameters")
         return _convert_ndarray_to_list(
             {
+                "datetime": self.datetime,
                 "network": self.network,
                 "annotations": self.annotations,
                 "neighborhoods": self.neighborhoods,
