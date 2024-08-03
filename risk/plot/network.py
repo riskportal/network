@@ -73,37 +73,94 @@ class NetworkPlotter:
         self.ax = ax
         return fig, ax
 
-    def add_domain(self, key, nodes, color="chartreuse"):
-        ...
-
     def plot_network(
         self,
         node_size=50,
         edge_width=1.0,
         node_color="white",
-        edge_color="black",
         node_edgecolor="black",
+        edge_color="black",
+        node_shape="circle",
     ):
         """Plot the network graph with customizable node colors, sizes, and edge widths."""
         params.log_plotter(
             network_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
             network_edge_width=edge_width,
             network_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
-            network_edge_color=edge_color,
             network_node_edgecolor=node_edgecolor,
+            network_edge_color=edge_color,
+            network_node_shape=node_shape,
         )
+
         node_coordinates = self.network_graph.node_coordinates
         nx.draw_networkx_nodes(
             self.network_graph.network,
             pos=node_coordinates,
             node_size=node_size,
             node_color=node_color,
+            node_shape=node_shape,
             alpha=1.00,
             edgecolors=node_edgecolor,
             ax=self.ax,
         )
+
         nx.draw_networkx_edges(
             self.network_graph.network,
+            pos=node_coordinates,
+            width=edge_width,
+            edge_color=edge_color,
+            ax=self.ax,
+        )
+
+    def plot_subnetwork(
+        self,
+        nodes,
+        node_size=50,
+        edge_width=1.0,
+        node_color="white",
+        node_edgecolor="black",
+        edge_color="black",
+        node_shape="circle",
+    ):
+        params.log_plotter(
+            subnetwork_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
+            subnetwork_edge_width=edge_width,
+            subnetwork_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
+            subnetwork_node_edgecolor=node_edgecolor,
+            subnetwork_edge_color=edge_color,
+            subnet_node_shape=node_shape,
+        )
+
+        # Filter to get node IDs and their coordinates
+        node_ids = [
+            self.network_graph.node_label_to_id_map.get(node)
+            for node in nodes
+            if node in self.network_graph.node_label_to_id_map
+        ]
+        if not node_ids:
+            raise ValueError("No nodes found in the network graph.")
+
+        # Get the coordinates of the filtered nodes
+        node_coordinates = {
+            node_id: self.network_graph.node_coordinates[node_id] for node_id in node_ids
+        }
+        # Draw the nodes
+        nx.draw_networkx_nodes(
+            self.network_graph.network,
+            pos=node_coordinates,
+            nodelist=node_ids,
+            node_size=node_size,
+            node_color=node_color,
+            node_shape=node_shape,
+            alpha=1.00,
+            edgecolors=node_edgecolor,
+            ax=self.ax,
+        )
+
+        # Draw the edges between the specified nodes
+        subgraph = self.network_graph.network.subgraph(node_ids)
+        nx.draw_networkx_edges(
+            subgraph,
             pos=node_coordinates,
             width=edge_width,
             edge_color=edge_color,
@@ -126,6 +183,7 @@ class NetworkPlotter:
             contour_alpha=alpha,
             contour_color="custom" if isinstance(color, list) else color,
         )
+
         # Check if color is a list of colors or a single color string
         if isinstance(color, str):
             color = self.get_annotated_contour_colors(color=color)
@@ -144,6 +202,37 @@ class NetworkPlotter:
                     grid_size=grid_size,
                     alpha=alpha,
                 )
+
+    def plot_subcontour(
+        self, nodes, levels=5, bandwidth=0.8, grid_size=200, alpha=0.2, color="white"
+    ):
+        params.log_plotter(
+            contour_levels=levels,
+            contour_bandwidth=bandwidth,
+            contour_grid_size=grid_size,
+            contour_alpha=alpha,
+            contour_color="custom" if isinstance(color, list) else color,
+        )
+        # Filter to get node IDs and their coordinates
+        node_ids = [
+            self.network_graph.node_label_to_id_map.get(node)
+            for node in nodes
+            if node in self.network_graph.node_label_to_id_map
+        ]
+        if not node_ids or len(node_ids) == 1:
+            raise ValueError("No nodes found in the network graph.")
+
+        node_coordinates = self.network_graph.node_coordinates
+        self._draw_kde_contour(
+            self.ax,
+            node_coordinates,
+            node_ids,
+            color=color,
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
+            alpha=alpha,
+        )
 
     def _draw_kde_contour(
         self, ax, pos, nodes, color, levels=5, bandwidth=0.8, grid_size=200, alpha=0.5
