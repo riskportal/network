@@ -10,13 +10,13 @@ from statsmodels.stats.multitest import fdrcorrection
 
 from risk.stats.permutation import (
     compute_neighborhood_score_by_sum_cython,
-    compute_neighborhood_score_by_variance_cython,
+    compute_neighborhood_score_by_stdev_cython,
     compute_neighborhood_score_by_z_score_cython,
 )
 
 DISPATCH_PERMUTATION_TABLE = {
     "sum": compute_neighborhood_score_by_sum_cython,
-    "variance": compute_neighborhood_score_by_variance_cython,
+    "stdev": compute_neighborhood_score_by_stdev_cython,
     "z_score": compute_neighborhood_score_by_z_score_cython,
 }
 
