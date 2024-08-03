@@ -269,8 +269,8 @@ class NetworkIO:
         G = calculate_edge_lengths(
             G.copy(),
             compute_sphere=self.compute_sphere,
-            surface_depth=self.surface_depth,
             include_edge_weight=self.include_edge_weight,
+            surface_depth=0,
         )
         return G
 
