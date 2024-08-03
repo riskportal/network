@@ -68,9 +68,7 @@ class NetworkGraph:
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(network_2d)
 
-    def get_domain_colors(
-        self, min_scale=0.8, max_scale=1.0, outlier_threshold=2.0, random_seed=888, **kwargs
-    ):
+    def get_domain_colors(self, min_scale=0.8, max_scale=1.0, random_seed=888, **kwargs):
         """Generate composite colors for domains.
 
         This method generates composite colors for nodes based on their enrichment scores and transforms
@@ -93,7 +91,6 @@ class NetworkGraph:
             enrichment_sums,
             min_scale=min_scale,
             max_scale=max_scale,
-            z_score_threshold=abs(outlier_threshold),  # Two-tailed test - use absolute value
         )
 
         return transformed_colors
@@ -138,22 +135,15 @@ class NetworkGraph:
         return dict(zip(self.domain_to_nodes.keys(), domain_colors))
 
 
-def _transform_colors(colors, enrichment_sums, min_scale=0.8, max_scale=1.0, z_score_threshold=2.0):
+def _transform_colors(colors, enrichment_sums, min_scale=0.8, max_scale=1.0):
     """Transform colors to ensure proper alpha values and intensity based on enrichment sums."""
     if min_scale == max_scale:
         min_scale = max_scale - 0.001  # Avoid division by zero
+
     # Calculate z-scores for the enrichment sums
-    z_scores = zscore(enrichment_sums)
-    # Identify the threshold values corresponding to z-scores of -z_score_threshold and z_score_threshold
-    threshold_min = np.min(enrichment_sums[z_scores <= -z_score_threshold])
-    threshold_max = np.max(enrichment_sums[z_scores >= z_score_threshold])
-    # Cap the enrichment sums at the threshold values
-    capped_sums = np.where(z_scores <= -z_score_threshold, threshold_min, enrichment_sums)
-    capped_sums = np.where(z_scores >= z_score_threshold, threshold_max, capped_sums)
+    enrichment_sums = zscore(enrichment_sums)
     # Normalize the capped enrichment sums to the range [0, 1]
-    normalized_sums = (capped_sums - np.min(capped_sums)) / (
-        np.max(capped_sums) - np.min(capped_sums)
-    )
+    normalized_sums = enrichment_sums / np.max(enrichment_sums)
     # Scale normalized sums to the specified color range [min_scale, max_scale]
     scaled_sums = min_scale + (max_scale - min_scale) * normalized_sums
     # Apply log transformation and scale to 0-1 range

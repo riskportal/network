@@ -51,8 +51,6 @@ def get_network_neighborhoods(
     """
     radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
 
-    if distance_metric == "euclidean":
-        return _calculate_euclidean_neighborhoods(network, radius)
     if distance_metric == "dijkstra":
         return _calculate_dijkstra_neighborhoods(network, radius)
     if distance_metric == "louvain":
@@ -77,33 +75,9 @@ def get_network_neighborhoods(
         return _calculate_chinese_whispers_neighborhoods(network)
 
     raise ValueError(
-        "Incorrect distance metric specified. Please choose from 'euclidean', 'dijkstra', 'louvain', 'affinity_propagation'."
+        "Incorrect distance metric specified. Please choose from 'dijkstra', 'louvain', 'affinity_propagation'."
         "label_propagation', 'random_walk', 'markov_clustering', 'walktrap', spinglass', 'chinese_whispers'."
     )
-
-
-def _calculate_euclidean_neighborhoods(network, radius):
-    """Helper function to calculate neighborhoods using Euclidean distances.
-
-    Args:
-        network (nx.Graph): The network graph.
-        radius (float): The radius for neighborhood calculation.
-
-    Returns:
-        np.ndarray: Neighborhood matrix based on Euclidean distances.
-    """
-    # Extract x and y coordinates from the network nodes
-    x = np.array(list(dict(network.nodes.data("x")).values()))
-    y = np.array(list(dict(network.nodes.data("y")).values()))
-    node_coordinates = np.stack((x, y), axis=1)
-
-    # Calculate Euclidean distances between all node pairs
-    node_distances = squareform(pdist(node_coordinates, "euclidean"))
-
-    # Determine neighborhoods based on the radius
-    neighborhoods = np.zeros_like(node_distances, dtype=int)
-    neighborhoods[node_distances < radius] = 1
-    return neighborhoods
 
 
 def _calculate_dijkstra_neighborhoods(network, radius):
