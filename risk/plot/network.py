@@ -80,7 +80,7 @@ class NetworkPlotter:
         node_color="white",
         node_edgecolor="black",
         edge_color="black",
-        node_shape="circle",
+        node_shape="o",
     ):
         """Plot the network graph with customizable node colors, sizes, and edge widths."""
         params.log_plotter(
@@ -120,7 +120,7 @@ class NetworkPlotter:
         node_color="white",
         node_edgecolor="black",
         edge_color="black",
-        node_shape="circle",
+        node_shape="o",
     ):
         params.log_plotter(
             subnetwork_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
