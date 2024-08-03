@@ -1,2 +1,34 @@
 # RISK
-RISK Infers Spatial Kinship
+
+<ins>RISK Infers Spatial Kinship</ins>
+
+<p align="left">
+    <img src="./docs/risk-logo-dark.png#gh-dark-mode-only" width="40%" />
+    <img src="./docs/risk-logo-light.png#gh-light-mode-only" width="40%" />
+</p>
+
+RISK is a software tool for visualizing spatial relationships in networks. It aims to enhance network analysis by integrating advanced network annotation algorithms, such as Louvain and Markov Clustering, to identify key functional modules and pathways.
+
+## Features
+
+- Spatial analysis of biological networks
+- Functional enrichment detection
+- Optimized performance
+
+## Example
+
+*Saccharomyces cerevisiae* proteins oriented by protein domain similarities
+
+![Metabolic Network Demo](./docs/20240801_michaelis_2023.png)
+
+## Installation
+
+Coming soon...
+
+## Usage
+
+Coming soon...
+
+## License
+
+This project is licensed under the MIT License.
