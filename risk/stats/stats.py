@@ -3,6 +3,7 @@ risk/stats/stats
 ~~~~~~~~~~~~~~~~
 """
 
+from multiprocessing import Pool, Lock
 from tqdm import tqdm
 
 import numpy as np
@@ -28,18 +29,20 @@ def compute_permutation(
     null_distribution="network",
     num_permutations=1000,
     random_seed=888,
+    max_workers=1,
 ):
     # NOTE: Both `neighborhoods` and `annotations` are binary matrices and must NOT have any NaN values
     neighborhoods = neighborhoods.astype(np.float32)
     annotations = annotations.astype(np.float32)
     neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[score_metric]
     counts_depletion, counts_enrichment = _run_permutation_test(
-        neighborhoods,
-        annotations,
-        neighborhood_score_func,
-        null_distribution,
-        num_permutations,
-        random_seed,
+        neighborhoods=neighborhoods,
+        annotations=annotations,
+        neighborhood_score_func=neighborhood_score_func,
+        null_distribution=null_distribution,
+        num_permutations=num_permutations,
+        random_seed=random_seed,
+        max_workers=max_workers,
     )
     # Compute P-values
     # Necessary conservative adjustment: when p-value = 0, set it to 1/num_permutations
@@ -59,53 +62,118 @@ def _run_permutation_test(
     null_distribution="network",
     num_permutations=1000,
     random_seed=888,
+    max_workers=4,
 ):
     np.random.seed(random_seed)
-    # NOTE: `annotations` is a Numpy 2D matrix of type float.64 WITH NaN values!
-    # NOTE: Prior to introducing `annotations` to ANY permutation test, all NaN values must be set to 0
-    # First capture which distribution we want to assess enrichment: 1) Network - checks if neighborhood of
-    # nodes enriched for an annotation compared to all nodes in a network or 2) Annotations file - checks if
-    # neighborhood of nodes enriched for an annotation compared to all nodes found in the annotations
     if null_distribution == "network":
         idxs = range(annotations.shape[0])
     else:
         idxs = np.nonzero(np.sum(~np.isnan(annotations), axis=1))[0]
-    # Setting all NaN values to 0 AFTER capturing appropriate permutation indices
+
     annotations[np.isnan(annotations)] = 0
-    # The observed test statistic indices for `annotations`
     annotation_matrix_obsv = annotations[idxs]
-    # `neighborhoods_matrix_obsv` must match in column number to `annotation_matrix_obsv` row number
     neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
-    # This is the observed test statistic
+
     with np.errstate(invalid="ignore", divide="ignore"):
         observed_neighborhood_scores = neighborhood_score_func(
             neighborhoods_matrix_obsv, annotation_matrix_obsv
         )
-    # Make two empty matrices to track which permuted test statistics fell below or exceeded the observed test statistic
+
     counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
-    # Running permutations
-    for _ in tqdm(
-        range(num_permutations),
-        desc=f"Running {num_permutations} permutations",
-        total=num_permutations,
-        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
-    ):
-        # `annotation_matrix_permut` must match in row number to `neighborhoods_matrix_obsv` column number
-        annotation_matrix_permut = annotations[np.random.permutation(idxs)]
-        # Below is NOT the bottleneck...
+
+    subset_size = num_permutations // max_workers
+    remainder = num_permutations % max_workers
+
+    if max_workers == 1:
+        local_counts_depletion, local_counts_enrichment = _permutation_process_subset(
+            annotations,
+            idxs,
+            neighborhoods_matrix_obsv,
+            observed_neighborhood_scores,
+            neighborhood_score_func,
+            num_permutations,
+            0,
+            False,
+        )
+        counts_depletion = np.add(counts_depletion, local_counts_depletion)
+        counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
+    else:
+        params_list = [
+            (
+                annotations,
+                idxs,
+                neighborhoods_matrix_obsv,
+                observed_neighborhood_scores,
+                neighborhood_score_func,
+                subset_size + (1 if i < remainder else 0),
+                i,
+                True,
+            )
+            for i in range(max_workers)
+        ]
+
+        lock = Lock()
+        with Pool(max_workers, initializer=_init, initargs=(lock,)) as pool:
+            results = pool.starmap(_permutation_process_subset, params_list)
+
+            for local_counts_depletion, local_counts_enrichment in results:
+                counts_depletion = np.add(counts_depletion, local_counts_depletion)
+                counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
+
+    return counts_depletion, counts_enrichment
+
+
+def _permutation_process_subset(
+    annotation_matrix,
+    idxs,
+    neighborhoods_matrix_obsv,
+    observed_neighborhood_scores,
+    neighborhood_score_func,
+    subset_size,
+    worker_id,
+    use_lock,
+):
+    local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
+    local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
+
+    text = f"Worker {worker_id + 1} Progress"
+    if use_lock:
+        with lock:
+            progress = tqdm(total=subset_size, desc=text, position=worker_id, leave=False)
+    else:
+        progress = tqdm(total=subset_size, desc=text, position=worker_id, leave=False)
+
+    for _ in range(subset_size):
+        annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs)]
         with np.errstate(invalid="ignore", divide="ignore"):
             permuted_neighborhood_scores = neighborhood_score_func(
                 neighborhoods_matrix_obsv, annotation_matrix_permut
             )
-        counts_depletion = np.add(
-            counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
+        local_counts_depletion = np.add(
+            local_counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
         )
-        counts_enrichment = np.add(
-            counts_enrichment, permuted_neighborhood_scores >= observed_neighborhood_scores
+        local_counts_enrichment = np.add(
+            local_counts_enrichment, permuted_neighborhood_scores >= observed_neighborhood_scores
         )
+        if use_lock:
+            with lock:
+                progress.update(1)
+        else:
+            progress.update(1)
 
-    return counts_depletion, counts_enrichment
+    if use_lock:
+        with lock:
+            progress.close()
+    else:
+        progress.close()
+
+    return local_counts_depletion, local_counts_enrichment
+
+
+def _init(lock_):
+    global lock
+    lock = lock_
 
 
 def calculate_significance_matrices(
