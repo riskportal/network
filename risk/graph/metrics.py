@@ -27,8 +27,7 @@ def get_best_surface_depth(
     random_walk_length=3,
     random_walk_num=250,
     lower_bound=0,
-    upper_bound=1024,
-    tolerance=4,
+    upper_bound=1.024,
 ):
     """Find the optimal surface depth for the network.
 
@@ -36,39 +35,58 @@ def get_best_surface_depth(
         G (NetworkX graph): The network graph.
         lower_bound (int): Lower bound for surface depth.
         upper_bound (int): Upper bound for surface depth.
-        tolerance (int): Tolerance for surface depth optimization.
 
     Returns:
         int: The best surface depth.
     """
     print("Warning: Optimizing surface depth is an expensive process...")
-    # Initialize variables to keep track of the best score and corresponding surface depth
     max_score = -np.inf
     best_surface_depth = lower_bound
-    # Calculate the total number of iterations for progress tracking
-    total_iterations = int(np.ceil(np.log2((upper_bound - lower_bound) / tolerance)))
-    # Initialize the progress bar
+    total_iterations = int(np.ceil(np.log2((upper_bound - lower_bound) * 1000)))
+
     with tqdm(
         total=total_iterations,
         desc="Optimizing surface depth",
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
     ) as pbar:
-        while upper_bound - lower_bound > tolerance:
-            # Compute the midpoint of the current search interval
-            mid_surface_depth = (lower_bound + upper_bound) / 2
-            # Generate surface depths to test (midpoint and midpoint + tolerance)
-            surface_depths_to_test = [mid_surface_depth, mid_surface_depth + tolerance]
+        current_iteration = 0
 
-            for surface_depth in map(int, surface_depths_to_test):
-                # Calculate edge lengths with the current surface depth
-                G_test = calculate_edge_lengths(
-                    G,
-                    include_edge_weight=include_edge_weight,
+        while upper_bound - lower_bound > 0.001:  # Use 1 as the minimum difference for convergence
+            if current_iteration == 0:
+                G_test_zero = calculate_edge_lengths(
+                    G.copy(),
                     compute_sphere=compute_sphere,
-                    surface_depth=surface_depth,
+                    include_edge_weight=include_edge_weight,
+                    surface_depth=upper_bound,
                 )
+                with _suppress_print():
+                    neighborhoods_test_zero = get_network_neighborhoods(
+                        network=G_test_zero,
+                        distance_metric=distance_metric,
+                        neighborhood_diameter=neighborhood_diameter,
+                        compute_sphere=compute_sphere,
+                        louvain_resolution=louvain_resolution,
+                        random_walk_length=random_walk_length,
+                        random_walk_num=random_walk_num,
+                    )
+                max_value = np.max(neighborhoods_test_zero)
+                distance_matrix = max_value - neighborhoods_test_zero
+                np.fill_diagonal(distance_matrix, 0)
+                distance_matrix = np.maximum(distance_matrix, 0)
+                score_test = _compute_silhouette_score(distance_matrix)
 
-                # Suppress print output for loading neighborhoods
+                if score_test > max_score:
+                    max_score = score_test
+                    best_surface_depth = 0
+
+            else:
+                mid_surface_depth = (lower_bound + upper_bound) / 2
+                G_test = calculate_edge_lengths(
+                    G.copy(),
+                    compute_sphere=compute_sphere,
+                    include_edge_weight=include_edge_weight,
+                    surface_depth=mid_surface_depth,
+                )
                 with _suppress_print():
                     neighborhoods_test = get_network_neighborhoods(
                         network=G_test,
@@ -79,29 +97,29 @@ def get_best_surface_depth(
                         random_walk_length=random_walk_length,
                         random_walk_num=random_walk_num,
                     )
+                max_value = np.max(neighborhoods_test)
+                distance_matrix = max_value - neighborhoods_test
+                np.fill_diagonal(distance_matrix, 0)
+                distance_matrix = np.maximum(distance_matrix, 0)
+                score_test = _compute_silhouette_score(distance_matrix)
 
-                # Compute the silhouette score for the test graph
-                score_test = _compute_silhouette_score(neighborhoods_test)
-
-                # Update the best score and surface depth if the current score is better
                 if score_test > max_score:
                     max_score = score_test
-                    best_surface_depth = surface_depth
+                    best_surface_depth = mid_surface_depth
 
-            # Adjust the search interval based on the test results
-            if best_surface_depth == mid_surface_depth + tolerance:
-                lower_bound = mid_surface_depth
-            else:
-                upper_bound = mid_surface_depth
+                if best_surface_depth == mid_surface_depth + 1:
+                    lower_bound = mid_surface_depth
+                else:
+                    upper_bound = mid_surface_depth
 
-            # Update the progress bar
+            current_iteration += 1
             pbar.update(1)
 
     print(f"Optimal surface depth: {best_surface_depth}")
     return best_surface_depth
 
 
-def calculate_edge_lengths(G, compute_sphere=True, surface_depth=None, include_edge_weight=False):
+def calculate_edge_lengths(G, compute_sphere=True, include_edge_weight=False, surface_depth=0.0):
     # Normalize graph coordinates
     _normalize_graph_coordinates(G)
     # Normalize weights
@@ -112,8 +130,6 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=None, include_e
         # Identify subclusters - TODO: play with this value and research optimal radius! So far, 1 works best
         neighborhood_radius = np.pi / 2  # (4 * 1.0 (normalized diameter))
         partition = _find_subclusters_with_shortest_path(G, neighborhood_radius)
-        # This is key to offer more dynamic range for the user; surface depths don't need to be large
-        surface_depth = 0.0 if surface_depth is None else surface_depth / 1000
         # Create surface depth
         _create_depth(G, partition, surface_depth=surface_depth)
 
@@ -190,14 +206,13 @@ def _find_subclusters_with_shortest_path(G, neighborhood_radius):
 def _create_depth(G, subclusters, surface_depth=0.20):
     # Create a strength metric for subclusters (here using size)
     subcluster_strengths = {node: len(neighbors) for node, neighbors in subclusters.items()}
-
     # Normalize the subcluster strengths and apply depths
     max_strength = max(subcluster_strengths.values())
     for node, strength in subcluster_strengths.items():
-        surface_depth = strength / max_strength * surface_depth
+        normalized_surface_depth = (strength / max_strength) * surface_depth
         x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
         norm = np.sqrt(x**2 + y**2 + z**2)
-        G.nodes[node]["z"] -= (z / norm) * surface_depth  # Adjust Z for a depth
+        G.nodes[node]["z"] -= (z / norm) * normalized_surface_depth  # Adjust Z for a depth
 
 
 def _normalize_graph_coordinates(G):
