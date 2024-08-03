@@ -59,7 +59,7 @@ class Params:
     def save_as_json(self, filepath):
         try:
             with open(filepath, "w") as json_file:
-                json.dump(self.load(), json_file)
+                json.dump(self.load(), json_file, indent=4)
             print(f"Parameters successfully exported to filepath: {filepath}")
         except Exception as e:
             print(f"An error occurred while exporting the parameter: {e}")
