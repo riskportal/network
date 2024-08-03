@@ -8,7 +8,7 @@ This file contains the code for the RISK class and command-line access.
 import json
 
 from risk.annotations import load_annotations
-from risk.io.console import print_header
+from risk.log import params, print_header
 
 
 class AnnotationsIO:
@@ -31,7 +31,9 @@ class AnnotationsIO:
         Returns:
             dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
         """
-        _log_loading("JSON", filepath=filepath)
+        filetype = "JSON"
+        params.log_annotations(filepath=filepath, filetype=filetype)
+        _log_loading(filetype, filepath=filepath)
         # Open and read the JSON file
         with open(filepath, "r") as file:
             annotations_input = json.load(file)
