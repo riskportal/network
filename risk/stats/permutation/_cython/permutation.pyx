@@ -2,7 +2,7 @@
 import numpy as np
 cimport numpy as np
 cimport cython
-
+from threadpoolctl import threadpool_limits
 
 @cython.boundscheck(False)  # Disable bounds checking for entire function
 @cython.wraparound(False)   # Disable negative index wrapping for entire function
@@ -10,9 +10,23 @@ def compute_neighborhood_score_by_sum_cython(
     np.ndarray[np.float32_t, ndim=2] neighborhoods,
     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
     ):
-    # NOTE: `np.dot` is already highly optimized. The smaller the dtype the faster the algorithm!
-    cdef np.float32_t[:, :] neighborhood_score = np.dot(neighborhoods, annotation_matrix)
+    cdef np.float32_t[:, :] neighborhood_score
+    
+    # Limit the number of threads used by np.dot
+    with threadpool_limits(limits=1, user_api='blas'):
+        neighborhood_score = np.dot(neighborhoods, annotation_matrix)
+    
     return np.asarray(neighborhood_score)
+
+# @cython.boundscheck(False)  # Disable bounds checking for entire function
+# @cython.wraparound(False)   # Disable negative index wrapping for entire function
+# def compute_neighborhood_score_by_sum_cython(
+#     np.ndarray[np.float32_t, ndim=2] neighborhoods,
+#     np.ndarray[np.float32_t, ndim=2] annotation_matrix,
+#     ):
+#     # NOTE: `np.dot` is already highly optimized. The smaller the dtype the faster the algorithm!
+#     cdef np.float32_t[:, :] neighborhood_score = np.dot(neighborhoods, annotation_matrix)
+#     return np.asarray(neighborhood_score)
 
 
 @cython.boundscheck(False)
