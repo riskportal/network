@@ -82,6 +82,7 @@ class RISK(NetworkIO, AnnotationsIO):
         null_distribution="network",
         num_permutations=1000,
         random_seed=888,
+        max_workers=1,
     ):
         """Load significant neighborhoods for the network.
 
@@ -97,6 +98,7 @@ class RISK(NetworkIO, AnnotationsIO):
             null_distribution=null_distribution,
             num_permutations=num_permutations,
             random_seed=random_seed,
+            max_workers=max_workers,
         )
         for_print_distance_metric = (
             f"louvain (resolution={self.louvain_resolution})"
@@ -125,6 +127,7 @@ class RISK(NetworkIO, AnnotationsIO):
             null_distribution=null_distribution,
             num_permutations=num_permutations,
             random_seed=random_seed,
+            max_workers=max_workers,
         )
         return neighborhood_significance
 
