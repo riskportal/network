@@ -85,7 +85,7 @@ def _run_permutation_test(
     counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
     # Running permutations
-    for i in tqdm(
+    for _ in tqdm(
         range(num_permutations),
         desc=f"Running {num_permutations} permutations",
         total=num_permutations,
