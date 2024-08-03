@@ -181,7 +181,7 @@ class NetworkPlotter:
             contour_bandwidth=bandwidth,
             contour_grid_size=grid_size,
             contour_alpha=alpha,
-            contour_color="custom" if isinstance(color, list) else color,
+            contour_color="custom" if isinstance(color, np.ndarray) else color,
         )
 
         # Check if color is a list of colors or a single color string
@@ -211,7 +211,7 @@ class NetworkPlotter:
             contour_bandwidth=bandwidth,
             contour_grid_size=grid_size,
             contour_alpha=alpha,
-            contour_color="custom" if isinstance(color, list) else color,
+            contour_color="custom" if isinstance(color, np.ndarray) else color,
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
@@ -294,9 +294,9 @@ class NetworkPlotter:
             label_offset=offset,
             label_font=font,
             label_fontsize=fontsize,
-            label_fontcolor="custom" if isinstance(fontcolor, list) else fontcolor,
+            label_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
             label_arrow_linewidth=arrow_linewidth,
-            label_arrow_color="custom" if isinstance(arrow_color, list) else arrow_color,
+            label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
             label_num_words=num_words,
             label_min_words=min_words,
         )
