@@ -1,3 +1,5 @@
+cython
+markov_clustering
 matplotlib
 networkx
 nltk
