@@ -86,9 +86,9 @@ class NetworkPlotter:
     ):
         """Plot the network graph with customizable node colors, sizes, and edge widths."""
         params.log_plotter(
-            network_node_size=node_size,
+            network_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
             network_edge_width=edge_width,
-            network_node_color=node_color,
+            network_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
             network_edge_color=edge_color,
             network_node_edgecolor=node_edgecolor,
         )
@@ -124,7 +124,7 @@ class NetworkPlotter:
             contour_bandwidth=bandwidth,
             contour_grid_size=grid_size,
             contour_alpha=alpha,
-            contour_color=color,
+            contour_color="custom" if isinstance(color, list) else color,
         )
         # Check if color is a list of colors or a single color string
         if isinstance(color, str):
@@ -205,9 +205,9 @@ class NetworkPlotter:
             label_offset=offset,
             label_font=font,
             label_fontsize=fontsize,
-            label_fontcolor=fontcolor,
+            label_fontcolor="custom" if isinstance(fontcolor, list) else fontcolor,
             label_arrow_linewidth=arrow_linewidth,
-            label_arrow_color=arrow_color,
+            label_arrow_color="custom" if isinstance(arrow_color, list) else arrow_color,
             label_num_words=num_words,
             label_min_words=min_words,
         )
