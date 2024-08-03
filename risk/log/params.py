@@ -34,7 +34,7 @@ class Params:
     def log_plotter(self, **kwargs):
         self.plotter = {**self.plotter, **kwargs}
 
-    def save_as_csv(self, filepath):
+    def to_csv(self, filepath):
         try:
             # Load the parameter dictionary
             params = self.load()
@@ -58,7 +58,7 @@ class Params:
         except Exception as e:
             print(f"An error occurred while exporting the parameter: {e}")
 
-    def save_as_json(self, filepath):
+    def to_json(self, filepath):
         try:
             with open(filepath, "w") as json_file:
                 json.dump(self.load(), json_file, indent=4)
@@ -66,7 +66,7 @@ class Params:
         except Exception as e:
             print(f"An error occurred while exporting the parameter: {e}")
 
-    def save_as_txt(self, filepath):
+    def to_txt(self, filepath):
         try:
             # Load the parameter dictionary
             params = self.load()
