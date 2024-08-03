@@ -24,6 +24,8 @@ def get_best_surface_depth(
     distance_metric="euclidean",
     neighborhood_diameter=0.5,
     louvain_resolution=None,
+    random_walk_length=3,
+    random_walk_num=250,
     lower_bound=0,
     upper_bound=1024,
     tolerance=4,
@@ -74,6 +76,8 @@ def get_best_surface_depth(
                         neighborhood_diameter=neighborhood_diameter,
                         compute_sphere=compute_sphere,
                         louvain_resolution=louvain_resolution,
+                        random_walk_length=random_walk_length,
+                        random_walk_num=random_walk_num,
                     )
 
                 # Compute the silhouette score for the test graph
