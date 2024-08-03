@@ -106,7 +106,7 @@ class NetworkIO:
             NetworkX graph: Loaded and processed network.
         """
         filetype = "Cytoscape"
-        params.log_network(filepath=filepath, filetype=filetype)
+        params.log_network(filepath=str(filepath), filetype=filetype)
         _log_loading(
             filetype,
             compute_sphere=self.compute_sphere,
@@ -227,19 +227,19 @@ class NetworkIO:
         G.remove_edges_from(self_loops)
 
     @staticmethod
-    def _validate_graph(graph):
+    def _validate_graph(G):
         """Validate the graph structure and attributes.
 
         Args:
             graph (NetworkX graph): A NetworkX graph object.
         """
-        for node, attrs in graph.nodes(data=True):
+        for node, attrs in G.nodes(data=True):
             assert (
                 "x" in attrs and "y" in attrs
             ), f"Node {node} is missing 'x' or 'y' position attributes."
             assert "label" in attrs, f"Node {node} is missing a 'label' attribute."
 
-        missing_weights = [edge for edge in graph.edges(data=True) if "weight" not in edge[2]]
+        missing_weights = [edge for edge in G.edges(data=True) if "weight" not in edge[2]]
         if missing_weights:
             warnings.warn(
                 "Some edges are missing weights; default weight of 1 will be used for missing weights."
