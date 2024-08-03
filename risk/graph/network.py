@@ -14,34 +14,36 @@ class NetworkGraph:
     def __init__(
         self,
         network,
-        annotation_matrix,
-        domains_matrix,
-        trimmed_domains_matrix,
+        top_annotations,
+        domains,
+        trimmed_domains,
+        node_label_to_id_map,
         neighborhoods_enrichment_matrix,
     ):
         """Initialize the NetworkGraph object.
 
         Args:
             network: The network graph.
-            annotation_matrix: DataFrame of annotations data for the network nodes.
-            domains_matrix: DataFrame of domain data for the network nodes.
-            trimmed_domains_matrix: DataFrame of trimmed domain data for the network nodes.
+            top_annotations: DataFrame of annotations data for the network nodes.
+            domains: DataFrame of domain data for the network nodes.
+            trimmed_domains: DataFrame of trimmed domain data for the network nodes.
             neighborhoods_enrichment_matrix: Matrix of neighborhood binary enrichment data.
         """
-        self.annotation_matrix = annotation_matrix
-        self.domain_to_nodes = self._create_domain_to_nodes_map(domains_matrix)
-        self.domains_matrix = domains_matrix
-        self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains_matrix)
-        self.trimmed_domains_matrix = trimmed_domains_matrix
+        self.top_annotations = top_annotations
+        self.domain_to_nodes = self._create_domain_to_nodes_map(domains)
+        self.domains = domains
+        self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains)
+        self.trimmed_domains = trimmed_domains
+        self.node_label_to_id_map = node_label_to_id_map
         self.neighborhoods_enrichment_matrix = neighborhoods_enrichment_matrix
         # NOTE: self.network and self.node_coordinates declared in _initialize_network
         self.network = None
         self.node_coordinates = None
         self._initialize_network(network)
 
-    def _create_domain_to_nodes_map(self, domains_matrix):
+    def _create_domain_to_nodes_map(self, domains):
         """Creates a mapping from domains to the list of nodes belonging to each domain."""
-        cleaned_domains_matrix = domains_matrix.reset_index()[["index", "primary domain"]]
+        cleaned_domains_matrix = domains.reset_index()[["index", "primary domain"]]
         node_to_domains = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
         domain_to_nodes = defaultdict(list)
         for k, v in node_to_domains.items():
@@ -49,12 +51,12 @@ class NetworkGraph:
 
         return domain_to_nodes
 
-    def _create_domain_to_term_map(self, trimmed_domains_matrix):
+    def _create_domain_to_term_map(self, trimmed_domains):
         """Creates a mapping from domain IDs to their corresponding terms."""
         return dict(
             zip(
-                trimmed_domains_matrix.index,
-                trimmed_domains_matrix["label"],
+                trimmed_domains.index,
+                trimmed_domains["label"],
             )
         )
 
@@ -123,15 +125,15 @@ class NetworkGraph:
     def _create_node_to_enrichment_score_binary(self):
         """Create a DataFrame of node to enrichment score binary values."""
         return pd.DataFrame(
-            data=self.neighborhoods_enrichment_matrix[:, self.annotation_matrix.index.values],
-            columns=[self.annotation_matrix.index.values, self.annotation_matrix["domain"]],
+            data=self.neighborhoods_enrichment_matrix[:, self.top_annotations.index.values],
+            columns=[self.top_annotations.index.values, self.top_annotations["domain"]],
         )
 
     def _get_domain_colors(self, **kwargs):
         """Get colors for each domain."""
         # Exclude non-numeric domain columns
         numeric_domains = [
-            col for col in self.domains_matrix.columns if isinstance(col, (int, np.integer))
+            col for col in self.domains.columns if isinstance(col, (int, np.integer))
         ]
         domains = np.sort(numeric_domains)
         domain_colors = _get_colors(**kwargs, num_colors_to_generate=len(domains))
