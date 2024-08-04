@@ -114,7 +114,7 @@ def define_top_annotations(
         annotations_enrichment_matrix["top attributes"]
     ]:
         enriched_neighborhoods = list(
-            compress(list(network), binary_enrichment_matrix[:, attribute] > 0)
+            compress(list(network), binary_enrichment_matrix[:, attribute])
         )
         enriched_network = nx.subgraph(network, enriched_neighborhoods)
 

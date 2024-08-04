@@ -284,12 +284,9 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             dict: Adjusted neighborhoods data.
         """
-        enrichment_matrix = neighborhoods["significance_matrix"]
-        binary_enrichment_matrix = neighborhoods["binary_significance_matrix"]
         return process_neighborhoods(
             network=network,
-            enrichment_matrix=enrichment_matrix,
-            binary_enrichment_matrix=binary_enrichment_matrix,
+            neighborhoods=neighborhoods,
             impute_depth=impute_depth,
             prune_threshold=prune_threshold,
         )
@@ -309,7 +306,7 @@ class RISK(NetworkIO, AnnotationsIO):
         """
         ordered_annotations = annotations["ordered_annotations"]
         neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_counts"]
-        neighborhoods_binary_enrichment_matrix = neighborhoods["binary_significance_matrix"]
+        neighborhoods_binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
         return define_top_annotations(
             network=network,
             ordered_annotation_labels=ordered_annotations,
@@ -331,7 +328,8 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             pd.DataFrame: Domains matrix.
         """
-        significant_neighborhoods_enrichment = neighborhoods["significance_matrix"]
+        significant_neighborhoods_enrichment = neighborhoods["significant_enrichment_matrix"]
+        # Apply the mask
         return define_domains(
             top_annotations=top_annotations,
             significant_neighborhoods_enrichment=significant_neighborhoods_enrichment,

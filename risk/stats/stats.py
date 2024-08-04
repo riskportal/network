@@ -244,16 +244,19 @@ def calculate_significance_matrices(
     log_depletion_matrix = -np.log10(depletion_matrix)
     log_enrichment_matrix = -np.log10(enrichment_matrix)
 
-    significance_matrix, binary_significance_matrix = _select_significance_matrices(
+    enrichment_matrix, binary_enrichment_matrix = _select_significance_matrices(
         tail,
         log_depletion_matrix,
         depletion_alpha_threshold_matrix,
         log_enrichment_matrix,
         enrichment_alpha_threshold_matrix,
     )
+    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+
     return {
-        "significance_matrix": significance_matrix,
-        "binary_significance_matrix": binary_significance_matrix,
+        "enrichment_matrix": enrichment_matrix,
+        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "significant_enrichment_matrix": significant_enrichment_matrix,
     }
 
 
@@ -281,14 +284,14 @@ def _select_significance_matrices(
         raise ValueError("Invalid value for 'tail'. Must be 'left', 'right', or 'both'.")
 
     if tail == "left":
-        significance_matrix = -log_depletion_matrix
+        enrichment_matrix = -log_depletion_matrix
         alpha_threshold_matrix = depletion_alpha_threshold_matrix
     elif tail == "right":
-        significance_matrix = log_enrichment_matrix
+        enrichment_matrix = log_enrichment_matrix
         alpha_threshold_matrix = enrichment_alpha_threshold_matrix
     elif tail == "both":
         # Determine the highest absolute enrichment while preserving signs
-        significance_matrix = np.where(
+        enrichment_matrix = np.where(
             np.abs(log_depletion_matrix) >= np.abs(log_enrichment_matrix),
             -log_depletion_matrix,
             log_enrichment_matrix,
@@ -298,11 +301,11 @@ def _select_significance_matrices(
         )
 
     valid_idxs = ~np.isnan(alpha_threshold_matrix)
-    binary_significance_matrix = np.zeros(alpha_threshold_matrix.shape)
+    binary_enrichment_matrix = np.zeros(alpha_threshold_matrix.shape)
     # Filter for alpha cutoff here
-    binary_significance_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
+    binary_enrichment_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
 
-    return significance_matrix, binary_significance_matrix
+    return enrichment_matrix, binary_enrichment_matrix
 
 
 def _compute_threshold_matrix(pvals, fdr_pvals=None, pval_cutoff=0.05, fdr_cutoff=0.05):
