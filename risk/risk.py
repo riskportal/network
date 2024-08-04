@@ -331,7 +331,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             pd.DataFrame: Domains matrix.
         """
-        significant_neighborhoods_enrichment = neighborhoods["binary_significance_matrix"]
+        significant_neighborhoods_enrichment = neighborhoods["significance_matrix"]
         return define_domains(
             top_annotations=top_annotations,
             significant_neighborhoods_enrichment=significant_neighborhoods_enrichment,
