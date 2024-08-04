@@ -28,8 +28,8 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 def get_network_neighborhoods(
     network,
-    distance_metric,
-    neighborhood_diameter,
+    distance_metric="dijkstra",
+    edge_length_threshold=1.0,
     compute_sphere=False,
     louvain_resolution=1.0,
     random_walk_length=3,
@@ -42,17 +42,17 @@ def get_network_neighborhoods(
         network (nx.Graph): The network graph.
         distance_metric (str): The distance metric to use ('euclidean', 'dijkstra', 'louvain', 'affinity_propagation',
         'label_propagation').
-        neighborhood_diameter (float): The neighborhood_diameter of the neighborhoods.
+        edge_length_threshold (float): The edge_length_threshold of the neighborhoods.
         compute_sphere (bool, optional): Whether to compute the neighborhoods considering a spherical surface. Defaults to False.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
 
     Returns:
         np.ndarray: Neighborhood matrix.
     """
-    radius = (neighborhood_diameter / 2) * (4 if compute_sphere else 1)
+    network = _create_percentile_limited_subgraph(network, edge_length_threshold)
 
     if distance_metric == "dijkstra":
-        return _calculate_dijkstra_neighborhoods(network, radius)
+        return _calculate_dijkstra_neighborhoods(network)
     if distance_metric == "louvain":
         return _calculate_louvain_neighborhoods(
             network, louvain_resolution, random_seed=random_seed
@@ -80,20 +80,44 @@ def get_network_neighborhoods(
     )
 
 
-def _calculate_dijkstra_neighborhoods(network, radius):
+def _create_percentile_limited_subgraph(G, edge_length_percentile):
+    """
+    Calculate the edge length corresponding to the given percentile of edge lengths in the graph
+    and create a subgraph with all nodes and edges below this length.
+
+    Args:
+        G (networkx.Graph): The input graph.
+        edge_length_percentile (float): The percentile to calculate (between 0 and 1).
+
+    Returns:
+        nx.Graph: A subgraph with all nodes and edges below the edge length corresponding to the given percentile.
+    """
+    # Extract edge lengths from the graph
+    edge_lengths = [d["length"] for _, _, d in G.edges(data=True) if "length" in d]
+    # Calculate the specific edge length for the given percentile
+    percentile_length = np.percentile(edge_lengths, edge_length_percentile * 100)
+    # Create a new graph with all nodes
+    subgraph = nx.Graph()
+    subgraph.add_nodes_from(G.nodes(data=True))
+    # Add edges below the specified percentile length
+    for u, v, d in G.edges(data=True):
+        if d.get("length", 1) <= percentile_length:
+            subgraph.add_edge(u, v, **d)
+
+    return subgraph
+
+
+def _calculate_dijkstra_neighborhoods(network):
     """Helper function to calculate neighborhoods using Dijkstra's distances.
 
     Args:
         network (nx.Graph): The network graph.
-        radius (float): The radius for neighborhood calculation.
 
     Returns:
         np.ndarray: Neighborhood matrix based on Dijkstra's distances.
     """
     # Compute Dijkstra's distance within the specified radius
-    all_dijkstra_paths = dict(
-        nx.all_pairs_dijkstra_path_length(network, weight="length", cutoff=radius)
-    )
+    all_dijkstra_paths = dict(nx.all_pairs_dijkstra_path_length(network, weight="length"))
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
     # Populate neighborhoods matrix based on Dijkstra's
