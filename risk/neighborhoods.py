@@ -415,12 +415,14 @@ def process_neighborhoods(
             distance_threshold=prune_threshold,
         )
 
-    neighborhood_sum_enriched_binary = np.sum(binary_enrichment_matrix, axis=0)
+    neighborhood_enrichment_counts = np.sum(binary_enrichment_matrix, axis=0)
+    node_enrichment_sums = np.sum(enrichment_matrix, axis=1)
 
     return {
-        "neighborhood_enrichment_sums": neighborhood_sum_enriched_binary,
         "significance_matrix": enrichment_matrix,
         "binary_significance_matrix": binary_enrichment_matrix,
+        "neighborhood_enrichment_counts": neighborhood_enrichment_counts,
+        "node_enrichment_sums": node_enrichment_sums,
     }
 
 
@@ -466,7 +468,9 @@ def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_
                     valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
                 )
                 enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor]
-                binary_enrichment_matrix[row_index] = binary_enrichment_matrix[closest_neighbor]
+                binary_enrichment_matrix[row_index] = binary_enrichment_matrix[
+                    closest_neighbor
+                ] / np.sqrt(depth + 1)
             else:
                 next_rows_to_impute.append(row_index)
 

@@ -18,7 +18,7 @@ class NetworkGraph:
         domains,
         trimmed_domains,
         node_label_to_id_map,
-        neighborhoods_enrichment_matrix,
+        node_enrichment_sums,
     ):
         """Initialize the NetworkGraph object.
 
@@ -27,7 +27,6 @@ class NetworkGraph:
             top_annotations: DataFrame of annotations data for the network nodes.
             domains: DataFrame of domain data for the network nodes.
             trimmed_domains: DataFrame of trimmed domain data for the network nodes.
-            neighborhoods_enrichment_matrix: Matrix of neighborhood binary enrichment data.
         """
         self.top_annotations = top_annotations
         self.domain_to_nodes = self._create_domain_to_nodes_map(domains)
@@ -35,7 +34,7 @@ class NetworkGraph:
         self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains)
         self.trimmed_domains = trimmed_domains
         self.node_label_to_id_map = node_label_to_id_map
-        self.neighborhoods_enrichment_matrix = neighborhoods_enrichment_matrix
+        self.node_enrichment_sums = node_enrichment_sums
         # NOTE: self.network and self.node_coordinates declared in _initialize_network
         self.network = None
         self.node_coordinates = None
@@ -82,13 +81,10 @@ class NetworkGraph:
         domain_colors = self._get_domain_colors(**kwargs, random_seed=random_seed)
         # Generate composite colors for nodes
         node_colors = self._get_composite_node_colors(domain_colors)
-        # Create a DataFrame of node to enrichment score binary values
-        node_to_enrichment_score_binary = self._create_node_to_enrichment_score_binary()
-        enrichment_sums = node_to_enrichment_score_binary.sum(axis=1)
         # Transform colors to ensure proper alpha values and intensity
         transformed_colors = _transform_colors(
             node_colors,
-            enrichment_sums,
+            self.node_enrichment_sums,
             min_scale=min_scale,
             max_scale=max_scale,
         )
@@ -117,13 +113,6 @@ class NetworkGraph:
 
         return composite_colors
 
-    def _create_node_to_enrichment_score_binary(self):
-        """Create a DataFrame of node to enrichment score binary values."""
-        return pd.DataFrame(
-            data=self.neighborhoods_enrichment_matrix[:, self.top_annotations.index.values],
-            columns=[self.top_annotations.index.values, self.top_annotations["domain"]],
-        )
-
     def _get_domain_colors(self, **kwargs):
         """Get colors for each domain."""
         # Exclude non-numeric domain columns
@@ -151,10 +140,10 @@ def _transform_colors(colors, enrichment_sums, min_scale=0.8, max_scale=1.0):
     log_scaled_sums = (log_scaled_sums - np.min(log_scaled_sums)) / (
         np.max(log_scaled_sums) - np.min(log_scaled_sums)
     )
-    log_scaled_sums = min_scale + (max_scale - min_scale) * log_scaled_sums
+    scaled_sums = np.sqrt(min_scale + (max_scale - min_scale) * log_scaled_sums)
     # Apply transformations to colors
     for i in range(3):  # Only adjust RGB values
-        colors[:, i] = log_scaled_sums * colors[:, i]
+        colors[:, i] = scaled_sums * colors[:, i]
 
     return colors
 
