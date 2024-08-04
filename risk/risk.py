@@ -19,12 +19,10 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         compute_sphere=True,
         surface_depth=0.0,
-        edge_length_threshold=0.5,
         distance_metric="dijkstra",
         louvain_resolution=0.1,
-        random_walk_length=3,
-        random_walk_num=250,
         min_edges_per_node=0,
+        edge_length_threshold=0.5,
         include_edge_weight=True,
         weight_label="weight",
     ):
@@ -41,11 +39,9 @@ class RISK(NetworkIO, AnnotationsIO):
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             distance_metric=distance_metric,
-            edge_length_threshold=edge_length_threshold,
             louvain_resolution=louvain_resolution,
-            random_walk_length=random_walk_length,
-            random_walk_num=random_walk_num,
             min_edges_per_node=min_edges_per_node,
+            edge_length_threshold=edge_length_threshold,
             include_edge_weight=include_edge_weight,
             weight_label=weight_label,
         )
@@ -54,24 +50,21 @@ class RISK(NetworkIO, AnnotationsIO):
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             distance_metric=distance_metric,
-            edge_length_threshold=edge_length_threshold,
             louvain_resolution=louvain_resolution,
-            random_walk_length=random_walk_length,
-            random_walk_num=random_walk_num,
-            include_edge_weight=include_edge_weight,
             min_edges_per_node=min_edges_per_node,
+            edge_length_threshold=edge_length_threshold,
+            include_edge_weight=include_edge_weight,
             weight_label=weight_label,
         )
         AnnotationsIO.__init__(self)
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
-        self.include_edge_weight = include_edge_weight
         self.distance_metric = distance_metric
-        self.edge_length_threshold = edge_length_threshold
         self.louvain_resolution = louvain_resolution
-        self.random_walk_length = random_walk_length
-        self.random_walk_num = random_walk_num
         self.min_edges_per_node = min_edges_per_node
+        self.edge_length_threshold = edge_length_threshold
+        self.include_edge_weight = include_edge_weight
+        self.weight_label = weight_label
 
     @property
     def params(self):
@@ -106,8 +99,6 @@ class RISK(NetworkIO, AnnotationsIO):
         for_print_distance_metric = (
             f"louvain (resolution={self.louvain_resolution})"
             if self.distance_metric == "louvain"
-            else f"random walk (length={self.random_walk_length}, num={self.random_walk_num})"
-            if self.distance_metric == "random_walk"
             else self.distance_metric
         )
         print(f"Distance metric: '{for_print_distance_metric}'")
@@ -116,8 +107,6 @@ class RISK(NetworkIO, AnnotationsIO):
             self.distance_metric,
             self.edge_length_threshold,
             louvain_resolution=self.louvain_resolution,
-            random_walk_length=self.random_walk_length,
-            random_walk_num=self.random_walk_num,
             random_seed=random_seed,
         )
         print(f"Null distribution: '{null_distribution}'")

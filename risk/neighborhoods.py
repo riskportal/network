@@ -32,8 +32,6 @@ def get_network_neighborhoods(
     edge_length_threshold=1.0,
     compute_sphere=False,
     louvain_resolution=1.0,
-    random_walk_length=3,
-    random_walk_num=250,
     random_seed=888,
 ):
     """Calculate the neighborhoods for each node in the network based on the specified distance metric.
@@ -57,26 +55,18 @@ def get_network_neighborhoods(
         return _calculate_louvain_neighborhoods(
             network, louvain_resolution, random_seed=random_seed
         )
-    if distance_metric == "affinity_propagation":
-        return _calculate_affinity_propagation_neighborhoods(network, random_seed=random_seed)
     if distance_metric == "label_propagation":
         return _calculate_label_propagation_neighborhoods(network)
-    if distance_metric == "random_walk":
-        return _calculate_random_walk_neighborhoods(
-            network, walk_length=random_walk_length, num_walks=random_walk_num
-        )
     if distance_metric == "markov_clustering":
         return _calculate_markov_clustering_neighborhoods(network)
     if distance_metric == "walktrap":
         return _calculate_walktrap_neighborhoods(network)
     if distance_metric == "spinglass":
         return _calculate_spinglass_neighborhoods(network)
-    if distance_metric == "chinese_whispers":
-        return _calculate_chinese_whispers_neighborhoods(network)
 
     raise ValueError(
-        "Incorrect distance metric specified. Please choose from 'dijkstra', 'louvain', 'affinity_propagation'."
-        "label_propagation', 'random_walk', 'markov_clustering', 'walktrap', spinglass', 'chinese_whispers'."
+        "Incorrect distance metric specified. Please choose from 'dijkstra', 'louvain',"
+        "label_propagation', 'markov_clustering', 'walktrap', spinglass'."
     )
 
 
@@ -155,36 +145,6 @@ def _calculate_louvain_neighborhoods(network, resolution, random_seed=888):
     return neighborhoods
 
 
-def _calculate_affinity_propagation_neighborhoods(network, random_seed=888):
-    """Helper function to calculate neighborhoods using Affinity Propagation.
-
-    Args:
-        network (nx.Graph): The network graph.
-
-    Returns:
-        np.ndarray: Neighborhood matrix based on Affinity Propagation clustering.
-    """
-    # Compute Dijkstra's to form a distance matrix
-    distance_matrix = nx.floyd_warshall_numpy(network)
-
-    # Convert distances to similarities
-    similarity_matrix = -distance_matrix
-
-    # Apply Affinity Propagation clustering
-    clustering = AffinityPropagation(affinity="precomputed", random_state=random_seed)
-    clustering.fit(similarity_matrix)
-    labels = clustering.labels_
-    neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
-
-    # Assign neighborhoods based on clustering results
-    for i, label_i in enumerate(labels):
-        for j, label_j in enumerate(labels):
-            if label_i == label_j:
-                neighborhoods[i, j] = 1
-
-    return neighborhoods
-
-
 def _calculate_label_propagation_neighborhoods(network):
     """Apply Label Propagation to the network to detect communities.
 
@@ -214,50 +174,6 @@ def _calculate_label_propagation_neighborhoods(network):
                 neighborhoods[node_i, node_j] = 1
 
     return neighborhoods
-
-
-def _calculate_random_walk_neighborhoods(network, walk_length=3, num_walks=100):
-    """Apply Random Walk Clustering to the network to detect communities.
-
-    Args:
-        network (nx.Graph): The network graph.
-        walk_length (int): The length of each random walk.
-        num_walks (int): The number of random walks to perform from each node.
-
-    Returns:
-        np.ndarray: Neighborhood matrix based on Random Walk Clustering.
-    """
-
-    def random_walk(graph, start_node, walk_length):
-        """Perform a random walk of specified length starting from the start_node."""
-        walk = [start_node]
-        for _ in range(walk_length - 1):
-            neighbors = list(graph.neighbors(walk[-1]))
-            if neighbors:
-                walk.append(np.random.choice(neighbors))
-            else:
-                break
-        return walk
-
-    # Perform random walks from each node
-    walks = []
-    for node in network.nodes:
-        for _ in range(num_walks):
-            walks.append(random_walk(network, node, walk_length))
-
-    # Count co-occurrences in walks to create a similarity matrix
-    co_occurrences = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
-    for walk in walks:
-        for i in range(len(walk)):
-            for j in range(i + 1, len(walk)):
-                co_occurrences[walk[i], walk[j]] += 1
-                co_occurrences[walk[j], walk[i]] += 1
-
-    # Normalize co-occurrences to get a neighborhood matrix
-    max_co_occurrence = np.max(co_occurrences)
-    neighborhoods = (co_occurrences / max_co_occurrence) > 0.1  # Threshold can be adjusted
-
-    return neighborhoods.astype(int)
 
 
 def _calculate_markov_clustering_neighborhoods(network):
@@ -342,51 +258,6 @@ def _calculate_spinglass_neighborhoods(network):
     for community_id, community in enumerate(communities):
         for node in community:
             community_dict[node] = community_id
-
-    # Create a neighborhood matrix
-    num_nodes = network.number_of_nodes()
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
-    # Assign neighborhoods based on community labels
-    for node_i, community_i in community_dict.items():
-        for node_j, community_j in community_dict.items():
-            if community_i == community_j:
-                neighborhoods[node_i, node_j] = 1
-
-    return neighborhoods
-
-
-def _calculate_chinese_whispers_neighborhoods(network):
-    """Apply Chinese Whispers Community Detection to the network.
-
-    Args:
-        network (nx.Graph): The network graph.
-
-    Returns:
-        np.ndarray: Neighborhood matrix based on Chinese Whispers communities.
-    """
-    # Initialize node labels
-    for node in network.nodes:
-        network.nodes[node]["label"] = node
-
-    for _ in range(20):  # Number of iterations
-        nodes = list(network.nodes)
-        np.random.shuffle(nodes)
-        for node in nodes:
-            label_freq = {}
-            for neighbor in network.neighbors(node):
-                label = network.nodes[neighbor]["label"]
-                if label in label_freq:
-                    label_freq[label] += 1
-                else:
-                    label_freq[label] = 1
-            most_frequent_label = max(label_freq, key=label_freq.get)
-            network.nodes[node]["label"] = most_frequent_label
-
-    # Create a community label for each node
-    community_dict = {}
-    for node in network.nodes:
-        community_dict[node] = network.nodes[node]["label"]
 
     # Create a neighborhood matrix
     num_nodes = network.number_of_nodes()
