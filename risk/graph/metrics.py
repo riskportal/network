@@ -119,6 +119,8 @@ def _create_depth(G, surface_depth=0.0):
     Returns:
         networkx.Graph: The graph with adjusted 'z' attribute for each node.
     """
+    if surface_depth >= 1.0:
+        surface_depth = surface_depth - 1e-6  # Cap the surface depth to prevent value of 1.0
     # Compute subclusters as connected components (subclusters can be any other method)
     subclusters = {node: set(nx.node_connected_component(G, node)) for node in G.nodes}
     # Create a strength metric for subclusters (here using size)

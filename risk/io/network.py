@@ -25,8 +25,6 @@ class NetworkIO:
         distance_metric="dijkstra",
         edge_length_threshold=0.5,
         louvain_resolution=0.1,
-        random_walk_length=3,
-        random_walk_num=250,
         min_edges_per_node=0,
         include_edge_weight=True,
         weight_label="weight",
@@ -38,8 +36,6 @@ class NetworkIO:
         self.distance_metric = distance_metric
         self.edge_length_threshold = edge_length_threshold
         self.louvain_resolution = louvain_resolution
-        self.random_walk_length = random_walk_length
-        self.random_walk_num = random_walk_num
         self.min_edges_per_node = min_edges_per_node
 
     def load_gpickle_network(self, filepath):
@@ -211,7 +207,7 @@ class NetworkIO:
                 self.weight_label, 1.0
             )  # Default to 1.0 if 'weight' not present
 
-        if missing_weights:
+        if self.include_edge_weight and missing_weights:
             print(f"Total edges missing weights: {missing_weights}")
 
     def _validate_nodes(self, G):
