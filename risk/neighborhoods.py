@@ -379,8 +379,7 @@ def _calculate_chinese_whispers_neighborhoods(network):
 
 def process_neighborhoods(
     network,
-    enrichment_matrix,
-    binary_enrichment_matrix,
+    neighborhoods,
     impute_depth=1,
     prune_threshold=0.0,
 ):
@@ -397,9 +396,16 @@ def process_neighborhoods(
     Returns:
         dict: Processed neighborhoods data.
     """
+    enrichment_matrix = neighborhoods["enrichment_matrix"]
+    binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+    significant_enrichment_matrix = neighborhoods["significant_enrichment_matrix"]
     print(f"Imputation depth: {impute_depth}")
     if impute_depth:
-        enrichment_matrix, binary_enrichment_matrix = _impute_neighbors(
+        (
+            enrichment_matrix,
+            binary_enrichment_matrix,
+            significant_enrichment_matrix,
+        ) = _impute_neighbors(
             network,
             enrichment_matrix,
             binary_enrichment_matrix,
@@ -408,7 +414,11 @@ def process_neighborhoods(
 
     print(f"Pruning threshold: {prune_threshold}")
     if prune_threshold:
-        enrichment_matrix, binary_enrichment_matrix = _prune_neighbors(
+        (
+            enrichment_matrix,
+            binary_enrichment_matrix,
+            significant_enrichment_matrix,
+        ) = _prune_neighbors(
             network,
             enrichment_matrix,
             binary_enrichment_matrix,
@@ -417,10 +427,10 @@ def process_neighborhoods(
 
     neighborhood_enrichment_counts = np.sum(binary_enrichment_matrix, axis=0)
     node_enrichment_sums = np.sum(enrichment_matrix, axis=1)
-
     return {
-        "significance_matrix": enrichment_matrix,
-        "binary_significance_matrix": binary_enrichment_matrix,
+        "enrichment_matrix": enrichment_matrix,
+        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "significant_enrichment_matrix": significant_enrichment_matrix,
         "neighborhood_enrichment_counts": neighborhood_enrichment_counts,
         "node_enrichment_sums": node_enrichment_sums,
     }
@@ -477,7 +487,9 @@ def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_
         rows_to_impute = next_rows_to_impute
         depth += 1
 
-    return enrichment_matrix, binary_enrichment_matrix
+    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+
+    return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
 
 
 def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9):
@@ -532,7 +544,9 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
                 enrichment_matrix[row_index] = 0
                 binary_enrichment_matrix[row_index] = 0
 
-    return enrichment_matrix, binary_enrichment_matrix
+    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+
+    return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
 
 
 def _get_euclidean_distance(node1, node2, network):
