@@ -223,14 +223,14 @@ class RISK(NetworkIO, AnnotationsIO):
         ordered_nodes = annotations["ordered_nodes"]
         node_label_to_id = dict(zip(ordered_nodes, range(len(ordered_nodes))))
         # Get the significant binary enrichment matrix for neighborhoods
-        neighborhoods_enrichment_matrix = processed_neighborhoods["binary_significance_matrix"]
+        node_enrichment_sums = processed_neighborhoods["node_enrichment_sums"]
         return NetworkGraph(
             network=network,
             top_annotations=top_annotations,
             domains=domains,
             trimmed_domains=trimmed_domains,
             node_label_to_id_map=node_label_to_id,
-            neighborhoods_enrichment_matrix=neighborhoods_enrichment_matrix,
+            node_enrichment_sums=node_enrichment_sums,
         )
 
     def load_plotter(
@@ -308,7 +308,7 @@ class RISK(NetworkIO, AnnotationsIO):
             dict: Top annotations.
         """
         ordered_annotations = annotations["ordered_annotations"]
-        neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_sums"]
+        neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_counts"]
         neighborhoods_binary_enrichment_matrix = neighborhoods["binary_significance_matrix"]
         return define_top_annotations(
             network=network,
