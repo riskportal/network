@@ -1,10 +1,14 @@
 import csv
-from datetime import datetime
 import json
+import warnings
+from datetime import datetime
 
 import numpy as np
 
 from .console import print_header
+
+# Suppress all warnings - this is to resolve warnings from multiprocessing
+warnings.filterwarnings("ignore")
 
 
 class Params:
