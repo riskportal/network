@@ -90,15 +90,15 @@ def define_top_annotations(
         {
             "id": range(len(ordered_annotation_labels)),
             "words": ordered_annotation_labels,
-            "num enriched neighborhoods": neighborhood_enrichment_sums,
+            "neighborhood enrichment sums": neighborhood_enrichment_sums,
         }
     )
     annotations_enrichment_matrix["top attributes"] = False
     # Requirement 1: a minimum and maximum number of enriched neighborhoods
     # Combining both conditions with a logical AND
     annotations_enrichment_matrix.loc[
-        (annotations_enrichment_matrix["num enriched neighborhoods"] >= min_cluster_size)
-        & (annotations_enrichment_matrix["num enriched neighborhoods"] <= max_cluster_size),
+        (annotations_enrichment_matrix["neighborhood enrichment sums"] >= min_cluster_size)
+        & (annotations_enrichment_matrix["neighborhood enrichment sums"] <= max_cluster_size),
         "top attributes",
     ] = True
 

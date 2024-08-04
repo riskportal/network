@@ -129,19 +129,12 @@ def _transform_colors(colors, enrichment_sums, min_scale=0.8, max_scale=1.0):
     if min_scale == max_scale:
         min_scale = max_scale - 0.001  # Avoid division by zero
 
-    # Calculate z-scores for the enrichment sums
-    enrichment_sums = zscore(enrichment_sums)
+    log_enrichment_sums = np.log1p(enrichment_sums)  # Use log1p to avoid log(0)
     # Normalize the capped enrichment sums to the range [0, 1]
-    normalized_sums = enrichment_sums / np.max(enrichment_sums)
+    normalized_sums = log_enrichment_sums / np.max(log_enrichment_sums)
     # Scale normalized sums to the specified color range [min_scale, max_scale]
     scaled_sums = min_scale + (max_scale - min_scale) * normalized_sums
-    # Apply log transformation and scale to 0-1 range
-    log_scaled_sums = np.log1p(scaled_sums - min_scale)  # Use log1p to avoid log(0)
-    log_scaled_sums = (log_scaled_sums - np.min(log_scaled_sums)) / (
-        np.max(log_scaled_sums) - np.min(log_scaled_sums)
-    )
-    scaled_sums = np.sqrt(min_scale + (max_scale - min_scale) * log_scaled_sums)
-    # Apply transformations to colors
+    # Adjust RGB values based on scaled sums
     for i in range(3):  # Only adjust RGB values
         colors[:, i] = scaled_sums * colors[:, i]
 

@@ -603,20 +603,20 @@ def define_domains(
     top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
 
     # Create DataFrames to store domain information
-    node2nes_binary = pd.DataFrame(
+    node_to_enrichment = pd.DataFrame(
         data=significant_neighborhoods_enrichment,
         columns=[top_annotations.index.values, top_annotations["domain"]],
     )
-    node2domain = node2nes_binary.groupby(level="domain", axis=1).sum()
+    node_to_domain = node_to_enrichment.groupby(level="domain", axis=1).sum()
 
-    t_max = node2domain.loc[:, 1:].max(axis=1)
-    t_idxmax = node2domain.loc[:, 1:].idxmax(axis=1)
+    t_max = node_to_domain.loc[:, 1:].max(axis=1)
+    t_idxmax = node_to_domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
 
     # Assign primary domain and NES
-    node2domain["primary domain"] = t_idxmax
+    node_to_domain["primary domain"] = t_idxmax
 
-    return node2domain
+    return node_to_domain
 
 
 def trim_domains_and_top_annotations(
@@ -646,7 +646,7 @@ def trim_domains_and_top_annotations(
     domains.loc[domains["primary domain"].isin(to_remove), ["primary domain"]] = invalid_domain_id
     # Normalize "num enriched neighborhoods" by percentile for each domain and scale to 0-10
     top_annotations["normalized_value"] = top_annotations.groupby("domain")[
-        "num enriched neighborhoods"
+        "neighborhood enrichment sums"
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
     # Multiply 'name' column by normalized values
     top_annotations["words"] = top_annotations.apply(
