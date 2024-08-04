@@ -18,14 +18,15 @@ class RISK(NetworkIO, AnnotationsIO):
     def __init__(
         self,
         compute_sphere=True,
-        surface_depth="auto",
-        neighborhood_diameter=0.5,
+        surface_depth=0.0,
+        edge_length_threshold=0.5,
         distance_metric="dijkstra",
         louvain_resolution=0.1,
         random_walk_length=3,
         random_walk_num=250,
-        include_edge_weight=True,
         min_edges_per_node=0,
+        include_edge_weight=True,
+        weight_label="weight",
     ):
         """Initialize RISK with configuration settings.
 
@@ -39,32 +40,34 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_network(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
-            include_edge_weight=include_edge_weight,
             distance_metric=distance_metric,
-            neighborhood_diameter=neighborhood_diameter,
+            edge_length_threshold=edge_length_threshold,
             louvain_resolution=louvain_resolution,
             random_walk_length=random_walk_length,
             random_walk_num=random_walk_num,
             min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
         )
         NetworkIO.__init__(
             self,
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
-            include_edge_weight=include_edge_weight,
             distance_metric=distance_metric,
-            neighborhood_diameter=neighborhood_diameter,
+            edge_length_threshold=edge_length_threshold,
             louvain_resolution=louvain_resolution,
             random_walk_length=random_walk_length,
             random_walk_num=random_walk_num,
+            include_edge_weight=include_edge_weight,
             min_edges_per_node=min_edges_per_node,
+            weight_label=weight_label,
         )
         AnnotationsIO.__init__(self)
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
         self.include_edge_weight = include_edge_weight
         self.distance_metric = distance_metric
-        self.neighborhood_diameter = neighborhood_diameter
+        self.edge_length_threshold = edge_length_threshold
         self.louvain_resolution = louvain_resolution
         self.random_walk_length = random_walk_length
         self.random_walk_num = random_walk_num
@@ -111,8 +114,7 @@ class RISK(NetworkIO, AnnotationsIO):
         neighborhoods = get_network_neighborhoods(
             network,
             self.distance_metric,
-            self.neighborhood_diameter,
-            compute_sphere=self.compute_sphere,
+            self.edge_length_threshold,
             louvain_resolution=self.louvain_resolution,
             random_walk_length=self.random_walk_length,
             random_walk_num=self.random_walk_num,
