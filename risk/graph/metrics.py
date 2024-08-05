@@ -35,9 +35,11 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge
     # Normalize weights
     _normalize_weights(G)
     if compute_sphere:
+        # Map to sphere and adjust depth
         _map_to_sphere(G)
         G_depth = _create_depth(G.copy(), surface_depth=surface_depth)
     else:
+        # Calculate edge lengths directly on the plane
         G_depth = G.copy()
 
     for u, v, _ in G_depth.edges(data=True):
@@ -48,13 +50,13 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge
             u_coords = np.append(u_coords, G_depth.nodes[u].get("z", 0))
             v_coords = np.append(v_coords, G_depth.nodes[v].get("z", 0))
 
-        dist = compute_distance(u_coords, v_coords, is_sphere=compute_sphere)
-
+        distance = compute_distance(u_coords, v_coords, is_sphere=compute_sphere)
         if include_edge_weight:
             # Square root of the normalized weight is used to minimize the effect of large weights
-            G.edges[u, v]["length"] = dist / np.sqrt(G.edges[u, v]["normalized_weight"] + 1e-6)
+            G.edges[u, v]["length"] = distance / np.sqrt(G.edges[u, v]["normalized_weight"] + 1e-6)
         else:
-            G.edges[u, v]["length"] = dist  # Use calculated distance directly
+            # Use calculated distance directly
+            G.edges[u, v]["length"] = distance
 
     return G
 
@@ -62,16 +64,13 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge
 def _map_to_sphere(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
-
     # Normalize the coordinates between [0, 1]
     min_vals = np.min(xy_coords, axis=0)
     max_vals = np.max(xy_coords, axis=0)
     normalized_xy = (xy_coords - min_vals) / (max_vals - min_vals)
-
     # Map normalized coordinates to theta and phi on a sphere
     theta = normalized_xy[:, 0] * np.pi * 2
     phi = normalized_xy[:, 1] * np.pi
-
     # Convert spherical coordinates to Cartesian coordinates for 3D sphere
     for i, node in enumerate(G.nodes()):
         x = np.sin(phi[i]) * np.cos(theta[i])
@@ -85,20 +84,18 @@ def _map_to_sphere(G):
 def _normalize_graph_coordinates(G):
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
-
     # Calculate min and max values for x and y
     min_vals = np.min(xy_coords, axis=0)
     max_vals = np.max(xy_coords, axis=0)
-
     # Normalize the coordinates to [0, 1]
     normalized_xy = (xy_coords - min_vals) / (max_vals - min_vals)
-
     # Update the node coordinates with the normalized values
     for i, node in enumerate(G.nodes()):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
 
 
 def _normalize_weights(G):
+    # "weight" is present for all edges - weights are 1.0 if weight was not specified by the user
     weights = [data["weight"] for _, _, data in G.edges(data=True)]
     if weights:  # Ensure there are weighted edges
         min_weight = min(weights)
@@ -109,8 +106,7 @@ def _normalize_weights(G):
 
 
 def _create_depth(G, surface_depth=0.0):
-    """
-    Adjust the 'z' attribute of each node based on the subcluster strengths and normalized surface depth.
+    """Adjust the 'z' attribute of each node based on the subcluster strengths and normalized surface depth.
 
     Args:
         G (networkx.Graph): The input graph.

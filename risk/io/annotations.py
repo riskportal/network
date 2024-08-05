@@ -13,17 +13,10 @@ from risk.log import params, print_header
 
 class AnnotationsIO:
     def __init__(self):
-        """
-        Initialize the NetworkAnnotations class.
-
-        Args:
-            network (NetworkX graph): The network graph with nodes having IDs matching the annotations file.
-        """
         pass
 
     def load_json_annotations(self, filepath, network):
-        """
-        Load annotations from a JSON file and convert them to a DataFrame.
+        """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:
             annotations_filepath (str): Path to the JSON annotations file.
