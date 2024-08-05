@@ -171,7 +171,7 @@ class NetworkPlotter:
         self,
         levels=5,
         bandwidth=0.8,
-        grid_size=200,
+        grid_size=250,
         alpha=0.2,
         color="white",
     ):
@@ -204,7 +204,7 @@ class NetworkPlotter:
                 )
 
     def plot_subcontour(
-        self, nodes, levels=5, bandwidth=0.8, grid_size=200, alpha=0.2, color="white"
+        self, nodes, levels=5, bandwidth=0.8, grid_size=250, alpha=0.2, color="white"
     ):
         params.log_plotter(
             contour_levels=levels,
@@ -235,7 +235,7 @@ class NetworkPlotter:
         )
 
     def _draw_kde_contour(
-        self, ax, pos, nodes, color, levels=5, bandwidth=0.8, grid_size=200, alpha=0.5
+        self, ax, pos, nodes, color, levels=5, bandwidth=0.8, grid_size=250, alpha=0.5
     ):
         """Draws a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis."""
         points = np.array([pos[n] for n in nodes])
@@ -251,8 +251,7 @@ class NetworkPlotter:
                 xmin : xmax : complex(0, grid_size), ymin : ymax : complex(0, grid_size)
             ]
             z = kde(np.vstack([x.ravel(), y.ravel()])).reshape(x.shape)
-            thresholded_grid = _generate_thresholded_grid(z)
-            connected = _is_connected(thresholded_grid)
+            connected = _is_connected(z)
             if not connected:
                 bandwidth += 0.05
 
@@ -306,11 +305,11 @@ class NetworkPlotter:
         if isinstance(arrow_color, str):
             arrow_color = self.get_annotated_contour_colors(color=arrow_color)
 
+        # Calculate the center and radius of the network
         domain_centroids = self._calculate_domain_centroids()
         center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=perimeter_scale
         )
-
         # Filter out domains with insufficient words
         filtered_domains = {
             domain: centroid
@@ -318,21 +317,12 @@ class NetworkPlotter:
             if len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words])
             >= min_words
         }
+        best_label_positions = _best_label_positions(filtered_domains, center, radius, offset)
 
-        num_domains = len(filtered_domains)
-        equidistant_positions = _equidistant_angles_around_center(
-            center, radius, offset, num_domains
-        )
-        label_positions = {
-            domain: position
-            for domain, position in zip(filtered_domains.keys(), equidistant_positions)
-        }
-        best_label_positions = self._optimize_label_positions(label_positions, filtered_domains)
-
+        # Annotate the network with labels
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
             centroid = filtered_domains[domain]
             annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words]
-
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -359,29 +349,8 @@ class NetworkPlotter:
             sum_distances = np.sum(distances_matrix, axis=1)
             central_node_idx = np.argmin(sum_distances)
             domain_central_nodes[domain] = node_positions[central_node_idx]
-        return domain_central_nodes
 
-    def _optimize_label_positions(self, best_label_positions, domain_centroids):
-        """Optimizes label positions around the perimeter to minimize total distance to centroids."""
-        improvement = True
-        while improvement:
-            improvement = False
-            for i in range(len(domain_centroids)):
-                for j in range(i + 1, len(domain_centroids)):
-                    current_distance = _calculate_total_distance(
-                        best_label_positions, domain_centroids
-                    )
-                    swapped_distance = _swap_and_evaluate(
-                        best_label_positions, i, j, domain_centroids
-                    )
-                    if swapped_distance < current_distance:
-                        labels = list(best_label_positions.keys())
-                        best_label_positions[labels[i]], best_label_positions[labels[j]] = (
-                            best_label_positions[labels[j]],
-                            best_label_positions[labels[i]],
-                        )
-                        improvement = True
-        return best_label_positions
+        return domain_central_nodes
 
     def get_annotated_node_colors(self, nonenriched_color="white", random_seed=888, **kwargs):
         """Adjusts the colors of nodes in the network graph.
@@ -478,15 +447,10 @@ class NetworkPlotter:
         plt.show(*args, **kwargs)
 
 
-def _is_connected(thresholded_grid):
+def _is_connected(z):
     """Determines if a thresholded grid represents a single, connected component."""
-    _, num_features = label(thresholded_grid)
+    _, num_features = label(z)
     return num_features == 1
-
-
-def _generate_thresholded_grid(z, threshold=0.05):
-    """Generates a thresholded grid from a KDE grid by applying a threshold value."""
-    return z > threshold
 
 
 def _calculate_bounding_box(node_coordinates, radius_margin=1.05):
@@ -498,6 +462,28 @@ def _calculate_bounding_box(node_coordinates, radius_margin=1.05):
     return center, radius
 
 
+def _best_label_positions(filtered_domains, center, radius, offset):
+    """
+    Calculates and optimizes the label positions for clarity.
+
+    Args:
+        filtered_domains (dict): Centroids of the filtered domains.
+        center (tuple): The center coordinates.
+        radius (float): The radius for positioning.
+        offset (float): The offset for positioning.
+
+    Returns:
+        dict: Optimized positions for labels.
+    """
+    num_domains = len(filtered_domains)
+    equidistant_positions = _equidistant_angles_around_center(center, radius, offset, num_domains)
+    label_positions = {
+        domain: position for domain, position in zip(filtered_domains.keys(), equidistant_positions)
+    }
+    best_label_positions = _optimize_label_positions(label_positions, filtered_domains)
+    return best_label_positions
+
+
 def _equidistant_angles_around_center(center, radius, label_offset, num_domains):
     """Calculates positions around a center at equidistant angles."""
     angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
@@ -507,12 +493,33 @@ def _equidistant_angles_around_center(center, radius, label_offset, num_domains)
     ]
 
 
+def _optimize_label_positions(best_label_positions, domain_centroids):
+    """Optimizes label positions around the perimeter to minimize total distance to centroids."""
+    improvement = True
+    while improvement:
+        improvement = False
+        for i in range(len(domain_centroids)):
+            for j in range(i + 1, len(domain_centroids)):
+                current_distance = _calculate_total_distance(best_label_positions, domain_centroids)
+                swapped_distance = _swap_and_evaluate(best_label_positions, i, j, domain_centroids)
+                if swapped_distance < current_distance:
+                    labels = list(best_label_positions.keys())
+                    best_label_positions[labels[i]], best_label_positions[labels[j]] = (
+                        best_label_positions[labels[j]],
+                        best_label_positions[labels[i]],
+                    )
+                    improvement = True
+
+    return best_label_positions
+
+
 def _calculate_total_distance(label_positions, domain_centroids):
     """Calculates the total distance from label positions to their domain centroids."""
     total_distance = 0
     for domain, pos in label_positions.items():
         centroid = domain_centroids[domain]
         total_distance += np.linalg.norm(centroid - pos)
+
     return total_distance
 
 

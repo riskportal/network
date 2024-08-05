@@ -1,11 +1,9 @@
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 import random
 import matplotlib
 import matplotlib.cm as cm
-from scipy.stats import zscore
 
 
 class NetworkGraph:

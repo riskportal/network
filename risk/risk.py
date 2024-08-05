@@ -111,6 +111,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
         print(f"Null distribution: '{null_distribution}'")
         print(f"Neighborhood scoring metric: '{score_metric}'")
+        print(f"Number of permutations: {num_permutations}")
         neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
