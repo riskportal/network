@@ -6,6 +6,7 @@ This file contains the code for the RISK class and command-line access.
 """
 
 import json
+from typing import Any, Dict
 
 import networkx as nx
 import pandas as pd
@@ -24,7 +25,7 @@ class AnnotationsIO:
     def __init__(self):
         pass
 
-    def load_json_annotations(self, filepath: str, network: nx.Graph) -> dict:
+    def load_json_annotations(self, filepath: str, network: nx.Graph) -> Dict[str, Any]:
         """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:
