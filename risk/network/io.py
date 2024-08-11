@@ -229,9 +229,6 @@ class NetworkIO:
     def _initialize_graph(self, G: nx.Graph) -> nx.Graph:
         """Initialize the graph by processing and validating its nodes and edges.
 
-        This method relabels the graph nodes to integers, removes invalid properties, validates edges and nodes,
-        and processes the graph for further use.
-
         Args:
             G (nx.Graph): The input NetworkX graph.
 
@@ -248,8 +245,6 @@ class NetworkIO:
 
     def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
         """Remove invalid properties from the graph.
-
-        This method removes nodes with fewer edges than a specified threshold and removes self-loop edges.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
