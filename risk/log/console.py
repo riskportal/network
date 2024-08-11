@@ -1,6 +1,5 @@
 def print_header(input_string):
-    """
-    Prints the input string as a header and plots a line of dashes below it of the same length.
+    """Prints the input string as a header and plots a line of dashes below it of the same length.
 
     Args:
         input_string: The string to be printed as a header.

@@ -1,6 +1,4 @@
-from risk.annotations import define_top_annotations
-from risk.graph import NetworkGraph
-from risk.io import AnnotationsIO, NetworkIO
+from risk.annotations import AnnotationsIO, define_top_annotations
 from risk.log import params, print_header
 from risk.neighborhoods import (
     define_domains,
@@ -8,8 +6,8 @@ from risk.neighborhoods import (
     process_neighborhoods,
     trim_domains_and_top_annotations,
 )
-from risk.plot import NetworkPlotter
-from risk.stats import calculate_significance_matrices, compute_permutation
+from risk.network import NetworkIO, NetworkGraph, NetworkPlotter
+from risk.stats import compute_permutation, calculate_significance_matrices
 
 
 class RISK(NetworkIO, AnnotationsIO):
