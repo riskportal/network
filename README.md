@@ -1,6 +1,6 @@
 # RISK
 
-<ins>RISK Infers Spatial Kinship</ins>
+<ins>Regional Inference of Significant Kinships</ins>
 
 <p align="left">
     <img src="./docs/risk-logo-dark.png#gh-dark-mode-only" width="40%" />
