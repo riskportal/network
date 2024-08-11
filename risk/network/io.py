@@ -49,7 +49,7 @@ class NetworkIO:
             NetworkX graph: Loaded network.
         """
         filetype = "GPickle"
-        params.log_network(filepath=filepath, filetype=filetype)
+        params.log_network(filetype=filetype, filepath=filepath)
         self._log_loading(filetype, filepath=filepath)
         with open(filepath, "rb") as f:
             G = pickle.load(f)
@@ -89,7 +89,7 @@ class NetworkIO:
             NetworkX graph: Loaded and processed network.
         """
         filetype = "Cytoscape"
-        params.log_network(filepath=str(filepath), filetype=filetype)
+        params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
         cys_files = []
         # Try / finally to remove unzipped files
@@ -185,7 +185,7 @@ class NetworkIO:
             NetworkX graph: Loaded and processed network.
         """
         filetype = "Cytoscape JSON"
-        params.log_network(filepath=str(filepath), filetype=filetype)
+        params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
         # Load the Cytoscape JSON file
         with open(filepath, "r") as f:
