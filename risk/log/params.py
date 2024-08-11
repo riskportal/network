@@ -7,7 +7,7 @@ import csv
 import json
 import warnings
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
 import numpy as np
 
@@ -156,7 +156,7 @@ class Params:
                 # Add a blank line between different keys
                 txt_file.write("\n")
 
-    def load(self) -> dict:
+    def load(self) -> Dict[str, Any]:
         """Load and process various parameters, converting any np.ndarray values to lists.
 
         Returns:
