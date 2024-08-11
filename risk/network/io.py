@@ -59,6 +59,7 @@ class NetworkIO:
         self._log_loading(filetype, filepath=filepath)
         with open(filepath, "rb") as f:
             G = pickle.load(f)
+
         return self._initialize_graph(G)
 
     def load_networkx_network(self, G: nx.Graph) -> nx.Graph:
@@ -254,10 +255,12 @@ class NetworkIO:
             G (nx.Graph): A NetworkX graph object.
         """
         print(f"Minimum edges per node: {self.min_edges_per_node}")
+        # Remove nodes with fewer edges than the specified threshold
         nodes_with_few_edges = [
             node for node in G.nodes() if G.degree(node) <= self.min_edges_per_node
         ]
         G.remove_nodes_from(nodes_with_few_edges)
+        # Remove self-loop edges
         self_loops = list(nx.selfloop_edges(G))
         G.remove_edges_from(self_loops)
 

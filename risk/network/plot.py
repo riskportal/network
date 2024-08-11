@@ -79,7 +79,6 @@ class NetworkPlotter:
         # Create a new figure and axis for plotting
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()  # Adjust subplot parameters to give specified padding
-
         if plot_outline:
             # Draw a circle to represent the network perimeter
             circle = plt.Circle(
@@ -108,8 +107,9 @@ class NetworkPlotter:
         ax.set_yticks([])
         ax.patch.set_visible(False)  # Hide the axis background
 
-        self.ax = ax  # Store the axis for further use
-        return fig, ax  # Return the figure and axis
+        # Store the axis for further use and return the figure and axis
+        self.ax = ax
+        return fig, ax
 
     def plot_network(
         self,
@@ -139,10 +139,8 @@ class NetworkPlotter:
             network_edge_color=edge_color,
             network_node_shape=node_shape,
         )
-
         # Extract node coordinates from the network graph
         node_coordinates = self.network_graph.node_coordinates
-
         # Draw the nodes of the graph
         nx.draw_networkx_nodes(
             self.network_graph.G,
@@ -154,7 +152,6 @@ class NetworkPlotter:
             edgecolors=node_edgecolor,
             ax=self.ax,
         )
-
         # Draw the edges of the graph
         nx.draw_networkx_edges(
             self.network_graph.G,
@@ -432,7 +429,6 @@ class NetworkPlotter:
             label_num_words=num_words,
             label_min_words=min_words,
         )
-
         # Convert color strings to RGBA arrays if necessary
         if isinstance(fontcolor, str):
             fontcolor = self.get_annotated_contour_colors(color=fontcolor)
@@ -481,6 +477,7 @@ class NetworkPlotter:
         for domain, nodes in self.network_graph.domain_to_nodes.items():
             if not nodes:  # Skip if the domain has no nodes
                 continue
+
             # Extract positions of all nodes in the domain
             node_positions = self.network_graph.node_coordinates[nodes, :]
             # Calculate the pairwise distance matrix between all nodes in the domain
@@ -594,7 +591,6 @@ class NetworkPlotter:
         # Generate colors for each domain using the provided arguments and random seed
         node_colors = self.network_graph.get_domain_colors(**kwargs, random_seed=random_seed)
         annotated_colors = []
-
         for _, nodes in self.network_graph.domain_to_nodes.items():
             if len(nodes) > 1:
                 # For domains with multiple nodes, choose the brightest color (sum of RGB values)
@@ -696,8 +692,7 @@ def _best_label_positions(
         domain: position for domain, position in zip(filtered_domains.keys(), equidistant_positions)
     }
     # Optimize the label positions to minimize distance to domain centroids
-    best_label_positions = _optimize_label_positions(label_positions, filtered_domains)
-    return best_label_positions
+    return _optimize_label_positions(label_positions, filtered_domains)
 
 
 def _equidistant_angles_around_center(
