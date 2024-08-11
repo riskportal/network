@@ -14,21 +14,27 @@ from xml.dom import minidom
 import networkx as nx
 import pandas as pd
 
-from risk.network.geometry import calculate_edge_lengths
+from risk.network.geometry import apply_edge_lengths
 from risk.log import params, print_header
 
 
 class NetworkIO:
+    """A class for loading, processing, and managing network data.
+
+    The NetworkIO class provides methods to load network data from various formats (e.g., GPickle, NetworkX)
+    and process the network by adjusting node coordinates, calculating edge lengths, and validating graph structure.
+    """
+
     def __init__(
         self,
-        compute_sphere=True,
-        surface_depth=0.0,
-        distance_metric="dijkstra",
-        edge_length_threshold=0.5,
-        louvain_resolution=0.1,
-        min_edges_per_node=0,
-        include_edge_weight=True,
-        weight_label="weight",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        distance_metric: str = "dijkstra",
+        edge_length_threshold: float = 0.5,
+        louvain_resolution: float = 0.1,
+        min_edges_per_node: int = 0,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
     ):
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
@@ -39,14 +45,14 @@ class NetworkIO:
         self.louvain_resolution = louvain_resolution
         self.min_edges_per_node = min_edges_per_node
 
-    def load_gpickle_network(self, filepath):
+    def load_gpickle_network(self, filepath: str) -> nx.Graph:
         """Load a network from a GPickle file.
 
         Args:
             filepath (str): Path to the GPickle file.
 
         Returns:
-            NetworkX graph: Loaded network.
+            nx.Graph: Loaded and processed network.
         """
         filetype = "GPickle"
         params.log_network(filetype=filetype, filepath=filepath)
@@ -55,14 +61,14 @@ class NetworkIO:
             G = pickle.load(f)
         return self._initialize_graph(G)
 
-    def load_networkx_network(self, G):
+    def load_networkx_network(self, G: nx.Graph) -> nx.Graph:
         """Load a NetworkX graph.
 
         Args:
-            G (NetworkX graph): A NetworkX graph object.
+            G (nx.Graph): A NetworkX graph object.
 
         Returns:
-            NetworkX graph: Processed network.
+            nx.Graph: Processed network.
         """
         filetype = "NetworkX"
         params.log_network(filetype=filetype)
@@ -71,22 +77,21 @@ class NetworkIO:
 
     def load_cytoscape_network(
         self,
-        filepath,
-        source_label="source",
-        target_label="target",
-        view_name=None,
-    ):
+        filepath: str,
+        source_label: str = "source",
+        target_label: str = "target",
+        view_name: str = "",
+    ) -> nx.Graph:
         """Load a network from a Cytoscape file.
 
         Args:
             filepath (str): Path to the Cytoscape file.
-            source_label (str, optional): Source node label. Default is "source".
-            target_label (str, optional): Target node label. Default is "target".
-            view_name (str, optional): Specific view name to load. Default is None.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Default is 0.
+            source_label (str, optional): Source node label. Defaults to "source".
+            target_label (str, optional): Target node label. Defaults to "target".
+            view_name (str, optional): Specific view name to load. Defaults to None.
 
         Returns:
-            NetworkX graph: Loaded and processed network.
+            nx.Graph: Loaded and processed network.
         """
         filetype = "Cytoscape"
         params.log_network(filetype=filetype, filepath=str(filepath))
@@ -209,8 +214,8 @@ class NetworkIO:
         # Process edges
         for edge in cyjs_data["elements"]["edges"]:
             edge_data = edge["data"]
-            source = edge_data["source"]
-            target = edge_data["target"]
+            source = edge_data[source_label]
+            target = edge_data[target_label]
             if self.weight_label is not None and self.weight_label in edge_data:
                 weight = float(edge_data[self.weight_label])
                 G.add_edge(source, target, weight=weight)
@@ -220,21 +225,33 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(G)
 
-    def _initialize_graph(self, G):
+    def _initialize_graph(self, G: nx.Graph) -> nx.Graph:
+        """Initialize the graph by processing and validating its nodes and edges.
+
+        This method relabels the graph nodes to integers, removes invalid properties, validates edges and nodes,
+        and processes the graph for further use.
+
+        Args:
+            G (nx.Graph): The input NetworkX graph.
+
+        Returns:
+            nx.Graph: The processed and validated graph.
+        """
         # IMPORTANT: This is where the graph node labels are converted to integers
         G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
         self._remove_invalid_graph_properties(G)
         self._validate_edges(G)
         self._validate_nodes(G)
-        G = self._process_graph(G)
+        self._process_graph(G)
         return G
 
-    def _remove_invalid_graph_properties(self, G):
+    def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
         """Remove invalid properties from the graph.
 
+        This method removes nodes with fewer edges than a specified threshold and removes self-loop edges.
+
         Args:
-            G (NetworkX graph): A NetworkX graph object.
-            min_edges_per_node (int): Minimum number of edges per node.
+            G (nx.Graph): A NetworkX graph object.
         """
         print(f"Minimum edges per node: {self.min_edges_per_node}")
         nodes_with_few_edges = [
@@ -244,9 +261,14 @@ class NetworkIO:
         self_loops = list(nx.selfloop_edges(G))
         G.remove_edges_from(self_loops)
 
-    def _validate_edges(self, G):
+    def _validate_edges(self, G: nx.Graph) -> None:
+        """Validate and assign weights to the edges in the graph.
+
+        Args:
+            G (nx.Graph): A NetworkX graph object.
+        """
         missing_weights = 0
-        # Assign user-defined edge weights to "weight" attribute
+        # Assign user-defined edge weights to the "weight" attribute
         for _, _, data in G.edges(data=True):
             if self.weight_label not in data:
                 missing_weights += 1
@@ -257,11 +279,11 @@ class NetworkIO:
         if self.include_edge_weight and missing_weights:
             print(f"Total edges missing weights: {missing_weights}")
 
-    def _validate_nodes(self, G):
+    def _validate_nodes(self, G: nx.Graph) -> None:
         """Validate the graph structure and attributes.
 
         Args:
-            graph (NetworkX graph): A NetworkX graph object.
+            G (nx.Graph): A NetworkX graph object.
         """
         for node, attrs in G.nodes(data=True):
             assert (
@@ -269,29 +291,30 @@ class NetworkIO:
             ), f"Node {node} is missing 'x' or 'y' position attributes."
             assert "label" in attrs, f"Node {node} is missing a 'label' attribute."
 
-    def _process_graph(self, G):
-        """Prepare network by adjusting surface depth and get neighborhoods.
+    def _process_graph(self, G: nx.Graph) -> None:
+        """Prepare the network by adjusting surface depth and calculating edge lengths.
 
         Args:
-            G (NetworkX graph): The input network.
-
-        Returns:
-            Tuple: Processed network and neighborhoods.
+            G (nx.Graph): The input network graph.
         """
-        G = calculate_edge_lengths(
-            G.copy(),
+        apply_edge_lengths(
+            G,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
             include_edge_weight=self.include_edge_weight,
         )
-        return G
 
     def _log_loading(
         self,
-        filetype,
-        filepath=None,
-    ):
-        """Log the initialization of the RISK class."""
+        filetype: str,
+        filepath: str = "",
+    ) -> None:
+        """Log the initialization details of the RISK class.
+
+        Args:
+            filetype (str): The type of the file being loaded (e.g., 'CSV', 'JSON').
+            filepath (str, optional): The path to the file being loaded. Defaults to "".
+        """
         print_header("Loading network")
         print(f"Filetype: {filetype}")
         if filepath:
