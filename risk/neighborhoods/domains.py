@@ -5,6 +5,7 @@ risk/neighborhoods/domains
 
 from contextlib import suppress
 from tqdm import tqdm
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -16,24 +17,23 @@ from risk.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
 
 
 def define_domains(
-    top_annotations,
-    significant_neighborhoods_enrichment,
-    linkage_criterion,
-    linkage_method,
-    linkage_metric,
-):
+    top_annotations: pd.DataFrame,
+    significant_neighborhoods_enrichment: np.ndarray,
+    linkage_criterion: str,
+    linkage_method: str,
+    linkage_metric: str,
+) -> pd.DataFrame:
     """Define domains and assign nodes to these domains based on their enrichment scores and clustering.
 
     Args:
-        neighborhoods (np.ndarray): The neighborhood enrichment matrix.
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
-        significant_enrichment (np.ndarray): The binary enrichment matrix below alpha.
+        significant_neighborhoods_enrichment (np.ndarray): The binary enrichment matrix below alpha.
         linkage_criterion (str): The clustering criterion for defining groups.
         linkage_method (str): The linkage method for clustering.
         linkage_metric (str): The linkage metric for clustering.
 
     Returns:
-        pd.DataFrame: DataFrame with primary domain for each node.
+        pd.DataFrame: DataFrame with the primary domain for each node.
     """
     # Perform hierarchical clustering on the binary enrichment matrix
     m = significant_neighborhoods_enrichment[:, top_annotations["top attributes"]].T
@@ -52,7 +52,7 @@ def define_domains(
 
     max_d_optimal = np.max(Z[:, 2]) * best_threshold
     domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
-    # Assign domains to annotations matrix
+    # Assign domains to the annotations matrix
     top_annotations["domain"] = 0
     top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
 
@@ -67,42 +67,50 @@ def define_domains(
     t_idxmax = node_to_domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
 
-    # Assign primary domain and NES
+    # Assign primary domain
     node_to_domain["primary domain"] = t_idxmax
 
     return node_to_domain
 
 
 def trim_domains_and_top_annotations(
-    domains, top_annotations, min_cluster_size=5, max_cluster_size=1000
-):
+    domains: pd.DataFrame,
+    top_annotations: pd.DataFrame,
+    min_cluster_size: int = 5,
+    max_cluster_size: int = 1000,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Trim domains and top annotations that do not meet size criteria and find outliers.
 
     Args:
         domains (pd.DataFrame): DataFrame of domain data for the network nodes.
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
-        min_cluster_size (int): Minimum size of a cluster to be retained.
-        max_cluster_size (int): Maximum size of a cluster to be retained.
+        min_cluster_size (int, optional): Minimum size of a cluster to be retained. Defaults to 5.
+        max_cluster_size (int, optional): Maximum size of a cluster to be retained. Defaults to 1000.
 
     Returns:
-        tuple: Trimmed annotations, domains, and a DataFrame with domain labels.
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing:
+            - Trimmed annotations (pd.DataFrame)
+            - Trimmed domains (pd.DataFrame)
+            - A DataFrame with domain labels (pd.DataFrame)
     """
     # Identify domains to remove based on size criteria
     domain_counts = domains["primary domain"].value_counts()
     to_remove = set(
         domain_counts[(domain_counts < min_cluster_size) | (domain_counts > max_cluster_size)].index
     )
+
     # Add invalid domain IDs
     invalid_domain_id = 888888
     invalid_domain_ids = {0, invalid_domain_id}
     # Mark domains to be removed
     top_annotations["domain"].replace(to_remove, invalid_domain_id, inplace=True)
     domains.loc[domains["primary domain"].isin(to_remove), ["primary domain"]] = invalid_domain_id
+
     # Normalize "num enriched neighborhoods" by percentile for each domain and scale to 0-10
     top_annotations["normalized_value"] = top_annotations.groupby("domain")[
         "neighborhood enrichment sums"
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
-    # Multiply 'name' column by normalized values
+    # Multiply 'words' column by normalized values
     top_annotations["words"] = top_annotations.apply(
         lambda row: " ".join([row["words"]] * row["normalized_value"]), axis=1
     )
@@ -126,8 +134,8 @@ def trim_domains_and_top_annotations(
 
 
 def _optimize_silhouette_across_linkage_and_metrics(
-    m, linkage_criterion, linkage_method, linkage_metric
-):
+    m: np.ndarray, linkage_criterion: str, linkage_method: str, linkage_metric: str
+) -> Tuple[str, str, float]:
     """Optimize silhouette score across different linkage methods and distance metrics.
 
     Args:
@@ -137,7 +145,10 @@ def _optimize_silhouette_across_linkage_and_metrics(
         linkage_metric (str): Linkage metric for clustering.
 
     Returns:
-        tuple: Best linkage method, linkage metric, and threshold.
+        tuple[str, str, float]: A tuple containing:
+            - Best linkage method (str)
+            - Best linkage metric (str)
+            - Best threshold (float)
     """
     best_overall_method = linkage_method
     best_overall_metric = linkage_metric
@@ -169,8 +180,14 @@ def _optimize_silhouette_across_linkage_and_metrics(
 
 
 def _find_best_silhouette_score(
-    Z, m, linkage_metric, linkage_criterion, lower_bound=0.001, upper_bound=1.0, resolution=0.001
-):
+    Z: np.ndarray,
+    m: np.ndarray,
+    linkage_metric: str,
+    linkage_criterion: str,
+    lower_bound: float = 0.001,
+    upper_bound: float = 1.0,
+    resolution: float = 0.001,
+) -> Tuple[float, float]:
     """Find the best silhouette score using binary search.
 
     Args:
@@ -180,10 +197,12 @@ def _find_best_silhouette_score(
         linkage_criterion (str): Clustering criterion.
         lower_bound (float, optional): Lower bound for search. Defaults to 0.001.
         upper_bound (float, optional): Upper bound for search. Defaults to 1.0.
-        resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.01.
+        resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.001.
 
     Returns:
-        tuple: Best threshold and best silhouette score.
+        tuple[float, float]: A tuple containing:
+            - Best threshold (float): The threshold that yields the best silhouette score.
+            - Best silhouette score (float): The highest silhouette score achieved.
     """
     best_score = -np.inf
     best_threshold = None
@@ -224,6 +243,7 @@ def _find_best_silhouette_score(
             score_mid = silhouette_score(m, clusters_mid, metric=linkage_metric)
         except ValueError:
             score_mid = -np.inf
+
         # Update best score and threshold if mid-point is better
         if score_mid > best_score:
             best_score = score_mid

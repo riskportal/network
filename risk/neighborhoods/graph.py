@@ -10,8 +10,8 @@ import markov_clustering as mc
 from networkx.algorithms.community import asyn_lpa_communities
 
 
-def calculate_dijkstra_neighborhoods(network):
-    """Helper function to calculate neighborhoods using Dijkstra's distances.
+def calculate_dijkstra_neighborhoods(network: nx.Graph) -> np.ndarray:
+    """Calculate neighborhoods using Dijkstra's shortest path distances.
 
     Args:
         network (nx.Graph): The network graph.
@@ -19,11 +19,11 @@ def calculate_dijkstra_neighborhoods(network):
     Returns:
         np.ndarray: Neighborhood matrix based on Dijkstra's distances.
     """
-    # Compute Dijkstra's distance within the specified radius
+    # Compute Dijkstra's distance for all pairs of nodes in the network
     all_dijkstra_paths = dict(nx.all_pairs_dijkstra_path_length(network, weight="length"))
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
 
-    # Populate neighborhoods matrix based on Dijkstra's
+    # Populate the neighborhoods matrix based on Dijkstra's distances
     for source, targets in all_dijkstra_paths.items():
         for target, length in targets.items():
             neighborhoods[source, target] = (
@@ -33,7 +33,7 @@ def calculate_dijkstra_neighborhoods(network):
     return neighborhoods
 
 
-def calculate_label_propagation_neighborhoods(network):
+def calculate_label_propagation_neighborhoods(network: nx.Graph) -> np.ndarray:
     """Apply Label Propagation to the network to detect communities.
 
     Args:
@@ -64,12 +64,15 @@ def calculate_label_propagation_neighborhoods(network):
     return neighborhoods
 
 
-def calculate_louvain_neighborhoods(network, resolution, random_seed=888):
-    """Helper function to calculate neighborhoods using the Louvain method.
+def calculate_louvain_neighborhoods(
+    network: nx.Graph, resolution: float, random_seed: int = 888
+) -> np.ndarray:
+    """Calculate neighborhoods using the Louvain method.
 
     Args:
         network (nx.Graph): The network graph.
         resolution (float): Resolution parameter for the Louvain method.
+        random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
         np.ndarray: Neighborhood matrix based on the Louvain method.
@@ -89,7 +92,7 @@ def calculate_louvain_neighborhoods(network, resolution, random_seed=888):
     return neighborhoods
 
 
-def calculate_markov_clustering_neighborhoods(network):
+def calculate_markov_clustering_neighborhoods(network: nx.Graph) -> np.ndarray:
     """Apply Markov Clustering (MCL) to the network.
 
     Args:
@@ -101,9 +104,10 @@ def calculate_markov_clustering_neighborhoods(network):
     # Convert the graph to an adjacency matrix
     adjacency_matrix = nx.to_numpy_array(network)
     # Run Markov Clustering
-    result = mc.run_mcl(adjacency_matrix)  # run MCL with default parameters
+    result = mc.run_mcl(adjacency_matrix)  # Run MCL with default parameters
     # Get clusters
     clusters = mc.get_clusters(result)
+
     # Create a community label for each node
     community_dict = {}
     for community_id, community in enumerate(clusters):
@@ -123,7 +127,7 @@ def calculate_markov_clustering_neighborhoods(network):
     return neighborhoods
 
 
-def calculate_spinglass_neighborhoods(network):
+def calculate_spinglass_neighborhoods(network: nx.Graph) -> np.ndarray:
     """Apply Spin Glass Community Detection to the network.
 
     Args:
@@ -154,7 +158,7 @@ def calculate_spinglass_neighborhoods(network):
     return neighborhoods
 
 
-def calculate_walktrap_neighborhoods(network):
+def calculate_walktrap_neighborhoods(network: nx.Graph) -> np.ndarray:
     """Apply Walktrap Community Detection to the network.
 
     Args:
