@@ -15,6 +15,12 @@ from risk.log import params, print_header
 
 
 class AnnotationsIO:
+    """Handles the loading and exporting of annotations in various file formats.
+
+    This class provides methods to load annotations from different file types (JSON, CSV, Excel, etc.)
+    and to export parameter data to various formats like JSON, CSV, and text files.
+    """
+
     def __init__(self):
         pass
 
