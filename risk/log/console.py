@@ -4,11 +4,11 @@ risk/log/console
 """
 
 
-def print_header(input_string):
-    """Prints the input string as a header and plots a line of dashes below it of the same length.
+def print_header(input_string: str) -> None:
+    """Print the input string as a header with a line of dashes above and below it.
 
     Args:
-        input_string: The string to be printed as a header.
+        input_string (str): The string to be printed as a header.
     """
     border = "-" * len(input_string)
     print(border)
