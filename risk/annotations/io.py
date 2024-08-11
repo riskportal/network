@@ -7,6 +7,7 @@ This file contains the code for the RISK class and command-line access.
 
 import json
 
+import networkx as nx
 import pandas as pd
 
 from risk.annotations.annotations import load_annotations
@@ -17,11 +18,12 @@ class AnnotationsIO:
     def __init__(self):
         pass
 
-    def load_json_annotations(self, filepath, network):
+    def load_json_annotations(self, filepath: str, network: nx.Graph) -> dict:
         """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:
-            annotations_filepath (str): Path to the JSON annotations file.
+            filepath (str): Path to the JSON annotations file.
+            network (NetworkX graph): The network to which the annotations are related.
 
         Returns:
             dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
@@ -33,17 +35,22 @@ class AnnotationsIO:
         with open(filepath, "r") as file:
             annotations_input = json.load(file)
 
-        # Convert the JSON data to a DataFrame
+        # Process the JSON data and return it in the context of the network
         return load_annotations(network, annotations_input)
 
     def load_csv_annotation(
-        self, filepath, network, label_colname="label", nodes_colname="nodes", delimiter=";"
-    ):
+        self,
+        filepath: str,
+        network: nx.Graph,
+        label_colname: str = "label",
+        nodes_colname: str = "nodes",
+        delimiter: str = ";",
+    ) -> pd.DataFrame:
         """Load annotations from a CSV file and convert them to a DataFrame.
 
         Args:
             filepath (str): Path to the CSV annotations file.
-            network: The network to which the annotations are related.
+            network (NetworkX graph): The network to which the annotations are related.
             label_colname (str): Name of the column containing the labels.
             nodes_colname (str): Name of the column containing the nodes.
             delimiter (str): Delimiter used to parse the nodes column (default is ';').
@@ -54,25 +61,25 @@ class AnnotationsIO:
         filetype = "CSV"
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
-        # Load the CSV file using the utility function
+        # Load the CSV file into a DataFrame
         annotations_df = _load_matrix_file(filepath, label_colname, nodes_colname, delimiter)
-        # Process the DataFrame as needed for your specific use case
+        # Process and return the annotations in the context of the network
         return load_annotations(network, annotations_df)
 
     def load_excel_annotation(
         self,
-        filepath,
-        network,
-        label_colname="label",
-        nodes_colname="nodes",
-        sheet_name="Sheet1",
-        delimiter=";",
-    ):
+        filepath: str,
+        network: nx.Graph,
+        label_colname: str = "label",
+        nodes_colname: str = "nodes",
+        sheet_name: str = "Sheet1",
+        delimiter: str = ";",
+    ) -> pd.DataFrame:
         """Load annotations from an Excel file and convert them to a DataFrame.
 
         Args:
             filepath (str): Path to the Excel annotations file.
-            network: The network to which the annotations are related.
+            network (NetworkX graph): The network to which the annotations are related.
             label_colname (str): Name of the column containing the labels.
             nodes_colname (str): Name of the column containing the nodes.
             sheet_name (str): The name of the Excel sheet to load (default is 'Sheet1').
@@ -84,20 +91,26 @@ class AnnotationsIO:
         filetype = "Excel"
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
-        # Load the Excel file into a DataFrame
+        # Load the specified sheet from the Excel file into a DataFrame
         df = pd.read_excel(filepath, sheet_name=sheet_name)
-        # Split the nodes column by the delimiter
+        # Split the nodes column by the specified delimiter
         df[nodes_colname] = df[nodes_colname].apply(lambda x: x.split(delimiter))
-        # Process the DataFrame as needed for your specific use case
+        # Extract and return the relevant columns
         annotations_df = df[[label_colname, nodes_colname]]
         return load_annotations(network, annotations_df)
 
-    def load_tsv_annotation(self, filepath, network, label_colname="label", nodes_colname="nodes"):
+    def load_tsv_annotation(
+        self,
+        filepath: str,
+        network: nx.Graph,
+        label_colname: str = "label",
+        nodes_colname: str = "nodes",
+    ) -> pd.DataFrame:
         """Load annotations from a TSV file and convert them to a DataFrame.
 
         Args:
             filepath (str): Path to the TSV annotations file.
-            network: The network to which the annotations are related.
+            network (NetworkX graph): The network to which the annotations are related.
             label_colname (str): Name of the column containing the labels.
             nodes_colname (str): Name of the column containing the nodes.
 
@@ -107,13 +120,15 @@ class AnnotationsIO:
         filetype = "TSV"
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
-        # TSV files use a tab delimiter, so we pass '\t' to the utility function
+        # Load the TSV file with tab delimiter and convert to DataFrame
         annotations_df = _load_matrix_file(filepath, label_colname, nodes_colname, delimiter="\t")
-        # Process the DataFrame as needed for your specific use case
+        # Process and return the annotations in the context of the network
         return load_annotations(network, annotations_df)
 
 
-def _load_matrix_file(filepath, label_colname, nodes_colname, delimiter=";"):
+def _load_matrix_file(
+    filepath: str, label_colname: str, nodes_colname: str, delimiter: str = ";"
+) -> pd.DataFrame:
     """Load annotations from a CSV or TSV file and convert them to a DataFrame.
 
     Args:
@@ -126,12 +141,13 @@ def _load_matrix_file(filepath, label_colname, nodes_colname, delimiter=";"):
         pd.DataFrame: DataFrame containing the labels and parsed nodes.
     """
     df = pd.read_csv(filepath)
-    # Split the nodes column by the delimiter
+    # Split the nodes column by the delimiter and store it back in the DataFrame
     df[nodes_colname] = df[nodes_colname].apply(lambda x: x.split(delimiter))
+    # Return only the label and nodes columns
     return df[[label_colname, nodes_colname]]
 
 
-def _log_loading(filetype, filepath=None):
+def _log_loading(filetype: str, filepath: str = "") -> None:
     """Log information about the network file being loaded.
 
     Args:
