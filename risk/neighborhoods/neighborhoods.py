@@ -4,6 +4,7 @@ risk/neighborhoods/neighborhoods
 """
 
 import warnings
+from typing import Any, Dict, Tuple
 
 import networkx as nx
 import numpy as np
@@ -23,23 +24,24 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 
 def get_network_neighborhoods(
-    network,
-    distance_metric="dijkstra",
-    edge_length_threshold=1.0,
-    louvain_resolution=1.0,
-    random_seed=888,
-):
+    network: nx.Graph,
+    distance_metric: str = "dijkstra",
+    edge_length_threshold: float = 1.0,
+    louvain_resolution: float = 1.0,
+    random_seed: int = 888,
+) -> np.ndarray:
     """Calculate the neighborhoods for each node in the network based on the specified distance metric.
 
     Args:
         network (nx.Graph): The network graph.
         distance_metric (str): The distance metric to use ('euclidean', 'dijkstra', 'louvain', 'affinity_propagation',
-        'label_propagation').
-        edge_length_threshold (float): The edge_length_threshold of the neighborhoods.
+                               'label_propagation', 'markov_clustering', 'walktrap', 'spinglass').
+        edge_length_threshold (float): The edge length threshold for the neighborhoods.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
+        random_seed (int, optional): Random seed for methods requiring random initialization. Defaults to 888.
 
     Returns:
-        np.ndarray: Neighborhood matrix.
+        np.ndarray: Neighborhood matrix calculated based on the selected distance metric.
     """
     network = _create_percentile_limited_subgraph(network, edge_length_threshold)
 
@@ -58,17 +60,16 @@ def get_network_neighborhoods(
 
     raise ValueError(
         "Incorrect distance metric specified. Please choose from 'dijkstra', 'louvain',"
-        "label_propagation', 'markov_clustering', 'walktrap', spinglass'."
+        "'label_propagation', 'markov_clustering', 'walktrap', 'spinglass'."
     )
 
 
-def _create_percentile_limited_subgraph(G, edge_length_percentile):
-    """
-    Calculate the edge length corresponding to the given percentile of edge lengths in the graph
+def _create_percentile_limited_subgraph(G: nx.Graph, edge_length_percentile: float) -> nx.Graph:
+    """Calculate the edge length corresponding to the given percentile of edge lengths in the graph
     and create a subgraph with all nodes and edges below this length.
 
     Args:
-        G (networkx.Graph): The input graph.
+        G (nx.Graph): The input graph.
         edge_length_percentile (float): The percentile to calculate (between 0 and 1).
 
     Returns:
@@ -78,10 +79,10 @@ def _create_percentile_limited_subgraph(G, edge_length_percentile):
     edge_lengths = [d["length"] for _, _, d in G.edges(data=True) if "length" in d]
     # Calculate the specific edge length for the given percentile
     percentile_length = np.percentile(edge_lengths, edge_length_percentile * 100)
-    # Create a new graph with all nodes
+    # Create a new graph with all nodes from the original graph
     subgraph = nx.Graph()
     subgraph.add_nodes_from(G.nodes(data=True))
-    # Add edges below the specified percentile length
+    # Add edges to the subgraph if they are below the specified percentile length
     for u, v, d in G.edges(data=True):
         if d.get("length", 1) <= percentile_length:
             subgraph.add_edge(u, v, **d)
@@ -90,23 +91,21 @@ def _create_percentile_limited_subgraph(G, edge_length_percentile):
 
 
 def process_neighborhoods(
-    network,
-    neighborhoods,
-    impute_depth=1,
-    prune_threshold=0.0,
-):
+    network: nx.Graph,
+    neighborhoods: Dict[str, Any],
+    impute_depth: int = 1,
+    prune_threshold: float = 0.0,
+) -> Dict[str, Any]:
     """Process neighborhoods based on the imputation and pruning settings.
 
     Args:
-        network: The network data structure used for imputing and pruning neighbors.
-        enrichment_matrix (numpy.ndarray): Enrichment matrix data.
-        binary_enrichment_matrix (numpy.ndarray): Binary enrichment matrix data.
-        impute_threshold (float): Distance threshold for imputing neighbors.
-        impute_depth (int): Depth for imputing neighbors.
-        prune_threshold (float): Distance threshold for pruning neighbors.
+        network (nx.Graph): The network data structure used for imputing and pruning neighbors.
+        neighborhoods (dict): Dictionary containing 'enrichment_matrix', 'binary_enrichment_matrix', and 'significant_enrichment_matrix'.
+        impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
+        prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
 
     Returns:
-        dict: Processed neighborhoods data.
+        dict: Processed neighborhoods data, including the updated matrices and enrichment counts.
     """
     enrichment_matrix = neighborhoods["enrichment_matrix"]
     binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
@@ -148,20 +147,27 @@ def process_neighborhoods(
     }
 
 
-def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_depth=3):
-    """
-    Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
+def _impute_neighbors(
+    network: nx.Graph,
+    enrichment_matrix: np.ndarray,
+    binary_enrichment_matrix: np.ndarray,
+    max_depth: int = 3,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
 
     Args:
-        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
+        network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
         binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
-        tuple: The imputed enrichment matrix and the imputed alpha threshold matrix.
+        tuple: A tuple containing:
+            - np.ndarray: The imputed enrichment matrix.
+            - np.ndarray: The imputed alpha threshold matrix.
+            - np.ndarray: The significant enrichment matrix with non-significant entries set to zero.
     """
-    # Calculate shortest instances for each node and determine the distance threshold
+    # Calculate shortest distances for each node to determine the distance threshold
     shortest_distances = []
     for node in network.nodes():
         neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
@@ -171,10 +177,8 @@ def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_
 
     depth = 1
     rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
-
     while len(rows_to_impute) and depth <= max_depth:
         next_rows_to_impute = []
-
         for row_index in rows_to_impute:
             neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
             valid_neighbors = [
@@ -184,11 +188,11 @@ def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_
                 and binary_enrichment_matrix[n].sum() != 0
                 and enrichment_matrix[n].sum() != 0
             ]
-
             if valid_neighbors:
                 closest_neighbor = min(
                     valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
                 )
+                # Impute the row with the closest valid neighbor's data
                 enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor]
                 binary_enrichment_matrix[row_index] = binary_enrichment_matrix[
                     closest_neighbor
@@ -199,38 +203,34 @@ def _impute_neighbors(network, enrichment_matrix, binary_enrichment_matrix, max_
         rows_to_impute = next_rows_to_impute
         depth += 1
 
+    # Create a matrix where non-significant entries are set to zero
     significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
 
     return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
 
 
-def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, distance_threshold=0.9):
-    """
-    Remove outliers based on their rank for edge lengths.
+def _prune_neighbors(
+    network: nx.Graph,
+    enrichment_matrix: np.ndarray,
+    binary_enrichment_matrix: np.ndarray,
+    distance_threshold: float = 0.9,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Remove outliers based on their rank for edge lengths.
 
     Args:
-        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
+        network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix.
         binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
         distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
 
     Returns:
-        tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
+        tuple: A tuple containing:
+            - np.ndarray: The updated enrichment matrix with outliers set to zero.
+            - np.ndarray: The updated alpha threshold matrix with outliers set to zero.
+            - np.ndarray: The significant enrichment matrix, where non-significant entries are set to zero.
     """
-    """
-    Remove outliers based on their rank for edge lengths.
-
-    Args:
-        network (NetworkX graph): The network graph with nodes having IDs matching the matrix indices.
-        enrichment_matrix (np.ndarray): The enrichment matrix.
-        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
-        distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
-
-    Returns:
-        tuple: The updated enrichment matrix and alpha threshold matrix with outliers set to zero.
-    """
+    # Identify indices with non-zero rows in the binary enrichment matrix
     non_zero_indices = np.where(binary_enrichment_matrix.sum(axis=1) != 0)[0]
-
     average_distances = []
     for node in non_zero_indices:
         neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
@@ -240,8 +240,9 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
             )
             average_distances.append(average_distance)
 
+    # Calculate the distance threshold value based on rank
     distance_threshold_value = _calculate_threshold(average_distances, 1 - distance_threshold)
-
+    # Prune nodes that are outliers based on the distance threshold
     for row_index in non_zero_indices:
         neighbors = [
             n for n in network.neighbors(row_index) if binary_enrichment_matrix[n].sum() != 0
@@ -256,18 +257,38 @@ def _prune_neighbors(network, enrichment_matrix, binary_enrichment_matrix, dista
                 enrichment_matrix[row_index] = 0
                 binary_enrichment_matrix[row_index] = 0
 
+    # Create a matrix where non-significant entries are set to zero
     significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
 
     return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
 
 
-def _get_euclidean_distance(node1, node2, network):
+def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
+    """Calculate the Euclidean distance between two nodes in the network.
+
+    Args:
+        node1 (Any): The first node.
+        node2 (Any): The second node.
+        network (nx.Graph): The network graph containing the nodes.
+
+    Returns:
+        float: The Euclidean distance between the two nodes.
+    """
     pos1 = _get_node_position(network, node1)
     pos2 = _get_node_position(network, node2)
     return np.linalg.norm(pos1 - pos2)
 
 
-def _get_node_position(network, node):
+def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
+    """Retrieve the position of a node in the network as a numpy array.
+
+    Args:
+        network (nx.Graph): The network graph containing node positions.
+        node (Any): The node for which the position is being retrieved.
+
+    Returns:
+        np.ndarray: A numpy array representing the position of the node in the format [x, y, z].
+    """
     return np.array(
         [
             network.nodes[node].get(coord, 0)
@@ -277,11 +298,24 @@ def _get_node_position(network, node):
     )
 
 
-def _calculate_threshold(average_distances, distance_threshold):
+def _calculate_threshold(average_distances: np.ndarray, distance_threshold: float) -> float:
+    """Calculate the distance threshold based on the given average distances and a percentile threshold.
+
+    Args:
+        average_distances (np.ndarray): An array of average distances.
+        distance_threshold (float): A percentile threshold (0 to 1) used to determine the distance cutoff.
+
+    Returns:
+        float: The calculated distance threshold value.
+    """
+    # Sort the average distances
     sorted_distances = np.sort(average_distances)
+    # Compute the rank percentiles for the sorted distances
     rank_percentiles = np.linspace(0, 1, len(sorted_distances))
     # Interpolating the ranks to 1000 evenly spaced percentiles
     interpolated_percentiles = np.linspace(0, 1, 1000)
     smoothed_distances = np.interp(interpolated_percentiles, rank_percentiles, sorted_distances)
+    # Determine the index corresponding to the distance threshold
     threshold_index = int(np.ceil(distance_threshold * len(smoothed_distances))) - 1
+    # Return the smoothed distance at the calculated index
     return smoothed_distances[threshold_index]
