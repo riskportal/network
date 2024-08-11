@@ -5,6 +5,7 @@ risk/annotations/annotations
 
 from collections import Counter
 from itertools import compress, permutations
+from typing import Any, Dict, List, Set
 
 import networkx as nx
 import nltk
@@ -31,7 +32,7 @@ def _setup_nltk():
 _setup_nltk()
 
 
-def load_annotations(network: nx.Graph, annotations_input: dict) -> dict:
+def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Dict[str, Any]:
     """Convert annotations input to a DataFrame and reindex based on the network's node labels.
 
     Args:
@@ -76,8 +77,8 @@ def load_annotations(network: nx.Graph, annotations_input: dict) -> dict:
 
 def define_top_annotations(
     network: nx.Graph,
-    ordered_annotation_labels: list,
-    neighborhood_enrichment_sums: list,
+    ordered_annotation_labels: List[str],
+    neighborhood_enrichment_sums: List[int],
     binary_enrichment_matrix: np.ndarray,
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
@@ -86,8 +87,8 @@ def define_top_annotations(
 
     Args:
         network (NetworkX graph): The network graph.
-        ordered_annotation_labels (list): List of ordered annotation labels.
-        neighborhood_enrichment_sums (list): List of neighborhood enrichment sums.
+        ordered_annotation_labels (list of str): List of ordered annotation labels.
+        neighborhood_enrichment_sums (list of int): List of neighborhood enrichment sums.
         binary_enrichment_matrix (np.ndarray): Binary enrichment matrix below alpha threshold.
         min_cluster_size (int, optional): Minimum cluster size. Defaults to 5.
         max_cluster_size (int, optional): Maximum cluster size. Defaults to 1000.
@@ -180,11 +181,11 @@ def get_description(words_column: pd.Series) -> str:
     return description
 
 
-def _simplify_word_list(words: list, threshold: float = 0.80) -> list:
+def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
     """Filter out words that are too similar based on the Jaccard index, keeping the word with the higher count.
 
     Args:
-        words (list): The list of words to be filtered.
+        words (list of str): The list of words to be filtered.
         threshold (float, optional): The similarity threshold for the Jaccard index.
                                      Defaults to 0.80.
 
@@ -218,7 +219,7 @@ def _simplify_word_list(words: list, threshold: float = 0.80) -> list:
     return final_words
 
 
-def _jaccard_index(set1: set, set2: set) -> float:
+def _jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
     """Calculate the Jaccard Index of two sets.
 
     Args:
@@ -234,11 +235,11 @@ def _jaccard_index(set1: set, set2: set) -> float:
     return intersection / union if union else 0
 
 
-def _generate_coherent_description(words: list) -> str:
+def _generate_coherent_description(words: List[str]) -> str:
     """Generate a coherent description from a list of words.
 
     Args:
-        words (list): A list of words from which to generate the description.
+        words (list of str): A list of words from which to generate the description.
 
     Returns:
         str: A coherent description formed by arranging the words in a logical sequence.
