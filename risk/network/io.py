@@ -5,6 +5,7 @@ risk/network/io
 This file contains the code for the RISK class and command-line access.
 """
 
+import json
 import pickle
 import shutil
 import zipfile
@@ -164,14 +165,60 @@ class NetworkIO:
                     node
                 ]  # Assuming you have a dict `node_y_positions` for y coordinates
 
-            G = self._initialize_graph(G)
+            return self._initialize_graph(G)
+
         finally:
             # Remove unzipped files/directories
             cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
             for dirname in cys_dirnames:
                 shutil.rmtree(dirname)
 
-        return G
+    def load_cytoscape_json_network(self, filepath, source_label="source", target_label="target"):
+        """Load a network from a Cytoscape JSON (.cyjs) file.
+
+        Args:
+            filepath (str): Path to the Cytoscape JSON file.
+            source_label (str, optional): Source node label. Default is "source".
+            target_label (str, optional): Target node label. Default is "target".
+
+        Returns:
+            NetworkX graph: Loaded and processed network.
+        """
+        filetype = "Cytoscape JSON"
+        params.log_network(filepath=str(filepath), filetype=filetype)
+        self._log_loading(filetype, filepath=filepath)
+        # Load the Cytoscape JSON file
+        with open(filepath, "r") as f:
+            cyjs_data = json.load(f)
+
+        # Create a graph
+        G = nx.Graph()
+        # Process nodes
+        node_x_positions = {}
+        node_y_positions = {}
+        for node in cyjs_data["elements"]["nodes"]:
+            node_data = node["data"]
+            node_id = node_data["id"]
+            node_x_positions[node_id] = node["position"]["x"]
+            node_y_positions[node_id] = node["position"]["y"]
+            G.add_node(node_id)
+            G.nodes[node_id]["label"] = node_data.get("name", node_id)
+            G.nodes[node_id]["x"] = node["position"]["x"]
+            G.nodes[node_id]["y"] = node["position"]["y"]
+
+        # Process edges
+        for edge in cyjs_data["elements"]["edges"]:
+            edge_data = edge["data"]
+            source = edge_data["source"]
+            target = edge_data["target"]
+            if self.weight_label is not None and self.weight_label in edge_data:
+                weight = float(edge_data[self.weight_label])
+                G.add_edge(source, target, weight=weight)
+            else:
+                G.add_edge(source, target)
+
+        # Initialize the graph
+        return self._initialize_graph(G)
 
     def _initialize_graph(self, G):
         # IMPORTANT: This is where the graph node labels are converted to integers
