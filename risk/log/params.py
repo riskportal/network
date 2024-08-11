@@ -46,7 +46,7 @@ def _safe_param_export(func):
 class Params:
     """Handles the storage and logging of various parameters for network analysis.
 
-    This class provides methods to log parameters related to different components of the analysis,
+    The Params class provides methods to log parameters related to different components of the analysis,
     such as the network, annotations, neighborhoods, graph, and plotter settings. It also stores
     the current datetime when the parameters were initialized.
     """
