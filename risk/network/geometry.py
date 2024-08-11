@@ -7,18 +7,22 @@ import networkx as nx
 import numpy as np
 
 
-def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge_weight=False):
-    """
-    Calculate edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
+def apply_edge_lengths(
+    G: nx.Graph,
+    compute_sphere: bool = True,
+    surface_depth: float = 0.0,
+    include_edge_weight: bool = False,
+) -> nx.Graph:
+    """Calculate edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
 
     Args:
-        G (networkx.Graph): The input graph.
-        compute_sphere (bool): Whether to map nodes to a sphere.
-        surface_depth (float): The surface depth for mapping to a sphere.
-        include_edge_weight (bool): Whether to include edge weights in the calculation.
+        G (nx.Graph): The input graph.
+        compute_sphere (bool): Whether to map nodes to a sphere. Defaults to True.
+        surface_depth (float): The surface depth for mapping to a sphere. Defaults to 0.0.
+        include_edge_weight (bool): Whether to include edge weights in the calculation. Defaults to False.
 
     Returns:
-        networkx.Graph: The graph with calculated edge lengths.
+        nx.Graph: The graph with calculated edge lengths.
     """
 
     def compute_distance(u_coords, v_coords, is_sphere=False):
@@ -34,6 +38,7 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge
     _normalize_graph_coordinates(G)
     # Normalize weights
     _normalize_weights(G)
+    # Use G_depth for edge length calculation
     if compute_sphere:
         # Map to sphere and adjust depth
         _map_to_sphere(G)
@@ -61,7 +66,12 @@ def calculate_edge_lengths(G, compute_sphere=True, surface_depth=0, include_edge
     return G
 
 
-def _map_to_sphere(G):
+def _map_to_sphere(G: nx.Graph) -> None:
+    """Map the x and y coordinates of graph nodes onto a 3D sphere.
+
+    Args:
+        G (nx.Graph): The input graph with nodes having 'x' and 'y' coordinates.
+    """
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
     # Normalize the coordinates between [0, 1]
@@ -81,7 +91,12 @@ def _map_to_sphere(G):
         G.nodes[node]["z"] = z
 
 
-def _normalize_graph_coordinates(G):
+def _normalize_graph_coordinates(G: nx.Graph) -> None:
+    """Normalize the x and y coordinates of the nodes in the graph to the [0, 1] range.
+
+    Args:
+        G (nx.Graph): The input graph with nodes having 'x' and 'y' coordinates.
+    """
     # Extract x, y coordinates from the graph nodes
     xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
     # Calculate min and max values for x and y
@@ -94,29 +109,36 @@ def _normalize_graph_coordinates(G):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
 
 
-def _normalize_weights(G):
+def _normalize_weights(G: nx.Graph) -> None:
+    """Normalize the weights of the edges in the graph.
+
+    Args:
+        G (nx.Graph): The input graph with weighted edges.
+    """
     # "weight" is present for all edges - weights are 1.0 if weight was not specified by the user
     weights = [data["weight"] for _, _, data in G.edges(data=True)]
     if weights:  # Ensure there are weighted edges
         min_weight = min(weights)
         max_weight = max(weights)
         range_weight = max_weight - min_weight if max_weight > min_weight else 1
+
         for _, _, data in G.edges(data=True):
             data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 
 
-def _create_depth(G, surface_depth=0.0):
+def _create_depth(G: nx.Graph, surface_depth: float = 0.0) -> nx.Graph:
     """Adjust the 'z' attribute of each node based on the subcluster strengths and normalized surface depth.
 
     Args:
-        G (networkx.Graph): The input graph.
+        G (nx.Graph): The input graph.
         surface_depth (float): The maximum surface depth to apply for the strongest subcluster.
 
     Returns:
-        networkx.Graph: The graph with adjusted 'z' attribute for each node.
+        nx.Graph: The graph with adjusted 'z' attribute for each node.
     """
     if surface_depth >= 1.0:
         surface_depth = surface_depth - 1e-6  # Cap the surface depth to prevent value of 1.0
+
     # Compute subclusters as connected components (subclusters can be any other method)
     subclusters = {node: set(nx.node_connected_component(G, node)) for node in G.nodes}
     # Create a strength metric for subclusters (here using size)
