@@ -1,6 +1,6 @@
 """
-risk/network/graph
-~~~~~~~~~~~~~~~~~~
+risk/network/geometry
+~~~~~~~~~~~~~~~~~~~~~
 """
 
 import networkx as nx

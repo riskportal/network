@@ -1,6 +1,6 @@
 """
-risk/network/plot
-~~~~~~~~~~~~~~~~~
+risk/network
+~~~~~~~~~~~~
 """
 
 from .graph import NetworkGraph

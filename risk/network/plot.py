@@ -1,3 +1,8 @@
+"""
+risk/network/plot
+~~~~~~~~~~~~~~~~~
+"""
+
 import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
