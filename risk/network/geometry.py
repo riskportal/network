@@ -13,7 +13,7 @@ def apply_edge_lengths(
     surface_depth: float = 0.0,
     include_edge_weight: bool = False,
 ) -> nx.Graph:
-    """Calculate edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
+    """Apply edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
 
     Args:
         G (nx.Graph): The input graph.
@@ -22,7 +22,7 @@ def apply_edge_lengths(
         include_edge_weight (bool): Whether to include edge weights in the calculation. Defaults to False.
 
     Returns:
-        nx.Graph: The graph with calculated edge lengths.
+        nx.Graph: The graph with applied edge lengths.
     """
 
     def compute_distance(u_coords, v_coords, is_sphere=False):
@@ -50,7 +50,6 @@ def apply_edge_lengths(
     for u, v, _ in G_depth.edges(data=True):
         u_coords = np.array([G_depth.nodes[u]["x"], G_depth.nodes[u]["y"]])
         v_coords = np.array([G_depth.nodes[v]["x"], G_depth.nodes[v]["y"]])
-
         if compute_sphere:
             u_coords = np.append(u_coords, G_depth.nodes[u].get("z", 0))
             v_coords = np.append(v_coords, G_depth.nodes[v].get("z", 0))
@@ -121,7 +120,6 @@ def _normalize_weights(G: nx.Graph) -> None:
         min_weight = min(weights)
         max_weight = max(weights)
         range_weight = max_weight - min_weight if max_weight > min_weight else 1
-
         for _, _, data in G.edges(data=True):
             data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 

@@ -93,8 +93,9 @@ class NetworkGraph:
         Args:
             G (nx.Graph): The input network graph with 3D node coordinates.
         """
-        G_2d = _unfold_sphere_to_plane(G)
         # Unfold the network's 3D coordinates to 2D
+        G_2d = _unfold_sphere_to_plane(G)
+        # Assign the unfolded graph to self.G
         self.G = G_2d
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(G_2d)
@@ -264,7 +265,6 @@ def _get_colors(
     """
     # Set random seed for reproducibility
     random.seed(random_seed)
-
     if kwargs.get("color"):
         # If a direct color string is provided, generate a list with that color
         rgba = matplotlib.colors.to_rgba(kwargs["color"])
