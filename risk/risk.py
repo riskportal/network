@@ -1,3 +1,8 @@
+"""
+risk/risk
+~~~~~~~~~
+"""
+
 from risk.annotations import AnnotationsIO, define_top_annotations
 from risk.log import params, print_header
 from risk.neighborhoods import (

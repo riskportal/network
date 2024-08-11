@@ -1,6 +1,6 @@
 """
-risk/network/constants
-~~~~~~~~~~~~~~~~~~~~~~
+risk/constants
+~~~~~~~~~~~~~~
 """
 
 GROUP_DISTANCE_METRICS = [

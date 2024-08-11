@@ -1,6 +1,6 @@
 """
-risk/network/annotations
-~~~~~~~~~~~~~~~~~~~~~~~
+risk/annotations/annotations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from collections import Counter

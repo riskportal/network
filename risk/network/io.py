@@ -1,6 +1,6 @@
 """
-risk/network/io/network
-~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/io
+~~~~~~~~~~~~~~~
 
 This file contains the code for the RISK class and command-line access.
 """

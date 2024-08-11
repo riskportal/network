@@ -1,3 +1,8 @@
+"""
+risk/neighborhoods/graph
+~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 import community as community_louvain
 import networkx as nx
 import numpy as np

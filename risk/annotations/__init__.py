@@ -1,6 +1,6 @@
 """
-risk/network/io
-~~~~~~~~~~~~~~~
+risk/annotations
+~~~~~~~~~~~~~~~~
 """
 
 from .annotations import define_top_annotations, get_description
