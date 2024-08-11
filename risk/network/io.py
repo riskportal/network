@@ -13,7 +13,7 @@ from xml.dom import minidom
 import networkx as nx
 import pandas as pd
 
-from risk.graph.metrics import calculate_edge_lengths
+from risk.network.geometry import calculate_edge_lengths
 from risk.log import params, print_header
 
 
