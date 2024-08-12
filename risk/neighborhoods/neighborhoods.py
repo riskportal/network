@@ -35,7 +35,7 @@ def get_network_neighborhoods(
     Args:
         network (nx.Graph): The network graph.
         distance_metric (str): The distance metric to use ('euclidean', 'dijkstra', 'louvain', 'affinity_propagation',
-                               'label_propagation', 'markov_clustering', 'walktrap', 'spinglass').
+            'label_propagation', 'markov_clustering', 'walktrap', 'spinglass').
         edge_length_threshold (float): The edge length threshold for the neighborhoods.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
         random_seed (int, optional): Random seed for methods requiring random initialization. Defaults to 888.
@@ -247,12 +247,10 @@ def _prune_neighbors(
         neighbors = [
             n for n in network.neighbors(row_index) if binary_enrichment_matrix[n].sum() != 0
         ]
-
         if neighbors:
             average_distance = np.mean(
                 [_get_euclidean_distance(row_index, n, network) for n in neighbors]
             )
-
             if average_distance >= distance_threshold_value:
                 enrichment_matrix[row_index] = 0
                 binary_enrichment_matrix[row_index] = 0

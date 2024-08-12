@@ -186,8 +186,7 @@ def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
 
     Args:
         words (list of str): The list of words to be filtered.
-        threshold (float, optional): The similarity threshold for the Jaccard index.
-                                     Defaults to 0.80.
+        threshold (float, optional): The similarity threshold for the Jaccard index. Defaults to 0.80.
 
     Returns:
         list of str: A list of filtered words, where similar words are reduced to the most frequent one.
