@@ -25,13 +25,26 @@ def apply_edge_lengths(
         nx.Graph: The graph with applied edge lengths.
     """
 
-    def compute_distance(u_coords, v_coords, is_sphere=False):
+    def compute_distance(
+        u_coords: np.ndarray, v_coords: np.ndarray, is_sphere: bool = False
+    ) -> float:
+        """Compute the distance between two coordinate vectors.
+
+        Args:
+            u_coords (np.ndarray): Coordinates of the first point.
+            v_coords (np.ndarray): Coordinates of the second point.
+            is_sphere (bool, optional): If True, compute spherical distance. Defaults to False.
+
+        Returns:
+            float: The computed distance between the two points.
+        """
         if is_sphere:
-            # Normalize vectors for spherical distance
+            # Normalize vectors and compute spherical distance using the dot product
             u_coords /= np.linalg.norm(u_coords)
             v_coords /= np.linalg.norm(v_coords)
             return np.arccos(np.clip(np.dot(u_coords, v_coords), -1.0, 1.0))
         else:
+            # Compute Euclidean distance
             return np.linalg.norm(u_coords - v_coords)
 
     # Normalize graph coordinates
