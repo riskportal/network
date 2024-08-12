@@ -3,6 +3,11 @@ risk/risk
 ~~~~~~~~~
 """
 
+from typing import Any, Dict
+
+import networkx as nx
+import pandas as pd
+
 from risk.annotations import AnnotationsIO, define_top_annotations
 from risk.log import params, print_header
 from risk.neighborhoods import (
@@ -16,27 +21,36 @@ from risk.stats import compute_permutation, calculate_significance_matrices
 
 
 class RISK(NetworkIO, AnnotationsIO):
-    """RISK: A class for network analysis and visualization."""
+    """RISK: A class for network analysis and visualization.
+
+    The RISK class integrates functionalities for loading networks, processing annotations,
+    and performing network-based statistical analysis, such as neighborhood significance testing.
+    """
 
     def __init__(
         self,
-        compute_sphere=True,
-        surface_depth=0.0,
-        distance_metric="dijkstra",
-        louvain_resolution=0.1,
-        min_edges_per_node=0,
-        edge_length_threshold=0.5,
-        include_edge_weight=True,
-        weight_label="weight",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        distance_metric: str = "dijkstra",
+        louvain_resolution: float = 0.1,
+        min_edges_per_node: int = 0,
+        edge_length_threshold: float = 0.5,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
     ):
-        """Initialize RISK with configuration settings.
+        """Initialize the RISK class with configuration settings.
 
         Args:
-            network_filepath (str): Path to the network file.
-            annotation_filepath (str): Path to the annotations file.
-            **kwargs: Additional configuration parameters.
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            distance_metric (str, optional): Distance metric to use in network analysis. Defaults to "dijkstra".
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            edge_length_threshold (float, optional): Edge length threshold for analysis. Defaults to 0.5.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
         """
-        # Always clear / initialize all logged parameters upon RISK instantiation
+        # Initialize and log network parameters
         params.initialize()
         params.log_network(
             compute_sphere=compute_sphere,
@@ -48,6 +62,7 @@ class RISK(NetworkIO, AnnotationsIO):
             include_edge_weight=include_edge_weight,
             weight_label=weight_label,
         )
+        # Initialize parent classes
         NetworkIO.__init__(
             self,
             compute_sphere=compute_sphere,
@@ -60,6 +75,8 @@ class RISK(NetworkIO, AnnotationsIO):
             weight_label=weight_label,
         )
         AnnotationsIO.__init__(self)
+
+        # Set class attributes
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
         self.distance_metric = distance_metric
@@ -71,27 +88,35 @@ class RISK(NetworkIO, AnnotationsIO):
 
     @property
     def params(self):
+        """Access the logged parameters."""
         return params
 
     def load_neighborhoods(
         self,
-        network,
-        annotations,
-        score_metric="sum",
-        null_distribution="network",
-        num_permutations=1000,
-        random_seed=888,
-        max_workers=1,
-    ):
+        network: nx.Graph,
+        annotations: pd.DataFrame,
+        score_metric: str = "sum",
+        null_distribution: str = "network",
+        num_permutations: int = 1000,
+        random_seed: int = 888,
+        max_workers: int = 1,
+    ) -> Dict[str, Any]:
         """Load significant neighborhoods for the network.
 
         Args:
-            network (NetworkX graph): The network graph.
+            network (nx.Graph): The network graph.
+            annotations (pd.DataFrame): The matrix of annotations associated with the network.
+            score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
+            null_distribution (str, optional): Distribution used for permutation tests. Defaults to "network".
+            num_permutations (int, optional): Number of permutations for significance testing. Defaults to 1000.
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+            max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
 
         Returns:
-            dict: Neighborhoods of the network.
+            dict: Computed significance of neighborhoods.
         """
         print_header("Running permutation test")
+        # Log neighborhood analysis parameters
         params.log_neighborhoods(
             score_metric=score_metric,
             null_distribution=null_distribution,
@@ -99,12 +124,14 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed=random_seed,
             max_workers=max_workers,
         )
-        for_print_distance_metric = (
-            f"louvain (resolution={self.louvain_resolution})"
-            if self.distance_metric == "louvain"
-            else self.distance_metric
-        )
+
+        # Display the chosen distance metric
+        if self.distance_metric == "louvain":
+            for_print_distance_metric = f"louvain (resolution={self.louvain_resolution})"
+        else:
+            for_print_distance_metric = self.distance_metric
         print(f"Distance metric: '{for_print_distance_metric}'")
+        # Compute neighborhoods based on the network and distance metric
         neighborhoods = get_network_neighborhoods(
             network,
             self.distance_metric,
@@ -112,9 +139,12 @@ class RISK(NetworkIO, AnnotationsIO):
             louvain_resolution=self.louvain_resolution,
             random_seed=random_seed,
         )
+
+        # Log and display permutation test settings
         print(f"Null distribution: '{null_distribution}'")
         print(f"Neighborhood scoring metric: '{score_metric}'")
         print(f"Number of permutations: {num_permutations}")
+        # Run the permutation test to compute neighborhood significance
         neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
@@ -124,35 +154,48 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed=random_seed,
             max_workers=max_workers,
         )
+
         return neighborhood_significance
 
     def load_graph(
         self,
-        network,
-        annotations,
-        neighborhoods,
-        tail="right",  # OPTIONS: right (enrichment), left (depletion), both
-        pval_cutoff=0.01,  # OPTIONS: Any value between 0 to 1
-        apply_fdr=False,
-        fdr_cutoff=0.9999,  # OPTIONS: Any value between 0 to 1
-        impute_depth=1,
-        prune_threshold=0.0,
-        linkage_criterion="distance",
-        linkage_method="average",
-        linkage_metric="yule",
-        min_cluster_size=5,
-        max_cluster_size=1000,
-    ):
-        """Get a NetworkGraph object for plotting.
+        network: nx.Graph,
+        annotations: pd.DataFrame,
+        neighborhoods: Dict[str, Any],
+        tail: str = "right",  # OPTIONS: "right" (enrichment), "left" (depletion), "both"
+        pval_cutoff: float = 0.01,  # OPTIONS: Any value between 0 to 1
+        apply_fdr: bool = False,
+        fdr_cutoff: float = 0.9999,  # OPTIONS: Any value between 0 to 1
+        impute_depth: int = 1,
+        prune_threshold: float = 0.0,
+        linkage_criterion: str = "distance",
+        linkage_method: str = "average",
+        linkage_metric: str = "yule",
+        min_cluster_size: int = 5,
+        max_cluster_size: int = 1000,
+    ) -> NetworkGraph:
+        """Load and process the network graph, defining top annotations and domains.
 
         Args:
-            network (NetworkX graph): The network graph.
-            annotations (pd.DataFrame): Annotations matrix.
+            network (nx.Graph): The network graph.
+            annotations (pd.DataFrame): DataFrame containing annotation data for the network.
             neighborhoods (dict): Neighborhood enrichment data.
+            tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
+            pval_cutoff (float, optional): P-value cutoff for significance. Defaults to 0.01.
+            apply_fdr (bool, optional): Whether to apply FDR correction. Defaults to False.
+            fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
+            impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
+            prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
+            linkage_criterion (str, optional): Clustering criterion for defining domains. Defaults to "distance".
+            linkage_method (str, optional): Clustering method to use. Defaults to "average".
+            linkage_metric (str, optional): Metric to use for calculating distances. Defaults to "yule".
+            min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
+            max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
         Returns:
-            NetworkGraph: A NetworkGraph object.
+            NetworkGraph: A fully initialized and processed NetworkGraph object.
         """
+        # Log the parameters and display headers
         print_header("Finding significant neighborhoods")
         params.log_graph(
             tail=tail,
@@ -167,11 +210,13 @@ class RISK(NetworkIO, AnnotationsIO):
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
+
         print(f"P-value cutoff: {pval_cutoff}")
         print(f"FDR cutoff: {'N/A' if not apply_fdr else apply_fdr}")
         print(
             f"Significance tail: '{tail}' ({'enrichment' if tail == 'right' else 'depletion' if tail == 'left' else 'both'})"
         )
+        # Calculate significant neighborhoods based on the provided parameters
         significant_neighborhoods = calculate_significance_matrices(
             neighborhoods["depletion_pvals"],
             neighborhoods["enrichment_pvals"],
@@ -180,17 +225,20 @@ class RISK(NetworkIO, AnnotationsIO):
             apply_fdr=apply_fdr,
             fdr_cutoff=fdr_cutoff,
         )
-        # Process neighborhoods based on the imputation and pruning settings
-        processed_neighborhoods = self._process_neighborhoods(
-            network,
-            significant_neighborhoods,
+
+        print_header("Processing neighborhoods")
+        # Process neighborhoods by imputing and pruning based on the given settings
+        processed_neighborhoods = process_neighborhoods(
+            network=network,
+            neighborhoods=significant_neighborhoods,
             impute_depth=impute_depth,
             prune_threshold=prune_threshold,
         )
-        print_header("Trimming domains and finding top annotations")
+
+        print_header("Finding top annotations")
         print(f"Min cluster size: {min_cluster_size}")
         print(f"Max cluster size: {max_cluster_size}")
-        # Define top annotations based on the network and neighborhoods
+        # Define top annotations based on processed neighborhoods
         top_annotations = self._define_top_annotations(
             network=network,
             annotations=annotations,
@@ -198,8 +246,9 @@ class RISK(NetworkIO, AnnotationsIO):
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
+
         print_header(f"Optimizing distance threshold for domains")
-        # Define domains in the network
+        # Define domains in the network using the specified clustering settings
         domains = self._define_domains(
             neighborhoods=processed_neighborhoods,
             top_annotations=top_annotations,
@@ -207,18 +256,20 @@ class RISK(NetworkIO, AnnotationsIO):
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,
         )
-        # Trim domains and top annotations based on the cluster size
+        # Trim domains and top annotations based on cluster size constraints
         top_annotations, domains, trimmed_domains = trim_domains_and_top_annotations(
             domains=domains,
             top_annotations=top_annotations,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
-        # Get the ordered nodes for the network
+
+        # Prepare node mapping and enrichment sums for the final NetworkGraph object
         ordered_nodes = annotations["ordered_nodes"]
         node_label_to_id = dict(zip(ordered_nodes, range(len(ordered_nodes))))
-        # Get the significant binary enrichment matrix for neighborhoods
         node_enrichment_sums = processed_neighborhoods["node_enrichment_sums"]
+
+        # Return the fully initialized NetworkGraph object
         return NetworkGraph(
             network=network,
             top_annotations=top_annotations,
@@ -230,22 +281,28 @@ class RISK(NetworkIO, AnnotationsIO):
 
     def load_plotter(
         self,
-        graph,
-        figsize=(10, 10),
-        background_color="white",
-        plot_outline=True,
-        outline_color="black",
-        outline_scale=1.00,
-    ):
+        graph: NetworkGraph,
+        figsize: tuple = (10, 10),
+        background_color: str = "white",
+        plot_outline: bool = True,
+        outline_color: str = "black",
+        outline_scale: float = 1.00,
+    ) -> NetworkPlotter:
         """Get a NetworkPlotter object for plotting.
 
         Args:
-            graph (NetworkGraph): A NetworkGraph object.
+            graph (NetworkGraph): The graph to plot.
+            figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
+            background_color (str, optional): Background color of the plot. Defaults to "white".
+            plot_outline (bool, optional): Whether to plot the network outline. Defaults to True.
+            outline_color (str, optional): Color of the outline. Defaults to "black".
+            outline_scale (float, optional): Scaling factor for the outline. Defaults to 1.00.
 
         Returns:
-            NetworkPlotter: A NetworkPlotter object.
+            NetworkPlotter: A NetworkPlotter object configured with the given parameters.
         """
         print_header("Loading plotter")
+        # Log the plotter settings
         params.log_plotter(
             figsize=figsize,
             background_color=background_color,
@@ -253,6 +310,7 @@ class RISK(NetworkIO, AnnotationsIO):
             outline_color=outline_color,
             outline_scale=outline_scale,
         )
+        # Initialize and return a NetworkPlotter object
         return NetworkPlotter(
             graph,
             figsize=figsize,
@@ -262,46 +320,31 @@ class RISK(NetworkIO, AnnotationsIO):
             outline_scale=outline_scale,
         )
 
-    def _process_neighborhoods(
-        self,
-        network,
-        neighborhoods,
-        impute_depth=1,
-        prune_threshold=0.0,
-    ):
-        """Process neighborhoods based on the imputation and pruning settings.
-
-        Args:
-            neighborhoods (dict): Neighborhoods data.
-            impute_depth (int): Depth for imputing neighbors.
-            prune_threshold (float): Distance threshold for pruning neighbors.
-
-        Returns:
-            dict: Adjusted neighborhoods data.
-        """
-        return process_neighborhoods(
-            network=network,
-            neighborhoods=neighborhoods,
-            impute_depth=impute_depth,
-            prune_threshold=prune_threshold,
-        )
-
     def _define_top_annotations(
-        self, network, annotations, neighborhoods, min_cluster_size=5, max_cluster_size=1000
-    ):
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        neighborhoods: Dict[str, Any],
+        min_cluster_size: int = 5,
+        max_cluster_size: int = 1000,
+    ) -> pd.DataFrame:
         """Define top annotations for the network.
 
         Args:
-            network (NetworkX graph): The network graph.
-            annotations (dict): Annotations for the network.
-            neighborhoods (dict): Neighborhoods map with enrichment data.
+            network (nx.Graph): The network graph.
+            annotations (dict): Annotations data for the network.
+            neighborhoods (dict): Neighborhood enrichment data.
+            min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
+            max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
         Returns:
-            dict: Top annotations.
+            dict: Top annotations identified within the network.
         """
+        # Extract necessary data from annotations and neighborhoods
         ordered_annotations = annotations["ordered_annotations"]
         neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_counts"]
         neighborhoods_binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+        # Call external function to define top annotations
         return define_top_annotations(
             network=network,
             ordered_annotation_labels=ordered_annotations,
@@ -312,19 +355,28 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
     def _define_domains(
-        self, neighborhoods, top_annotations, linkage_criterion, linkage_method, linkage_metric
-    ):
+        self,
+        neighborhoods: Dict[str, Any],
+        top_annotations: pd.DataFrame,
+        linkage_criterion: str,
+        linkage_method: str,
+        linkage_metric: str,
+    ) -> pd.DataFrame:
         """Define domains in the network based on enrichment data.
 
         Args:
             neighborhoods (dict): Enrichment data for neighborhoods.
             top_annotations (pd.DataFrame): Enrichment matrix for top annotations.
+            linkage_criterion (str): Clustering criterion for defining domains.
+            linkage_method (str): Clustering method to use.
+            linkage_metric (str): Metric to use for calculating distances.
 
         Returns:
-            pd.DataFrame: Domains matrix.
+            pd.DataFrame: Matrix of defined domains.
         """
+        # Extract the significant enrichment matrix from the neighborhoods data
         significant_neighborhoods_enrichment = neighborhoods["significant_enrichment_matrix"]
-        # Apply the mask
+        # Call external function to define domains based on the extracted data
         return define_domains(
             top_annotations=top_annotations,
             significant_neighborhoods_enrichment=significant_neighborhoods_enrichment,
