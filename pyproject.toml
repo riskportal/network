@@ -1,28 +1,16 @@
 [build-system]
-requires = ["flit_core >=3.9.0,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools", "wheel", "Cython", "numpy"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "risk"
+name = "risk-network"
+version = "0.0.1"
+description = "A Python package for biological network analysis"
 authors = [
-    {name = "Ira Horecka", email = "ira89@icloud.com"},
+    { name = "Ira Horecka", email = "ira89@icloud.com" },
 ]
-dependencies = [
-    "matplotlib",
-    "networkx",
-    "nltk",
-    "numpy",
-    "pandas",
-    "python-louvain",
-    "pyyaml",
-    "rich",
-    "scikit-learn",
-    "scipy",
-    "statsmodels",
-]
-requires-python = ">=3.7"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -30,10 +18,27 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Development Status :: 4 - Beta",
 ]
-dynamic = ['version', 'description']
+dependencies = [
+    "cython",
+    "ipywidgets",
+    "markov_clustering",
+    "matplotlib",
+    "networkx",
+    "nltk==3.8.1",
+    "numpy",
+    "pandas",
+    "python-louvain",
+    "scikit-learn",
+    "scipy",
+    "statsmodels",
+    "threadpoolctl",
+    "tqdm",
+]
+requires-python = ">=3.7"
