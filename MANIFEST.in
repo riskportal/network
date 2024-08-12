@@ -1,0 +1,17 @@
+# Include all Python and Cython source files
+recursive-include risk *.py
+recursive-include risk *.pyx
+
+# Include important project files in the distribution
+include README.md
+include LICENSE
+
+# Exclude compiled files or any other unwanted files
+exclude risk/**/*.c
+exclude risk/**/*.so
+exclude risk/**/*.dll
+exclude risk/**/*.pyd
+
+# Optionally exclude bytecode files if necessary
+exclude risk/**/*.pyc
+exclude risk/**/*.pyo
