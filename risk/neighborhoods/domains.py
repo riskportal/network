@@ -236,7 +236,6 @@ def _find_best_silhouette_score(
     # Binary search loop
     while upper_bound - lower_bound > resolution:
         mid_threshold = (upper_bound + lower_bound) / 2
-
         max_d_mid = np.max(Z[:, 2]) * mid_threshold
         clusters_mid = fcluster(Z, max_d_mid, criterion=linkage_criterion)
         try:
