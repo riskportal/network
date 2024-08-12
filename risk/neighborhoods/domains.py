@@ -255,4 +255,4 @@ def _find_best_silhouette_score(
         else:
             lower_bound = mid_threshold
 
-    return best_threshold, best_score
+    return best_threshold, float(best_score)
