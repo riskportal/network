@@ -3,12 +3,12 @@ ipywidgets
 markov_clustering
 matplotlib
 networkx
-nltk
+nltk==3.8.1
 numpy
 pandas
 python-louvain
-pyyaml
 scikit-learn
 scipy
 statsmodels
 threadpoolctl
+tqdm
