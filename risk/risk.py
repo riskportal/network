@@ -94,7 +94,7 @@ class RISK(NetworkIO, AnnotationsIO):
     def load_neighborhoods(
         self,
         network: nx.Graph,
-        annotations: pd.DataFrame,
+        annotations: Dict[str, Any],
         score_metric: str = "sum",
         null_distribution: str = "network",
         num_permutations: int = 1000,
@@ -160,7 +160,7 @@ class RISK(NetworkIO, AnnotationsIO):
     def load_graph(
         self,
         network: nx.Graph,
-        annotations: pd.DataFrame,
+        annotations: Dict[str, Any],
         neighborhoods: Dict[str, Any],
         tail: str = "right",  # OPTIONS: "right" (enrichment), "left" (depletion), "both"
         pval_cutoff: float = 0.01,  # OPTIONS: Any value between 0 to 1

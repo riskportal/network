@@ -298,11 +298,11 @@ def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
     )
 
 
-def _calculate_threshold(average_distances: np.ndarray, distance_threshold: float) -> float:
+def _calculate_threshold(average_distances: list, distance_threshold: float) -> float:
     """Calculate the distance threshold based on the given average distances and a percentile threshold.
 
     Args:
-        average_distances (np.ndarray): An array of average distances.
+        average_distances (list): An array of average distances.
         distance_threshold (float): A percentile threshold (0 to 1) used to determine the distance cutoff.
 
     Returns:

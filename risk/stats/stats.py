@@ -144,7 +144,7 @@ def _run_permutation_test(
         # If single-threaded, run the permutation process directly
         local_counts_depletion, local_counts_enrichment = _permutation_process_subset(
             annotations,
-            idxs,
+            np.array(idxs),
             neighborhoods_matrix_obsv,
             observed_neighborhood_scores,
             neighborhood_score_func,
