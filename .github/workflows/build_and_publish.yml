@@ -1,6 +1,6 @@
 name: Build and upload to PyPI
 # Take a look at https://github.com/pypa/cibuildwheel/blob/main/examples/github-deploy.yml for a more complete example
-# For a fine tuned example, take a look at https://github.com/adamchainz/time-machine/blob/2.15.0/.github/workflows/build.yml
+# Take a look at https://github.com/adamchainz/time-machine/blob/2.15.0/.github/workflows/build.yml for a fine-tuned example
 
 on:
   workflow_dispatch:  # Allows you to trigger this workflow manually from the GitHub Actions tab
@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
     env:
       CIBW_ALLOW_EMPTY: True
