@@ -14,7 +14,7 @@ extensions = [
 
 setup(
     name="risk-network",
-    version="0.0.1-beta.1",  # Updated version
+    version="0.0.2",  # Updated version
     author="Ira Horecka",
     author_email="ira89@icloud.com",
     description="A Python package for biological network analysis",  # Updated description
@@ -46,7 +46,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Information Analysis",
@@ -54,5 +54,5 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Development Status :: 4 - Beta",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.7",
 )
