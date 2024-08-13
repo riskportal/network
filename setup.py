@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 
 import numpy
 
-from risk import __version__
+from .risk import __version__
 
 
 extensions = [
