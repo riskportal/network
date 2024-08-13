@@ -1,0 +1,38 @@
+name: Build and Publish
+
+on:
+  workflow_dispatch:  # Allows you to trigger this workflow manually from the GitHub Actions tab
+  push:
+    tags:
+      - 'v*'  # Only runs on pushes with version tags like v0.0.1
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.7, 3.8, 3.9, 3.10, 3.11, 3.12]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel cython numpy
+
+    - name: Build wheels
+      run: |
+        python setup.py sdist bdist_wheel
+
+    - name: Upload to PyPI
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@v1.5.1
+      with:
+        username: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
