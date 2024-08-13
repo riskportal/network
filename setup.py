@@ -3,6 +3,8 @@ from Cython.Build import cythonize
 
 import numpy
 
+from risk import __version__
+
 
 extensions = [
     Extension(
@@ -14,7 +16,7 @@ extensions = [
 
 setup(
     name="risk-network",
-    version="0.0.2",  # Updated version
+    version=__version__,  # Updated version
     author="Ira Horecka",
     author_email="ira89@icloud.com",
     description="A Python package for biological network analysis",  # Updated description

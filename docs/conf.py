@@ -13,6 +13,8 @@ import os
 import sys
 from datetime import datetime
 
+from ..risk import __version__
+
 sys.path.insert(0, os.path.abspath(".."))
 
 
@@ -23,7 +25,7 @@ copyright = f"{datetime.now().year}, Ira Horecka"
 author = "Ira Horecka"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.2"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
