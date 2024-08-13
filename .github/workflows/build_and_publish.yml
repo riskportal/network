@@ -1,6 +1,7 @@
 name: Build and Publish to PyPI
 
 on:
+  workflow_dispatch:  # Allows you to trigger this workflow manually from the GitHub Actions tab
   release:
     types: [created]
   push:
