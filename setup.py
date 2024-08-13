@@ -14,7 +14,7 @@ extensions = [
 
 setup(
     name="risk-network",
-    version="0.0.1",  # Updated version
+    version="0.0.1-beta.1",  # Updated version
     author="Ira Horecka",
     author_email="ira89@icloud.com",
     description="A Python package for biological network analysis",  # Updated description
