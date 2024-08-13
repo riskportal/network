@@ -20,9 +20,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
     env:
-      CIBW_ARCHS_LINUX: x86_64 i686 aarch64
-      CIBW_ARCHS_MACOS: x86_64 universal2
-      CIBW_ARCHS_WINDOWS: AMD64 x86 ARM64
+      CIBW_ALLOW_EMPTY: True
       CIBW_BUILD: "cp37-* cp38-* cp39-* cp310-* cp311-* cp312-*"
 
     steps:
