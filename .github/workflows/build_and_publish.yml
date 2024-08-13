@@ -1,12 +1,14 @@
-name: Build and Publish Python Package to PyPI when a Release is Created
+name: Build and Publish to PyPI
 
 on:
   release:
     types: [created]
+  push:
+    tags:
+      - 'v*'  # Only runs on pushes with version tags like v0.0.1
 
 jobs:
-  pypi-publish:
-    name: Publish release to PyPI
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -14,24 +16,24 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel cython numpy
 
-      - name: Build package
-        run: |
-          python setup.py sdist bdist_wheel
+    - name: Build wheels
+      run: |
+        python setup.py sdist bdist_wheel
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.1
-        with:
-          username: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Upload to PyPI
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@v1.5.1
+      with:
+        username: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
