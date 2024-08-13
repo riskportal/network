@@ -1,9 +1,17 @@
+import re
 from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
 
 import numpy
 
-from .risk import __version__
+
+# Read version from file
+def find_version():
+    with open("risk/__init__.py", "r") as f:
+        version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
+        if version_match:
+            return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
 
 
 extensions = [
@@ -16,10 +24,10 @@ extensions = [
 
 setup(
     name="risk-network",
-    version=__version__,  # Updated version
+    version=find_version(),  # Fetch version dynamically
     author="Ira Horecka",
     author_email="ira89@icloud.com",
-    description="A Python package for biological network analysis",  # Updated description
+    description="A Python package for biological network analysis",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license="GPL-3.0-or-later",
