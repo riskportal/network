@@ -5,6 +5,11 @@ PROJECT NAME IDEA
     RISK Informs Spatial Kinship
     Regional Identification of Significant Kinships
     Regional Identification of Structural Kinships
+    Regional Inference of Significant Kinships
+    Reliable Inference of Subnetwork Kinship
+    Reliable Inference of Spatial Kinship
+    Regional Inference of Subnetwork Kinetics
+    Regional Inference of Spatial Kinetics
 - SPP: SAFE Plus Plus
 - DANGER:
     Discovery Algorithm for Network Group Enrichment Regions
@@ -51,7 +56,19 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
 2. 
     - Permutation test: now significantly faster (metrics needed to quantify this improvement).
 3.
-    - Accepts more intuitive file types (JSON annotations file).
+    - Accepts more intuitive annotation file types:
+        - JSON
+        - CSV
+        - TSV
+        - Excel
+    - Accepts more intuitive network file types:
+        - Cytoscape
+        - Gpickle
+        - CSV
+        - TSV
+        - Excel
+        - SIF
+    - Accepts NetworkX
 4.
     - Enhanced domain description generation using NLTK.
 5.
@@ -87,3 +104,9 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
     - Automatically generate and position labels around the network, with arrows pointing from the labels to their respective clusters.
 16.
     - Seamlessly interface with the plotter class, enabling graph instantiation, display, and export.
+17
+    - Multiprocessed permutation test, applicable in both Python and Jupyter environments
+18
+    - Ability to color annotation arrows
+19
+    - Ability to add custom nodes / contours to the plot (labeling still needed)
