@@ -5,7 +5,7 @@ from Cython.Build import cythonize
 import numpy
 
 
-# Read version from file
+# Function to extract version from __init__.py
 def find_version():
     with open("risk/__init__.py", "r") as f:
         version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
@@ -14,6 +14,7 @@ def find_version():
     raise RuntimeError("Unable to find version string.")
 
 
+# Cython extension modules
 extensions = [
     Extension(
         name="risk.stats.permutation._cython.permutation",
@@ -22,17 +23,18 @@ extensions = [
     ),
 ]
 
+# Setup function
 setup(
     name="risk-network",
-    version=find_version(),  # Fetch version dynamically
+    version=find_version(),  # Dynamically fetches the version
     author="Ira Horecka",
     author_email="ira89@icloud.com",
-    description="A Python package for biological network analysis",
+    description="A Python package for biological network analysis",  # Updated description
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license="GPL-3.0-or-later",
     packages=find_packages(),
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(extensions),  # Compile Cython extensions
     include_package_data=True,
     install_requires=[
         "cython",
