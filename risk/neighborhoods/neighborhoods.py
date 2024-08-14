@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 from sklearn.exceptions import DataConversionWarning
 
-from risk.neighborhoods.graph import (
+from risk.neighborhoods.community import (
     calculate_dijkstra_neighborhoods,
     calculate_label_propagation_neighborhoods,
     calculate_louvain_neighborhoods,
