@@ -1,6 +1,8 @@
 black
+build
 flake8
 pylint
 sphinx
 sphinx-copybutton
 sphinx-rtd-theme
+twine
