@@ -1,6 +1,5 @@
-# Include all Python and Cython source files
+# Include all Python source files
 recursive-include risk *.py
-recursive-include risk *.pyx
 
 # Include important project files in the distribution
 include README.md

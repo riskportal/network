@@ -1,7 +1,5 @@
 import re
-from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
-
+from setuptools import setup, find_packages
 import numpy
 
 
@@ -14,15 +12,6 @@ def find_version():
     raise RuntimeError("Unable to find version string.")
 
 
-# Cython extension modules
-extensions = [
-    Extension(
-        name="risk.stats.permutation._cython.permutation",
-        sources=["risk/stats/permutation/_cython/permutation.pyx"],
-        include_dirs=[numpy.get_include()],
-    ),
-]
-
 # Setup function
 setup(
     name="risk-network",
@@ -34,10 +23,8 @@ setup(
     long_description_content_type="text/markdown",
     license="GPL-3.0-or-later",
     packages=find_packages(),
-    ext_modules=cythonize(extensions),  # Compile Cython extensions
     include_package_data=True,
     install_requires=[
-        "cython",
         "ipywidgets",
         "markov_clustering",
         "matplotlib",
