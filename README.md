@@ -1,15 +1,17 @@
-# RISK
-
-<p align="left">
-    <img src="./docs/github/risk-logo-dark.png#gh-dark-mode-only" width="40%" />
-    <img src="./docs/github/risk-logo-light.png#gh-light-mode-only" width="40%" />
+<p align="center">
+  <img src="./docs/github/risk-logo-dark.png#gh-dark-mode-only" width="350" />
+  <img src="./docs/github/risk-logo-light.png#gh-light-mode-only" width="350" />
 </p>
 
-[![pypiv](https://img.shields.io/pypi/v/risk-network.svg)](https://pypi.python.org/pypi/risk-network)
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://raw.githubusercontent.com/irahorecka/chrono24/main/LICENSE)
+<p align="center">
+  <a href="https://pypi.python.org/pypi/risk-network"><img src="https://img.shields.io/pypi/v/risk-network.svg" alt="pypiv"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python 3.7+"></a>
+  <a href="https://raw.githubusercontent.com/irahorecka/chrono24/main/LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
+</p>
 
-### Regional Inference of Significant Kinships
+## RISK
+
+#### Regional Inference of Significant Kinships
 
 RISK is a software tool for visualizing spatial relationships in networks. It aims to enhance network analysis by integrating advanced network annotation algorithms, such as Louvain and Markov Clustering, to identify key functional modules and pathways.
 
