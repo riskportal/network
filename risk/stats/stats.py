@@ -36,23 +36,15 @@ else:
 
 
 from risk.stats.permutation import (
-    compute_neighborhood_score_by_sum_cython,
-    compute_neighborhood_score_by_stdev_cython,
-    compute_neighborhood_score_by_z_score_cython,
-    compute_neighborhood_score_by_sum_python,
-    compute_neighborhood_score_by_stdev_python,
-    compute_neighborhood_score_by_z_score_python,
+    compute_neighborhood_score_by_sum,
+    compute_neighborhood_score_by_stdev,
+    compute_neighborhood_score_by_z_score,
 )
 
-CYTHON_DISPATCH_PERMUTATION_TABLE = {
-    "sum": compute_neighborhood_score_by_sum_cython,
-    "stdev": compute_neighborhood_score_by_stdev_cython,
-    "z_score": compute_neighborhood_score_by_z_score_cython,
-}
-PYTHON_DISPATCH_PERMUTATION_TABLE = {
-    "sum": compute_neighborhood_score_by_sum_python,
-    "stdev": compute_neighborhood_score_by_stdev_python,
-    "z_score": compute_neighborhood_score_by_z_score_python,
+DISPATCH_PERMUTATION_TABLE = {
+    "sum": compute_neighborhood_score_by_sum,
+    "stdev": compute_neighborhood_score_by_stdev,
+    "z_score": compute_neighborhood_score_by_z_score,
 }
 
 
@@ -62,7 +54,6 @@ def compute_permutation(
     score_metric: str = "sum",
     null_distribution: str = "network",
     num_permutations: int = 1000,
-    use_cython: bool = True,
     random_seed: int = 888,
     max_workers: int = 1,
 ) -> dict:
@@ -75,7 +66,6 @@ def compute_permutation(
         null_distribution (str, optional): Type of null distribution ('network' or other). Defaults to "network".
         num_permutations (int, optional): Number of permutations to run. Defaults to 1000.
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
-        use_cython (bool, optional): Whether to use Cython for computation. Defaults to True.
         max_workers (int, optional): Number of workers for multiprocessing. Defaults to 1.
 
     Returns:
@@ -84,11 +74,8 @@ def compute_permutation(
     # Ensure that the matrices are in the correct format and free of NaN values
     neighborhoods = neighborhoods.astype(np.float32)
     annotations = annotations.astype(np.float32)
-    # Retrieve the appropriate scoring function based on the metric and Cython usage
-    if use_cython:
-        neighborhood_score_func = CYTHON_DISPATCH_PERMUTATION_TABLE[score_metric]
-    else:
-        neighborhood_score_func = PYTHON_DISPATCH_PERMUTATION_TABLE[score_metric]
+    # Retrieve the appropriate neighborhood score function based on the metric
+    neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[score_metric]
     # Run the permutation test to calculate depletion and enrichment counts
     counts_depletion, counts_enrichment = _run_permutation_test(
         neighborhoods=neighborhoods,

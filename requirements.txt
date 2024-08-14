@@ -1,4 +1,3 @@
-cython
 ipywidgets
 markov_clustering
 matplotlib

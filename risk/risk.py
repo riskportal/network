@@ -98,7 +98,6 @@ class RISK(NetworkIO, AnnotationsIO):
         score_metric: str = "sum",
         null_distribution: str = "network",
         num_permutations: int = 1000,
-        use_cython=True,
         random_seed: int = 888,
         max_workers: int = 1,
     ) -> Dict[str, Any]:
@@ -122,7 +121,6 @@ class RISK(NetworkIO, AnnotationsIO):
             score_metric=score_metric,
             null_distribution=null_distribution,
             num_permutations=num_permutations,
-            use_cython=use_cython,
             random_seed=random_seed,
             max_workers=max_workers,
         )
@@ -146,7 +144,6 @@ class RISK(NetworkIO, AnnotationsIO):
         print(f"Null distribution: '{null_distribution}'")
         print(f"Neighborhood scoring metric: '{score_metric}'")
         print(f"Number of permutations: {num_permutations}")
-        print(f"Use Cython: {use_cython}")
         # Run the permutation test to compute neighborhood significance
         neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
@@ -154,7 +151,6 @@ class RISK(NetworkIO, AnnotationsIO):
             score_metric=score_metric,
             null_distribution=null_distribution,
             num_permutations=num_permutations,
-            use_cython=use_cython,
             random_seed=random_seed,
             max_workers=max_workers,
         )
