@@ -1,6 +1,7 @@
-name: Build and upload to PyPI
 # Take a look at https://github.com/pypa/cibuildwheel/blob/main/examples/github-deploy.yml for a more complete example
 # Take a look at https://github.com/adamchainz/time-machine/blob/2.15.0/.github/workflows/build.yml for a fine-tuned example
+
+name: Build and upload to PyPI
 
 on:
   workflow_dispatch:  # Allows you to trigger this workflow manually from the GitHub Actions tab
@@ -25,6 +26,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache cibuildwheel
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pypoetry
+            ~/.cache/pip-tools
+            ~/Library/Caches/pypoetry
+            ~/Library/Caches/pip
+          key: ${{ runner.os }}-cibuildwheel-${{ hashFiles('**/*.pyx', '**/*.c', '**/*.h') }}
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.20.0
@@ -51,19 +63,18 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    environment: pypi
     permissions:
       id-token: write
-    # if: startsWith(github.ref, 'refs/tags/v')
+
     steps:
       - uses: actions/download-artifact@v4
         with:
-          # unpacks all CIBW artifacts into dist/
           pattern: cibw-*
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:  
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
