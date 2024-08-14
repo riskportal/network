@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="./docs/github/risk-logo-dark.png#gh-dark-mode-only" width="350" />
-  <img src="./docs/github/risk-logo-light.png#gh-light-mode-only" width="350" />
+  <img src="./docs/github/risk-logo-dark.png#gh-dark-mode-only" width="400" />
+  <img src="./docs/github/risk-logo-light.png#gh-light-mode-only" width="400" />
 </p>
 
 <p align="center">
