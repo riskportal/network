@@ -8,4 +8,8 @@ from Cython.Build import cythonize
 
 import numpy as np
 
-setup(ext_modules=cythonize("permutation.pyx"), include_dirs=[np.get_include()])
+setup(
+    ext_modules=cythonize("permutation.pyx"),
+    include_dirs=[np.get_include()],
+    extra_compile_args=["-O3", "-ffast-math"],
+)

@@ -8,6 +8,7 @@ from typing import Any, Callable, Union
 
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
+from threadpoolctl import threadpool_limits
 
 
 def _is_notebook() -> bool:
@@ -158,44 +159,45 @@ def _run_permutation_test(
     subset_size = num_permutations // max_workers
     remainder = num_permutations % max_workers
 
-    if max_workers == 1:
-        # If single-threaded, run the permutation process directly
-        local_counts_depletion, local_counts_enrichment = _permutation_process_subset(
-            annotations,
-            np.array(idxs),
-            neighborhoods_matrix_obsv,
-            observed_neighborhood_scores,
-            neighborhood_score_func,
-            num_permutations,
-            0,
-            False,
-        )
-        counts_depletion = np.add(counts_depletion, local_counts_depletion)
-        counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
-    else:
-        # Prepare parameters for multiprocessing
-        params_list = [
-            (
+    with threadpool_limits(limits=1, user_api="blas"):
+        if max_workers == 1:
+            # If single-threaded, run the permutation process directly
+            local_counts_depletion, local_counts_enrichment = _permutation_process_subset(
                 annotations,
-                idxs,
+                np.array(idxs),
                 neighborhoods_matrix_obsv,
                 observed_neighborhood_scores,
                 neighborhood_score_func,
-                subset_size + (1 if i < remainder else 0),
-                i,
-                True,
+                num_permutations,
+                0,
+                False,
             )
-            for i in range(max_workers)
-        ]
+            counts_depletion = np.add(counts_depletion, local_counts_depletion)
+            counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
+        else:
+            # Prepare parameters for multiprocessing
+            params_list = [
+                (
+                    annotations,
+                    idxs,
+                    neighborhoods_matrix_obsv,
+                    observed_neighborhood_scores,
+                    neighborhood_score_func,
+                    subset_size + (1 if i < remainder else 0),
+                    i,
+                    True,
+                )
+                for i in range(max_workers)
+            ]
 
-        # Initialize a multiprocessing pool with a lock
-        lock = Lock()
-        with Pool(max_workers, initializer=_init, initargs=(lock,)) as pool:
-            results = pool.starmap(_permutation_process_subset, params_list)
-            # Accumulate results from each worker
-            for local_counts_depletion, local_counts_enrichment in results:
-                counts_depletion = np.add(counts_depletion, local_counts_depletion)
-                counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
+            # Initialize a multiprocessing pool with a lock
+            lock = Lock()
+            with Pool(max_workers, initializer=_init, initargs=(lock,)) as pool:
+                results = pool.starmap(_permutation_process_subset, params_list)
+                # Accumulate results from each worker
+                for local_counts_depletion, local_counts_enrichment in results:
+                    counts_depletion = np.add(counts_depletion, local_counts_depletion)
+                    counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
 
     return counts_depletion, counts_enrichment
 
