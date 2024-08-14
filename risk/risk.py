@@ -146,6 +146,7 @@ class RISK(NetworkIO, AnnotationsIO):
         print(f"Null distribution: '{null_distribution}'")
         print(f"Neighborhood scoring metric: '{score_metric}'")
         print(f"Number of permutations: {num_permutations}")
+        print(f"Use Cython: {use_cython}")
         # Run the permutation test to compute neighborhood significance
         neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
