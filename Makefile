@@ -1,5 +1,5 @@
 black: ## Black format only python files to line length 100
-	black --line-length=100 ./;
+	black --line-length=100 ./
 	make clean
 
 flake8: ## Flake8 every python file
@@ -9,11 +9,12 @@ pylint: ## pylint every python file
 	find ./ -type f -name "*.py" -a | xargs pylint
 
 build: ## Build package distribution files
-	flit build;
+	python -m build
+	make clean
 
 publish: ## Publish package distribution files to pypi
-	flit publish;
-	make clean;
+	twine upload dist/*
+	make clean
 
 clean: ## Remove caches, checkpoints, and distribution artifacts
 	find . -type f -name ".DS_Store" | xargs rm -f
