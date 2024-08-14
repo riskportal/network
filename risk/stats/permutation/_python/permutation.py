@@ -5,6 +5,9 @@ risk/stats/permutation/_python/permutation
 
 import numpy as np
 
+# Note: Cython optimizations provided minimal performance benefits.
+# The final version with Cython is archived in the `cython_permutation` branch.
+
 
 def compute_neighborhood_score_by_sum_python(
     neighborhoods_matrix: np.ndarray, annotation_matrix: np.ndarray
