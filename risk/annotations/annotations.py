@@ -139,15 +139,15 @@ def define_top_annotations(
                 size_connected_components <= max_cluster_size,
             )
         )
-        annotations_enrichment_matrix.loc[
-            attribute, "num connected components"
-        ] = num_connected_components
-        annotations_enrichment_matrix.at[
-            attribute, "size connected components"
-        ] = size_connected_components
-        annotations_enrichment_matrix.loc[
-            attribute, "num large connected components"
-        ] = num_large_connected_components
+        annotations_enrichment_matrix.loc[attribute, "num connected components"] = (
+            num_connected_components
+        )
+        annotations_enrichment_matrix.at[attribute, "size connected components"] = (
+            size_connected_components
+        )
+        annotations_enrichment_matrix.loc[attribute, "num large connected components"] = (
+            num_large_connected_components
+        )
 
     # Filter out attributes with more than one connected component
     annotations_enrichment_matrix.loc[
