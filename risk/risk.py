@@ -164,7 +164,6 @@ class RISK(NetworkIO, AnnotationsIO):
         neighborhoods: Dict[str, Any],
         tail: str = "right",  # OPTIONS: "right" (enrichment), "left" (depletion), "both"
         pval_cutoff: float = 0.01,  # OPTIONS: Any value between 0 to 1
-        apply_fdr: bool = False,
         fdr_cutoff: float = 0.9999,  # OPTIONS: Any value between 0 to 1
         impute_depth: int = 1,
         prune_threshold: float = 0.0,
@@ -182,7 +181,6 @@ class RISK(NetworkIO, AnnotationsIO):
             neighborhoods (dict): Neighborhood enrichment data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): P-value cutoff for significance. Defaults to 0.01.
-            apply_fdr (bool, optional): Whether to apply FDR correction. Defaults to False.
             fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
             impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
             prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
@@ -200,7 +198,6 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_graph(
             tail=tail,
             pval_cutoff=pval_cutoff,
-            apply_fdr=apply_fdr,
             fdr_cutoff=fdr_cutoff,
             impute_depth=impute_depth,
             prune_threshold=prune_threshold,
@@ -212,7 +209,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         print(f"P-value cutoff: {pval_cutoff}")
-        print(f"FDR cutoff: {'N/A' if not apply_fdr else apply_fdr}")
+        print(f"FDR BH cutoff: {fdr_cutoff}")
         print(
             f"Significance tail: '{tail}' ({'enrichment' if tail == 'right' else 'depletion' if tail == 'left' else 'both'})"
         )
@@ -222,7 +219,6 @@ class RISK(NetworkIO, AnnotationsIO):
             neighborhoods["enrichment_pvals"],
             tail=tail,
             pval_cutoff=pval_cutoff,
-            apply_fdr=apply_fdr,
             fdr_cutoff=fdr_cutoff,
         )
 
