@@ -3,39 +3,13 @@ risk/stats/stats
 ~~~~~~~~~~~~~~~~
 """
 
-import sys
-from contextlib import contextmanager
-from multiprocessing import get_context, Lock
-from typing import Any, Callable, Generator, Union
+from multiprocessing import get_context, Manager
+from tqdm import tqdm
+from typing import Any, Callable, Dict, Union
 
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
 from threadpoolctl import threadpool_limits
-
-
-def _is_notebook() -> bool:
-    """Determine the type of interactive environment and return it as a dictionary.
-
-    Returns:
-        bool: True if the environment is a Jupyter notebook, False otherwise.
-    """
-    try:
-        shell = get_ipython().__class__.__name__
-        if shell == "ZMQInteractiveShell":
-            return True  # Jupyter notebook or qtconsole
-        elif shell == "TerminalInteractiveShell":
-            return False  # Terminal running IPython
-        else:
-            return False  # Other types of shell
-    except NameError:
-        return False  # Standard Python interpreter
-
-
-if _is_notebook():
-    from tqdm.notebook import tqdm
-else:
-    from tqdm import tqdm
-
 
 from risk.stats.permutation import (
     compute_neighborhood_score_by_sum,
@@ -58,7 +32,7 @@ def compute_permutation(
     num_permutations: int = 1000,
     random_seed: int = 888,
     max_workers: int = 1,
-) -> dict:
+) -> Dict[str, Any]:
     """Compute permutation test for enrichment and depletion in neighborhoods.
 
     Args:
@@ -78,6 +52,7 @@ def compute_permutation(
     annotations = annotations.astype(np.float32)
     # Retrieve the appropriate neighborhood score function based on the metric
     neighborhood_score_func = DISPATCH_PERMUTATION_TABLE[score_metric]
+
     # Run the permutation test to calculate depletion and enrichment counts
     counts_depletion, counts_enrichment = _run_permutation_test(
         neighborhoods=neighborhoods,
@@ -125,6 +100,7 @@ def _run_permutation_test(
     """
     # Set the random seed for reproducibility
     np.random.seed(random_seed)
+
     # Determine the indices to use based on the null distribution type
     if null_distribution == "network":
         idxs = range(annotations.shape[0])
@@ -135,6 +111,7 @@ def _run_permutation_test(
     annotations[np.isnan(annotations)] = 0
     annotation_matrix_obsv = annotations[idxs]
     neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
+
     # Calculate observed neighborhood scores
     with np.errstate(invalid="ignore", divide="ignore"):
         observed_neighborhood_scores = neighborhood_score_func(
@@ -144,14 +121,21 @@ def _run_permutation_test(
     # Initialize count matrices for depletion and enrichment
     counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
+
     # Determine the number of permutations to run in each worker process
     subset_size = num_permutations // max_workers
     remainder = num_permutations % max_workers
 
     # Use the spawn context for creating a new multiprocessing pool
     ctx = get_context("spawn")
-    with ctx.Pool(max_workers, initializer=_init, initargs=(Lock(),)) as pool:
-        with threadpool_limits(limits=1, user_api="blas"):
+    manager = Manager()
+    progress_counter = manager.Value("i", 0)
+    total_progress = num_permutations
+
+    # Execute the permutation test using multiprocessing
+    with ctx.Pool(max_workers) as pool:
+        with tqdm(total=total_progress, desc="Total progress", position=0) as progress:
+            # Prepare parameters for multiprocessing
             params_list = [
                 (
                     annotations,
@@ -160,14 +144,24 @@ def _run_permutation_test(
                     observed_neighborhood_scores,
                     neighborhood_score_func,
                     subset_size + (1 if i < remainder else 0),
-                    i,
-                    max_workers,
-                    True,
+                    progress_counter,
                 )
                 for i in range(max_workers)
             ]
-            results = pool.starmap(_permutation_process_subset, params_list)
-            for local_counts_depletion, local_counts_enrichment in results:
+
+            # Start the permutation process in parallel
+            results = pool.starmap_async(_permutation_process_subset, params_list)
+
+            # Update progress bar based on progress_counter
+            while not results.ready():
+                progress.update(progress_counter.value - progress.n)
+                results.wait(0.1)
+
+            # Ensure progress bar reaches 100%
+            progress.update(total_progress - progress.n)
+
+            # Accumulate results from each worker
+            for local_counts_depletion, local_counts_enrichment in results.get():
                 counts_depletion = np.add(counts_depletion, local_counts_depletion)
                 counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
 
@@ -181,9 +175,7 @@ def _permutation_process_subset(
     observed_neighborhood_scores: np.ndarray,
     neighborhood_score_func: Callable,
     subset_size: int,
-    worker_id: int,
-    max_workers: int,
-    use_lock: bool,
+    progress_counter,
 ) -> tuple:
     """Process a subset of permutations for the permutation test.
 
@@ -194,9 +186,7 @@ def _permutation_process_subset(
         observed_neighborhood_scores (np.ndarray): Observed neighborhood scores.
         neighborhood_score_func (Callable): Function to calculate neighborhood scores.
         subset_size (int): Number of permutations to run in this subset.
-        worker_id (int): ID of the worker process.
-        max_workers (int): Number of worker processes.
-        use_lock (bool): Whether to use a lock for multiprocessing synchronization.
+        progress_counter: Shared counter for tracking progress.
 
     Returns:
         tuple: Local counts of depletion and enrichment.
@@ -205,13 +195,7 @@ def _permutation_process_subset(
     local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
 
-    # Initialize progress bar for tracking permutation progress
-    text = f"Worker {worker_id + 1} of {max_workers} progress"
-    leave = worker_id == max_workers - 1  # Only leave the progress bar for the last worker
-
-    with _tqdm_context(
-        total=subset_size, desc=text, position=0, leave=leave, use_lock=use_lock
-    ) as progress:
+    with threadpool_limits(limits=1, user_api="blas"):
         for _ in range(subset_size):
             # Permute the annotation matrix
             annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs)]
@@ -228,70 +212,10 @@ def _permutation_process_subset(
                 local_counts_enrichment,
                 permuted_neighborhood_scores >= observed_neighborhood_scores,
             )
-            # Update progress bar
-            progress.update(1)
+            # Update the shared progress counter
+            progress_counter.value += 1
 
     return local_counts_depletion, local_counts_enrichment
-
-
-def _init(lock_: Any) -> None:
-    """Initialize a global lock for multiprocessing.
-
-    Args:
-        lock_ (Any): A lock object to be used in multiprocessing.
-    """
-    global lock
-    lock = lock_  # Assign the provided lock to a global variable
-
-
-@contextmanager
-def _tqdm_context(
-    total: int, desc: str, position: int, leave: bool = False, use_lock: bool = False
-) -> Generator:
-    """A context manager for a `tqdm` progress bar.
-
-    Args:
-        total (int): The total number of iterations for the progress bar.
-        desc (str): Description for the progress bar.
-        position (int): The position of the progress bar (useful for multiple bars).
-        leave (bool): Whether to leave the progress bar after completion.
-        use_lock (bool): Whether to use a lock for multiprocessing synchronization.
-
-    Yields:
-        tqdm: A `tqdm` progress bar object.
-    """
-    # Set default parameters for the progress bar
-    min_interval = 0.1
-    # Use a lock for multiprocessing synchronization if specified
-    if use_lock:
-        with lock:
-            # Create a progress bar with specified parameters and direct output to stderr
-            progress = tqdm(
-                total=total,
-                desc=desc,
-                position=position,
-                leave=leave,
-                mininterval=min_interval,
-                file=sys.stderr,
-            )
-            try:
-                yield progress  # Yield the progress bar to the calling context
-            finally:
-                progress.close()  # Ensure the progress bar is closed properly
-    else:
-        # Create a progress bar without using a lock
-        progress = tqdm(
-            total=total,
-            desc=desc,
-            position=position,
-            leave=leave,
-            mininterval=min_interval,
-            file=sys.stderr,
-        )
-        try:
-            yield progress  # Yield the progress bar to the calling context
-        finally:
-            progress.close()  # Ensure the progress bar is closed properly
 
 
 def calculate_significance_matrices(
