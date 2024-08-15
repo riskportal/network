@@ -10,7 +10,6 @@ pylint: ## pylint every python file
 
 build: ## Build package distribution files
 	python -m build
-	make clean
 
 publish: ## Publish package distribution files to pypi
 	twine upload dist/*
