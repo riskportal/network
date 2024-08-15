@@ -299,7 +299,6 @@ def calculate_significance_matrices(
     enrichment_pvals: np.ndarray,
     tail: str = "right",
     pval_cutoff: float = 0.05,
-    apply_fdr: bool = False,
     fdr_cutoff: float = 0.05,
 ) -> dict:
     """Calculate significance matrices based on p-values and specified tail.
@@ -309,14 +308,13 @@ def calculate_significance_matrices(
         enrichment_pvals (np.ndarray): Matrix of enrichment p-values.
         tail (str, optional): The tail type for significance selection ('left', 'right', 'both'). Defaults to 'right'.
         pval_cutoff (float, optional): Cutoff for p-value significance. Defaults to 0.05.
-        apply_fdr (bool, optional): Whether to apply FDR correction. Defaults to False.
         fdr_cutoff (float, optional): Cutoff for FDR significance if applied. Defaults to 0.05.
 
     Returns:
         dict: Dictionary containing the enrichment matrix, binary significance matrix,
               and the matrix of significant enrichment values.
     """
-    if apply_fdr:
+    if fdr_cutoff < 1.0:
         # Apply FDR correction to depletion p-values
         depletion_qvals = np.apply_along_axis(fdrcorrection, 1, depletion_pvals)[:, 1, :]
         depletion_alpha_threshold_matrix = _compute_threshold_matrix(
