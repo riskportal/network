@@ -45,21 +45,24 @@ class NetworkPlotter:
             outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
         """
         self.network_graph = network_graph
-        self.ax = None  # Initialize the axis attribute
-        # Initialize the plot with the given parameters
-        self._initialize_plot(figsize, background_color, plot_outline, outline_color, outline_scale)
+        # Initialize the plot with the specified parameters
+        self.ax = self._initialize_plot(
+            network_graph, figsize, background_color, plot_outline, outline_color, outline_scale
+        )
 
     def _initialize_plot(
         self,
+        network_graph: NetworkGraph,
         figsize: tuple,
         background_color: str,
         plot_outline: bool,
         outline_color: str,
         outline_scale: float,
-    ) -> tuple:
+    ) -> plt.Axes:
         """Set up the plot with figure size, optional circle perimeter, and background color.
 
         Args:
+            network_graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
             plot_outline (bool): Whether to plot the network perimeter circle.
@@ -67,10 +70,10 @@ class NetworkPlotter:
             outline_scale (float): Outline scaling factor for the perimeter diameter.
 
         Returns:
-            tuple: The created matplotlib figure and axis.
+            plt.Axes: The axis object for the plot.
         """
         # Extract node coordinates from the network graph
-        node_coordinates = self.network_graph.node_coordinates
+        node_coordinates = network_graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
         center, radius = _calculate_bounding_box(node_coordinates)
         # Scale the radius by the outline_scale factor
@@ -107,9 +110,7 @@ class NetworkPlotter:
         ax.set_yticks([])
         ax.patch.set_visible(False)  # Hide the axis background
 
-        # Store the axis for further use and return the figure and axis
-        self.ax = ax
-        return fig, ax
+        return ax
 
     def plot_network(
         self,
@@ -436,7 +437,12 @@ class NetworkPlotter:
             arrow_color = self.get_annotated_contour_colors(color=arrow_color)
 
         # Calculate the center and radius of the network
-        domain_centroids = self._calculate_domain_centroids()
+        domain_centroids = {}
+        for domain, nodes in self.network_graph.domain_to_nodes.items():
+            if nodes:  # Skip if the domain has no nodes
+                domain_centroids[domain] = self._calculate_domain_centroid(nodes)
+
+        # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=perimeter_scale
         )
@@ -467,31 +473,26 @@ class NetworkPlotter:
                 arrowprops=dict(arrowstyle="->", color=arrow_color[idx], linewidth=arrow_linewidth),
             )
 
-    def _calculate_domain_centroids(self) -> Dict[Any, np.ndarray]:
-        """Calculate the most centrally located node within each domain based on the node positions.
+    def _calculate_domain_centroid(self, nodes: list) -> tuple:
+        """Calculate the most centrally located node in .
+
+        Args:
+            nodes (list): List of node labels to include in the subnetwork.
 
         Returns:
-            Dict[Any, np.ndarray]: A dictionary mapping each domain to its central node's coordinates.
+            tuple: A tuple containing the domain's central node coordinates.
         """
-        domain_central_nodes = {}
-        for domain, nodes in self.network_graph.domain_to_nodes.items():
-            if not nodes:  # Skip if the domain has no nodes
-                continue
-
-            # Extract positions of all nodes in the domain
-            node_positions = self.network_graph.node_coordinates[nodes, :]
-            # Calculate the pairwise distance matrix between all nodes in the domain
-            distances_matrix = np.linalg.norm(
-                node_positions[:, np.newaxis] - node_positions, axis=2
-            )
-            # Sum the distances for each node to all other nodes in the domain
-            sum_distances = np.sum(distances_matrix, axis=1)
-            # Identify the node with the smallest total distance to others (the centroid)
-            central_node_idx = np.argmin(sum_distances)
-            # Map the domain to the coordinates of its central node
-            domain_central_nodes[domain] = node_positions[central_node_idx]
-
-        return domain_central_nodes
+        # Extract positions of all nodes in the domain
+        node_positions = self.network_graph.node_coordinates[nodes, :]
+        # Calculate the pairwise distance matrix between all nodes in the domain
+        distances_matrix = np.linalg.norm(node_positions[:, np.newaxis] - node_positions, axis=2)
+        # Sum the distances for each node to all other nodes in the domain
+        sum_distances = np.sum(distances_matrix, axis=1)
+        # Identify the node with the smallest total distance to others (the centroid)
+        central_node_idx = np.argmin(sum_distances)
+        # Map the domain to the coordinates of its central node
+        domain_central_node = node_positions[central_node_idx]
+        return domain_central_node
 
     def get_annotated_node_colors(
         self, nonenriched_color: str = "white", random_seed: int = 888, **kwargs
@@ -603,16 +604,6 @@ class NetworkPlotter:
                 annotated_colors.append(default_color)
 
         return np.array(annotated_colors)
-
-    @staticmethod
-    def close(*args, **kwargs) -> None:
-        """Close the current plot.
-
-        Args:
-            *args: Positional arguments passed to `plt.close`.
-            **kwargs: Keyword arguments passed to `plt.close`.
-        """
-        plt.close(*args, **kwargs)
 
     @staticmethod
     def savefig(*args, **kwargs) -> None:
