@@ -150,14 +150,14 @@ def _run_permutation_test(
             ]
 
             # Start the permutation process in parallel
-            results = pool.starmap_async(_permutation_process_subset, params_list)
+            results = pool.starmap_async(_permutation_process_subset, params_list, chunksize=1)
 
             # Update progress bar based on progress_counter
             # NOTE: Waiting for results to be ready while updating progress bar gives a big improvement
             # in performance, especially for large number of permutations and workers
             while not results.ready():
                 progress.update(progress_counter.value - progress.n)
-                results.wait(1)  # Wait for 1 second
+                results.wait(0.05)  # Wait for 50ms
 
             # Ensure progress bar reaches 100%
             progress.update(total_progress - progress.n)
