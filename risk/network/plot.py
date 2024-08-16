@@ -402,7 +402,7 @@ class NetworkPlotter:
         fontcolor: Union[str, np.ndarray] = "black",
         arrow_linewidth: float = 1,
         arrow_color: Union[str, np.ndarray] = "black",
-        num_words: int = 10,
+        max_words: int = 10,
         min_words: int = 1,
     ) -> None:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
@@ -415,7 +415,7 @@ class NetworkPlotter:
             fontcolor (str or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
             arrow_color (str or np.ndarray, optional): Color of the arrows. Can be a string or RGBA array. Defaults to "black".
-            num_words (int, optional): Maximum number of words in a label. Defaults to 10.
+            max_words (int, optional): Maximum number of words in a label. Defaults to 10.
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
         """
         # Log the plotting parameters
@@ -427,7 +427,7 @@ class NetworkPlotter:
             label_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
             label_arrow_linewidth=arrow_linewidth,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
-            label_num_words=num_words,
+            label_max_words=max_words,
             label_min_words=min_words,
         )
         # Convert color strings to RGBA arrays if necessary
@@ -451,7 +451,7 @@ class NetworkPlotter:
         filtered_domains = {
             domain: centroid
             for domain, centroid in domain_centroids.items()
-            if len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words])
+            if len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words])
             >= min_words
         }
         # Calculate the best positions for labels around the perimeter
@@ -459,7 +459,7 @@ class NetworkPlotter:
         # Annotate the network with labels
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
             centroid = filtered_domains[domain]
-            annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:num_words]
+            annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words]
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
