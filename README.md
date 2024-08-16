@@ -25,7 +25,7 @@ RISK is a software tool for visualizing spatial relationships in networks. It ai
 
 *Saccharomyces cerevisiae* proteins oriented by physical interactions discovered through affinity enrichment and mass spectrometry (Michaelis et al., 2023).
 
-![Metabolic Network Demo](./docs/github/network.png)
+![PPI Network Demo](./docs/github/network.png)
 
 ## Installation
 
