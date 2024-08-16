@@ -29,9 +29,6 @@ class NetworkIO:
         self,
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
-        distance_metric: str = "dijkstra",
-        edge_length_threshold: float = 0.5,
-        louvain_resolution: float = 0.1,
         min_edges_per_node: int = 0,
         include_edge_weight: bool = True,
         weight_label: str = "weight",
@@ -40,9 +37,6 @@ class NetworkIO:
         self.surface_depth = surface_depth
         self.include_edge_weight = include_edge_weight
         self.weight_label = weight_label
-        self.distance_metric = distance_metric
-        self.edge_length_threshold = edge_length_threshold
-        self.louvain_resolution = louvain_resolution
         self.min_edges_per_node = min_edges_per_node
 
     def load_gpickle_network(self, filepath: str) -> nx.Graph:
@@ -320,7 +314,6 @@ class NetworkIO:
         print(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
         if self.compute_sphere:
             print(f"Surface depth: {self.surface_depth}")
-        print(f"Edge length threshold: {self.edge_length_threshold}")
         print(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
         if self.include_edge_weight:
             print(f"Weight label: {self.weight_label}")

@@ -31,10 +31,7 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
-        distance_metric: str = "dijkstra",
-        louvain_resolution: float = 0.1,
         min_edges_per_node: int = 0,
-        edge_length_threshold: float = 0.5,
         include_edge_weight: bool = True,
         weight_label: str = "weight",
     ):
@@ -43,10 +40,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            distance_metric (str, optional): Distance metric to use in network analysis. Defaults to "dijkstra".
-            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            edge_length_threshold (float, optional): Edge length threshold for analysis. Defaults to 0.5.
             include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
             weight_label (str, optional): Label for edge weights. Defaults to "weight".
         """
@@ -55,10 +49,7 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_network(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
-            distance_metric=distance_metric,
-            louvain_resolution=louvain_resolution,
             min_edges_per_node=min_edges_per_node,
-            edge_length_threshold=edge_length_threshold,
             include_edge_weight=include_edge_weight,
             weight_label=weight_label,
         )
@@ -67,10 +58,7 @@ class RISK(NetworkIO, AnnotationsIO):
             self,
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
-            distance_metric=distance_metric,
-            louvain_resolution=louvain_resolution,
             min_edges_per_node=min_edges_per_node,
-            edge_length_threshold=edge_length_threshold,
             include_edge_weight=include_edge_weight,
             weight_label=weight_label,
         )
@@ -79,10 +67,7 @@ class RISK(NetworkIO, AnnotationsIO):
         # Set class attributes
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
-        self.distance_metric = distance_metric
-        self.louvain_resolution = louvain_resolution
         self.min_edges_per_node = min_edges_per_node
-        self.edge_length_threshold = edge_length_threshold
         self.include_edge_weight = include_edge_weight
         self.weight_label = weight_label
 
@@ -95,6 +80,9 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
+        distance_metric: str = "dijkstra",
+        louvain_resolution: float = 0.1,
+        edge_length_threshold: float = 0.5,
         score_metric: str = "sum",
         null_distribution: str = "network",
         num_permutations: int = 1000,
@@ -106,6 +94,9 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): The matrix of annotations associated with the network.
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
             score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
             null_distribution (str, optional): Distribution used for permutation tests. Defaults to "network".
             num_permutations (int, optional): Number of permutations for significance testing. Defaults to 1000.
@@ -118,6 +109,9 @@ class RISK(NetworkIO, AnnotationsIO):
         print_header("Running permutation test")
         # Log neighborhood analysis parameters
         params.log_neighborhoods(
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            edge_length_threshold=edge_length_threshold,
             score_metric=score_metric,
             null_distribution=null_distribution,
             num_permutations=num_permutations,
@@ -126,17 +120,18 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Display the chosen distance metric
-        if self.distance_metric == "louvain":
-            for_print_distance_metric = f"louvain (resolution={self.louvain_resolution})"
+        if distance_metric == "louvain":
+            for_print_distance_metric = f"louvain (resolution={louvain_resolution})"
         else:
-            for_print_distance_metric = self.distance_metric
+            for_print_distance_metric = distance_metric
         print(f"Distance metric: '{for_print_distance_metric}'")
+        print(f"Edge length threshold: {edge_length_threshold}")
         # Compute neighborhoods based on the network and distance metric
         neighborhoods = get_network_neighborhoods(
             network,
-            self.distance_metric,
-            self.edge_length_threshold,
-            louvain_resolution=self.louvain_resolution,
+            distance_metric,
+            edge_length_threshold,
+            louvain_resolution=louvain_resolution,
             random_seed=random_seed,
         )
 
@@ -144,6 +139,8 @@ class RISK(NetworkIO, AnnotationsIO):
         print(f"Null distribution: '{null_distribution}'")
         print(f"Neighborhood scoring metric: '{score_metric}'")
         print(f"Number of permutations: {num_permutations}")
+        print(f"Random seed: {random_seed}")
+        print(f"Maximum workers: {max_workers}")
         # Run the permutation test to compute neighborhood significance
         neighborhood_significance = compute_permutation(
             neighborhoods=neighborhoods,
