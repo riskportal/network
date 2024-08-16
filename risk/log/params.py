@@ -147,14 +147,11 @@ class Params:
         params = self.load()
         # Open the file in write mode
         with open(filepath, "w") as txt_file:
-            for key, nested_dict in params.items():
-                # Write the key
-                txt_file.write(f"{key}:\n")
-                # Write the nested dictionary values, one per line
-                for nested_key, nested_value in nested_dict.items():
-                    txt_file.write(f"  {nested_key}: {nested_value}\n")
-                # Add a blank line between different keys
-                txt_file.write("\n")
+            for key, value in params.items():
+                # Write the key and its corresponding value
+                txt_file.write(f"{key}: {value}\n")
+            # Add a blank line after each entry
+            txt_file.write("\n")
 
     def load(self) -> Dict[str, Any]:
         """Load and process various parameters, converting any np.ndarray values to lists.
