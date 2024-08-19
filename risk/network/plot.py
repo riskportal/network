@@ -299,11 +299,11 @@ class NetworkPlotter:
         """
         # Log the plotting parameters
         params.log_plotter(
-            contour_levels=levels,
-            contour_bandwidth=bandwidth,
-            contour_grid_size=grid_size,
-            contour_alpha=alpha,
-            contour_color="custom" if isinstance(color, np.ndarray) else color,
+            subcontour_levels=levels,
+            subcontour_bandwidth=bandwidth,
+            subcontour_grid_size=grid_size,
+            subcontour_alpha=alpha,
+            subcontour_color="custom" if isinstance(color, np.ndarray) else color,
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
@@ -442,23 +442,36 @@ class NetworkPlotter:
             if nodes:  # Skip if the domain has no nodes
                 domain_centroids[domain] = self._calculate_domain_centroid(nodes)
 
+        # Initialize empty lists to collect valid indices
+        valid_indices = []
+        filtered_domain_centroids = {}
+        # Loop through domain_centroids with index
+        for idx, (domain, centroid) in enumerate(domain_centroids.items()):
+            # Check if the domain passes the word count condition
+            if (
+                len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words])
+                >= min_words
+            ):
+                # Add to filtered_domain_centroids
+                filtered_domain_centroids[domain] = centroid
+                # Keep track of the valid index
+                valid_indices.append(idx)
+
+        # Now filter fontcolor and arrow_color to keep only the valid indices
+        fontcolor = fontcolor[valid_indices]
+        arrow_color = arrow_color[valid_indices]
+
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
             self.network_graph.node_coordinates, radius_margin=perimeter_scale
         )
-
-        # Filter out domains with insufficient words for labeling
-        filtered_domains = {
-            domain: centroid
-            for domain, centroid in domain_centroids.items()
-            if len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words])
-            >= min_words
-        }
         # Calculate the best positions for labels around the perimeter
-        best_label_positions = _best_label_positions(filtered_domains, center, radius, offset)
+        best_label_positions = _best_label_positions(
+            filtered_domain_centroids, center, radius, offset
+        )
         # Annotate the network with labels
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
-            centroid = filtered_domains[domain]
+            centroid = filtered_domain_centroids[domain]
             annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words]
             self.ax.annotate(
                 "\n".join(annotations),
@@ -472,6 +485,81 @@ class NetworkPlotter:
                 color=fontcolor[idx],
                 arrowprops=dict(arrowstyle="->", color=arrow_color[idx], linewidth=arrow_linewidth),
             )
+
+    def plot_sublabel(
+        self,
+        nodes: list,
+        label: str,
+        radial_position: float = 0.0,
+        perimeter_scale: float = 1.05,
+        offset: float = 0.10,
+        font: str = "Arial",
+        fontsize: int = 10,
+        fontcolor: str = "black",
+        arrow_linewidth: float = 1,
+        arrow_color: str = "black",
+    ) -> None:
+        """Annotate the network graph with a single label for the given nodes, positioned at a specified radial angle.
+
+        Args:
+            nodes (List[str]): List of node labels to be used for calculating the centroid.
+            label (str): The label to be annotated on the network.
+            radial_position (float, optional): Radial angle for positioning the label, in degrees (0-360). Defaults to 0.0.
+            perimeter_scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
+            offset (float, optional): Offset distance for the label from the perimeter. Defaults to 0.10.
+            font (str, optional): Font name for the label. Defaults to "Arial".
+            fontsize (int, optional): Font size for the label. Defaults to 10.
+            fontcolor (str, optional): Color of the label text. Defaults to "black".
+            arrow_linewidth (float, optional): Line width of the arrow pointing to the centroid. Defaults to 1.
+            arrow_color (str, optional): Color of the arrow. Defaults to "black".
+        """
+        # Log the plotting parameters
+        params.log_plotter(
+            sublabel_perimeter_scale=perimeter_scale,
+            sublabel_offset=offset,
+            sublabel_font=font,
+            sublabel_fontsize=fontsize,
+            sublabel_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
+            sublabel_arrow_linewidth=arrow_linewidth,
+            sublabel_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
+            sublabel_radial_position=radial_position,
+        )
+
+        # Map node labels to IDs
+        node_ids = [
+            self.network_graph.node_label_to_id_map.get(node)
+            for node in nodes
+            if node in self.network_graph.node_label_to_id_map
+        ]
+
+        # Calculate the centroid of the provided nodes
+        centroid = self._calculate_domain_centroid(node_ids)
+
+        # Calculate the bounding box around the network
+        center, radius = _calculate_bounding_box(
+            self.network_graph.node_coordinates, radius_margin=perimeter_scale
+        )
+
+        # Convert radial position to radians, adjusting for a 90-degree rotation
+        radial_radians = np.deg2rad(radial_position - 90)
+        label_position = (
+            center[0] + (radius + offset) * np.cos(radial_radians),
+            center[1] + (radius + offset) * np.sin(radial_radians),
+        )
+
+        # Annotate the network with the label
+        self.ax.annotate(
+            label,
+            xy=centroid,
+            xytext=label_position,
+            textcoords="data",
+            ha="center",
+            va="center",
+            fontsize=fontsize,
+            fontname=font,
+            color=fontcolor,
+            arrowprops=dict(arrowstyle="->", color=arrow_color, linewidth=arrow_linewidth),
+        )
 
     def _calculate_domain_centroid(self, nodes: list) -> tuple:
         """Calculate the most centrally located node in .
@@ -662,12 +750,12 @@ def _calculate_bounding_box(
 
 
 def _best_label_positions(
-    filtered_domains: Dict[str, Any], center: np.ndarray, radius: float, offset: float
+    filtered_domain_centroids: Dict[str, Any], center: np.ndarray, radius: float, offset: float
 ) -> Dict[str, Any]:
     """Calculate and optimize label positions for clarity.
 
     Args:
-        filtered_domains (dict): Centroids of the filtered domains.
+        filtered_domain_centroids (dict): Centroids of the filtered domains.
         center (np.ndarray): The center coordinates for label positioning.
         radius (float): The radius for positioning labels around the center.
         offset (float): The offset distance from the radius for positioning labels.
@@ -675,15 +763,16 @@ def _best_label_positions(
     Returns:
         dict: Optimized positions for labels.
     """
-    num_domains = len(filtered_domains)
+    num_domains = len(filtered_domain_centroids)
     # Calculate equidistant positions around the center for initial label placement
     equidistant_positions = _equidistant_angles_around_center(center, radius, offset, num_domains)
     # Create a mapping of domains to their initial label positions
     label_positions = {
-        domain: position for domain, position in zip(filtered_domains.keys(), equidistant_positions)
+        domain: position
+        for domain, position in zip(filtered_domain_centroids.keys(), equidistant_positions)
     }
     # Optimize the label positions to minimize distance to domain centroids
-    return _optimize_label_positions(label_positions, filtered_domains)
+    return _optimize_label_positions(label_positions, filtered_domain_centroids)
 
 
 def _equidistant_angles_around_center(

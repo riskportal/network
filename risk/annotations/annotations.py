@@ -171,7 +171,9 @@ def get_description(words_column: pd.Series) -> str:
     stop_words = set(stopwords.words("english"))
     # Tokenize the concatenated string and filter out stopwords and non-alphabetic words
     words = [
-        word.lower() if word.istitle() else word  # Lowercase all words except proper nouns (e.g., RNA, mRNA)
+        (
+            word.lower() if word.istitle() else word
+        )  # Lowercase all words except proper nouns (e.g., RNA, mRNA)
         for word in word_tokenize(words_column.str.cat(sep=" "))
         if word.isalpha() and word.lower() not in stop_words
     ]
