@@ -2,6 +2,7 @@ black
 build
 flake8
 pylint
+pytest
 sphinx
 sphinx-copybutton
 sphinx-rtd-theme
