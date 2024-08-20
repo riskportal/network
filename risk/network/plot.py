@@ -27,7 +27,7 @@ class NetworkPlotter:
 
     def __init__(
         self,
-        network_graph: NetworkGraph,
+        graph: NetworkGraph,
         figsize: tuple = (10, 10),
         background_color: str = "white",
         plot_outline: bool = True,
@@ -37,22 +37,22 @@ class NetworkPlotter:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
         Args:
-            network_graph (NetworkGraph): The network data and attributes to be visualized.
+            graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
             plot_outline (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
             outline_color (str, optional): Color of the network perimeter circle. Defaults to "black".
             outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
         """
-        self.network_graph = network_graph
+        self.graph = graph
         # Initialize the plot with the specified parameters
         self.ax = self._initialize_plot(
-            network_graph, figsize, background_color, plot_outline, outline_color, outline_scale
+            graph, figsize, background_color, plot_outline, outline_color, outline_scale
         )
 
     def _initialize_plot(
         self,
-        network_graph: NetworkGraph,
+        graph: NetworkGraph,
         figsize: tuple,
         background_color: str,
         plot_outline: bool,
@@ -62,7 +62,7 @@ class NetworkPlotter:
         """Set up the plot with figure size, optional circle perimeter, and background color.
 
         Args:
-            network_graph (NetworkGraph): The network data and attributes to be visualized.
+            graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
             plot_outline (bool): Whether to plot the network perimeter circle.
@@ -73,7 +73,7 @@ class NetworkPlotter:
             plt.Axes: The axis object for the plot.
         """
         # Extract node coordinates from the network graph
-        node_coordinates = network_graph.node_coordinates
+        node_coordinates = graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
         center, radius = _calculate_bounding_box(node_coordinates)
         # Scale the radius by the outline_scale factor
@@ -141,10 +141,10 @@ class NetworkPlotter:
             network_node_shape=node_shape,
         )
         # Extract node coordinates from the network graph
-        node_coordinates = self.network_graph.node_coordinates
+        node_coordinates = self.graph.node_coordinates
         # Draw the nodes of the graph
         nx.draw_networkx_nodes(
-            self.network_graph.G,
+            self.graph.network,
             pos=node_coordinates,
             node_size=node_size,
             node_color=node_color,
@@ -155,7 +155,7 @@ class NetworkPlotter:
         )
         # Draw the edges of the graph
         nx.draw_networkx_edges(
-            self.network_graph.G,
+            self.graph.network,
             pos=node_coordinates,
             width=edge_width,
             edge_color=edge_color,
@@ -197,20 +197,18 @@ class NetworkPlotter:
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
-            self.network_graph.node_label_to_id_map.get(node)
+            self.graph.node_label_to_id_map.get(node)
             for node in nodes
-            if node in self.network_graph.node_label_to_id_map
+            if node in self.graph.node_label_to_id_map
         ]
         if not node_ids:
             raise ValueError("No nodes found in the network graph.")
 
         # Get the coordinates of the filtered nodes
-        node_coordinates = {
-            node_id: self.network_graph.node_coordinates[node_id] for node_id in node_ids
-        }
+        node_coordinates = {node_id: self.graph.node_coordinates[node_id] for node_id in node_ids}
         # Draw the nodes in the subnetwork
         nx.draw_networkx_nodes(
-            self.network_graph.G,
+            self.graph.network,
             pos=node_coordinates,
             nodelist=node_ids,
             node_size=node_size,
@@ -221,7 +219,7 @@ class NetworkPlotter:
             ax=self.ax,
         )
         # Draw the edges between the specified nodes in the subnetwork
-        subgraph = self.network_graph.G.subgraph(node_ids)
+        subgraph = self.graph.network.subgraph(node_ids)
         nx.draw_networkx_edges(
             subgraph,
             pos=node_coordinates,
@@ -260,9 +258,9 @@ class NetworkPlotter:
             color = self.get_annotated_contour_colors(color=color)
 
         # Extract node coordinates from the network graph
-        node_coordinates = self.network_graph.node_coordinates
+        node_coordinates = self.graph.node_coordinates
         # Draw contours for each domain in the network
-        for idx, (_, nodes) in enumerate(self.network_graph.domain_to_nodes.items()):
+        for idx, (_, nodes) in enumerate(self.graph.domain_to_nodes.items()):
             if len(nodes) > 1:
                 self._draw_kde_contour(
                     self.ax,
@@ -307,15 +305,15 @@ class NetworkPlotter:
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
-            self.network_graph.node_label_to_id_map.get(node)
+            self.graph.node_label_to_id_map.get(node)
             for node in nodes
-            if node in self.network_graph.node_label_to_id_map
+            if node in self.graph.node_label_to_id_map
         ]
         if not node_ids or len(node_ids) == 1:
             raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
 
         # Draw the KDE contour for the specified nodes
-        node_coordinates = self.network_graph.node_coordinates
+        node_coordinates = self.graph.node_coordinates
         self._draw_kde_contour(
             self.ax,
             node_coordinates,
@@ -438,7 +436,7 @@ class NetworkPlotter:
 
         # Calculate the center and radius of the network
         domain_centroids = {}
-        for domain, nodes in self.network_graph.domain_to_nodes.items():
+        for domain, nodes in self.graph.domain_to_nodes.items():
             if nodes:  # Skip if the domain has no nodes
                 domain_centroids[domain] = self._calculate_domain_centroid(nodes)
 
@@ -448,10 +446,7 @@ class NetworkPlotter:
         # Loop through domain_centroids with index
         for idx, (domain, centroid) in enumerate(domain_centroids.items()):
             # Check if the domain passes the word count condition
-            if (
-                len(self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words])
-                >= min_words
-            ):
+            if len(self.graph.trimmed_domain_to_term[domain].split(" ")[:max_words]) >= min_words:
                 # Add to filtered_domain_centroids
                 filtered_domain_centroids[domain] = centroid
                 # Keep track of the valid index
@@ -463,7 +458,7 @@ class NetworkPlotter:
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
-            self.network_graph.node_coordinates, radius_margin=perimeter_scale
+            self.graph.node_coordinates, radius_margin=perimeter_scale
         )
         # Calculate the best positions for labels around the perimeter
         best_label_positions = _best_label_positions(
@@ -472,7 +467,7 @@ class NetworkPlotter:
         # Annotate the network with labels
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
-            annotations = self.network_graph.trimmed_domain_to_term[domain].split(" ")[:max_words]
+            annotations = self.graph.trimmed_domain_to_term[domain].split(" ")[:max_words]
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -527,17 +522,19 @@ class NetworkPlotter:
 
         # Map node labels to IDs
         node_ids = [
-            self.network_graph.node_label_to_id_map.get(node)
+            self.graph.node_label_to_id_map.get(node)
             for node in nodes
-            if node in self.network_graph.node_label_to_id_map
+            if node in self.graph.node_label_to_id_map
         ]
+        if not node_ids or len(node_ids) == 1:
+            raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
 
         # Calculate the centroid of the provided nodes
         centroid = self._calculate_domain_centroid(node_ids)
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
-            self.network_graph.node_coordinates, radius_margin=perimeter_scale
+            self.graph.node_coordinates, radius_margin=perimeter_scale
         )
 
         # Convert radial position to radians, adjusting for a 90-degree rotation
@@ -571,7 +568,7 @@ class NetworkPlotter:
             tuple: A tuple containing the domain's central node coordinates.
         """
         # Extract positions of all nodes in the domain
-        node_positions = self.network_graph.node_coordinates[nodes, :]
+        node_positions = self.graph.node_coordinates[nodes, :]
         # Calculate the pairwise distance matrix between all nodes in the domain
         distances_matrix = np.linalg.norm(node_positions[:, np.newaxis] - node_positions, axis=2)
         # Sum the distances for each node to all other nodes in the domain
@@ -596,7 +593,7 @@ class NetworkPlotter:
             np.ndarray: Array of RGBA colors adjusted for enrichment status.
         """
         # Get the initial domain colors for each node
-        network_colors = self.network_graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        network_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
         if isinstance(nonenriched_color, str):
             # Convert the non-enriched color from string to RGBA
             nonenriched_color = mcolors.to_rgba(nonenriched_color)
@@ -623,14 +620,14 @@ class NetworkPlotter:
         """
         # Merge all enriched nodes from the domain_to_nodes dictionary
         enriched_nodes = set()
-        for _, nodes in self.network_graph.domain_to_nodes.items():
+        for _, nodes in self.graph.domain_to_nodes.items():
             enriched_nodes.update(nodes)
 
         # Initialize all node sizes to the non-enriched size
-        node_sizes = np.full(len(self.network_graph.G.nodes), nonenriched_nodesize)
+        node_sizes = np.full(len(self.graph.network.nodes), nonenriched_nodesize)
         # Set the size for enriched nodes
         for node in enriched_nodes:
-            if node in self.network_graph.G.nodes:
+            if node in self.graph.network.nodes:
                 node_sizes[node] = enriched_nodesize
 
         return node_sizes
@@ -675,12 +672,12 @@ class NetworkPlotter:
         if isinstance(color, str):
             # If a single color string is provided, convert it to RGBA and apply to all domains
             rgba_color = np.array(matplotlib.colors.to_rgba(color))
-            return np.array([rgba_color for _ in self.network_graph.domain_to_nodes])
+            return np.array([rgba_color for _ in self.graph.domain_to_nodes])
 
         # Generate colors for each domain using the provided arguments and random seed
-        node_colors = self.network_graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        node_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
         annotated_colors = []
-        for _, nodes in self.network_graph.domain_to_nodes.items():
+        for _, nodes in self.graph.domain_to_nodes.items():
             if len(nodes) > 1:
                 # For domains with multiple nodes, choose the brightest color (sum of RGB values)
                 domain_colors = np.array([node_colors[node] for node in nodes])

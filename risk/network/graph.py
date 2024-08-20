@@ -49,8 +49,8 @@ class NetworkGraph:
         self.trimmed_domains = trimmed_domains
         self.node_label_to_id_map = node_label_to_id_map
         self.node_enrichment_sums = node_enrichment_sums
-        # NOTE: self.G and self.node_coordinates are declared in _initialize_network
-        self.G = None
+        # NOTE: self.network and self.node_coordinates are declared in _initialize_network
+        self.network = None
         self.node_coordinates = None
         self._initialize_network(network)
 
@@ -95,8 +95,8 @@ class NetworkGraph:
         """
         # Unfold the network's 3D coordinates to 2D
         G_2d = _unfold_sphere_to_plane(G)
-        # Assign the unfolded graph to self.G
-        self.G = G_2d
+        # Assign the unfolded graph to self.network
+        self.network = G_2d
         # Extract 2D coordinates of nodes
         self.node_coordinates = _extract_node_coordinates(G_2d)
 
