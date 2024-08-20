@@ -25,7 +25,7 @@ class AnnotationsIO:
     def __init__(self):
         pass
 
-    def load_json_annotations(self, filepath: str, network: nx.Graph) -> Dict[str, Any]:
+    def load_json_annotation(self, filepath: str, network: nx.Graph) -> Dict[str, Any]:
         """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:

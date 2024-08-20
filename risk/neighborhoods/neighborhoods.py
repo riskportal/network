@@ -170,7 +170,16 @@ def _impute_neighbors(
     # Calculate shortest distances for each node to determine the distance threshold
     shortest_distances = []
     for node in network.nodes():
-        neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
+        try:
+            neighbors = [
+                n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0
+            ]
+        except IndexError as e:
+            raise IndexError(
+                f"Failed to find neighbors for node '{node}': Ensure that the node exists in the network and that the binary enrichment matrix is correctly indexed."
+            ) from e
+
+        # Calculate the shortest distance to a neighbor
         if neighbors:
             shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
             shortest_distances.append(shortest_distance)
