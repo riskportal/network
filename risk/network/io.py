@@ -56,11 +56,11 @@ class NetworkIO:
 
         return self._initialize_graph(G)
 
-    def load_networkx_network(self, G: nx.Graph) -> nx.Graph:
+    def load_networkx_network(self, network: nx.Graph) -> nx.Graph:
         """Load a NetworkX graph.
 
         Args:
-            G (nx.Graph): A NetworkX graph object.
+            network (nx.Graph): A NetworkX graph object.
 
         Returns:
             nx.Graph: Processed network.
@@ -68,7 +68,7 @@ class NetworkIO:
         filetype = "NetworkX"
         params.log_network(filetype=filetype)
         self._log_loading(filetype)
-        return self._initialize_graph(G)
+        return self._initialize_graph(network)
 
     def load_cytoscape_network(
         self,
@@ -187,35 +187,45 @@ class NetworkIO:
         filetype = "Cytoscape JSON"
         params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
+
         # Load the Cytoscape JSON file
         with open(filepath, "r") as f:
             cyjs_data = json.load(f)
 
         # Create a graph
         G = nx.Graph()
-        # Process nodes
+        # Store node positions for later use
         node_x_positions = {}
         node_y_positions = {}
         for node in cyjs_data["elements"]["nodes"]:
             node_data = node["data"]
-            node_id = node_data["id"]
+            node_id = node_data["id_original"]
             node_x_positions[node_id] = node["position"]["x"]
             node_y_positions[node_id] = node["position"]["y"]
-            G.add_node(node_id)
-            G.nodes[node_id]["label"] = node_data.get("name", node_id)
-            G.nodes[node_id]["x"] = node["position"]["x"]
-            G.nodes[node_id]["y"] = node["position"]["y"]
 
-        # Process edges
+        # Process edges and add them to the graph
         for edge in cyjs_data["elements"]["edges"]:
             edge_data = edge["data"]
-            source = edge_data[source_label]
-            target = edge_data[target_label]
+            source = edge_data[f"{source_label}_original"]
+            target = edge_data[f"{target_label}_original"]
+            # Add the edge to the graph, optionally including weights
             if self.weight_label is not None and self.weight_label in edge_data:
                 weight = float(edge_data[self.weight_label])
                 G.add_edge(source, target, weight=weight)
             else:
                 G.add_edge(source, target)
+
+            # Ensure nodes exist in the graph and add them if not present
+            if source not in G:
+                G.add_node(source)
+            if target not in G:
+                G.add_node(target)
+
+        # Add node attributes (like label, x, y positions)
+        for node in G.nodes():
+            G.nodes[node]["label"] = node
+            G.nodes[node]["x"] = node_x_positions.get(node, 0)  # Use stored positions
+            G.nodes[node]["y"] = node_y_positions.get(node, 0)  # Use stored positions
 
         # Initialize the graph
         return self._initialize_graph(G)
