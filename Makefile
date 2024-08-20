@@ -8,6 +8,9 @@ flake8: ## Flake8 every python file
 pylint: ## pylint every python file
 	find ./ -type f -name "*.py" -a | xargs pylint
 
+test:  ## Run tests
+	pytest -vv --tb=auto ./
+
 build: ## Build package distribution files
 	python -m build
 
