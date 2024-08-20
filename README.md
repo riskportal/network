@@ -5,7 +5,7 @@
 
 <p align="center">
   <a href="https://pypi.python.org/pypi/risk-network"><img src="https://img.shields.io/pypi/v/risk-network.svg" alt="pypiv"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python 3.7+"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+"></a>
   <a href="https://raw.githubusercontent.com/irahorecka/chrono24/main/LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
 </p>
 
