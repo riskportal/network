@@ -20,5 +20,5 @@ publish: ## Publish package distribution files to pypi
 
 clean: ## Remove caches, checkpoints, and distribution artifacts
 	find . -type f -name ".DS_Store" | xargs rm -f
-	find . -type d \( -name "__pycache__" -o -name ".pytest_cache" \) | xargs rm -rf
+	find . -type d \( -name ".ipynb_checkpoints" -o -name "__pycache__" -o -name ".pytest_cache" \) | xargs rm -rf
 	rm -rf dist/ build/ *.egg-info
