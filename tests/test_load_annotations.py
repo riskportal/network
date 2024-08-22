@@ -1,3 +1,8 @@
+"""
+tests/test_load_annotations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 def test_load_csv_annotation(risk_obj, network, data_path):
     """Test loading a CSV annotation file and associating it with a network
 

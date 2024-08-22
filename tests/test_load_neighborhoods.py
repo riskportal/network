@@ -1,3 +1,8 @@
+"""
+tests/test_load_neighborhoods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 def test_load_neighborhoods_single_process(risk_obj, network, annotations):
     """Test loading neighborhoods using a single process
 

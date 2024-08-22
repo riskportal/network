@@ -1,3 +1,8 @@
+"""
+tests/test_load_network
+~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 def test_load_cytoscape_network(risk_obj, data_path):
     """Test loading a Cytoscape network from a .cys file
 

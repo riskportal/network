@@ -27,49 +27,12 @@ class RISK(NetworkIO, AnnotationsIO):
     and performing network-based statistical analysis, such as neighborhood significance testing.
     """
 
-    def __init__(
-        self,
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
-    ):
-        """Initialize the RISK class with configuration settings.
-
-        Args:
-            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
-        """
+    def __init__(self, *args, **kwargs):
+        """Initialize the RISK class with configuration settings."""
         # Initialize and log network parameters
         params.initialize()
-        params.log_network(
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
-        )
-        # Initialize parent classes
-        NetworkIO.__init__(
-            self,
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
-        )
-        AnnotationsIO.__init__(self)
-
-        # Set class attributes
-        self.compute_sphere = compute_sphere
-        self.surface_depth = surface_depth
-        self.min_edges_per_node = min_edges_per_node
-        self.include_edge_weight = include_edge_weight
-        self.weight_label = weight_label
+        # Initialize the parent classes
+        super().__init__(*args, **kwargs)
 
     @property
     def params(self):

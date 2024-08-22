@@ -1,3 +1,8 @@
+"""
+tests/test_load_plotter
+~~~~~~~~~~~~~~~~~~~~~~~
+"""
+
 def test_initialize_plotter(risk_obj, graph):
     """Test initializing the plotter object with a graph
 

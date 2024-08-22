@@ -1,3 +1,8 @@
+"""
+tests/conftest
+~~~~~~~~~~~~~~
+"""
+
 import pytest
 from pathlib import Path
 from risk import RISK
