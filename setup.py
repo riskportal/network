@@ -1,3 +1,8 @@
+"""
+setup
+~~~~~
+"""
+
 import re
 from setuptools import setup, find_packages
 import numpy

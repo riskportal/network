@@ -1,3 +1,8 @@
+"""
+tests/test_load_graph
+~~~~~~~~~~~~~~~~~~~~~
+"""
+
 def test_load_graph(risk_obj, network, annotations):
     """Test loading a graph after generating neighborhoods with specific parameters
 

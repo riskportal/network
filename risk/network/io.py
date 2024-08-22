@@ -33,14 +33,62 @@ class NetworkIO:
         include_edge_weight: bool = True,
         weight_label: str = "weight",
     ):
+        """Initialize the NetworkIO class.
+
+        Args:
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
+        """
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
+        self.min_edges_per_node = min_edges_per_node
         self.include_edge_weight = include_edge_weight
         self.weight_label = weight_label
-        self.min_edges_per_node = min_edges_per_node
+        params.log_network(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
+        )
 
-    def load_gpickle_network(self, filepath: str) -> nx.Graph:
+    @classmethod
+    def load_gpickle_network(
+        cls,
+        filepath: str,
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
+    ) -> nx.Graph:
         """Load a network from a GPickle file.
+
+        Args:
+            filepath (str): Path to the GPickle file.
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
+
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        networkio = cls(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
+        )
+        return networkio._load_gpickle_network(filepath=filepath)
+
+    def _load_gpickle_network(self, filepath: str) -> nx.Graph:
+        """Private method to load a network from a GPickle file.
 
         Args:
             filepath (str): Path to the GPickle file.
@@ -56,8 +104,40 @@ class NetworkIO:
 
         return self._initialize_graph(G)
 
-    def load_networkx_network(self, network: nx.Graph) -> nx.Graph:
+    @classmethod
+    def load_networkx_network(
+        cls,
+        network: nx.Graph,
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
+    ) -> nx.Graph:
         """Load a NetworkX graph.
+
+        Args:
+            network (nx.Graph): A NetworkX graph object.
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
+
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        networkio = cls(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
+        )
+        return networkio._load_networkx_network(network=network)
+
+    def _load_networkx_network(self, network: nx.Graph) -> nx.Graph:
+        """Private method to load a NetworkX graph.
 
         Args:
             network (nx.Graph): A NetworkX graph object.
@@ -70,14 +150,57 @@ class NetworkIO:
         self._log_loading(filetype)
         return self._initialize_graph(network)
 
+    @classmethod
     def load_cytoscape_network(
+        cls,
+        filepath: str,
+        source_label: str = "source",
+        target_label: str = "target",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
+        view_name: str = "",
+    ) -> nx.Graph:
+        """Load a network from a Cytoscape file.
+
+        Args:
+            filepath (str): Path to the Cytoscape file.
+            source_label (str, optional): Source node label. Defaults to "source".
+            target_label (str, optional): Target node label. Defaults to "target".
+            view_name (str, optional): Specific view name to load. Defaults to None.
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
+
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        networkio = cls(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
+        )
+        return networkio._load_cytoscape_network(
+            filepath=filepath,
+            source_label=source_label,
+            target_label=target_label,
+            view_name=view_name,
+        )
+
+    def _load_cytoscape_network(
         self,
         filepath: str,
         source_label: str = "source",
         target_label: str = "target",
         view_name: str = "",
     ) -> nx.Graph:
-        """Load a network from a Cytoscape file.
+        """Private method to load a network from a Cytoscape file.
 
         Args:
             filepath (str): Path to the Cytoscape file.
@@ -173,8 +296,48 @@ class NetworkIO:
             for dirname in cys_dirnames:
                 shutil.rmtree(dirname)
 
-    def load_cytoscape_json_network(self, filepath, source_label="source", target_label="target"):
+    @classmethod
+    def load_cytoscape_json_network(
+        cls,
+        filepath: str,
+        source_label: str = "source",
+        target_label: str = "target",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+        include_edge_weight: bool = True,
+        weight_label: str = "weight",
+    ) -> nx.Graph:
         """Load a network from a Cytoscape JSON (.cyjs) file.
+
+        Args:
+            filepath (str): Path to the Cytoscape JSON file.
+            source_label (str, optional): Source node label. Default is "source".
+            target_label (str, optional): Target node label. Default is "target".
+            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
+            weight_label (str, optional): Label for edge weights. Defaults to "weight".
+
+        Returns:
+            NetworkX graph: Loaded and processed network.
+        """
+        networkio = cls(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+            include_edge_weight=include_edge_weight,
+            weight_label=weight_label,
+        )
+        return networkio._load_cytoscape_json_network(
+            filepath=filepath,
+            source_label=source_label,
+            target_label=target_label,
+        )
+
+    def _load_cytoscape_json_network(self, filepath, source_label="source", target_label="target"):
+        """Private method to load a network from a Cytoscape JSON (.cyjs) file.
 
         Args:
             filepath (str): Path to the Cytoscape JSON file.
