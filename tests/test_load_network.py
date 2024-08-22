@@ -3,6 +3,7 @@ tests/test_load_network
 ~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+
 def test_load_cytoscape_network(risk_obj, data_path):
     """Test loading a Cytoscape network from a .cys file
 
@@ -71,4 +72,16 @@ def test_load_networkx_network(risk_obj, network):
     Returns:
         None
     """
-    network = risk_obj.load_networkx
+    network = risk_obj.load_networkx_network(network=network)
+
+    assert network is not None
+    assert len(network.nodes) > 0  # Check that the graph has nodes
+    assert len(network.edges) > 0  # Check that the graph has edges
+    # Additional checks to verify the properties of the loaded graph
+    for node in network.nodes:
+        # Check that each node in the original network is in the RISK network
+        assert node in network.nodes
+
+    for edge in network.edges:
+        # Check that each edge in the original network is in the RISK network
+        assert edge in network.edges
