@@ -1,4 +1,14 @@
 def test_load_graph(risk_obj, network, annotations):
+    """Test loading a graph after generating neighborhoods with specific parameters
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs
+        network: The network object to be used for neighborhood and graph generation
+        annotations: The annotations associated with the network
+
+    Returns:
+        None
+    """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods(
         network=network,
@@ -26,7 +36,7 @@ def test_load_graph(risk_obj, network, annotations):
         linkage_criterion="distance",  # Clustering based on distance
         linkage_method="average",  # Set linkage method to average
         linkage_metric="yule",  # Set linkage metric to yule
-        min_cluster_size=5,  # Minimum cluster size set to 1
+        min_cluster_size=5,  # Minimum cluster size set to 5
         max_cluster_size=1000,  # Maximum cluster size set to 1000
     )
 

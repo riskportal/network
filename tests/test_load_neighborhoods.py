@@ -1,4 +1,14 @@
 def test_load_neighborhoods_single_process(risk_obj, network, annotations):
+    """Test loading neighborhoods using a single process
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods
+        network: The network object to be used for neighborhood generation
+        annotations: The annotations associated with the network
+
+    Returns:
+        None
+    """
     # Load neighborhoods with 1 process
     neighborhoods = risk_obj.load_neighborhoods(
         network=network,
@@ -18,6 +28,16 @@ def test_load_neighborhoods_single_process(risk_obj, network, annotations):
 
 
 def test_load_neighborhoods_multi_process(risk_obj, network, annotations):
+    """Test loading neighborhoods using multiple processes
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods
+        network: The network object to be used for neighborhood generation
+        annotations: The annotations associated with the network
+
+    Returns:
+        None
+    """
     # Load neighborhoods with 4 processes
     neighborhoods = risk_obj.load_neighborhoods(
         network=network,
