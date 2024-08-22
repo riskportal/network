@@ -7,11 +7,21 @@ ROOT_PATH = Path(__file__).resolve().parent / "data"
 
 @pytest.fixture(scope="session")
 def data_path():
+    """Fixture to provide the base path to the data directory
+
+    Returns:
+        Path: The base path to the data directory
+    """
     return ROOT_PATH
 
 
 @pytest.fixture(scope="session")
 def risk_obj():
+    """Fixture to initialize and return the RISK object
+
+    Returns:
+        RISK: The initialized RISK object instance
+    """
     return RISK(
         compute_sphere=True,
         surface_depth=0.1,
@@ -23,6 +33,15 @@ def risk_obj():
 
 @pytest.fixture(scope="session")
 def network(risk_obj, data_path):
+    """Fixture to load and return the network from a Cytoscape file
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network
+        data_path: The base path to the data directory
+
+    Returns:
+        Network: The loaded network object
+    """
     network_file = data_path / "cytoscape" / "michaelis_2023.cys"
     network = risk_obj.load_cytoscape_network(
         filepath=str(network_file),
@@ -35,6 +54,16 @@ def network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def annotations(risk_obj, network, data_path):
+    """Fixture to load and return annotations from a JSON file
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations
+        network: The network object to which annotations will be applied
+        data_path: The base path to the data directory
+
+    Returns:
+        Annotations: The loaded annotations object
+    """
     annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
     annotations = risk_obj.load_json_annotation(filepath=str(annotation_file), network=network)
     return annotations
@@ -42,14 +71,26 @@ def annotations(risk_obj, network, data_path):
 
 @pytest.fixture(scope="session")
 def graph(risk_obj, data_path):
+    """Fixture to load and return a graph built from a Cytoscape JSON network and annotations
+
+    Args:
+        risk_obj: The RISK object instance used for loading the graph
+        data_path: The base path to the data directory
+
+    Returns:
+        Graph: The constructed graph object
+    """
     network_filepath = data_path / "cyjs" / "michaelis_2023.cyjs"
     annotation_filepath = data_path / "json" / "annotations" / "go_biological_process.json"
+
     # Load network from the Cytoscape JSON file
     network = risk_obj.load_cytoscape_json_network(
         filepath=str(network_filepath), source_label="source", target_label="target"
     )
+
     # Load annotations associated with the network
     annotations = risk_obj.load_json_annotation(filepath=str(annotation_filepath), network=network)
+
     # Build neighborhoods based on the loaded network and annotations
     neighborhoods = risk_obj.load_neighborhoods(
         network=network,
@@ -63,6 +104,7 @@ def graph(risk_obj, data_path):
         random_seed=887,
         max_workers=4,  # Use 4 processes
     )
+
     # Build the graph using the neighborhoods
     graph = risk_obj.load_graph(
         network=network,
