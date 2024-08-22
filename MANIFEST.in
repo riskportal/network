@@ -5,6 +5,10 @@ recursive-include risk *.py
 include README.md
 include LICENSE
 
+# Exclude the tests directory
+exclude tests/
+exclude tests/*
+
 # Exclude compiled files or any other unwanted files
 exclude risk/**/*.c
 exclude risk/**/*.so
