@@ -430,9 +430,9 @@ class NetworkPlotter:
         )
         # Convert color strings to RGBA arrays if necessary
         if isinstance(fontcolor, str):
-            fontcolor = self.get_annotated_contour_colors(color=fontcolor)
+            fontcolor = self.get_annotated_label_colors(color=fontcolor)
         if isinstance(arrow_color, str):
-            arrow_color = self.get_annotated_contour_colors(color=arrow_color)
+            arrow_color = self.get_annotated_label_colors(color=arrow_color)
 
         # Calculate the center and radius of the network
         domain_centroids = {}

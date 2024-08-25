@@ -197,7 +197,7 @@ def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
     word_counts = Counter(words)
     filtered_words = []
     used_words = set()
-
+    # Iterate through the words to find similar words
     for word in word_counts:
         if word in used_words:
             continue
