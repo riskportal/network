@@ -484,9 +484,9 @@ class NetworkIO:
         print(f"Filetype: {filetype}")
         if filepath:
             print(f"Filepath: {filepath}")
-        print(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
-        if self.compute_sphere:
-            print(f"Surface depth: {self.surface_depth}")
         print(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
         if self.include_edge_weight:
             print(f"Weight label: {self.weight_label}")
+        print(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
+        if self.compute_sphere:
+            print(f"Surface depth: {self.surface_depth}")
