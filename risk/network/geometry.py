@@ -7,13 +7,13 @@ import networkx as nx
 import numpy as np
 
 
-def apply_edge_lengths(
+def assign_edge_lengths(
     G: nx.Graph,
     compute_sphere: bool = True,
     surface_depth: float = 0.0,
     include_edge_weight: bool = False,
 ) -> nx.Graph:
-    """Apply edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
+    """Assign edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
 
     Args:
         G (nx.Graph): The input graph.

@@ -15,7 +15,7 @@ from xml.dom import minidom
 import networkx as nx
 import pandas as pd
 
-from risk.network.geometry import apply_edge_lengths
+from risk.network.geometry import assign_edge_lengths
 from risk.log import params, print_header
 
 
@@ -408,12 +408,13 @@ class NetworkIO:
         Returns:
             nx.Graph: The processed and validated graph.
         """
-        # IMPORTANT: This is where the graph node labels are converted to integers
-        G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
-        self._remove_invalid_graph_properties(G)
-        self._validate_edges(G)
         self._validate_nodes(G)
-        self._process_graph(G)
+        self._assign_edge_weights(G)
+        self._assign_edge_lengths(G)
+        self._remove_invalid_graph_properties(G)
+        # IMPORTANT: This is where the graph node labels are converted to integers
+        # Make sure to perform this step after all other processing
+        G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
         return G
 
     def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
@@ -422,18 +423,26 @@ class NetworkIO:
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
-        print(f"Minimum edges per node: {self.min_edges_per_node}")
-        # Remove nodes with fewer edges than the specified threshold
-        nodes_with_few_edges = [
-            node for node in G.nodes() if G.degree(node) <= self.min_edges_per_node
-        ]
-        G.remove_nodes_from(nodes_with_few_edges)
-        # Remove self-loop edges
-        self_loops = list(nx.selfloop_edges(G))
-        G.remove_edges_from(self_loops)
+        # First, Remove self-loop edges to ensure correct edge count
+        G.remove_edges_from(list(nx.selfloop_edges(G)))
+        # Then, iteratively remove nodes with fewer edges than the specified threshold
+        while True:
+            nodes_to_remove = [
+                node for node in G.nodes() if G.degree(node) < self.min_edges_per_node
+            ]
+            if not nodes_to_remove:
+                break  # Exit loop if no more nodes to remove
 
-    def _validate_edges(self, G: nx.Graph) -> None:
-        """Validate and assign weights to the edges in the graph.
+            # Remove the nodes and their associated edges
+            G.remove_nodes_from(nodes_to_remove)
+
+        # Optionally: Remove any isolated nodes if needed
+        isolated_nodes = list(nx.isolates(G))
+        if isolated_nodes:
+            G.remove_nodes_from(isolated_nodes)
+
+    def _assign_edge_weights(self, G: nx.Graph) -> None:
+        """Assign weights to the edges in the graph.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
@@ -462,13 +471,13 @@ class NetworkIO:
             ), f"Node {node} is missing 'x' or 'y' position attributes."
             assert "label" in attrs, f"Node {node} is missing a 'label' attribute."
 
-    def _process_graph(self, G: nx.Graph) -> None:
+    def _assign_edge_lengths(self, G: nx.Graph) -> None:
         """Prepare the network by adjusting surface depth and calculating edge lengths.
 
         Args:
             G (nx.Graph): The input network graph.
         """
-        apply_edge_lengths(
+        assign_edge_lengths(
             G,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
