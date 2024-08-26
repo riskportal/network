@@ -6,6 +6,7 @@ This file contains the code for the RISK class and command-line access.
 """
 
 import json
+import os
 import pickle
 import shutil
 import zipfile
@@ -215,14 +216,20 @@ class NetworkIO:
         params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
         cys_files = []
+        tmp_dir = ".tmp_cytoscape"
         # Try / finally to remove unzipped files
         try:
-            # Unzip CYS file
+            # Create the temporary directory if it doesn't exist
+            if not os.path.exists(tmp_dir):
+                os.makedirs(tmp_dir)
+
+            # Unzip CYS file into the temporary directory
             with zipfile.ZipFile(filepath, "r") as zip_ref:
                 cys_files = zip_ref.namelist()
-                zip_ref.extractall("./")
+                zip_ref.extractall(tmp_dir)
+
             # Get first view and network instances
-            cys_view_files = [cf for cf in cys_files if "/views/" in cf]
+            cys_view_files = [os.path.join(tmp_dir, cf) for cf in cys_files if "/views/" in cf]
             cys_view_file = (
                 cys_view_files[0]
                 if not view_name
@@ -244,7 +251,7 @@ class NetworkIO:
             # Read the node attributes (from /tables/)
             attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "edge.cytable"]
             attribute_metadata = [
-                cf
+                os.path.join(tmp_dir, cf)
                 for cf in cys_files
                 if all(keyword in cf for keyword in attribute_metadata_keywords)
             ][0]
@@ -291,10 +298,9 @@ class NetworkIO:
             return self._initialize_graph(G)
 
         finally:
-            # Remove unzipped files/directories
-            cys_dirnames = list(set([cf.split("/")[0] for cf in cys_files]))
-            for dirname in cys_dirnames:
-                shutil.rmtree(dirname)
+            # Remove the temporary directory and its contents
+            if os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
 
     @classmethod
     def load_cytoscape_json_network(
