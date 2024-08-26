@@ -5,12 +5,12 @@ tests/test_load_annotations
 
 
 def test_load_csv_annotation(risk_obj, network, data_path):
-    """Test loading a CSV annotation file and associating it with a network
+    """Test loading a CSV annotation file and associating it with a network.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations
-        network: The network object to which annotations will be applied
-        data_path: The base path to the directory containing the annotation files
+        risk_obj: The RISK object instance used for loading annotations.
+        network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation files.
 
     Returns:
         None
@@ -23,12 +23,12 @@ def test_load_csv_annotation(risk_obj, network, data_path):
 
 
 def test_load_json_annotation(risk_obj, network, data_path):
-    """Test loading a JSON annotation file and associating it with a network
+    """Test loading a JSON annotation file and associating it with a network.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations
-        network: The network object to which annotations will be applied
-        data_path: The base path to the directory containing the annotation files
+        risk_obj: The RISK object instance used for loading annotations.
+        network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation files.
 
     Returns:
         None
@@ -41,12 +41,12 @@ def test_load_json_annotation(risk_obj, network, data_path):
 
 
 def test_load_tsv_annotation(risk_obj, network, data_path):
-    """Test loading a TSV annotation file and associating it with a network
+    """Test loading a TSV annotation file and associating it with a network.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations
-        network: The network object to which annotations will be applied
-        data_path: The base path to the directory containing the annotation files
+        risk_obj: The RISK object instance used for loading annotations.
+        network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation files.
 
     Returns:
         None
@@ -59,12 +59,12 @@ def test_load_tsv_annotation(risk_obj, network, data_path):
 
 
 def test_load_excel_annotation(risk_obj, network, data_path):
-    """Test loading an Excel annotation file and associating it with a network
+    """Test loading an Excel annotation file and associating it with a network.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations
-        network: The network object to which annotations will be applied
-        data_path: The base path to the directory containing the annotation files
+        risk_obj: The RISK object instance used for loading annotations.
+        network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation files.
 
     Returns:
         None

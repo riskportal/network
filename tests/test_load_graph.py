@@ -5,12 +5,12 @@ tests/test_load_graph
 
 
 def test_load_graph(risk_obj, network, annotations):
-    """Test loading a graph after generating neighborhoods with specific parameters
+    """Test loading a graph after generating neighborhoods with specific parameters.
 
     Args:
-        risk_obj: The RISK object instance used for loading neighborhoods and graphs
-        network: The network object to be used for neighborhood and graph generation
-        annotations: The annotations associated with the network
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs.
+        network: The network object to be used for neighborhood and graph generation.
+        annotations: The annotations associated with the network.
 
     Returns:
         None
