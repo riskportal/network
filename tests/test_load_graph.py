@@ -4,21 +4,21 @@ tests/test_load_graph
 """
 
 
-def test_load_graph(risk_obj, network, annotations):
+def test_load_graph(risk_obj, cytoscape_network, json_annotation):
     """Test loading a graph after generating neighborhoods with specific parameters.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
-        network: The network object to be used for neighborhood and graph generation.
-        annotations: The annotations associated with the network.
+        cytoscape_network: The network object to be used for neighborhood and graph generation.
+        json_annotation: The annotations associated with the network.
 
     Returns:
         None
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods(
-        network=network,
-        annotations=annotations,
+        network=cytoscape_network,
+        annotations=json_annotation,
         distance_metric="louvain",
         louvain_resolution=8,
         edge_length_threshold=0.75,
@@ -28,11 +28,10 @@ def test_load_graph(risk_obj, network, annotations):
         random_seed=887,
         max_workers=4,  # Use 4 processes
     )
-
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
-        network=network,
-        annotations=annotations,
+        network=cytoscape_network,
+        annotations=json_annotation,
         neighborhoods=neighborhoods,
         tail="right",  # Right tail for enrichment
         pval_cutoff=0.05,  # P-value cutoff of 0.05

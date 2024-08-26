@@ -8,8 +8,8 @@ def test_initialize_plotter(risk_obj, graph):
     """Test initializing the plotter object with a graph.
 
     Args:
-        risk_obj: The RISK object instance used for initializing the plotter
-        graph: The graph object to be plotted
+        risk_obj: The RISK object instance used for initializing the plotter.
+        graph: The graph object to be plotted.
 
     Returns:
         None
@@ -24,8 +24,8 @@ def test_plot_network(risk_obj, graph):
     """Test plotting the full network using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object to be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
 
     Returns:
         None
@@ -40,8 +40,8 @@ def test_plot_subnetwork(risk_obj, graph):
     """Test plotting a subnetwork using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object containing the subnetwork to be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object containing the subnetwork to be plotted.
 
     Returns:
         None
@@ -56,8 +56,8 @@ def test_plot_contours(risk_obj, graph):
     """Test plotting contours on the network using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object on which contours will be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which contours will be plotted.
 
     Returns:
         None
@@ -72,8 +72,8 @@ def test_plot_subcontour(risk_obj, graph):
     """Test plotting subcontours on the network using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object on which subcontours will be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which subcontours will be plotted.
 
     Returns:
         None
@@ -88,8 +88,8 @@ def test_plot_labels(risk_obj, graph):
     """Test plotting labels on the network using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object on which labels will be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which labels will be plotted.
 
     Returns:
         None
@@ -104,8 +104,8 @@ def test_plot_sublabel(risk_obj, graph):
     """Test plotting a sublabel on the network using the plotter.
 
     Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object on which the sublabel will be plotted
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which the sublabel will be plotted.
 
     Returns:
         None
@@ -116,31 +116,18 @@ def test_plot_sublabel(risk_obj, graph):
     assert plotter is not None  # Ensure the plotter is initialized
 
 
-def test_display_plot(risk_obj, graph):
-    """Test displaying the plot using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting
-        graph: The graph object to be displayed
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    display_plot(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
+# NOTE: Displaying plots during testing can cause the program to hang. Avoid including plot displays in tests.
 
 
 def initialize_plotter(risk, graph):
     """Initialize the plotter with specified settings.
 
     Args:
-        risk: The RISK object instance used for plotting
-        graph: The graph object to be plotted
+        risk: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
 
     Returns:
-        Plotter: The initialized plotter object
+        Plotter: The initialized plotter object.
     """
     return risk.load_plotter(
         graph=graph,
@@ -156,7 +143,7 @@ def plot_network(plotter):
     """Plot the full network using the plotter.
 
     Args:
-        plotter: The initialized plotter object
+        plotter: The initialized plotter object.
 
     Returns:
         None
@@ -181,7 +168,7 @@ def plot_subnetwork(plotter):
     """Plot a specific subnetwork using the plotter.
 
     Args:
-        plotter: The initialized plotter object
+        plotter: The initialized plotter object.
 
     Returns:
         None
@@ -210,7 +197,7 @@ def plot_contours(plotter):
     """Plot contours on the network using the plotter.
 
     Args:
-        plotter: The initialized plotter object
+        plotter: The initialized plotter object.
 
     Returns:
         None
@@ -228,7 +215,7 @@ def plot_subcontour(plotter):
     """Plot subcontours on a specific subnetwork using the plotter.
 
     Args:
-        plotter: The initialized plotter object
+        plotter: The initialized plotter object.
 
     Returns:
         None
@@ -256,7 +243,7 @@ def plot_labels(plotter):
     """Plot labels on the network using the plotter.
 
     Args:
-        plotter: The initialized plotter object
+        plotter: The initialized plotter object.
 
     Returns:
         None
