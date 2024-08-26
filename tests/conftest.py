@@ -12,20 +12,20 @@ ROOT_PATH = Path(__file__).resolve().parent / "data"
 
 @pytest.fixture(scope="session")
 def data_path():
-    """Fixture to provide the base path to the data directory
+    """Fixture to provide the base path to the data directory.
 
     Returns:
-        Path: The base path to the data directory
+        Path: The base path to the data directory.
     """
     return ROOT_PATH
 
 
 @pytest.fixture(scope="session")
 def risk_obj():
-    """Fixture to initialize and return the RISK object
+    """Fixture to initialize and return the RISK object.
 
     Returns:
-        RISK: The initialized RISK object instance
+        RISK: The initialized RISK object instance.
     """
     return RISK(
         compute_sphere=True,
@@ -39,7 +39,15 @@ def risk_obj():
 # Network fixtures
 @pytest.fixture(scope="session")
 def cytoscape_network(risk_obj, data_path):
-    """Fixture to load and return the network from a Cytoscape file"""
+    """Fixture to load and return the network from a Cytoscape file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the Cytoscape file.
+
+    Returns:
+        Network: The loaded network object.
+    """
     network_file = data_path / "cytoscape" / "michaelis_2023.cys"
     return risk_obj.load_cytoscape_network(
         filepath=str(network_file),
@@ -51,7 +59,15 @@ def cytoscape_network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def cytoscape_json_network(risk_obj, data_path):
-    """Fixture to load and return the network from a Cytoscape JSON file"""
+    """Fixture to load and return the network from a Cytoscape JSON file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the Cytoscape JSON file.
+
+    Returns:
+        Network: The loaded network object.
+    """
     network_file = data_path / "cyjs" / "michaelis_2023.cyjs"
     return risk_obj.load_cytoscape_json_network(
         filepath=str(network_file),
@@ -62,44 +78,94 @@ def cytoscape_json_network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def gpickle_network(risk_obj, data_path):
-    """Fixture to load and return the network from a GPickle file"""
+    """Fixture to load and return the network from a GPickle file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the GPickle file.
+
+    Returns:
+        Network: The loaded network object.
+    """
     network_file = data_path / "gpickle" / "michaelis_2023.gpickle"
     return risk_obj.load_gpickle_network(filepath=str(network_file))
 
 
 @pytest.fixture(scope="session")
 def networkx_network(risk_obj, cytoscape_network):
-    """Fixture to convert and return the network from a Cytoscape file as a NetworkX graph"""
-    # Here, cytoscape_network is already a loaded network using the Cytoscape loader
-    # Convert the Cytoscape network (or just reuse it if already a NetworkX graph)
+    """Fixture to convert and return the network from a Cytoscape file as a NetworkX graph.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        cytoscape_network: The network object loaded from a Cytoscape file.
+
+    Returns:
+        NetworkXGraph: The network object converted to a NetworkX graph.
+    """
     return risk_obj.load_networkx_network(network=cytoscape_network)
 
 
 # Annotation fixtures
 @pytest.fixture(scope="session")
 def json_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a JSON file"""
+    """Fixture to load and return annotations from a JSON file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation file.
+
+    Returns:
+        Annotations: The loaded annotations object.
+    """
     annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
     return risk_obj.load_json_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def csv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a CSV file"""
+    """Fixture to load and return annotations from a CSV file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation file.
+
+    Returns:
+        Annotations: The loaded annotations object.
+    """
     annotation_file = data_path / "csv" / "annotations" / "go_biological_process.csv"
     return risk_obj.load_csv_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def tsv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a TSV file"""
+    """Fixture to load and return annotations from a TSV file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation file.
+
+    Returns:
+        Annotations: The loaded annotations object.
+    """
     annotation_file = data_path / "tsv" / "annotations" / "go_biological_process.tsv"
     return risk_obj.load_tsv_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def excel_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from an Excel file"""
+    """Fixture to load and return annotations from an Excel file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+        data_path: The base path to the directory containing the annotation file.
+
+    Returns:
+        Annotations: The loaded annotations object.
+    """
     annotation_file = data_path / "excel" / "annotations" / "go_biological_process.xlsx"
     return risk_obj.load_excel_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
@@ -107,8 +173,16 @@ def excel_annotation(risk_obj, cytoscape_network, data_path):
 # Combined fixture for testing graph loading
 @pytest.fixture(scope="session")
 def graph(risk_obj, cytoscape_network, json_annotation):
-    """Fixture to load and return a graph built from a Cytoscape JSON network and annotations"""
-    # Using the Cytoscape JSON network and JSON annotations as default for the graph fixture
+    """Fixture to load and return a graph built from a Cytoscape JSON network and annotations.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the graph.
+        cytoscape_network: The network object loaded from a Cytoscape file.
+        json_annotation: The JSON annotations associated with the network.
+
+    Returns:
+        Graph: The constructed graph object.
+    """
     network = cytoscape_network
     annotations = json_annotation
     # Build neighborhoods based on the loaded network and annotations
