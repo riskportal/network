@@ -36,22 +36,9 @@ PROJECT NAME IDEA
 THINGS I UPDATED
 ================
 1. 
-    - Replaced matrix multiplication for color computation with an element-wise approach.
-    - ChatGPT:
-"""
-Refactoring the given code block to implement an alternative to matrix multiplication for creating node colors that signify importance or enrichment involves a few steps. Given your description, it seems like you want to aggregate domain associations for each node and then apply a color mapping based on these associations. Since matmul may not be the most intuitive choice here, especially for custom logic involving color intensity or shading based on domain counts, we'll proceed with an element-wise approach that provides more control.
-
-First, let's outline the steps needed to refactor the code block:
-
-    Aggregate Domain Associations: Summarize the domain associations per node to determine the "weight" or "importance" of each node based on its domain counts.
-    Normalize Domain Counts: Normalize these counts to ensure they fall within a range that can be mapped to colors effectively.
-    Apply Color Mapping: Based on the normalized counts, apply a color mapping strategy that reflects the node's importance or enrichment.
-    Implement Custom Logic for Color Intensity: Develop a logic that adjusts color intensity or shading based on the normalized domain counts. This could involve interpolating between a set of base colors and adjusting the intensity or transparency (alpha value) of the colors based on the domain count.
-
-Since you've already aggregated domain associations (node2domain_count) and computed the total domain counts per node (node2all_domains_count), the next step is to apply the color mapping.
-
-Assuming domain2rgb contains base colors for domains and you want to generate a composite color for each node based on its associations, here is how you can refactor the existing code block to apply a custom color mapping without using np.matmul:
-"""
+    - In addition to computing the sum of dot products of the observed test statistic against the null distribution (randomized network), I've introduced:
+	- Standard deviation of dot products in the observed test statistic against the null distribution
+	- Z-score of dot products in the observed test statistic against the null distribution
     - Improved coloring with appropriate shading for less enriched nodes.
 2. 
     - Permutation test: now significantly faster (metrics needed to quantify this improvement).
@@ -63,11 +50,8 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
         - Excel
     - Accepts more intuitive network file types:
         - Cytoscape
+        - Cytoscape JSON
         - Gpickle
-        - CSV
-        - TSV
-        - Excel
-        - SIF
     - Accepts NetworkX
 4.
     - Enhanced domain description generation using NLTK.
@@ -78,35 +62,48 @@ Assuming domain2rgb contains base colors for domains and you want to generate a 
 6.
     - Remove node significance if its closest edge with an enriched neighbor is greater than N STDEV of all edge lengths.
 7.
-    - Added new domain selection algorithms:
+    - Added new domain selection algorithms (original is Dijkstra):
         - Louvain
-        - Affinity propagation
+        - Label propagation
+	- Markov clustering
+	- Spinglass method
+	- Walktrap method
 8. 
     - Automatically compute domain thresholding across different linkages and metrics (default behavior).
 9.
-    - Plot the local enrichment-finished network on a sphere.
-    - Enable the sphere to rotate, capturing every rotational image to ultimately make an animation.
+    - Add random seeding to key functions, enabling total reporduction of results
 10. [BIG]
     - Enable the conversion of the input 2D network to 3D prior to computing neighborhoods.
         - This allows for a better spread of tightly packed nodes, facilitating a more optimal scan for local enrichment.
-    - When plotting, enable the conversion of the 3D network back to a 2D plane.
+    - When plotting, convert of the 3D network back to a 2D plane.
 11.
-    - Explicitly use edge weights to better refine node distancing prior to neighborhood computation.
+    - Enable surface depth of the spherical network, giving further depth on sphere surface for tight-clustering nodes.
+    - This diminishes edge distance of nodes in a tight cluster, while expanding distances between sparsely connected node clusters
 12.
-    - Enable surface dimpling of the spherical network, clustering regions of the network with tight connections.
-    - Call this the dimpling effect, with the degree of travel towards the spherical center dictated by a 'dimple factor'.
-    - Automate calculation of the optimal dimple factor.
+    - Enable option to user to use edge weights to better refine node distancing prior to neighborhood computation.
 13.
     - Add contours to the network, providing a simpler way to view regions of enrichment.
 14.
     - Impute non-significant nodes' significance to their closest significant node.
+    - Prune faraway significant nodes, enhancing cluster formation and visualization
 15.
-    - Automatically generate and position labels around the network, with arrows pointing from the labels to their respective clusters.
+    - Automatically generate and position labels around the network, with non-intersecting arrows pointing from the labels to their respective clusters.
 16.
     - Seamlessly interface with the plotter class, enabling graph instantiation, display, and export.
 17
     - Multiprocessed permutation test, applicable in both Python and Jupyter environments
+	- Enable selection of significant neighborhoods (cluster of nodes enriched for an annotation (let's say the clusters are genes and annotation is a GO term)) using P-value and FDR BH
 18
     - Ability to color annotation arrows
 19
-    - Ability to add custom nodes / contours to the plot (labeling still needed)
+    - Ability to add custom nodes, contours, and labels to the plot
+20
+    - Exports object instance attibutes as:
+	- CSV
+	- Text file
+	- JSON
+    - This enables users to keep track of prior configuration settings for reproducibility
+21 
+    - Network plotting
+	- Ability to specify minimum and maximum cluster sizes to display. Anything beyond range is not plotted
+	- Specify a maximum distance from a node to find its neighbors
