@@ -11,7 +11,7 @@
 
 ## RISK
 
-#### Regional Inference of Significant Kinships
+#### RISK Infers Spatial Kinships
 
 RISK is a software tool for visualizing spatial relationships in networks. It aims to enhance network analysis by integrating advanced network annotation algorithms, such as Louvain and Markov Clustering, to identify key functional modules and pathways.
 
