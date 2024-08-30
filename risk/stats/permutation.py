@@ -3,86 +3,210 @@ risk/stats/permutation
 ~~~~~~~~~~~~~~~~~~~~~~
 """
 
+from multiprocessing import get_context, Manager
+from tqdm import tqdm
+from typing import Any, Callable, Dict
+
 import numpy as np
+from threadpoolctl import threadpool_limits
 
-# Note: Cython optimizations provided minimal performance benefits.
-# The final version with Cython is archived in the `cython_permutation` branch.
-
-
-def compute_neighborhood_score_by_sum(
-    neighborhoods_matrix: np.ndarray, annotation_matrix: np.ndarray
-) -> np.ndarray:
-    """Compute the sum of attribute values for each neighborhood.
-
-    Args:
-        neighborhoods_matrix (np.ndarray): Binary matrix representing neighborhoods.
-        annotation_matrix (np.ndarray): Matrix representing annotation values.
-
-    Returns:
-        np.ndarray: Sum of attribute values for each neighborhood.
-    """
-    # Calculate the neighborhood score as the dot product of neighborhoods and annotations
-    neighborhood_score = np.dot(neighborhoods_matrix, annotation_matrix)
-    return neighborhood_score
+from risk.stats.test_functions import DISPATCH_TEST_FUNCTIONS
 
 
-def compute_neighborhood_score_by_stdev(
-    neighborhoods_matrix: np.ndarray, annotation_matrix: np.ndarray
-) -> np.ndarray:
-    """Compute the standard deviation of neighborhood scores.
+def compute_permutation(
+    neighborhoods: np.ndarray,
+    annotations: np.ndarray,
+    score_metric: str = "sum",
+    null_distribution: str = "network",
+    num_permutations: int = 1000,
+    random_seed: int = 888,
+    max_workers: int = 1,
+) -> Dict[str, Any]:
+    """Compute permutation test for enrichment and depletion in neighborhoods.
 
     Args:
-        neighborhoods_matrix (np.ndarray): Binary matrix representing neighborhoods.
-        annotation_matrix (np.ndarray): Matrix representing annotation values.
+        neighborhoods (np.ndarray): Binary matrix representing neighborhoods.
+        annotations (np.ndarray): Binary matrix representing annotations.
+        score_metric (str, optional): Metric to use for scoring ('sum', 'mean', etc.). Defaults to "sum".
+        null_distribution (str, optional): Type of null distribution ('network' or other). Defaults to "network".
+        num_permutations (int, optional): Number of permutations to run. Defaults to 1000.
+        random_seed (int, optional): Seed for random number generation. Defaults to 888.
+        max_workers (int, optional): Number of workers for multiprocessing. Defaults to 1.
 
     Returns:
-        np.ndarray: Standard deviation of the neighborhood scores.
+        dict: Dictionary containing depletion and enrichment p-values.
     """
-    # Calculate the neighborhood score as the dot product of neighborhoods and annotations
-    neighborhood_score = np.dot(neighborhoods_matrix, annotation_matrix)
-    # Calculate the number of elements in each neighborhood
-    N = np.sum(neighborhoods_matrix, axis=1)
-    # Compute the mean of the neighborhood scores
-    M = neighborhood_score / N[:, None]
-    # Compute the mean of squares (EXX) directly using squared annotation matrix
-    EXX = np.dot(neighborhoods_matrix, annotation_matrix**2) / N[:, None]
-    # Calculate variance as EXX - M^2
-    variance = EXX - M**2
-    # Compute the standard deviation as the square root of the variance
-    stdev = np.sqrt(variance)
-    return stdev
+    # Ensure that the matrices are in the correct format and free of NaN values
+    neighborhoods = neighborhoods.astype(np.float32)
+    annotations = annotations.astype(np.float32)
+    # Retrieve the appropriate neighborhood score function based on the metric
+    neighborhood_score_func = DISPATCH_TEST_FUNCTIONS[score_metric]
 
-
-def compute_neighborhood_score_by_z_score(
-    neighborhoods_matrix: np.ndarray, annotation_matrix: np.ndarray
-) -> np.ndarray:
-    """Compute Z-scores for neighborhood scores.
-
-    Args:
-        neighborhoods_matrix (np.ndarray): Binary matrix representing neighborhoods.
-        annotation_matrix (np.ndarray): Matrix representing annotation values.
-
-    Returns:
-        np.ndarray: Z-scores for each neighborhood.
-    """
-    # Calculate the neighborhood score as the dot product of neighborhoods and annotations
-    neighborhood_score = np.dot(neighborhoods_matrix, annotation_matrix)
-    # Calculate the number of elements in each neighborhood
-    N = np.dot(
-        neighborhoods_matrix, np.ones(annotation_matrix.shape[1], dtype=annotation_matrix.dtype)
+    # Run the permutation test to calculate depletion and enrichment counts
+    counts_depletion, counts_enrichment = _run_permutation_test(
+        neighborhoods=neighborhoods,
+        annotations=annotations,
+        neighborhood_score_func=neighborhood_score_func,
+        null_distribution=null_distribution,
+        num_permutations=num_permutations,
+        random_seed=random_seed,
+        max_workers=max_workers,
     )
-    # Compute the mean of the neighborhood scores
-    M = neighborhood_score / N
-    # Compute the mean of squares (EXX)
-    EXX = np.dot(neighborhoods_matrix, annotation_matrix**2) / N
-    # Calculate the standard deviation for each neighborhood
-    variance = EXX - M**2
-    std = np.sqrt(variance)
-    # Calculate Z-scores, handling cases where std is 0 or N is less than 3
-    with np.errstate(divide="ignore", invalid="ignore"):
-        z_scores = M / std
-        z_scores[(std == 0) | (N < 3)] = (
-            np.nan
-        )  # Handle division by zero and apply minimum threshold
+    # Compute p-values for depletion and enrichment
+    # If counts are 0, set p-value to 1/num_permutations to avoid zero p-values
+    depletion_pvals = np.maximum(counts_depletion, 1) / num_permutations
+    enrichment_pvals = np.maximum(counts_enrichment, 1) / num_permutations
 
-    return z_scores
+    return {
+        "depletion_pvals": depletion_pvals,
+        "enrichment_pvals": enrichment_pvals,
+    }
+
+
+def _run_permutation_test(
+    neighborhoods: np.ndarray,
+    annotations: np.ndarray,
+    neighborhood_score_func: Callable,
+    null_distribution: str = "network",
+    num_permutations: int = 1000,
+    random_seed: int = 888,
+    max_workers: int = 4,
+) -> tuple:
+    """Run a permutation test to calculate enrichment and depletion counts.
+
+    Args:
+        neighborhoods (np.ndarray): The neighborhood matrix.
+        annotations (np.ndarray): The annotation matrix.
+        neighborhood_score_func (Callable): Function to calculate neighborhood scores.
+        null_distribution (str, optional): Type of null distribution. Defaults to "network".
+        num_permutations (int, optional): Number of permutations. Defaults to 1000.
+        random_seed (int, optional): Seed for random number generation. Defaults to 888.
+        max_workers (int, optional): Number of workers for multiprocessing. Defaults to 4.
+
+    Returns:
+        tuple: Depletion and enrichment counts.
+    """
+    # Initialize the RNG for reproducibility
+    rng = np.random.default_rng(seed=random_seed)
+    # Determine the indices to use based on the null distribution type
+    if null_distribution == "network":
+        idxs = range(annotations.shape[0])
+    else:
+        idxs = np.nonzero(np.sum(~np.isnan(annotations), axis=1))[0]
+
+    # Replace NaNs with zeros in the annotations matrix
+    annotations[np.isnan(annotations)] = 0
+    annotation_matrix_obsv = annotations[idxs]
+    neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
+    # Calculate observed neighborhood scores
+    with np.errstate(invalid="ignore", divide="ignore"):
+        observed_neighborhood_scores = neighborhood_score_func(
+            neighborhoods_matrix_obsv, annotation_matrix_obsv
+        )
+
+    # Initialize count matrices for depletion and enrichment
+    counts_depletion = np.zeros(observed_neighborhood_scores.shape)
+    counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
+
+    # Determine the number of permutations to run in each worker process
+    subset_size = num_permutations // max_workers
+    remainder = num_permutations % max_workers
+
+    # Use the spawn context for creating a new multiprocessing pool
+    ctx = get_context("spawn")
+    manager = Manager()
+    progress_counter = manager.Value("i", 0)
+    total_progress = num_permutations
+
+    # Execute the permutation test using multiprocessing
+    with ctx.Pool(max_workers) as pool:
+        with tqdm(total=total_progress, desc="Total progress", position=0) as progress:
+            # Prepare parameters for multiprocessing
+            params_list = [
+                (
+                    annotations,
+                    np.array(idxs),
+                    neighborhoods_matrix_obsv,
+                    observed_neighborhood_scores,
+                    neighborhood_score_func,
+                    subset_size + (1 if i < remainder else 0),
+                    progress_counter,
+                    rng,  # Pass the RNG to each process
+                )
+                for i in range(max_workers)
+            ]
+
+            # Start the permutation process in parallel
+            results = pool.starmap_async(_permutation_process_subset, params_list, chunksize=1)
+
+            # Update progress bar based on progress_counter
+            # NOTE: Waiting for results to be ready while updating progress bar gives a big improvement
+            # in performance, especially for large number of permutations and workers
+            while not results.ready():
+                progress.update(progress_counter.value - progress.n)
+                results.wait(0.05)  # Wait for 50ms
+            # Ensure progress bar reaches 100%
+            progress.update(total_progress - progress.n)
+
+            # Accumulate results from each worker
+            for local_counts_depletion, local_counts_enrichment in results.get():
+                counts_depletion = np.add(counts_depletion, local_counts_depletion)
+                counts_enrichment = np.add(counts_enrichment, local_counts_enrichment)
+
+    return counts_depletion, counts_enrichment
+
+
+def _permutation_process_subset(
+    annotation_matrix: np.ndarray,
+    idxs: np.ndarray,
+    neighborhoods_matrix_obsv: np.ndarray,
+    observed_neighborhood_scores: np.ndarray,
+    neighborhood_score_func: Callable,
+    subset_size: int,
+    progress_counter,
+    rng: np.random.Generator,
+) -> tuple:
+    """Process a subset of permutations for the permutation test.
+
+    Args:
+        annotation_matrix (np.ndarray): The annotation matrix.
+        idxs (np.ndarray): Indices of valid rows in the matrix.
+        neighborhoods_matrix_obsv (np.ndarray): Observed neighborhoods matrix.
+        observed_neighborhood_scores (np.ndarray): Observed neighborhood scores.
+        neighborhood_score_func (Callable): Function to calculate neighborhood scores.
+        subset_size (int): Number of permutations to run in this subset.
+        progress_counter: Shared counter for tracking progress.
+        rng (np.random.Generator): Random number generator object.
+
+    Returns:
+        tuple: Local counts of depletion and enrichment.
+    """
+    # Initialize local count matrices for this worker
+    local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
+    local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
+    # NOTE: Limit the number of threads used by NumPy's BLAS implementation to 1.
+    # This can help prevent oversubscription of CPU resources during multiprocessing,
+    # ensuring that each process doesn't use more than one CPU core.
+    with threadpool_limits(limits=1, user_api="blas"):
+        for _ in range(subset_size):
+            # Permute the annotation matrix using the RNG
+            annotation_matrix_permut = annotation_matrix[rng.permutation(idxs)]
+            # Calculate permuted neighborhood scores
+            with np.errstate(invalid="ignore", divide="ignore"):
+                permuted_neighborhood_scores = neighborhood_score_func(
+                    neighborhoods_matrix_obsv, annotation_matrix_permut
+                )
+
+            # Update local depletion and enrichment counts based on permuted scores
+            local_counts_depletion = np.add(
+                local_counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
+            )
+            local_counts_enrichment = np.add(
+                local_counts_enrichment,
+                permuted_neighborhood_scores >= observed_neighborhood_scores,
+            )
+
+            # Update the shared progress counter
+            progress_counter.value += 1
+
+    return local_counts_depletion, local_counts_enrichment
