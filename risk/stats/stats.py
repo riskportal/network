@@ -98,8 +98,8 @@ def _run_permutation_test(
     Returns:
         tuple: Depletion and enrichment counts.
     """
-    # Set the random seed for reproducibility
-    np.random.seed(random_seed)
+    # Initialize the RNG for reproducibility
+    rng = np.random.default_rng(seed=random_seed)
 
     # Determine the indices to use based on the null distribution type
     if null_distribution == "network":
@@ -111,7 +111,6 @@ def _run_permutation_test(
     annotations[np.isnan(annotations)] = 0
     annotation_matrix_obsv = annotations[idxs]
     neighborhoods_matrix_obsv = neighborhoods.T[idxs].T
-
     # Calculate observed neighborhood scores
     with np.errstate(invalid="ignore", divide="ignore"):
         observed_neighborhood_scores = neighborhood_score_func(
@@ -131,7 +130,6 @@ def _run_permutation_test(
     manager = Manager()
     progress_counter = manager.Value("i", 0)
     total_progress = num_permutations
-
     # Execute the permutation test using multiprocessing
     with ctx.Pool(max_workers) as pool:
         with tqdm(total=total_progress, desc="Total progress", position=0) as progress:
@@ -145,10 +143,10 @@ def _run_permutation_test(
                     neighborhood_score_func,
                     subset_size + (1 if i < remainder else 0),
                     progress_counter,
+                    rng,  # Pass the RNG to each process
                 )
                 for i in range(max_workers)
             ]
-
             # Start the permutation process in parallel
             results = pool.starmap_async(_permutation_process_subset, params_list, chunksize=1)
 
@@ -158,7 +156,6 @@ def _run_permutation_test(
             while not results.ready():
                 progress.update(progress_counter.value - progress.n)
                 results.wait(0.05)  # Wait for 50ms
-
             # Ensure progress bar reaches 100%
             progress.update(total_progress - progress.n)
 
@@ -178,6 +175,7 @@ def _permutation_process_subset(
     neighborhood_score_func: Callable,
     subset_size: int,
     progress_counter,
+    rng: np.random.Generator,
 ) -> tuple:
     """Process a subset of permutations for the permutation test.
 
@@ -189,6 +187,7 @@ def _permutation_process_subset(
         neighborhood_score_func (Callable): Function to calculate neighborhood scores.
         subset_size (int): Number of permutations to run in this subset.
         progress_counter: Shared counter for tracking progress.
+        rng (np.random.Generator): Random number generator object.
 
     Returns:
         tuple: Local counts of depletion and enrichment.
@@ -199,8 +198,8 @@ def _permutation_process_subset(
 
     with threadpool_limits(limits=1, user_api="blas"):
         for _ in range(subset_size):
-            # Permute the annotation matrix
-            annotation_matrix_permut = annotation_matrix[np.random.permutation(idxs)]
+            # Permute the annotation matrix using the RNG
+            annotation_matrix_permut = annotation_matrix[rng.permutation(idxs)]
             # Calculate permuted neighborhood scores
             with np.errstate(invalid="ignore", divide="ignore"):
                 permuted_neighborhood_scores = neighborhood_score_func(
