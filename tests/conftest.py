@@ -186,7 +186,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
     network = cytoscape_network
     annotations = json_annotation
     # Build neighborhoods based on the loaded network and annotations
-    neighborhoods = risk_obj.load_neighborhoods(
+    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=network,
         annotations=annotations,
         distance_metric="louvain",  # Example metric
