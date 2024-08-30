@@ -249,7 +249,7 @@ class RISK(NetworkIO, AnnotationsIO):
             annotations (pd.DataFrame): DataFrame containing annotation data for the network.
             neighborhoods (dict): Neighborhood enrichment data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
-            pval_cutoff (float, optional): P-value cutoff for significance. Defaults to 0.01.
+            pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
             fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
             impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
             prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
@@ -277,7 +277,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=max_cluster_size,
         )
 
-        print(f"P-value cutoff: {pval_cutoff}")
+        print(f"p-value cutoff: {pval_cutoff}")
         print(f"FDR BH cutoff: {fdr_cutoff}")
         print(
             f"Significance tail: '{tail}' ({'enrichment' if tail == 'right' else 'depletion' if tail == 'left' else 'both'})"
