@@ -2,9 +2,6 @@
 risk
 ~~~~
 
-risk
-~~~~
-
 RISK: RISK Infers Spatial Kinship
 """
 
