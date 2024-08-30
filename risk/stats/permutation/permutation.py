@@ -1,6 +1,6 @@
 """
-risk/stats/permutation
-~~~~~~~~~~~~~~~~~~~~~~
+risk/stats/permutation/permutation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from multiprocessing import get_context, Manager
@@ -10,10 +10,10 @@ from typing import Any, Callable, Dict
 import numpy as np
 from threadpoolctl import threadpool_limits
 
-from risk.stats.test_functions import DISPATCH_TEST_FUNCTIONS
+from risk.stats.permutation.test_functions import DISPATCH_TEST_FUNCTIONS
 
 
-def compute_permutation(
+def compute_permutation_test(
     neighborhoods: np.ndarray,
     annotations: np.ndarray,
     score_metric: str = "sum",
