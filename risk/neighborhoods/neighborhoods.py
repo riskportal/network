@@ -321,7 +321,11 @@ def _calculate_threshold(average_distances: list, distance_threshold: float) -> 
     rank_percentiles = np.linspace(0, 1, len(sorted_distances))
     # Interpolating the ranks to 1000 evenly spaced percentiles
     interpolated_percentiles = np.linspace(0, 1, 1000)
-    smoothed_distances = np.interp(interpolated_percentiles, rank_percentiles, sorted_distances)
+    try:
+        smoothed_distances = np.interp(interpolated_percentiles, rank_percentiles, sorted_distances)
+    except ValueError as e:
+        raise ValueError("No significant annotations found.") from e
+
     # Determine the index corresponding to the distance threshold
     threshold_index = int(np.ceil(distance_threshold * len(smoothed_distances))) - 1
     # Return the smoothed distance at the calculated index
