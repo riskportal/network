@@ -400,8 +400,10 @@ class NetworkPlotter:
         fontcolor: Union[str, np.ndarray] = "black",
         arrow_linewidth: float = 1,
         arrow_color: Union[str, np.ndarray] = "black",
+        max_labels: Union[int, None] = None,
         max_words: int = 10,
         min_words: int = 1,
+        words_to_omit: Union[List[str], None] = None,
     ) -> None:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
 
@@ -413,8 +415,10 @@ class NetworkPlotter:
             fontcolor (str or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
             arrow_color (str or np.ndarray, optional): Color of the arrows. Can be a string or RGBA array. Defaults to "black".
+            max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
             max_words (int, optional): Maximum number of words in a label. Defaults to 10.
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
+            words_to_omit (List[str], optional): List of words to omit from the labels. Defaults to None.
         """
         # Log the plotting parameters
         params.log_plotter(
@@ -425,14 +429,20 @@ class NetworkPlotter:
             label_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
             label_arrow_linewidth=arrow_linewidth,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
+            label_max_labels=max_labels,
             label_max_words=max_words,
             label_min_words=min_words,
+            label_words_to_omit=words_to_omit,  # Log words_to_omit parameter
         )
+
         # Convert color strings to RGBA arrays if necessary
         if isinstance(fontcolor, str):
             fontcolor = self.get_annotated_label_colors(color=fontcolor)
         if isinstance(arrow_color, str):
             arrow_color = self.get_annotated_label_colors(color=arrow_color)
+        # Normalize words_to_omit to lowercase
+        if words_to_omit:
+            words_to_omit = set(word.lower() for word in words_to_omit)
 
         # Calculate the center and radius of the network
         domain_centroids = {}
@@ -443,18 +453,45 @@ class NetworkPlotter:
         # Initialize empty lists to collect valid indices
         valid_indices = []
         filtered_domain_centroids = {}
+        filtered_domain_terms = {}
         # Loop through domain_centroids with index
         for idx, (domain, centroid) in enumerate(domain_centroids.items()):
+            # Process the domain term
+            terms = self.graph.trimmed_domain_to_term[domain].split(" ")
+            # Remove words_to_omit
+            if words_to_omit:
+                terms = [term for term in terms if term.lower() not in words_to_omit]
+            # Trim to max_words
+            terms = terms[:max_words]
             # Check if the domain passes the word count condition
-            if len(self.graph.trimmed_domain_to_term[domain].split(" ")[:max_words]) >= min_words:
+            if len(terms) >= min_words:
                 # Add to filtered_domain_centroids
                 filtered_domain_centroids[domain] = centroid
+                # Store the trimmed terms
+                filtered_domain_terms[domain] = " ".join(terms)
                 # Keep track of the valid index
                 valid_indices.append(idx)
 
-        # Now filter fontcolor and arrow_color to keep only the valid indices
-        fontcolor = fontcolor[valid_indices]
-        arrow_color = arrow_color[valid_indices]
+        # If max_labels is specified and less than the available labels
+        if max_labels is not None and max_labels < len(filtered_domain_centroids):
+            step = len(filtered_domain_centroids) / max_labels
+            selected_indices = [int(i * step) for i in range(max_labels)]
+            filtered_domain_centroids = {
+                k: v
+                for i, (k, v) in enumerate(filtered_domain_centroids.items())
+                if i in selected_indices
+            }
+            filtered_domain_terms = {
+                k: v
+                for i, (k, v) in enumerate(filtered_domain_terms.items())
+                if i in selected_indices
+            }
+            fontcolor = fontcolor[selected_indices]
+            arrow_color = arrow_color[selected_indices]
+
+        # Update the terms in the graph after omitting words and filtering
+        for domain, terms in filtered_domain_terms.items():
+            self.graph.trimmed_domain_to_term[domain] = terms
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
@@ -531,12 +568,10 @@ class NetworkPlotter:
 
         # Calculate the centroid of the provided nodes
         centroid = self._calculate_domain_centroid(node_ids)
-
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
             self.graph.node_coordinates, radius_margin=perimeter_scale
         )
-
         # Convert radial position to radians, adjusting for a 90-degree rotation
         radial_radians = np.deg2rad(radial_position - 90)
         label_position = (
