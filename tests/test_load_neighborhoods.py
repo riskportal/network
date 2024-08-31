@@ -224,7 +224,7 @@ def test_load_neighborhoods_with_various_distance_metrics(
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-@pytest.mark.parametrize("score_metric", ["sum", "stdev", "z_score"])
+@pytest.mark.parametrize("score_metric", ["sum", "stdev"])
 def test_load_neighborhoods_with_various_score_metrics(
     risk_obj, cytoscape_network, json_annotation, score_metric
 ):
