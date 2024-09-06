@@ -352,6 +352,7 @@ class RISK(NetworkIO, AnnotationsIO):
         plot_outline: bool = True,
         outline_color: str = "black",
         outline_scale: float = 1.00,
+        linestyle: str = "dashed",
     ) -> NetworkPlotter:
         """Get a NetworkPlotter object for plotting.
 
@@ -362,6 +363,7 @@ class RISK(NetworkIO, AnnotationsIO):
             plot_outline (bool, optional): Whether to plot the network outline. Defaults to True.
             outline_color (str, optional): Color of the outline. Defaults to "black".
             outline_scale (float, optional): Scaling factor for the outline. Defaults to 1.00.
+            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
 
         Returns:
             NetworkPlotter: A NetworkPlotter object configured with the given parameters.
@@ -374,6 +376,7 @@ class RISK(NetworkIO, AnnotationsIO):
             plot_outline=plot_outline,
             outline_color=outline_color,
             outline_scale=outline_scale,
+            linestyle=linestyle,
         )
 
         # Initialize and return a NetworkPlotter object
@@ -384,6 +387,7 @@ class RISK(NetworkIO, AnnotationsIO):
             plot_outline=plot_outline,
             outline_color=outline_color,
             outline_scale=outline_scale,
+            linestyle=linestyle,
         )
 
     def _load_neighborhoods(
