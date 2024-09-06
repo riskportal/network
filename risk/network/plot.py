@@ -33,6 +33,7 @@ class NetworkPlotter:
         plot_outline: bool = True,
         outline_color: str = "black",
         outline_scale: float = 1.0,
+        linestyle: str = "--",
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
@@ -43,11 +44,18 @@ class NetworkPlotter:
             plot_outline (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
             outline_color (str, optional): Color of the network perimeter circle. Defaults to "black".
             outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
+            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "--".
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
         self.ax = self._initialize_plot(
-            graph, figsize, background_color, plot_outline, outline_color, outline_scale
+            graph,
+            figsize,
+            background_color,
+            plot_outline,
+            outline_color,
+            outline_scale,
+            linestyle,
         )
 
     def _initialize_plot(
@@ -58,6 +66,7 @@ class NetworkPlotter:
         plot_outline: bool,
         outline_color: str,
         outline_scale: float,
+        linestyle: str,
     ) -> plt.Axes:
         """Set up the plot with figure size, optional circle perimeter, and background color.
 
@@ -68,6 +77,7 @@ class NetworkPlotter:
             plot_outline (bool): Whether to plot the network perimeter circle.
             outline_color (str): Color of the network perimeter circle.
             outline_scale (float): Outline scaling factor for the perimeter diameter.
+            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid).
 
         Returns:
             plt.Axes: The axis object for the plot.
@@ -87,7 +97,7 @@ class NetworkPlotter:
             circle = plt.Circle(
                 center,
                 scaled_radius,
-                linestyle="--",
+                linestyle=linestyle,  # Use the linestyle argument here
                 color=outline_color,
                 fill=False,
                 linewidth=1.5,
