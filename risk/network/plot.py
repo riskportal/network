@@ -33,7 +33,7 @@ class NetworkPlotter:
         plot_outline: bool = True,
         outline_color: str = "black",
         outline_scale: float = 1.0,
-        linestyle: str = "--",
+        linestyle: str = "dashed",
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
@@ -44,7 +44,7 @@ class NetworkPlotter:
             plot_outline (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
             outline_color (str, optional): Color of the network perimeter circle. Defaults to "black".
             outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
-            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "--".
+            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
