@@ -136,6 +136,7 @@ def initialize_plotter(risk, graph):
         plot_outline=True,
         outline_color="white",
         outline_scale=1.05,
+        linestyle="solid",
     )
 
 
@@ -256,8 +257,10 @@ def plot_labels(plotter):
         fontcolor=plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887),
         arrow_linewidth=1,
         arrow_color=plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887),
+        max_labels=10,
         max_words=4,
         min_words=2,
+        words_to_omit=["process", "biosynthetic"],
     )
 
 
