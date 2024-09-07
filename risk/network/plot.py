@@ -499,10 +499,6 @@ class NetworkPlotter:
             fontcolor = fontcolor[selected_indices]
             arrow_color = arrow_color[selected_indices]
 
-        # Update the terms in the graph after omitting words and filtering
-        for domain, terms in filtered_domain_terms.items():
-            self.graph.trimmed_domain_to_term[domain] = terms
-
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
             self.graph.node_coordinates, radius_margin=perimeter_scale
@@ -514,7 +510,7 @@ class NetworkPlotter:
         # Annotate the network with labels
         for idx, (domain, pos) in enumerate(best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
-            annotations = self.graph.trimmed_domain_to_term[domain].split(" ")[:max_words]
+            annotations = filtered_domain_terms[domain].split(" ")[:max_words]
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,

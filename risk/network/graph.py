@@ -11,7 +11,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import matplotlib
-import matplotlib.cm as cm
 
 
 class NetworkGraph:
@@ -270,7 +269,7 @@ def _get_colors(
         rgba = matplotlib.colors.to_rgba(kwargs["color"])
         rgbas = [rgba] * num_colors_to_generate
     else:
-        colormap = cm.get_cmap(cmap)
+        colormap = matplotlib.colormaps.get_cmap(cmap)
         # Generate evenly distributed color positions
         color_positions = np.linspace(0, 1, num_colors_to_generate)
         random.shuffle(color_positions)  # Shuffle the positions to randomize colors
