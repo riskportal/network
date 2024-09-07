@@ -487,7 +487,7 @@ class NetworkPlotter:
                 filtered_domain_centroids[domain] = centroid
                 # Store the filtered and trimmed terms
                 filtered_domain_terms[domain] = " ".join(terms)
-                # Keep track of the valid index
+                # Keep track of the valid index - used for fontcolor and arrow_color
                 valid_indices.append(idx)
 
         # If max_labels is specified and less than the available labels
@@ -515,8 +515,8 @@ class NetworkPlotter:
         best_label_positions = _best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
-        # Annotate the network with labels
-        for idx, (domain, pos) in enumerate(best_label_positions.items()):
+        # Annotate the network with labels - valid_indices is used for fontcolor and arrow_color
+        for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
             annotations = filtered_domain_terms[domain].split(" ")[:max_words]
             self.ax.annotate(
