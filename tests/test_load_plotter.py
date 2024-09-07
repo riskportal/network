@@ -260,6 +260,8 @@ def plot_labels(plotter):
         max_labels=10,
         max_words=4,
         min_words=2,
+        max_word_length=20,
+        min_word_length=3,
         words_to_omit=["process", "biosynthetic"],
     )
 

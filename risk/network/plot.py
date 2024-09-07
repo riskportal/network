@@ -413,6 +413,8 @@ class NetworkPlotter:
         max_labels: Union[int, None] = None,
         max_words: int = 10,
         min_words: int = 1,
+        max_word_length: int = 20,
+        min_word_length: int = 1,
         words_to_omit: Union[List[str], None] = None,
     ) -> None:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
@@ -428,6 +430,8 @@ class NetworkPlotter:
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
             max_words (int, optional): Maximum number of words in a label. Defaults to 10.
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
+            max_word_length (int, optional): Maximum number of characters in a word to display. Defaults to 20.
+            min_word_length (int, optional): Minimum number of characters in a word to display. Defaults to 1.
             words_to_omit (List[str], optional): List of words to omit from the labels. Defaults to None.
         """
         # Log the plotting parameters
@@ -442,7 +446,9 @@ class NetworkPlotter:
             label_max_labels=max_labels,
             label_max_words=max_words,
             label_min_words=min_words,
-            label_words_to_omit=words_to_omit,  # Log words_to_omit parameter
+            label_max_word_length=max_word_length,
+            label_min_word_length=min_word_length,
+            label_words_to_omit=words_to_omit,
         )
 
         # Convert color strings to RGBA arrays if necessary
@@ -471,13 +477,15 @@ class NetworkPlotter:
             # Remove words_to_omit
             if words_to_omit:
                 terms = [term for term in terms if term.lower() not in words_to_omit]
+            # Filter words based on length
+            terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
             # Trim to max_words
             terms = terms[:max_words]
             # Check if the domain passes the word count condition
             if len(terms) >= min_words:
                 # Add to filtered_domain_centroids
                 filtered_domain_centroids[domain] = centroid
-                # Store the trimmed terms
+                # Store the filtered and trimmed terms
                 filtered_domain_terms[domain] = " ".join(terms)
                 # Keep track of the valid index
                 valid_indices.append(idx)
