@@ -512,7 +512,7 @@ class NetworkPlotter:
             self.graph.node_coordinates, radius_margin=perimeter_scale
         )
         # Calculate the best positions for labels around the perimeter
-        best_label_positions = _best_label_positions(
+        best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
         # Annotate the network with labels - valid_indices is used for fontcolor and arrow_color
@@ -795,7 +795,7 @@ def _calculate_bounding_box(
     return center, radius
 
 
-def _best_label_positions(
+def _calculate_best_label_positions(
     filtered_domain_centroids: Dict[str, Any], center: np.ndarray, radius: float, offset: float
 ) -> Dict[str, Any]:
     """Calculate and optimize label positions for clarity.
@@ -811,7 +811,9 @@ def _best_label_positions(
     """
     num_domains = len(filtered_domain_centroids)
     # Calculate equidistant positions around the center for initial label placement
-    equidistant_positions = _equidistant_angles_around_center(center, radius, offset, num_domains)
+    equidistant_positions = _calculate_equidistant_positions_around_center(
+        center, radius, offset, num_domains
+    )
     # Create a mapping of domains to their initial label positions
     label_positions = {
         domain: position
@@ -821,7 +823,7 @@ def _best_label_positions(
     return _optimize_label_positions(label_positions, filtered_domain_centroids)
 
 
-def _equidistant_angles_around_center(
+def _calculate_equidistant_positions_around_center(
     center: np.ndarray, radius: float, label_offset: float, num_domains: int
 ) -> List[np.ndarray]:
     """Calculate positions around a center at equidistant angles.

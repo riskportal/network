@@ -207,7 +207,7 @@ def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
         similar_words = [
             other_word
             for other_word in word_counts
-            if _jaccard_index(word_set, set(other_word)) >= threshold
+            if _calculate_jaccard_index(word_set, set(other_word)) >= threshold
         ]
         # Sort by frequency and choose the most frequent word
         similar_words.sort(key=lambda w: word_counts[w], reverse=True)
@@ -220,7 +220,7 @@ def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
     return final_words
 
 
-def _jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
+def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
     """Calculate the Jaccard Index of two sets.
 
     Args:
