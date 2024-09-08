@@ -5,7 +5,7 @@ risk/network/graph
 
 import random
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -100,7 +100,12 @@ class NetworkGraph:
         self.node_coordinates = _extract_node_coordinates(G_2d)
 
     def get_domain_colors(
-        self, min_scale: float = 0.8, max_scale: float = 1.0, random_seed: int = 888, **kwargs
+        self,
+        min_scale: float = 0.8,
+        max_scale: float = 1.0,
+        scale_factor: float = 1.0,
+        random_seed: int = 888,
+        **kwargs,
     ) -> np.ndarray:
         """Generate composite colors for domains.
 
@@ -111,6 +116,8 @@ class NetworkGraph:
         Args:
             min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
             max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
+            scale_factor (float, optional): Exponent for scaling, where values > 1 increase contrast by dimming small
+                values more. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             **kwargs: Additional keyword arguments for color generation.
 
@@ -118,7 +125,7 @@ class NetworkGraph:
             np.ndarray: Array of transformed colors.
         """
         # Get colors for each domain
-        domain_colors = self._get_domain_colors(**kwargs, random_seed=random_seed)
+        domain_colors = self._get_domain_colors(random_seed=random_seed)
         # Generate composite colors for nodes
         node_colors = self._get_composite_node_colors(domain_colors)
         # Transform colors to ensure proper alpha values and intensity
@@ -127,6 +134,7 @@ class NetworkGraph:
             self.node_enrichment_sums,
             min_scale=min_scale,
             max_scale=max_scale,
+            scale_factor=scale_factor,
         )
 
         return transformed_colors
@@ -152,8 +160,14 @@ class NetworkGraph:
 
         return composite_colors
 
-    def _get_domain_colors(self, **kwargs) -> Dict[str, Any]:
+    def _get_domain_colors(
+        self, color: Union[str, None] = None, random_seed: int = 888
+    ) -> Dict[str, Any]:
         """Get colors for each domain.
+
+        Args:
+            color (Union[str, None], optional): Specific color to use for all domains. If specified, it will overwrite the colormap.
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
             dict: A dictionary mapping domain keys to their corresponding RGBA colors.
@@ -163,20 +177,28 @@ class NetworkGraph:
             col for col in self.domains.columns if isinstance(col, (int, np.integer))
         ]
         domains = np.sort(numeric_domains)
-        domain_colors = _get_colors(**kwargs, num_colors_to_generate=len(domains))
+        domain_colors = _get_colors(
+            num_colors_to_generate=len(domains), color=color, random_seed=random_seed
+        )
         return dict(zip(self.domain_to_nodes.keys(), domain_colors))
 
 
 def _transform_colors(
-    colors: np.ndarray, enrichment_sums: np.ndarray, min_scale: float = 0.8, max_scale: float = 1.0
+    colors: np.ndarray,
+    enrichment_sums: np.ndarray,
+    min_scale: float = 0.8,
+    max_scale: float = 1.0,
+    scale_factor: float = 1.0,
 ) -> np.ndarray:
-    """Transform colors to ensure proper alpha values and intensity based on enrichment sums.
+    """Transform colors using power scaling to emphasize high enrichment sums more.
 
     Args:
         colors (np.ndarray): An array of RGBA colors.
         enrichment_sums (np.ndarray): An array of enrichment sums corresponding to the colors.
         min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
         max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
+        scale_factor (float, optional): Exponent for scaling, where values > 1 increase contrast by dimming small
+            values more. Defaults to 1.0.
 
     Returns:
         np.ndarray: The transformed array of RGBA colors with adjusted intensities.
@@ -184,11 +206,12 @@ def _transform_colors(
     if min_scale == max_scale:
         min_scale = max_scale - 10e-6  # Avoid division by zero
 
-    log_enrichment_sums = np.log1p(enrichment_sums)  # Use log1p to avoid log(0)
-    # Normalize the capped enrichment sums to the range [0, 1]
-    normalized_sums = log_enrichment_sums / np.max(log_enrichment_sums)
-    # Scale normalized sums to the specified color range [min_scale, max_scale]
-    scaled_sums = min_scale + (max_scale - min_scale) * normalized_sums
+    # Normalize the enrichment sums to the range [0, 1]
+    normalized_sums = enrichment_sums / np.max(enrichment_sums)
+    # Apply power scaling to dim lower values and emphasize higher values
+    scaled_sums = normalized_sums**scale_factor
+    # Linearly scale the normalized sums to the range [min_scale, max_scale]
+    scaled_sums = min_scale + (max_scale - min_scale) * scaled_sums
     # Adjust RGB values based on scaled sums
     for i in range(3):  # Only adjust RGB values
         colors[:, i] = scaled_sums * colors[:, i]
@@ -249,7 +272,10 @@ def _extract_node_coordinates(G: nx.Graph) -> np.ndarray:
 
 
 def _get_colors(
-    num_colors_to_generate: int = 10, cmap: str = "hsv", random_seed: int = 888, **kwargs
+    num_colors_to_generate: int = 10,
+    cmap: str = "hsv",
+    random_seed: int = 888,
+    color: Union[str, None] = None,
 ) -> List[Tuple]:
     """Generate a list of RGBA colors from a specified colormap or use a direct color string.
 
@@ -257,16 +283,17 @@ def _get_colors(
         num_colors_to_generate (int): The number of colors to generate. Defaults to 10.
         cmap (str): The name of the colormap to use. Defaults to "hsv".
         random_seed (int): Seed for random number generation. Defaults to 888.
-        **kwargs: Additional keyword arguments, such as 'color' for a specific color.
+        color (str, optional): Specific color to use for all nodes. If specified, it will overwrite the colormap.
+            Defaults to None.
 
     Returns:
         list of tuple: List of RGBA colors.
     """
     # Set random seed for reproducibility
     random.seed(random_seed)
-    if kwargs.get("color"):
-        # If a direct color string is provided, generate a list with that color
-        rgba = matplotlib.colors.to_rgba(kwargs["color"])
+    if color:
+        # If a direct color is provided, generate a list with that color
+        rgba = matplotlib.colors.to_rgba(color)
         rgbas = [rgba] * num_colors_to_generate
     else:
         colormap = matplotlib.colormaps.get_cmap(cmap)
