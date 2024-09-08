@@ -156,6 +156,7 @@ def plot_network(plotter):
             cmap="gist_rainbow",
             min_scale=0.5,
             max_scale=1.0,
+            scale_factor=0.5,
             nonenriched_color="white",
             random_seed=887,
         ),
