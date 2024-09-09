@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="https://i.imgur.com/Fo9EmnK.png#gh-dark-mode-only" width="400" />
-  <img src="https://i.imgur.com/GENqqae.png#gh-light-mode-only" width="400" />
+  <img src="https://i.imgur.com/Fo9EmnK.png" width="400" />
 </p>
 
 <p align="center">
