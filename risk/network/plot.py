@@ -494,6 +494,7 @@ class NetworkPlotter:
         if max_labels is not None and max_labels < len(filtered_domain_centroids):
             step = len(filtered_domain_centroids) / max_labels
             selected_indices = [int(i * step) for i in range(max_labels)]
+            # Filter the centroids, terms, and valid_indices to only use the selected indices
             filtered_domain_centroids = {
                 k: v
                 for i, (k, v) in enumerate(filtered_domain_centroids.items())
@@ -504,8 +505,8 @@ class NetworkPlotter:
                 for i, (k, v) in enumerate(filtered_domain_terms.items())
                 if i in selected_indices
             }
-            fontcolor = fontcolor[selected_indices]
-            arrow_color = arrow_color[selected_indices]
+            # Update valid_indices to match selected indices
+            valid_indices = [valid_indices[i] for i in selected_indices]
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(
