@@ -5,7 +5,6 @@ risk/network/plot
 
 from typing import Any, Dict, List, Tuple, Union
 
-import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -72,7 +71,8 @@ class NetworkPlotter:
         ax.set_aspect("equal")  # Ensure the aspect ratio is equal
 
         # Set the background color of the plot
-        fig.patch.set_facecolor(background_color)
+        # Convert color to RGBA using the _to_rgba helper function
+        fig.patch.set_facecolor(_to_rgba(background_color, 1.0))
         ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
         # Remove axis spines for a cleaner look
         for spine in ax.spines.values():
@@ -90,7 +90,8 @@ class NetworkPlotter:
         scale: float = 1.0,
         linestyle: str = "dashed",
         linewidth: float = 1.5,
-        color: str = "black",
+        color: Union[str, List, Tuple, np.ndarray] = "black",
+        alpha: float = 1.0,
     ) -> None:
         """Plot a circle around the network graph to represent the network perimeter.
 
@@ -98,22 +99,29 @@ class NetworkPlotter:
             scale (float, optional): Scaling factor for the perimeter diameter. Defaults to 1.0.
             linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
             linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
-            color (str, optional): Color of the network perimeter circle. Defaults to "black".
+            color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
+            alpha (float, optional): Transparency level of the circle outline. Defaults to 1.0.
         """
         # Log the circle border plotting parameters
         params.log_plotter(
             border_scale=scale,
             border_linestyle=linestyle,
             border_linewidth=linewidth,
-            border_color=color,
+            border_color=(
+                "custom" if isinstance(color, (list, tuple, np.ndarray)) else color
+            ),  # np.ndarray usually indicates custom colors
+            border_alpha=alpha,
         )
 
+        # Convert color to RGBA using the _to_rgba helper function
+        color = _to_rgba(color, alpha)
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
         center, radius = _calculate_bounding_box(node_coordinates)
         # Scale the radius by the scale factor
         scaled_radius = radius * scale
+
         # Draw a circle to represent the network perimeter
         circle = plt.Circle(
             center,
@@ -130,9 +138,11 @@ class NetworkPlotter:
         node_size: Union[int, np.ndarray] = 50,
         node_shape: str = "o",
         edge_width: float = 1.0,
-        node_color: Union[str, np.ndarray] = "white",
-        node_edgecolor: str = "black",
-        edge_color: str = "black",
+        node_color: Union[str, List, Tuple, np.ndarray] = "white",
+        node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
+        edge_color: Union[str, List, Tuple, np.ndarray] = "black",
+        node_alpha: float = 1.0,
+        edge_alpha: float = 1.0,
     ) -> None:
         """Plot the network graph with customizable node colors, sizes, and edge widths.
 
@@ -140,21 +150,38 @@ class NetworkPlotter:
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
-            node_edgecolor (str, optional): Color of the node edges. Defaults to "black".
-            edge_color (str, optional): Color of the edges. Defaults to "black".
+            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
+            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
+            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
+            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0.
+            edge_alpha (float, optional): Alpha value (transparency) for the edges. Defaults to 1.0.
         """
         # Log the plotting parameters
         params.log_plotter(
-            network_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
+            network_node_size=(
+                "custom" if isinstance(node_size, np.ndarray) else node_size
+            ),  # np.ndarray usually indicates custom sizes
             network_node_shape=node_shape,
             network_edge_width=edge_width,
-            network_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
+            network_node_color=(
+                "custom" if isinstance(node_color, np.ndarray) else node_color
+            ),  # np.ndarray usually indicates custom colors
             network_node_edgecolor=node_edgecolor,
             network_edge_color=edge_color,
         )
+
+        # Convert colors to RGBA using the _to_rgba helper function
+        # If node_colors was generated using get_annotated_node_colors, its alpha values will override node_alpha
+        node_color = _to_rgba(node_color, node_alpha, num_repeats=len(self.graph.network.nodes))
+        # Convert other colors to RGBA using the _to_rgba helper function
+        node_edgecolor = _to_rgba(
+            node_edgecolor, 1.0, num_repeats=len(self.graph.network.nodes)
+        )  # Node edges are usually fully opaque
+        edge_color = _to_rgba(edge_color, edge_alpha, num_repeats=len(self.graph.network.edges))
+
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
+
         # Draw the nodes of the graph
         nx.draw_networkx_nodes(
             self.graph.network,
@@ -176,13 +203,15 @@ class NetworkPlotter:
 
     def plot_subnetwork(
         self,
-        nodes: list,
+        nodes: List,
         node_size: Union[int, np.ndarray] = 50,
         node_shape: str = "o",
         edge_width: float = 1.0,
-        node_color: Union[str, np.ndarray] = "white",
-        node_edgecolor: str = "black",
-        edge_color: str = "black",
+        node_color: Union[str, List, Tuple, np.ndarray] = "white",
+        node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
+        edge_color: Union[str, List, Tuple, np.ndarray] = "black",
+        node_alpha: float = 1.0,
+        edge_alpha: float = 1.0,
     ) -> None:
         """Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
@@ -191,22 +220,29 @@ class NetworkPlotter:
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
-            node_edgecolor (str, optional): Color of the node edges. Defaults to "black".
-            edge_color (str, optional): Color of the edges. Defaults to "black".
+            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
+            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
+            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
+            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0.
+            edge_alpha (float, optional): Alpha value (transparency) for the edges. Defaults to 1.0.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
         """
         # Log the plotting parameters for the subnetwork
         params.log_plotter(
-            subnetwork_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
+            subnetwork_node_size=(
+                "custom" if isinstance(node_size, np.ndarray) else node_size
+            ),  # np.ndarray usually indicates custom sizes
             subnetwork_node_shape=node_shape,
             subnetwork_edge_width=edge_width,
-            subnetwork_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
+            subnetwork_node_color=(
+                "custom" if isinstance(node_color, np.ndarray) else node_color
+            ),  # np.ndarray usually indicates custom colors
             subnetwork_node_edgecolor=node_edgecolor,
             subnetwork_edge_color=edge_color,
         )
+
         # Filter to get node IDs and their coordinates
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
@@ -216,8 +252,13 @@ class NetworkPlotter:
         if not node_ids:
             raise ValueError("No nodes found in the network graph.")
 
+        # Convert colors to RGBA using the _to_rgba helper function
+        node_color = _to_rgba(node_color, node_alpha)
+        node_edgecolor = _to_rgba(node_edgecolor, 1.0)  # Node edges usually fully opaque
+        edge_color = _to_rgba(edge_color, edge_alpha)
         # Get the coordinates of the filtered nodes
         node_coordinates = {node_id: self.graph.node_coordinates[node_id] for node_id in node_ids}
+
         # Draw the nodes in the subnetwork
         nx.draw_networkx_nodes(
             self.graph.network,
@@ -244,7 +285,7 @@ class NetworkPlotter:
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
-        color: Union[str, np.ndarray] = "white",
+        color: Union[str, List, Tuple, np.ndarray] = "white",
         alpha: float = 0.2,
     ) -> None:
         """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
@@ -253,7 +294,7 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            color (str or np.ndarray, optional): Color of the contours. Can be a string (e.g., 'white') or an array of colors. Defaults to "white".
+            color (str, list, tuple, or np.ndarray, optional): Color of the contours. Can be a single color or an array of colors. Defaults to "white".
             alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
         """
         # Log the contour plotting parameters
@@ -261,13 +302,14 @@ class NetworkPlotter:
             contour_levels=levels,
             contour_bandwidth=bandwidth,
             contour_grid_size=grid_size,
-            contour_color="custom" if isinstance(color, np.ndarray) else color,
+            contour_color=(
+                "custom" if isinstance(color, np.ndarray) else color
+            ),  # np.ndarray usually indicates custom colors
             contour_alpha=alpha,
         )
-        # Convert color string to RGBA array if necessary
-        if isinstance(color, str):
-            color = self.get_annotated_contour_colors(color=color)
 
+        # Ensure color is converted to RGBA with repetition matching the number of domains
+        color = _to_rgba(color, alpha, num_repeats=len(self.graph.domain_to_nodes))
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Draw contours for each domain in the network
@@ -286,11 +328,11 @@ class NetworkPlotter:
 
     def plot_subcontour(
         self,
-        nodes: list,
+        nodes: List,
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
-        color: Union[str, np.ndarray] = "white",
+        color: Union[str, List, Tuple, np.ndarray] = "white",
         alpha: float = 0.2,
     ) -> None:
         """Plot a subcontour for a given set of nodes using Kernel Density Estimation (KDE).
@@ -300,7 +342,7 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            color (str or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
+            color (str, list, tuple, or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
             alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
 
         Raises:
@@ -311,9 +353,12 @@ class NetworkPlotter:
             subcontour_levels=levels,
             subcontour_bandwidth=bandwidth,
             subcontour_grid_size=grid_size,
-            subcontour_color="custom" if isinstance(color, np.ndarray) else color,
+            subcontour_color=(
+                "custom" if isinstance(color, np.ndarray) else color
+            ),  # np.ndarray usually indicates custom colors
             subcontour_alpha=alpha,
         )
+
         # Filter to get node IDs and their coordinates
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
@@ -323,6 +368,8 @@ class NetworkPlotter:
         if not node_ids or len(node_ids) == 1:
             raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
 
+        # Convert color to RGBA using the _to_rgba helper function
+        color = _to_rgba(color, alpha)
         # Draw the KDE contour for the specified nodes
         node_coordinates = self.graph.node_coordinates
         self._draw_kde_contour(
@@ -340,7 +387,7 @@ class NetworkPlotter:
         self,
         ax: plt.Axes,
         pos: np.ndarray,
-        nodes: list,
+        nodes: List,
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
@@ -408,9 +455,11 @@ class NetworkPlotter:
         offset: float = 0.10,
         font: str = "Arial",
         fontsize: int = 10,
-        fontcolor: Union[str, np.ndarray] = "black",
+        fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
+        fontalpha: float = 1.0,
         arrow_linewidth: float = 1,
-        arrow_color: Union[str, np.ndarray] = "black",
+        arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
+        arrow_alpha: float = 1.0,
         max_labels: Union[int, None] = None,
         max_words: int = 10,
         min_words: int = 1,
@@ -425,9 +474,11 @@ class NetworkPlotter:
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
             fontsize (int, optional): Font size for the labels. Defaults to 10.
-            fontcolor (str or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
+            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
+            fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
-            arrow_color (str or np.ndarray, optional): Color of the arrows. Can be a string or RGBA array. Defaults to "black".
+            arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
+            arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
             max_words (int, optional): Maximum number of words in a label. Defaults to 10.
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
@@ -441,7 +492,9 @@ class NetworkPlotter:
             label_offset=offset,
             label_font=font,
             label_fontsize=fontsize,
-            label_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
+            label_fontcolor=(
+                "custom" if isinstance(fontcolor, np.ndarray) else fontcolor
+            ),  # np.ndarray usually indicates custom colors
             label_arrow_linewidth=arrow_linewidth,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
             label_max_labels=max_labels,
@@ -452,11 +505,12 @@ class NetworkPlotter:
             label_words_to_omit=words_to_omit,
         )
 
-        # Convert color strings to RGBA arrays if necessary
-        if isinstance(fontcolor, str):
-            fontcolor = self.get_annotated_label_colors(color=fontcolor)
-        if isinstance(arrow_color, str):
-            arrow_color = self.get_annotated_label_colors(color=arrow_color)
+        # Convert colors to RGBA using the _to_rgba helper function, applying alpha separately for font and arrow
+        fontcolor = _to_rgba(fontcolor, fontalpha, num_repeats=len(self.graph.domain_to_nodes))
+        arrow_color = _to_rgba(
+            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_to_nodes)
+        )
+
         # Normalize words_to_omit to lowercase
         if words_to_omit:
             words_to_omit = set(word.lower() for word in words_to_omit)
@@ -536,16 +590,18 @@ class NetworkPlotter:
 
     def plot_sublabel(
         self,
-        nodes: list,
+        nodes: List,
         label: str,
         radial_position: float = 0.0,
         perimeter_scale: float = 1.05,
         offset: float = 0.10,
         font: str = "Arial",
         fontsize: int = 10,
-        fontcolor: str = "black",
+        fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
+        fontalpha: float = 1.0,
         arrow_linewidth: float = 1,
-        arrow_color: str = "black",
+        arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
+        arrow_alpha: float = 1.0,
     ) -> None:
         """Annotate the network graph with a single label for the given nodes, positioned at a specified radial angle.
 
@@ -557,9 +613,11 @@ class NetworkPlotter:
             offset (float, optional): Offset distance for the label from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the label. Defaults to "Arial".
             fontsize (int, optional): Font size for the label. Defaults to 10.
-            fontcolor (str, optional): Color of the label text. Defaults to "black".
+            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Defaults to "black".
+            fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrow pointing to the centroid. Defaults to 1.
-            arrow_color (str, optional): Color of the arrow. Defaults to "black".
+            arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
+            arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
         """
         # Log the plotting parameters
         params.log_plotter(
@@ -567,10 +625,14 @@ class NetworkPlotter:
             sublabel_offset=offset,
             sublabel_font=font,
             sublabel_fontsize=fontsize,
-            sublabel_fontcolor="custom" if isinstance(fontcolor, np.ndarray) else fontcolor,
+            sublabel_fontcolor=(
+                "custom" if isinstance(fontcolor, np.ndarray) else fontcolor
+            ),  # np.ndarray usually indicates custom colors
             sublabel_arrow_linewidth=arrow_linewidth,
             sublabel_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
             sublabel_radial_position=radial_position,
+            sublabel_fontalpha=fontalpha,
+            sublabel_arrow_alpha=arrow_alpha,
         )
 
         # Map node labels to IDs
@@ -582,6 +644,9 @@ class NetworkPlotter:
         if not node_ids or len(node_ids) == 1:
             raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
 
+        # Convert fontcolor and arrow_color to RGBA using the _to_rgba helper function
+        fontcolor = _to_rgba(fontcolor, fontalpha)
+        arrow_color = _to_rgba(arrow_color, arrow_alpha)
         # Calculate the centroid of the provided nodes
         centroid = self._calculate_domain_centroid(node_ids)
         # Calculate the bounding box around the network
@@ -609,7 +674,7 @@ class NetworkPlotter:
             arrowprops=dict(arrowstyle="->", color=arrow_color, linewidth=arrow_linewidth),
         )
 
-    def _calculate_domain_centroid(self, nodes: list) -> tuple:
+    def _calculate_domain_centroid(self, nodes: List) -> tuple:
         """Calculate the most centrally located node in .
 
         Args:
@@ -652,28 +717,16 @@ class NetworkPlotter:
         """
         # Get the initial domain colors for each node, which are returned as RGBA
         network_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
-        # Set the alpha for enriched nodes
-        network_colors[:, 3] = alpha  # Set the 4th column (A channel) to the provided alpha value
-        # Convert the non-enriched color to RGBA if it's a string
-        if isinstance(nonenriched_color, str):
-            nonenriched_color = mcolors.to_rgba(nonenriched_color)
-
-        # Ensure nonenriched_color is a NumPy array and set its alpha value
-        nonenriched_color = np.array(nonenriched_color)
-        if len(nonenriched_color) == 3:  # If it's RGB, append the alpha value
-            nonenriched_color = np.append(nonenriched_color, nonenriched_alpha)
-        else:
-            nonenriched_color[3] = nonenriched_alpha  # Update the alpha for RGBA colors
-
+        # Apply the alpha value for enriched nodes
+        network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
+        # Convert the non-enriched color to RGBA using the _to_rgba helper function
+        nonenriched_color = _to_rgba(nonenriched_color, nonenriched_alpha)
         # Adjust node colors: replace any fully black nodes (RGB == 0) with the non-enriched color and its alpha
         adjusted_network_colors = np.where(
-            np.all(
-                network_colors[:, :3] == 0, axis=1, keepdims=True
-            ),  # Check RGB values only (ignore alpha)
-            np.array([nonenriched_color]),  # Apply the non-enriched color with the alpha
-            network_colors,  # Keep the original colors
+            np.all(network_colors[:, :3] == 0, axis=1, keepdims=True),  # Check RGB values only
+            np.array([nonenriched_color]),  # Apply the non-enriched color with alpha
+            network_colors,  # Keep the original colors for enriched nodes
         )
-
         return adjusted_network_colors
 
     def get_annotated_node_sizes(
@@ -727,35 +780,43 @@ class NetworkPlotter:
         return self._get_annotated_domain_colors(**kwargs, random_seed=random_seed)
 
     def _get_annotated_domain_colors(
-        self, color: Union[str, list, None] = None, random_seed: int = 888, **kwargs
+        self,
+        color: Union[str, List, Tuple, np.ndarray, None] = None,
+        random_seed: int = 888,
+        **kwargs,
     ) -> np.ndarray:
         """Get colors for the domains based on node annotations.
 
         Args:
-            color (str, list, or None, optional): If provided, use this color or list of colors for domains. Defaults to None.
+            color (str, list, tuple, np.ndarray, or None, optional): If provided, use this color or list of colors for domains. Defaults to None.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             **kwargs: Additional keyword arguments for `get_domain_colors`.
 
         Returns:
             np.ndarray: Array of RGBA colors for each domain.
         """
-        if isinstance(color, str):
-            # If a single color string is provided, convert it to RGBA and apply to all domains
-            rgba_color = np.array(matplotlib.colors.to_rgba(color))
-            return np.array([rgba_color for _ in self.graph.domain_to_nodes])
+        if color is not None:
+            # Convert color(s) to RGBA using _to_rgba helper
+            if isinstance(color, (list, tuple, np.ndarray)):
+                return np.array([_to_rgba(c) for c in color])
+            else:
+                rgba_color = _to_rgba(color)
+                return np.array([rgba_color for _ in self.graph.domain_to_nodes])
 
-        # Generate colors for each domain using the provided arguments and random seed
+        # Generate colors for each domain using provided arguments and random seed
         node_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
         annotated_colors = []
         for _, nodes in self.graph.domain_to_nodes.items():
             if len(nodes) > 1:
-                # For domains with multiple nodes, choose the brightest color (sum of RGB values)
+                # For domains with multiple nodes, select the brightest color (sum of RGB values)
                 domain_colors = np.array([node_colors[node] for node in nodes])
-                brightest_color = domain_colors[np.argmax(domain_colors.sum(axis=1))]
+                brightest_color = domain_colors[
+                    np.argmax(domain_colors[:, :3].sum(axis=1))
+                ]  # Only consider RGB
                 annotated_colors.append(brightest_color)
             else:
                 # Assign a default color (white) for single-node domains
-                default_color = np.array([1.0, 1.0, 1.0, 1.0])
+                default_color = np.array([1.0, 1.0, 1.0, 1.0])  # RGBA for white
                 annotated_colors.append(default_color)
 
         return np.array(annotated_colors)
@@ -779,6 +840,47 @@ class NetworkPlotter:
             **kwargs: Keyword arguments passed to `plt.show`.
         """
         plt.show(*args, **kwargs)
+
+
+def _to_rgba(
+    color: Union[str, List, Tuple, np.ndarray],
+    alpha: float = 1.0,
+    num_repeats: Union[int, None] = None,
+) -> np.ndarray:
+    """Convert a color or array of colors to RGBA format, applying or updating the alpha as needed.
+
+    Args:
+        color (Union[str, list, tuple, np.ndarray]): The color(s) to convert. Can be a string, list, tuple, or np.ndarray.
+        alpha (float, optional): Alpha value (transparency) to apply. Defaults to 1.0.
+        num_repeats (int or None, optional): If provided, the color will be repeated this many times. Defaults to None.
+
+    Returns:
+        np.ndarray: The RGBA color or array of RGBA colors.
+    """
+    # Handle single color case
+    if isinstance(color, str) or (
+        isinstance(color, (list, tuple, np.ndarray)) and len(color) in [3, 4]
+    ):
+        rgba_color = np.array(mcolors.to_rgba(color, alpha))
+        # Repeat the color if repeat argument is provided
+        if num_repeats is not None:
+            return np.array([rgba_color] * num_repeats)
+
+        return rgba_color
+
+    # Handle array of colors case
+    elif isinstance(color, (list, tuple, np.ndarray)) and isinstance(
+        color[0], (list, tuple, np.ndarray)
+    ):
+        rgba_colors = [mcolors.to_rgba(c, alpha) if len(c) == 3 else np.array(c) for c in color]
+        # Repeat the colors if repeat argument is provided
+        if num_repeats is not None and len(rgba_colors) == 1:
+            return np.array([rgba_colors[0]] * num_repeats)
+
+        return np.array(rgba_colors)
+
+    else:
+        raise ValueError("Color must be a valid RGB/RGBA or array of RGB/RGBA colors.")
 
 
 def _is_connected(z: np.ndarray) -> bool:
