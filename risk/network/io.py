@@ -48,6 +48,7 @@ class NetworkIO:
         self.min_edges_per_node = min_edges_per_node
         self.include_edge_weight = include_edge_weight
         self.weight_label = weight_label
+        # Log the initialization of the NetworkIO class
         params.log_network(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
@@ -98,11 +99,14 @@ class NetworkIO:
             nx.Graph: Loaded and processed network.
         """
         filetype = "GPickle"
+        # Log the loading of the GPickle file
         params.log_network(filetype=filetype, filepath=filepath)
         self._log_loading(filetype, filepath=filepath)
+
         with open(filepath, "rb") as f:
             G = pickle.load(f)
 
+        # Initialize the graph
         return self._initialize_graph(G)
 
     @classmethod
@@ -147,8 +151,11 @@ class NetworkIO:
             nx.Graph: Processed network.
         """
         filetype = "NetworkX"
+        # Log the loading of the NetworkX graph
         params.log_network(filetype=filetype)
         self._log_loading(filetype)
+
+        # Initialize the graph
         return self._initialize_graph(network)
 
     @classmethod
@@ -213,8 +220,10 @@ class NetworkIO:
             nx.Graph: Loaded and processed network.
         """
         filetype = "Cytoscape"
+        # Log the loading of the Cytoscape file
         params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
+
         cys_files = []
         tmp_dir = ".tmp_cytoscape"
         # Try / finally to remove unzipped files
@@ -295,6 +304,7 @@ class NetworkIO:
                     node
                 ]  # Assuming you have a dict `node_y_positions` for y coordinates
 
+            # Initialize the graph
             return self._initialize_graph(G)
 
         finally:
@@ -354,6 +364,7 @@ class NetworkIO:
             NetworkX graph: Loaded and processed network.
         """
         filetype = "Cytoscape JSON"
+        # Log the loading of the Cytoscape JSON file
         params.log_network(filetype=filetype, filepath=str(filepath))
         self._log_loading(filetype, filepath=filepath)
 
