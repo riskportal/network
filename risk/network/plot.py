@@ -168,6 +168,8 @@ class NetworkPlotter:
             ),  # np.ndarray usually indicates custom colors
             network_node_edgecolor=node_edgecolor,
             network_edge_color=edge_color,
+            network_node_alpha=node_alpha,
+            network_edge_alpha=edge_alpha,
         )
 
         # Convert colors to RGBA using the _to_rgba helper function
@@ -229,20 +231,7 @@ class NetworkPlotter:
         Raises:
             ValueError: If no valid nodes are found in the network graph.
         """
-        # Log the plotting parameters for the subnetwork
-        params.log_plotter(
-            subnetwork_node_size=(
-                "custom" if isinstance(node_size, np.ndarray) else node_size
-            ),  # np.ndarray usually indicates custom sizes
-            subnetwork_node_shape=node_shape,
-            subnetwork_edge_width=edge_width,
-            subnetwork_node_color=(
-                "custom" if isinstance(node_color, np.ndarray) else node_color
-            ),  # np.ndarray usually indicates custom colors
-            subnetwork_node_edgecolor=node_edgecolor,
-            subnetwork_edge_color=edge_color,
-        )
-
+        # Don't log subnetwork parameters as they are specific to individual annotations
         # Filter to get node IDs and their coordinates
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
@@ -348,17 +337,7 @@ class NetworkPlotter:
         Raises:
             ValueError: If no valid nodes are found in the network graph.
         """
-        # Log the plotting parameters
-        params.log_plotter(
-            subcontour_levels=levels,
-            subcontour_bandwidth=bandwidth,
-            subcontour_grid_size=grid_size,
-            subcontour_color=(
-                "custom" if isinstance(color, np.ndarray) else color
-            ),  # np.ndarray usually indicates custom colors
-            subcontour_alpha=alpha,
-        )
-
+        # Don't log subcontour parameters as they are specific to individual annotations
         # Filter to get node IDs and their coordinates
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
@@ -495,8 +474,10 @@ class NetworkPlotter:
             label_fontcolor=(
                 "custom" if isinstance(fontcolor, np.ndarray) else fontcolor
             ),  # np.ndarray usually indicates custom colors
+            label_fontalpha=fontalpha,
             label_arrow_linewidth=arrow_linewidth,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
+            label_arrow_alpha=arrow_alpha,
             label_max_labels=max_labels,
             label_max_words=max_words,
             label_min_words=min_words,
@@ -619,22 +600,7 @@ class NetworkPlotter:
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
             arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
         """
-        # Log the plotting parameters
-        params.log_plotter(
-            sublabel_perimeter_scale=perimeter_scale,
-            sublabel_offset=offset,
-            sublabel_font=font,
-            sublabel_fontsize=fontsize,
-            sublabel_fontcolor=(
-                "custom" if isinstance(fontcolor, np.ndarray) else fontcolor
-            ),  # np.ndarray usually indicates custom colors
-            sublabel_arrow_linewidth=arrow_linewidth,
-            sublabel_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
-            sublabel_radial_position=radial_position,
-            sublabel_fontalpha=fontalpha,
-            sublabel_arrow_alpha=arrow_alpha,
-        )
-
+        # Don't log sublabel parameters as they are specific to individual annotations
         # Map node labels to IDs
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
