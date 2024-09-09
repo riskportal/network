@@ -28,56 +28,32 @@ class NetworkPlotter:
     def __init__(
         self,
         graph: NetworkGraph,
-        figsize: tuple = (10, 10),
-        background_color: str = "white",
-        plot_outline: bool = True,
-        outline_color: str = "black",
-        outline_scale: float = 1.0,
-        linestyle: str = "dashed",
+        figsize: Tuple = (10, 10),
+        background_color: Union[str, List, Tuple, np.ndarray] = "white",
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
-            background_color (str, optional): Background color of the plot. Defaults to "white".
-            plot_outline (bool, optional): Whether to plot the network perimeter circle. Defaults to True.
-            outline_color (str, optional): Color of the network perimeter circle. Defaults to "black".
-            outline_scale (float, optional): Outline scaling factor for the perimeter diameter. Defaults to 1.0.
-            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
+            background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
-        self.ax = self._initialize_plot(
-            graph,
-            figsize,
-            background_color,
-            plot_outline,
-            outline_color,
-            outline_scale,
-            linestyle,
-        )
+        self.ax = self._initialize_plot(graph, figsize, background_color)
 
     def _initialize_plot(
         self,
         graph: NetworkGraph,
-        figsize: tuple,
-        background_color: str,
-        plot_outline: bool,
-        outline_color: str,
-        outline_scale: float,
-        linestyle: str,
+        figsize: Tuple,
+        background_color: Union[str, List, Tuple, np.ndarray],
     ) -> plt.Axes:
-        """Set up the plot with figure size, optional circle perimeter, and background color.
+        """Set up the plot with figure size and background color.
 
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
-            plot_outline (bool): Whether to plot the network perimeter circle.
-            outline_color (str): Color of the network perimeter circle.
-            outline_scale (float): Outline scaling factor for the perimeter diameter.
-            linestyle (str): Line style for the network perimeter circle (e.g., dashed, solid).
 
         Returns:
             plt.Axes: The axis object for the plot.
@@ -86,31 +62,18 @@ class NetworkPlotter:
         node_coordinates = graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
         center, radius = _calculate_bounding_box(node_coordinates)
-        # Scale the radius by the outline_scale factor
-        scaled_radius = radius * outline_scale
 
         # Create a new figure and axis for plotting
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()  # Adjust subplot parameters to give specified padding
-        if plot_outline:
-            # Draw a circle to represent the network perimeter
-            circle = plt.Circle(
-                center,
-                scaled_radius,
-                linestyle=linestyle,  # Use the linestyle argument here
-                color=outline_color,
-                fill=False,
-                linewidth=1.5,
-            )
-            ax.add_artist(circle)  # Add the circle to the plot
-
-        # Set axis limits based on the calculated bounding box and scaled radius
-        ax.set_xlim([center[0] - scaled_radius - 0.3, center[0] + scaled_radius + 0.3])
-        ax.set_ylim([center[1] - scaled_radius - 0.3, center[1] + scaled_radius + 0.3])
+        # Set axis limits based on the calculated bounding box and radius
+        ax.set_xlim([center[0] - radius - 0.3, center[0] + radius + 0.3])
+        ax.set_ylim([center[1] - radius - 0.3, center[1] + radius + 0.3])
         ax.set_aspect("equal")  # Ensure the aspect ratio is equal
-        fig.patch.set_facecolor(background_color)  # Set the figure background color
-        ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
 
+        # Set the background color of the plot
+        fig.patch.set_facecolor(background_color)
+        ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
         # Remove axis spines for a cleaner look
         for spine in ax.spines.values():
             spine.set_visible(False)
@@ -122,33 +85,73 @@ class NetworkPlotter:
 
         return ax
 
+    def plot_border(
+        self,
+        scale: float = 1.0,
+        linestyle: str = "dashed",
+        linewidth: float = 1.5,
+        color: str = "black",
+    ) -> None:
+        """Plot a circle around the network graph to represent the network perimeter.
+
+        Args:
+            scale (float, optional): Scaling factor for the perimeter diameter. Defaults to 1.0.
+            linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
+            linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
+            color (str, optional): Color of the network perimeter circle. Defaults to "black".
+        """
+        # Log the circle border plotting parameters
+        params.log_plotter(
+            border_scale=scale,
+            border_linestyle=linestyle,
+            border_linewidth=linewidth,
+            border_color=color,
+        )
+
+        # Extract node coordinates from the network graph
+        node_coordinates = self.graph.node_coordinates
+        # Calculate the center and radius of the bounding box around the network
+        center, radius = _calculate_bounding_box(node_coordinates)
+        # Scale the radius by the scale factor
+        scaled_radius = radius * scale
+        # Draw a circle to represent the network perimeter
+        circle = plt.Circle(
+            center,
+            scaled_radius,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            color=color,
+            fill=False,
+        )
+        self.ax.add_artist(circle)
+
     def plot_network(
         self,
         node_size: Union[int, np.ndarray] = 50,
+        node_shape: str = "o",
         edge_width: float = 1.0,
         node_color: Union[str, np.ndarray] = "white",
         node_edgecolor: str = "black",
         edge_color: str = "black",
-        node_shape: str = "o",
     ) -> None:
         """Plot the network graph with customizable node colors, sizes, and edge widths.
 
         Args:
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
+            node_shape (str, optional): Shape of the nodes. Defaults to "o".
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
             node_color (str or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
             node_edgecolor (str, optional): Color of the node edges. Defaults to "black".
             edge_color (str, optional): Color of the edges. Defaults to "black".
-            node_shape (str, optional): Shape of the nodes. Defaults to "o".
         """
         # Log the plotting parameters
         params.log_plotter(
             network_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
+            network_node_shape=node_shape,
             network_edge_width=edge_width,
             network_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
             network_node_edgecolor=node_edgecolor,
             network_edge_color=edge_color,
-            network_node_shape=node_shape,
         )
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
@@ -157,9 +160,8 @@ class NetworkPlotter:
             self.graph.network,
             pos=node_coordinates,
             node_size=node_size,
-            node_color=node_color,
             node_shape=node_shape,
-            alpha=1.00,
+            node_color=node_color,
             edgecolors=node_edgecolor,
             ax=self.ax,
         )
@@ -176,22 +178,22 @@ class NetworkPlotter:
         self,
         nodes: list,
         node_size: Union[int, np.ndarray] = 50,
+        node_shape: str = "o",
         edge_width: float = 1.0,
         node_color: Union[str, np.ndarray] = "white",
         node_edgecolor: str = "black",
         edge_color: str = "black",
-        node_shape: str = "o",
     ) -> None:
         """Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
         Args:
             nodes (list): List of node labels to include in the subnetwork.
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
+            node_shape (str, optional): Shape of the nodes. Defaults to "o".
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
             node_color (str or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
             node_edgecolor (str, optional): Color of the node edges. Defaults to "black".
             edge_color (str, optional): Color of the edges. Defaults to "black".
-            node_shape (str, optional): Shape of the nodes. Defaults to "o".
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
@@ -199,11 +201,11 @@ class NetworkPlotter:
         # Log the plotting parameters for the subnetwork
         params.log_plotter(
             subnetwork_node_size="custom" if isinstance(node_size, np.ndarray) else node_size,
+            subnetwork_node_shape=node_shape,
             subnetwork_edge_width=edge_width,
             subnetwork_node_color="custom" if isinstance(node_color, np.ndarray) else node_color,
             subnetwork_node_edgecolor=node_edgecolor,
             subnetwork_edge_color=edge_color,
-            subnet_node_shape=node_shape,
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
@@ -222,9 +224,8 @@ class NetworkPlotter:
             pos=node_coordinates,
             nodelist=node_ids,
             node_size=node_size,
-            node_color=node_color,
             node_shape=node_shape,
-            alpha=1.00,
+            node_color=node_color,
             edgecolors=node_edgecolor,
             ax=self.ax,
         )
@@ -243,8 +244,8 @@ class NetworkPlotter:
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
-        alpha: float = 0.2,
         color: Union[str, np.ndarray] = "white",
+        alpha: float = 0.2,
     ) -> None:
         """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
 
@@ -252,16 +253,16 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
             color (str or np.ndarray, optional): Color of the contours. Can be a string (e.g., 'white') or an array of colors. Defaults to "white".
+            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
         """
         # Log the contour plotting parameters
         params.log_plotter(
             contour_levels=levels,
             contour_bandwidth=bandwidth,
             contour_grid_size=grid_size,
-            contour_alpha=alpha,
             contour_color="custom" if isinstance(color, np.ndarray) else color,
+            contour_alpha=alpha,
         )
         # Convert color string to RGBA array if necessary
         if isinstance(color, str):
@@ -289,8 +290,8 @@ class NetworkPlotter:
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
-        alpha: float = 0.2,
         color: Union[str, np.ndarray] = "white",
+        alpha: float = 0.2,
     ) -> None:
         """Plot a subcontour for a given set of nodes using Kernel Density Estimation (KDE).
 
@@ -299,8 +300,8 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
             color (str or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
+            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
@@ -310,8 +311,8 @@ class NetworkPlotter:
             subcontour_levels=levels,
             subcontour_bandwidth=bandwidth,
             subcontour_grid_size=grid_size,
-            subcontour_alpha=alpha,
             subcontour_color="custom" if isinstance(color, np.ndarray) else color,
+            subcontour_alpha=alpha,
         )
         # Filter to get node IDs and their coordinates
         node_ids = [
@@ -340,10 +341,10 @@ class NetworkPlotter:
         ax: plt.Axes,
         pos: np.ndarray,
         nodes: list,
-        color: Union[str, np.ndarray],
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
+        color: Union[str, np.ndarray] = "white",
         alpha: float = 0.5,
     ) -> None:
         """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
@@ -352,10 +353,10 @@ class NetworkPlotter:
             ax (plt.Axes): The axis to draw the contour on.
             pos (np.ndarray): Array of node positions (x, y).
             nodes (list): List of node indices to include in the contour.
-            color (str or np.ndarray): Color for the contour.
             levels (int, optional): Number of contour levels. Defaults to 5.
             bandwidth (float, optional): Bandwidth for the KDE. Controls smoothness. Defaults to 0.8.
             grid_size (int, optional): Grid resolution for the KDE. Higher values yield finer contours. Defaults to 250.
+            color (str or np.ndarray): Color for the contour. Can be a string or RGBA array. Defaults to "white".
             alpha (float, optional): Transparency level for the contour fill. Defaults to 0.5.
         """
         # Extract the positions of the specified nodes
@@ -631,41 +632,45 @@ class NetworkPlotter:
 
     def get_annotated_node_colors(
         self,
+        alpha: float = 1.0,
         nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
+        nonenriched_alpha: float = 1.0,
         random_seed: int = 888,
         **kwargs,
     ) -> np.ndarray:
         """Adjust the colors of nodes in the network graph based on enrichment.
 
         Args:
-            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes.
-                Defaults to "white". If an alpha channel is provided, it will be used to darken the RGB values.
+            alpha (float, optional): Alpha value for enriched nodes. Defaults to 1.0.
+            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Defaults to "white".
+            nonenriched_alpha (float, optional): Alpha value for non-enriched nodes. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             **kwargs: Additional keyword arguments for `get_domain_colors`.
 
         Returns:
             np.ndarray: Array of RGBA colors adjusted for enrichment status.
         """
-        # Get the initial domain colors for each node
+        # Get the initial domain colors for each node, which are returned as RGBA
         network_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        # Set the alpha for enriched nodes
+        network_colors[:, 3] = alpha  # Set the 4th column (A channel) to the provided alpha value
+        # Convert the non-enriched color to RGBA if it's a string
         if isinstance(nonenriched_color, str):
-            # Convert the non-enriched color from string to RGBA
             nonenriched_color = mcolors.to_rgba(nonenriched_color)
 
-        # Ensure nonenriched_color is a NumPy array
+        # Ensure nonenriched_color is a NumPy array and set its alpha value
         nonenriched_color = np.array(nonenriched_color)
-        # If alpha is provided (4th value), darken the RGB values based on alpha
-        if len(nonenriched_color) == 4 and nonenriched_color[3] < 1.0:
-            alpha = nonenriched_color[3]
-            # Adjust RGB based on alpha (darken)
-            nonenriched_color[:3] = nonenriched_color[:3] * alpha
-            # Set alpha to 1.0 after darkening the color
-            nonenriched_color[3] = 1.0
+        if len(nonenriched_color) == 3:  # If it's RGB, append the alpha value
+            nonenriched_color = np.append(nonenriched_color, nonenriched_alpha)
+        else:
+            nonenriched_color[3] = nonenriched_alpha  # Update the alpha for RGBA colors
 
-        # Adjust node colors: replace any fully transparent nodes (enriched) with the non-enriched color
+        # Adjust node colors: replace any fully black nodes (RGB == 0) with the non-enriched color and its alpha
         adjusted_network_colors = np.where(
-            np.all(network_colors[:, :3] == 0, axis=1, keepdims=True),  # Check RGB values only
-            np.array([nonenriched_color]),  # Apply the non-enriched color (with adjusted alpha)
+            np.all(
+                network_colors[:, :3] == 0, axis=1, keepdims=True
+            ),  # Check RGB values only (ignore alpha)
+            np.array([nonenriched_color]),  # Apply the non-enriched color with the alpha
             network_colors,  # Keep the original colors
         )
 
