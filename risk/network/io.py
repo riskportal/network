@@ -418,28 +418,36 @@ class NetworkIO:
         return G
 
     def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
-        """Remove invalid properties from the graph.
+        """Remove invalid properties from the graph, including self-loops, nodes with fewer edges than
+        the threshold, and isolated nodes.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
-        # First, Remove self-loop edges to ensure correct edge count
+        # Count number of nodes and edges before cleaning
+        num_initial_nodes = G.number_of_nodes()
+        num_initial_edges = G.number_of_edges()
+        # Remove self-loops to ensure correct edge count
         G.remove_edges_from(list(nx.selfloop_edges(G)))
-        # Then, iteratively remove nodes with fewer edges than the specified threshold
+        # Iteratively remove nodes with fewer edges than the threshold
         while True:
-            nodes_to_remove = [
-                node for node in G.nodes() if G.degree(node) < self.min_edges_per_node
-            ]
+            nodes_to_remove = [node for node in G.nodes if G.degree(node) < self.min_edges_per_node]
             if not nodes_to_remove:
-                break  # Exit loop if no more nodes to remove
-
-            # Remove the nodes and their associated edges
+                break  # Exit loop if no more nodes need removal
             G.remove_nodes_from(nodes_to_remove)
 
-        # Optionally: Remove any isolated nodes if needed
+        # Remove isolated nodes
         isolated_nodes = list(nx.isolates(G))
         if isolated_nodes:
             G.remove_nodes_from(isolated_nodes)
+
+        # Log the number of nodes and edges before and after cleaning
+        num_final_nodes = G.number_of_nodes()
+        num_final_edges = G.number_of_edges()
+        print(f"Initial node count: {num_initial_nodes}")
+        print(f"Final node count: {num_final_nodes}")
+        print(f"Initial edge count: {num_initial_edges}")
+        print(f"Final edge count: {num_final_edges}")
 
     def _assign_edge_weights(self, G: nx.Graph) -> None:
         """Assign weights to the edges in the graph.
@@ -502,6 +510,7 @@ class NetworkIO:
         print(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
         if self.include_edge_weight:
             print(f"Weight label: {self.weight_label}")
+        print(f"Minimum edges per node: {self.min_edges_per_node}")
         print(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
         if self.compute_sphere:
             print(f"Surface depth: {self.surface_depth}")
