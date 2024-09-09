@@ -3,6 +3,8 @@ risk/constants
 ~~~~~~~~~~~~~~
 """
 
+GROUP_LINKAGE_METHODS = ["single", "complete", "average", "weighted", "centroid", "median", "ward"]
+
 GROUP_DISTANCE_METRICS = [
     "braycurtis",
     "canberra",
@@ -27,5 +29,3 @@ GROUP_DISTANCE_METRICS = [
     "sqeuclidean",
     "yule",
 ]
-
-GROUP_LINKAGE_METHODS = ["single", "complete", "average", "weighted", "centroid", "median", "ward"]
