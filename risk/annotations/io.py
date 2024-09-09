@@ -36,13 +36,15 @@ class AnnotationsIO:
             dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
         """
         filetype = "JSON"
+        # Log the loading of the JSON file
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
+
         # Open and read the JSON file
         with open(filepath, "r") as file:
             annotations_input = json.load(file)
 
-        # Process the JSON data and return it in the context of the network
+        # Load the annotations into the provided network
         return load_annotations(network, annotations_input)
 
     def load_excel_annotation(
@@ -69,14 +71,18 @@ class AnnotationsIO:
                             linked to the provided network.
         """
         filetype = "Excel"
+        # Log the loading of the Excel file
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
+
         # Load the specified sheet from the Excel file
         df = pd.read_excel(filepath, sheet_name=sheet_name)
         # Split the nodes column by the specified nodes_delimiter
         df[nodes_colname] = df[nodes_colname].apply(lambda x: x.split(nodes_delimiter))
         # Convert the DataFrame to a dictionary pairing labels with their corresponding nodes
         label_node_dict = df.set_index(label_colname)[nodes_colname].to_dict()
+
+        # Load the annotations into the provided network
         return load_annotations(network, label_node_dict)
 
     def load_csv_annotation(
@@ -101,13 +107,16 @@ class AnnotationsIO:
                             linked to the provided network.
         """
         filetype = "CSV"
+        # Log the loading of the CSV file
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
+
         # Load the CSV file into a dictionary
         annotations_input = _load_matrix_file(
             filepath, label_colname, nodes_colname, delimiter=",", nodes_delimiter=nodes_delimiter
         )
-        # Process and return the annotations in the context of the network
+
+        # Load the annotations into the provided network
         return load_annotations(network, annotations_input)
 
     def load_tsv_annotation(
@@ -132,13 +141,16 @@ class AnnotationsIO:
                             linked to the provided network.
         """
         filetype = "TSV"
+        # Log the loading of the TSV file
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
+
         # Load the TSV file into a dictionary
         annotations_input = _load_matrix_file(
             filepath, label_colname, nodes_colname, delimiter="\t", nodes_delimiter=nodes_delimiter
         )
-        # Process and return the annotations in the context of the network
+
+        # Load the annotations into the provided network
         return load_annotations(network, annotations_input)
 
 

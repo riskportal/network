@@ -4,7 +4,7 @@ risk/neighborhoods/neighborhoods
 """
 
 import warnings
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import networkx as nx
 import numpy as np
@@ -305,7 +305,7 @@ def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
     )
 
 
-def _calculate_threshold(average_distances: list, distance_threshold: float) -> float:
+def _calculate_threshold(average_distances: List, distance_threshold: float) -> float:
     """Calculate the distance threshold based on the given average distances and a percentile threshold.
 
     Args:

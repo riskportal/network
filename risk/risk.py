@@ -114,6 +114,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_workers=max_workers,
         )
 
+        # Return the computed neighborhood significance
         return neighborhood_significance
 
     def load_neighborhoods_by_fisher_exact(
@@ -169,6 +170,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_workers=max_workers,
         )
 
+        # Return the computed neighborhood significance
         return neighborhood_significance
 
     def load_neighborhoods_by_hypergeom(
@@ -224,6 +226,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_workers=max_workers,
         )
 
+        # Return the computed neighborhood significance
         return neighborhood_significance
 
     def load_graph(
@@ -414,6 +417,7 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed=random_seed,
         )
 
+        # Return the computed neighborhoods
         return neighborhoods
 
     def _define_top_annotations(
