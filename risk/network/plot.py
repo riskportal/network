@@ -630,12 +630,16 @@ class NetworkPlotter:
         return domain_central_node
 
     def get_annotated_node_colors(
-        self, nonenriched_color: str = "white", random_seed: int = 888, **kwargs
+        self,
+        nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
+        random_seed: int = 888,
+        **kwargs,
     ) -> np.ndarray:
         """Adjust the colors of nodes in the network graph based on enrichment.
 
         Args:
-            nonenriched_color (str, optional): Color for non-enriched nodes. Defaults to "white".
+            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes.
+                Defaults to "white". If an alpha channel is provided, it will be used to darken the RGB values.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             **kwargs: Additional keyword arguments for `get_domain_colors`.
 
@@ -648,12 +652,23 @@ class NetworkPlotter:
             # Convert the non-enriched color from string to RGBA
             nonenriched_color = mcolors.to_rgba(nonenriched_color)
 
+        # Ensure nonenriched_color is a NumPy array
+        nonenriched_color = np.array(nonenriched_color)
+        # If alpha is provided (4th value), darken the RGB values based on alpha
+        if len(nonenriched_color) == 4 and nonenriched_color[3] < 1.0:
+            alpha = nonenriched_color[3]
+            # Adjust RGB based on alpha (darken)
+            nonenriched_color[:3] = nonenriched_color[:3] * alpha
+            # Set alpha to 1.0 after darkening the color
+            nonenriched_color[3] = 1.0
+
         # Adjust node colors: replace any fully transparent nodes (enriched) with the non-enriched color
         adjusted_network_colors = np.where(
-            np.all(network_colors == 0, axis=1, keepdims=True),
-            np.array([nonenriched_color]),
-            network_colors,
+            np.all(network_colors[:, :3] == 0, axis=1, keepdims=True),  # Check RGB values only
+            np.array([nonenriched_color]),  # Apply the non-enriched color (with adjusted alpha)
+            network_colors,  # Keep the original colors
         )
+
         return adjusted_network_colors
 
     def get_annotated_node_sizes(
