@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="./docs/github/risk-logo-dark.png#gh-dark-mode-only" width="400" />
-  <img src="./docs/github/risk-logo-light.png#gh-light-mode-only" width="400" />
+  <img src="https://i.imgur.com/Fo9EmnK.png#gh-dark-mode-only" width="400" />
+  <img src="https://i.imgur.com/GENqqae.png#gh-light-mode-only" width="400" />
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@ RISK is a software tool for visualizing spatial relationships in networks. It ai
 
 *Saccharomyces cerevisiae* proteins oriented by physical interactions discovered through affinity enrichment and mass spectrometry (Michaelis et al., 2023).
 
-![PPI Network Demo](./docs/github/network.png)
+![PPI Network Demo](https://i.imgur.com/NnyK6nO.png)
 
 ## Installation
 
