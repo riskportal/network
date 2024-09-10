@@ -223,7 +223,7 @@ class NetworkPlotter:
             node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
             node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
             edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
-            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0.
+            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0. Annotated node_color alphas will override this value.
             edge_alpha (float, optional): Alpha value (transparency) for the edges. Defaults to 1.0.
         """
         # Log the plotting parameters
@@ -522,7 +522,7 @@ class NetworkPlotter:
 
     def plot_labels(
         self,
-        perimeter_scale: float = 1.05,
+        scale: float = 1.05,
         offset: float = 0.10,
         font: str = "Arial",
         fontsize: int = 10,
@@ -541,7 +541,7 @@ class NetworkPlotter:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
 
         Args:
-            perimeter_scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
+            scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
             fontsize (int, optional): Font size for the labels. Defaults to 10.
@@ -559,7 +559,7 @@ class NetworkPlotter:
         """
         # Log the plotting parameters
         params.log_plotter(
-            label_perimeter_scale=perimeter_scale,
+            label_perimeter_scale=scale,
             label_offset=offset,
             label_font=font,
             label_fontsize=fontsize,
@@ -637,9 +637,7 @@ class NetworkPlotter:
             valid_indices = [valid_indices[i] for i in selected_indices]
 
         # Calculate the bounding box around the network
-        center, radius = _calculate_bounding_box(
-            self.graph.node_coordinates, radius_margin=perimeter_scale
-        )
+        center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
         # Calculate the best positions for labels around the perimeter
         best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
@@ -666,7 +664,7 @@ class NetworkPlotter:
         nodes: List,
         label: str,
         radial_position: float = 0.0,
-        perimeter_scale: float = 1.05,
+        scale: float = 1.05,
         offset: float = 0.10,
         font: str = "Arial",
         fontsize: int = 10,
@@ -682,7 +680,7 @@ class NetworkPlotter:
             nodes (List[str]): List of node labels to be used for calculating the centroid.
             label (str): The label to be annotated on the network.
             radial_position (float, optional): Radial angle for positioning the label, in degrees (0-360). Defaults to 0.0.
-            perimeter_scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
+            scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for the label from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the label. Defaults to "Arial".
             fontsize (int, optional): Font size for the label. Defaults to 10.
@@ -708,9 +706,7 @@ class NetworkPlotter:
         # Calculate the centroid of the provided nodes
         centroid = self._calculate_domain_centroid(node_ids)
         # Calculate the bounding box around the network
-        center, radius = _calculate_bounding_box(
-            self.graph.node_coordinates, radius_margin=perimeter_scale
-        )
+        center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
         # Convert radial position to radians, adjusting for a 90-degree rotation
         radial_radians = np.deg2rad(radial_position - 90)
         label_position = (
@@ -755,26 +751,41 @@ class NetworkPlotter:
 
     def get_annotated_node_colors(
         self,
+        cmap: str = "gist_rainbow",
+        color: Union[str, None] = None,
+        min_scale: float = 0.8,
+        max_scale: float = 1.0,
+        scale_factor: float = 1.0,
         alpha: float = 1.0,
         nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
         nonenriched_alpha: float = 1.0,
         random_seed: int = 888,
-        **kwargs,
     ) -> np.ndarray:
         """Adjust the colors of nodes in the network graph based on enrichment.
 
         Args:
+            cmap (str, optional): Colormap to use for coloring the nodes. Defaults to "gist_rainbow".
+            color (str or None, optional): Color to use for the nodes. If None, the colormap will be used. Defaults to None.
+            min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
+            max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
+            scale_factor (float, optional): Factor for adjusting the color scaling intensity. Defaults to 1.0.
             alpha (float, optional): Alpha value for enriched nodes. Defaults to 1.0.
             nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Defaults to "white".
             nonenriched_alpha (float, optional): Alpha value for non-enriched nodes. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            **kwargs: Additional keyword arguments for `get_domain_colors`.
 
         Returns:
             np.ndarray: Array of RGBA colors adjusted for enrichment status.
         """
         # Get the initial domain colors for each node, which are returned as RGBA
-        network_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        network_colors = self.graph.get_domain_colors(
+            cmap=cmap,
+            color=color,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            scale_factor=scale_factor,
+            random_seed=random_seed,
+        )
         # Apply the alpha value for enriched nodes
         network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
         # Convert the non-enriched color to RGBA using the _to_rgba helper function
@@ -813,68 +824,120 @@ class NetworkPlotter:
 
         return node_sizes
 
-    def get_annotated_contour_colors(self, random_seed: int = 888, **kwargs) -> np.ndarray:
-        """Get colors for the contours based on node annotations.
+    def get_annotated_contour_colors(
+        self,
+        cmap: str = "gist_rainbow",
+        color: Union[str, None] = None,
+        min_scale: float = 0.8,
+        max_scale: float = 1.0,
+        scale_factor: float = 1.0,
+        random_seed: int = 888,
+    ) -> np.ndarray:
+        """Get colors for the contours based on node annotations or a specified colormap.
 
         Args:
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            **kwargs: Additional keyword arguments for `_get_annotated_domain_colors`.
+            cmap (str, optional): Name of the colormap to use for generating contour colors. Defaults to "gist_rainbow".
+            color (str or None, optional): Color to use for the contours. If None, the colormap will be used. Defaults to None.
+            min_scale (float, optional): Minimum intensity scale for the colors generated by the colormap.
+                Controls the dimmest colors. Defaults to 0.8.
+            max_scale (float, optional): Maximum intensity scale for the colors generated by the colormap.
+                Controls the brightest colors. Defaults to 1.0.
+            scale_factor (float, optional): Exponent for adjusting color scaling based on enrichment scores.
+                A higher value increases contrast by dimming lower scores more. Defaults to 1.0.
+            random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
             np.ndarray: Array of RGBA colors for contour annotations.
         """
-        return self._get_annotated_domain_colors(**kwargs, random_seed=random_seed)
+        return self._get_annotated_domain_colors(
+            cmap=cmap,
+            color=color,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            scale_factor=scale_factor,
+            random_seed=random_seed,
+        )
 
-    def get_annotated_label_colors(self, random_seed: int = 888, **kwargs) -> np.ndarray:
-        """Get colors for the labels based on node annotations.
+    def get_annotated_label_colors(
+        self,
+        cmap: str = "gist_rainbow",
+        color: Union[str, None] = None,
+        min_scale: float = 0.8,
+        max_scale: float = 1.0,
+        scale_factor: float = 1.0,
+        random_seed: int = 888,
+    ) -> np.ndarray:
+        """Get colors for the labels based on node annotations or a specified colormap.
 
         Args:
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            **kwargs: Additional keyword arguments for `_get_annotated_domain_colors`.
+            cmap (str, optional): Name of the colormap to use for generating label colors. Defaults to "gist_rainbow".
+            color (str or None, optional): Color to use for the labels. If None, the colormap will be used. Defaults to None.
+            min_scale (float, optional): Minimum intensity scale for the colors generated by the colormap.
+                Controls the dimmest colors. Defaults to 0.8.
+            max_scale (float, optional): Maximum intensity scale for the colors generated by the colormap.
+                Controls the brightest colors. Defaults to 1.0.
+            scale_factor (float, optional): Exponent for adjusting color scaling based on enrichment scores.
+                A higher value increases contrast by dimming lower scores more. Defaults to 1.0.
+            random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
             np.ndarray: Array of RGBA colors for label annotations.
         """
-        return self._get_annotated_domain_colors(**kwargs, random_seed=random_seed)
+        return self._get_annotated_domain_colors(
+            cmap=cmap,
+            color=color,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            scale_factor=scale_factor,
+            random_seed=random_seed,
+        )
 
     def _get_annotated_domain_colors(
         self,
-        color: Union[str, List, Tuple, np.ndarray, None] = None,
+        cmap: str = "gist_rainbow",
+        color: Union[str, None] = None,
+        min_scale: float = 0.8,
+        max_scale: float = 1.0,
+        scale_factor: float = 1.0,
         random_seed: int = 888,
-        **kwargs,
     ) -> np.ndarray:
-        """Get colors for the domains based on node annotations.
+        """Get colors for the domains based on node annotations, or use a specified color.
 
         Args:
-            color (str, list, tuple, np.ndarray, or None, optional): If provided, use this color or list of colors for domains. Defaults to None.
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            **kwargs: Additional keyword arguments for `get_domain_colors`.
+            cmap (str, optional): Colormap to use for generating domain colors. Defaults to "gist_rainbow".
+            color (str or None, optional): Color to use for the domains. If None, the colormap will be used. Defaults to None.
+            min_scale (float, optional): Minimum scale for color intensity when generating domain colors.
+                Defaults to 0.8.
+            max_scale (float, optional): Maximum scale for color intensity when generating domain colors.
+                Defaults to 1.0.
+            scale_factor (float, optional): Factor for adjusting the contrast in the colors generated based on
+                enrichment. Higher values increase the contrast. Defaults to 1.0.
+            random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
             np.ndarray: Array of RGBA colors for each domain.
         """
-        if color is not None:
-            # Convert color(s) to RGBA using _to_rgba helper
-            if isinstance(color, (list, tuple, np.ndarray)):
-                return np.array([_to_rgba(c) for c in color])
-            else:
-                rgba_color = _to_rgba(color)
-                return np.array([rgba_color for _ in self.graph.domain_to_nodes])
-
-        # Generate colors for each domain using provided arguments and random seed
-        node_colors = self.graph.get_domain_colors(**kwargs, random_seed=random_seed)
+        # Generate domain colors based on the enrichment data
+        node_colors = self.graph.get_domain_colors(
+            cmap=cmap,
+            color=color,
+            min_scale=min_scale,
+            max_scale=max_scale,
+            scale_factor=scale_factor,
+            random_seed=random_seed,
+        )
         annotated_colors = []
         for _, nodes in self.graph.domain_to_nodes.items():
             if len(nodes) > 1:
-                # For domains with multiple nodes, select the brightest color (sum of RGB values)
+                # For multi-node domains, choose the brightest color based on RGB sum
                 domain_colors = np.array([node_colors[node] for node in nodes])
                 brightest_color = domain_colors[
-                    np.argmax(domain_colors[:, :3].sum(axis=1))
-                ]  # Only consider RGB
+                    np.argmax(domain_colors[:, :3].sum(axis=1))  # Sum the RGB values
+                ]
                 annotated_colors.append(brightest_color)
             else:
-                # Assign a default color (white) for single-node domains
-                default_color = np.array([1.0, 1.0, 1.0, 1.0])  # RGBA for white
+                # Single-node domains default to white (RGBA)
+                default_color = np.array([1.0, 1.0, 1.0, 1.0])
                 annotated_colors.append(default_color)
 
         return np.array(annotated_colors)
