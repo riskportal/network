@@ -347,7 +347,7 @@ def plot_labels(plotter):
     """
     try:
         plotter.plot_labels(
-            perimeter_scale=1.25,
+            scale=1.25,
             offset=0.10,
             font="Arial",
             fontsize=10,
@@ -388,7 +388,7 @@ def plot_sublabel(plotter):
             ],
             label="LSM1-7-PAT1 Complex",
             radial_position=73,
-            perimeter_scale=1.6,
+            scale=1.6,
             offset=0.10,
             font="Arial",
             fontsize=14,
@@ -815,7 +815,7 @@ def test_plot_subcontour_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, perimeter_scale, offset, font, fontsize, arrow_linewidth",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth",
     [
         (
             None,
@@ -879,7 +879,7 @@ def test_plot_labels_with_custom_params(
     min_word_length,
     max_word_length,
     max_labels,
-    perimeter_scale,
+    scale,
     offset,
     font,
     fontsize,
@@ -899,7 +899,7 @@ def test_plot_labels_with_custom_params(
         min_word_length: Minimum length of each word.
         max_word_length: Maximum length of each word.
         max_labels: Maximum number of labels to display.
-        perimeter_scale: Scale factor for positioning labels around the perimeter.
+        scale: Scale factor for positioning labels around the perimeter.
         offset: Offset distance for labels from the perimeter.
         font: Font name for the labels.
         fontsize: Font size for the labels.
@@ -917,7 +917,7 @@ def test_plot_labels_with_custom_params(
             arrow_color = plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887)
 
         plotter.plot_labels(
-            perimeter_scale=perimeter_scale,
+            scale=scale,
             offset=offset,
             font=font,
             fontsize=fontsize,
@@ -938,7 +938,7 @@ def test_plot_labels_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, perimeter_scale, offset, arrow_linewidth, font",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, scale, offset, arrow_linewidth, font",
     [
         (
             "white",
@@ -987,7 +987,7 @@ def test_plot_sublabel_with_custom_params(
     arrow_alpha,
     fontsize,
     radial_position,
-    perimeter_scale,
+    scale,
     offset,
     arrow_linewidth,
     font,
@@ -1003,7 +1003,7 @@ def test_plot_sublabel_with_custom_params(
         arrow_alpha: The transparency of the label arrows.
         fontsize: The size of the label text.
         radial_position: The radial position of the label.
-        perimeter_scale: Scale factor for the label's radial position.
+        scale: Scale factor for the label's radial position.
         offset: Offset distance for labels from the perimeter.
         arrow_linewidth: The width of the arrow pointing to the label.
         font: The font used for the label text.
@@ -1026,7 +1026,7 @@ def test_plot_sublabel_with_custom_params(
             ],
             label="LSM1-7-PAT1 Complex",
             radial_position=radial_position,
-            perimeter_scale=perimeter_scale,
+            scale=scale,
             offset=offset,
             font=font,
             fontsize=fontsize,
