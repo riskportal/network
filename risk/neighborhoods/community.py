@@ -25,10 +25,14 @@ def calculate_dijkstra_neighborhoods(network: nx.Graph) -> np.ndarray:
 
     # Populate the neighborhoods matrix based on Dijkstra's distances
     for source, targets in all_dijkstra_paths.items():
+        max_length = max(targets.values()) if targets else 1  # Handle cases with no targets
         for target, length in targets.items():
-            neighborhoods[source, target] = (
-                1 if np.isnan(length) or length == 0 else np.sqrt(1 / length)
-            )
+            if np.isnan(length):
+                neighborhoods[source, target] = max_length  # Use max distance for NaN
+            elif length == 0:
+                neighborhoods[source, target] = 1  # Assign 1 for zero-length paths (self-loops)
+            else:
+                neighborhoods[source, target] = 1 / length  # Inverse of the distance
 
     return neighborhoods
 
