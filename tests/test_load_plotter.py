@@ -23,6 +23,38 @@ def test_initialize_plotter(risk_obj, graph):
     assert hasattr(plotter, "graph")  # Check that the plotter has a graph attribute
 
 
+def test_plot_circle_perimeter(risk_obj, graph):
+    """Test plotting a circle perimeter around the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_circle_perimeter(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_contour_perimeter(risk_obj, graph):
+    """Test plotting a contour perimeter around the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_contour_perimeter(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
 def test_plot_network(risk_obj, graph):
     """Test plotting the full network using the plotter.
 
@@ -136,6 +168,53 @@ def initialize_plotter(risk, graph):
     )
 
 
+def plot_circle_perimeter(plotter):
+    """Plot a circle perimeter around the network using the plotter.
+
+    Args:
+        plotter: The initialized plotter object.
+
+    Returns:
+        None
+    """
+    try:
+        plotter.plot_circle_perimeter(
+            scale=1.05,
+            linestyle="dashed",
+            linewidth=1.5,
+            color="black",
+            outline_alpha=1.0,
+            fill_alpha=0.0,
+        )
+    finally:
+        plt.close("all")
+
+
+def plot_contour_perimeter(plotter):
+    """Plot a contour perimeter around the network using KDE-based contour.
+
+    Args:
+        plotter: The initialized plotter object.
+
+    Returns:
+        None
+    """
+    try:
+        plotter.plot_contour_perimeter(
+            scale=1.0,
+            levels=5,
+            bandwidth=0.8,
+            grid_size=250,
+            color="black",
+            linestyle="solid",
+            linewidth=1.5,
+            outline_alpha=1.0,
+            fill_alpha=0.0,
+        )
+    finally:
+        plt.close("all")
+
+
 def plot_network(plotter):
     """Plot the full network using the plotter.
 
@@ -146,26 +225,25 @@ def plot_network(plotter):
         None
     """
     try:
-        # Optional: Plot network nodes and edges
         plotter.plot_network(
             node_size=plotter.get_annotated_node_sizes(
                 enriched_nodesize=100, nonenriched_nodesize=25
             ),
-            node_shape="o",  # OPTIONS: Circle shape
+            node_shape="o",
             edge_width=0.0,
             node_color=plotter.get_annotated_node_colors(
                 cmap="gist_rainbow",
                 min_scale=0.25,
                 max_scale=1.0,
                 scale_factor=0.5,
-                alpha=1.0,  # Alpha for enriched nodes
+                alpha=1.0,
                 nonenriched_color="white",
-                nonenriched_alpha=0.1,  # Alpha for non-enriched nodes
+                nonenriched_alpha=0.1,
                 random_seed=887,
             ),
             node_edgecolor="black",
             edge_color="white",
-            node_alpha=0.1,  # This will override the alpha value in node_color if set
+            node_alpha=0.1,
             edge_alpha=1.0,
         )
     finally:
@@ -194,13 +272,13 @@ def plot_subnetwork(plotter):
                 "PAT1",
             ],
             node_size=250,
-            node_shape="^",  # Triangle up for subnetwork
-            edge_width=0.5,  # Optional: Adjust edge width for subnetwork
-            node_color="skyblue",  # Subnetwork-specific node color
+            node_shape="^",
+            edge_width=0.5,
+            node_color="skyblue",
             node_edgecolor="black",
             edge_color="white",
-            node_alpha=0.5,  # Semi-transparent nodes
-            edge_alpha=0.5,  # Semi-transparent edges
+            node_alpha=0.5,
+            edge_alpha=0.5,
         )
     finally:
         plt.close("all")
@@ -317,8 +395,8 @@ def plot_sublabel(plotter):
             fontcolor="white",
             arrow_linewidth=1.5,
             arrow_color="white",
-            fontalpha=0.5,  # Added transparency for font
-            arrow_alpha=0.5,  # Added transparency for arrows
+            fontalpha=0.5,
+            arrow_alpha=0.5,
         )
     finally:
         plt.close("all")
@@ -329,61 +407,153 @@ def plot_sublabel(plotter):
 
 
 @pytest.mark.parametrize(
-    "color, alpha",
+    "color, outline_alpha, fill_alpha, scale, linestyle, linewidth",
     [
-        ("white", 1.0),  # Test case 1: white color, full opacity
-        ((0.5, 0.8, 1.0), 0.5),  # Test case 2: light blue (RGB), semi-transparent
+        (
+            "white",
+            1.0,
+            0.0,
+            1.05,
+            "solid",
+            1.5,
+        ),  # Test case 1: White color, full perimeter opacity, no fill
+        (
+            (0.5, 0.8, 1.0),
+            0.5,
+            0.5,
+            1.1,
+            "dashed",
+            2.0,
+        ),  # Test case 2: Light blue RGB, semi-transparent perimeter and fill
     ],
 )
-def test_plot_border_with_custom_color_and_alpha(risk_obj, graph, color, alpha):
-    """Test plot_border with different color and alpha parameters.
+def test_plot_circle_perimeter_with_custom_params(
+    risk_obj, graph, color, outline_alpha, fill_alpha, scale, linestyle, linewidth
+):
+    """Test plot_circle_perimeter with different color, alpha, and style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-        color: The color parameter for the border.
-        alpha: The transparency parameter for the border.
+        color: The color parameter for the perimeter.
+        outline_alpha: The transparency of the perimeter (outline).
+        fill_alpha: The transparency of the circle's fill.
+        scale: Scaling factor for the perimeter diameter.
+        linestyle: The line style for the circle's outline.
+        linewidth: The thickness of the circle's outline.
 
     Returns:
         None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        plotter.plot_border(
-            scale=1.05,
-            linestyle="solid",
-            linewidth=1.5,
+        plotter.plot_circle_perimeter(
+            scale=scale,
+            linestyle=linestyle,
+            linewidth=linewidth,
             color=color,
-            alpha=alpha,
+            outline_alpha=outline_alpha,
+            fill_alpha=fill_alpha,
         )
     finally:
         plt.close("all")
 
 
 @pytest.mark.parametrize(
-    "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha",
+    "scale, levels, bandwidth, grid_size, color, linestyle, linewidth, outline_alpha, fill_alpha",
     [
         (
-            None,
-            "white",
-            0.1,  # Test case 1: non-enriched nodes have alpha 0.1
+            1.0,
+            3,
+            0.8,
+            250,
             "black",
-            "blue",
+            "solid",
+            1.5,
             1.0,
+            0.0,
+        ),  # Test case 1: Black solid line, full opacity, no fill
+        (
+            1.1,
+            5,
             1.0,
-        ),  # Test case 1: Annotated node colors, white non-enriched, black edges, blue node edge, full opacity
+            300,
+            (0.5, 0.8, 1.0),
+            "dashed",
+            2.0,
+            0.7,
+            0.5,
+        ),  # Test case 2: Light blue contour with semi-transparent perimeter and fill
+    ],
+)
+def test_plot_contour_perimeter_with_custom_params(
+    risk_obj,
+    graph,
+    scale,
+    levels,
+    bandwidth,
+    grid_size,
+    color,
+    linestyle,
+    linewidth,
+    outline_alpha,
+    fill_alpha,
+):
+    """Test plot_contour_perimeter with different contour and alpha parameters.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+        scale: Scaling factor for the contour size.
+        levels: Number of contour levels.
+        bandwidth: Bandwidth for the KDE smoothing.
+        grid_size: Grid size for the KDE computation.
+        color: Color of the contour perimeter.
+        linestyle: Line style of the contour.
+        linewidth: Line width of the contour perimeter.
+        outline_alpha: Transparency of the contour outline.
+        fill_alpha: Transparency of the contour fill.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    try:
+        plotter.plot_contour_perimeter(
+            scale=scale,
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
+            color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            outline_alpha=outline_alpha,
+            fill_alpha=fill_alpha,
+        )
+    finally:
+        plt.close("all")
+
+
+@pytest.mark.parametrize(
+    "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width",
+    [
+        (None, "white", 0.1, "black", "blue", 1.0, 1.0, 100, "o", 0.0),  # Test case 1
         (
             (0.2, 0.6, 0.8),
             (1.0, 1.0, 0.5),
-            0.5,  # Test case 2: non-enriched nodes have alpha 0.5
+            0.5,
             (1.0, 0.0, 0.0),
             (0.0, 1.0, 0.0),
             0.5,
             0.5,
-        ),  # Test case 2: Custom node colors, yellow non-enriched, red edges, green node edge, 50% opacity
+            150,
+            "^",
+            1.0,
+        ),  # Test case 2
+        ("green", "yellow", 0.2, "grey", "red", 0.8, 0.9, 120, "s", 2.0),  # Test case 3
     ],
 )
-def test_plot_network_with_custom_colors_and_alpha(
+def test_plot_network_with_custom_params(
     risk_obj,
     graph,
     node_color,
@@ -393,20 +563,25 @@ def test_plot_network_with_custom_colors_and_alpha(
     node_edgecolor,
     node_alpha,
     edge_alpha,
+    node_size,
+    node_shape,
+    edge_width,
 ):
-    """Test plot_network with different node, edge, and node edge colors and alpha values.
+    """Test plot_network with different node, edge, and node edge colors, sizes, edge widths, and alpha values.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-        plotter: The initialized plotter object.
-        node_color: The color of the network nodes or None to use annotated colors.
+        node_color: The color of the network nodes.
         nonenriched_color: The color for non-enriched nodes.
         nonenriched_alpha: The transparency of the non-enriched nodes.
         edge_color: The color of the network edges.
         node_edgecolor: The color of the node edges.
         node_alpha: The transparency of the nodes.
         edge_alpha: The transparency of the edges.
+        node_size: The size of the nodes.
+        node_shape: The shape of the nodes.
+        edge_width: The width of the edges.
 
     Returns:
         None
@@ -420,19 +595,19 @@ def test_plot_network_with_custom_colors_and_alpha(
                 max_scale=1.0,
                 scale_factor=0.5,
                 nonenriched_color=nonenriched_color,
-                nonenriched_alpha=nonenriched_alpha,  # Using the nonenriched_alpha value
+                nonenriched_alpha=nonenriched_alpha,
                 random_seed=887,
             )
 
         plotter.plot_network(
             node_size=plotter.get_annotated_node_sizes(
-                enriched_nodesize=100, nonenriched_nodesize=10
+                enriched_nodesize=100, nonenriched_nodesize=node_size
             ),
-            edge_width=0.0,
+            edge_width=edge_width,
             node_color=node_color,
             node_edgecolor=node_edgecolor,
             edge_color=edge_color,
-            node_shape="o",
+            node_shape=node_shape,
             node_alpha=node_alpha,
             edge_alpha=edge_alpha,
         )
@@ -441,29 +616,14 @@ def test_plot_network_with_custom_colors_and_alpha(
 
 
 @pytest.mark.parametrize(
-    "node_color, edge_color, node_edgecolor, node_size, edge_width, node_alpha, edge_alpha",
+    "node_color, edge_color, node_edgecolor, node_size, edge_width, node_alpha, edge_alpha, node_shape",
     [
-        (
-            "white",
-            "black",
-            "blue",
-            250,
-            0.0,
-            1.0,
-            1.0,
-        ),  # Test case 1: Custom colors, node size 250, full opacity
-        (
-            (0.2, 0.6, 0.8),
-            (1.0, 0.0, 0.0),
-            (0.0, 1.0, 0.0),
-            300,
-            0.5,
-            0.5,
-            0.5,
-        ),  # Test case 2: Custom colors, node size 300, semi-transparent
+        ("white", "black", "blue", 250, 0.0, 1.0, 1.0, "^"),
+        ((0.2, 0.6, 0.8), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), 300, 0.5, 0.5, 0.5, "s"),
+        ("green", "gray", "red", 200, 1.0, 0.8, 0.9, "o"),
     ],
 )
-def test_plot_subnetwork_with_custom_colors_sizes_and_alpha(
+def test_plot_subnetwork_with_custom_params(
     risk_obj,
     graph,
     node_color,
@@ -473,8 +633,9 @@ def test_plot_subnetwork_with_custom_colors_sizes_and_alpha(
     edge_width,
     node_alpha,
     edge_alpha,
+    node_shape,
 ):
-    """Test plot_subnetwork with different node, edge, and node edge colors, sizes, edge widths, and alpha values.
+    """Test plot_subnetwork with different node, edge, and node edge colors, sizes, edge widths, shapes, and alpha values.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -486,6 +647,7 @@ def test_plot_subnetwork_with_custom_colors_sizes_and_alpha(
         edge_width: The width of the edges.
         node_alpha: The transparency of the nodes.
         edge_alpha: The transparency of the edges.
+        node_shape: The shape of the nodes.
 
     Returns:
         None
@@ -508,30 +670,61 @@ def test_plot_subnetwork_with_custom_colors_sizes_and_alpha(
             node_color=node_color,
             node_edgecolor=node_edgecolor,
             edge_color=edge_color,
-            node_shape="^",  # Keeping node shape constant
-            node_alpha=node_alpha,  # Applying node transparency
-            edge_alpha=edge_alpha,  # Applying edge transparency
+            node_shape=node_shape,
+            node_alpha=node_alpha,
+            edge_alpha=edge_alpha,
         )
     finally:
         plt.close("all")
 
 
 @pytest.mark.parametrize(
-    "color, alpha",
+    "color, alpha, levels, bandwidth, grid_size, linestyle, linewidth",
     [
-        (None, 0.2),  # Test case 1: Use annotated contour colors with alpha 0.2
-        ("red", 0.5),  # Test case 2: Use string color "red" with alpha 0.5
-        ((0.2, 0.6, 0.8), 0.3),  # Test case 3: Use RGB value for light blue with alpha 0.3
+        (None, 0.2, 5, 0.8, 250, "solid", 1.5),  # Test case 1: Annotated colors, alpha 0.2
+        (
+            "red",
+            0.5,
+            6,
+            1.0,
+            300,
+            "dashed",
+            2.0,
+        ),  # Test case 2: Red contours, alpha 0.5, custom bandwidth and grid size
+        (
+            (0.2, 0.6, 0.8),
+            0.3,
+            4,
+            0.6,
+            200,
+            "dotted",
+            1.0,
+        ),  # Test case 3: Light blue (RGB), alpha 0.3, dotted line
     ],
 )
-def test_plot_contours_with_custom_colors(risk_obj, graph, color, alpha):
-    """Test plot_contours with different color formats and alpha values.
+def test_plot_contours_with_custom_params(
+    risk_obj,
+    graph,
+    color,
+    alpha,
+    levels,
+    bandwidth,
+    grid_size,
+    linestyle,
+    linewidth,
+):
+    """Test plot_contours with different color formats, alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which contours will be plotted.
         color: The color of the contours (None for annotated, string, or RGB tuple).
         alpha: The transparency of the contours.
+        levels: The number of contour levels.
+        bandwidth: The bandwidth for KDE smoothing.
+        grid_size: The grid size for contour resolution.
+        linestyle: The line style for the contour lines.
+        linewidth: The width of the contour lines.
 
     Returns:
         None
@@ -542,31 +735,56 @@ def test_plot_contours_with_custom_colors(risk_obj, graph, color, alpha):
             color = plotter.get_annotated_contour_colors(cmap="gist_rainbow", random_seed=887)
 
         plotter.plot_contours(
-            levels=5,
-            bandwidth=0.8,
-            grid_size=250,
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
             alpha=alpha,
             color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
         )
     finally:
         plt.close("all")
 
 
 @pytest.mark.parametrize(
-    "color, alpha",
+    "color, alpha, levels, bandwidth, grid_size, linestyle, linewidth",
     [
-        ("red", 0.5),  # Test case 1: Use string color "red" with alpha 0.5
-        ((0.2, 0.6, 0.8), 0.3),  # Test case 2: Use RGB value for light blue with alpha 0.3
+        ("red", 0.5, 5, 0.8, 250, "solid", 1.5),  # Test case 1: Red with alpha 0.5, solid line
+        (
+            (0.2, 0.6, 0.8),
+            0.3,
+            4,
+            1.0,
+            300,
+            "dashed",
+            2.0,
+        ),  # Test case 2: Light blue RGB with alpha 0.3, dashed line
     ],
 )
-def test_plot_subcontour_with_custom_colors(risk_obj, graph, color, alpha):
-    """Test plot_subcontour with different color formats and alpha values.
+def test_plot_subcontour_with_custom_params(
+    risk_obj,
+    graph,
+    color,
+    alpha,
+    levels,
+    bandwidth,
+    grid_size,
+    linestyle,
+    linewidth,
+):
+    """Test plot_subcontour with different color formats, alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which subcontours will be plotted.
-        color: The color of the subcontours (None for annotated, string, or RGB tuple).
+        color: The color of the subcontours (string or RGB tuple).
         alpha: The transparency of the subcontours.
+        levels: The number of contour levels.
+        bandwidth: The bandwidth for KDE smoothing.
+        grid_size: The grid size for contour resolution.
+        linestyle: The line style for the contour lines.
+        linewidth: The width of the contour lines.
 
     Returns:
         None
@@ -584,18 +802,20 @@ def test_plot_subcontour_with_custom_colors(risk_obj, graph, color, alpha):
                 "LSM7",
                 "PAT1",
             ],
-            levels=5,
-            bandwidth=0.8,
-            grid_size=250,
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
             alpha=alpha,
             color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
         )
     finally:
         plt.close("all")
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, perimeter_scale, offset, font, fontsize, arrow_linewidth",
     [
         (
             None,
@@ -607,6 +827,11 @@ def test_plot_subcontour_with_custom_colors(risk_obj, graph, color, alpha):
             3,
             10,
             10,
+            1.25,
+            0.10,
+            "Arial",
+            10,
+            1,
         ),  # Test case 1: Annotated label colors, full opacity, max labels 10
         (
             "red",
@@ -618,6 +843,11 @@ def test_plot_subcontour_with_custom_colors(risk_obj, graph, color, alpha):
             4,
             15,
             5,
+            1.5,
+            0.15,
+            "Helvetica",
+            12,
+            2,
         ),  # Test case 2: Custom colors, semi-transparent, max labels 5
         (
             (0.2, 0.6, 0.8),
@@ -629,10 +859,15 @@ def test_plot_subcontour_with_custom_colors(risk_obj, graph, color, alpha):
             2,
             20,
             8,
+            1.35,
+            0.12,
+            "Times New Roman",
+            14,
+            1.5,
         ),  # Test case 3: Custom RGB colors, with alpha and word limits, max labels 8
     ],
 )
-def test_plot_labels_with_custom_colors_and_words(
+def test_plot_labels_with_custom_params(
     risk_obj,
     graph,
     fontcolor,
@@ -644,8 +879,13 @@ def test_plot_labels_with_custom_colors_and_words(
     min_word_length,
     max_word_length,
     max_labels,
+    perimeter_scale,
+    offset,
+    font,
+    fontsize,
+    arrow_linewidth,
 ):
-    """Test plot_labels with different label and arrow colors, alpha values, word constraints, and max labels.
+    """Test plot_labels with different label and arrow colors, alpha values, word constraints, max labels, and various style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -659,6 +899,11 @@ def test_plot_labels_with_custom_colors_and_words(
         min_word_length: Minimum length of each word.
         max_word_length: Maximum length of each word.
         max_labels: Maximum number of labels to display.
+        perimeter_scale: Scale factor for positioning labels around the perimeter.
+        offset: Offset distance for labels from the perimeter.
+        font: Font name for the labels.
+        fontsize: Font size for the labels.
+        arrow_linewidth: Line width for the arrows pointing to centroids.
 
     Returns:
         None
@@ -672,16 +917,16 @@ def test_plot_labels_with_custom_colors_and_words(
             arrow_color = plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887)
 
         plotter.plot_labels(
-            perimeter_scale=1.25,
-            offset=0.10,
-            font="Arial",
-            fontsize=10,
+            perimeter_scale=perimeter_scale,
+            offset=offset,
+            font=font,
+            fontsize=fontsize,
             fontcolor=fontcolor,
             fontalpha=font_alpha,
-            arrow_linewidth=1,
+            arrow_linewidth=arrow_linewidth,
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
-            max_labels=max_labels,  # Adding the max_labels parameter
+            max_labels=max_labels,
             max_words=max_words,
             min_words=min_words,
             max_word_length=max_word_length,
@@ -693,7 +938,7 @@ def test_plot_labels_with_custom_colors_and_words(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, perimeter_scale, offset, arrow_linewidth, font",
     [
         (
             "white",
@@ -702,6 +947,10 @@ def test_plot_labels_with_custom_colors_and_words(
             1.0,
             14,
             73,
+            1.6,
+            0.10,
+            1.5,
+            "Arial",
         ),  # Test case 1: Full opacity, white font and arrow, fontsize 14, radial position 73
         (
             "red",
@@ -710,6 +959,10 @@ def test_plot_labels_with_custom_colors_and_words(
             0.5,
             16,
             120,
+            1.5,
+            0.12,
+            2.0,
+            "Helvetica",
         ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120
         (
             (0.2, 0.6, 0.8),
@@ -718,13 +971,28 @@ def test_plot_labels_with_custom_colors_and_words(
             0.7,
             18,
             45,
+            1.4,
+            0.08,
+            1.8,
+            "Times New Roman",
         ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45
     ],
 )
-def test_plot_sublabel_with_custom_colors_and_alpha(
-    risk_obj, graph, fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position
+def test_plot_sublabel_with_custom_params(
+    risk_obj,
+    graph,
+    fontcolor,
+    arrow_color,
+    font_alpha,
+    arrow_alpha,
+    fontsize,
+    radial_position,
+    perimeter_scale,
+    offset,
+    arrow_linewidth,
+    font,
 ):
-    """Test plot_sublabel with different label and arrow colors, alpha values, and label positioning.
+    """Test plot_sublabel with different label and arrow colors, alpha values, label positioning, and other style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -735,6 +1003,10 @@ def test_plot_sublabel_with_custom_colors_and_alpha(
         arrow_alpha: The transparency of the label arrows.
         fontsize: The size of the label text.
         radial_position: The radial position of the label.
+        perimeter_scale: Scale factor for the label's radial position.
+        offset: Offset distance for labels from the perimeter.
+        arrow_linewidth: The width of the arrow pointing to the label.
+        font: The font used for the label text.
 
     Returns:
         None
@@ -754,15 +1026,15 @@ def test_plot_sublabel_with_custom_colors_and_alpha(
             ],
             label="LSM1-7-PAT1 Complex",
             radial_position=radial_position,
-            perimeter_scale=1.6,
-            offset=0.10,
-            font="Arial",
+            perimeter_scale=perimeter_scale,
+            offset=offset,
+            font=font,
             fontsize=fontsize,
             fontcolor=fontcolor,
-            fontalpha=font_alpha,  # Applying font transparency
-            arrow_linewidth=1.5,
+            fontalpha=font_alpha,
+            arrow_linewidth=arrow_linewidth,
             arrow_color=arrow_color,
-            arrow_alpha=arrow_alpha,  # Applying arrow transparency
+            arrow_alpha=arrow_alpha,
         )
     finally:
         plt.close("all")

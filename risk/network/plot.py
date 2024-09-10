@@ -17,11 +17,11 @@ from risk.network.graph import NetworkGraph
 
 
 class NetworkPlotter:
-    """A class responsible for visualizing network graphs with various customization options.
+    """A class for visualizing network graphs with customizable options.
 
-    The NetworkPlotter class takes in a NetworkGraph object, which contains the network's data and attributes,
-    and provides methods for plotting the network with customizable node and edge properties,
-    as well as optional features like drawing the network's perimeter and setting background colors.
+    The NetworkPlotter class uses a NetworkGraph object and provides methods to plot the network with
+    flexible node and edge properties. It also supports plotting labels, contours, drawing the network's
+    perimeter, and adjusting background colors.
     """
 
     def __init__(
@@ -85,13 +85,14 @@ class NetworkPlotter:
 
         return ax
 
-    def plot_border(
+    def plot_circle_perimeter(
         self,
         scale: float = 1.0,
         linestyle: str = "dashed",
         linewidth: float = 1.5,
         color: Union[str, List, Tuple, np.ndarray] = "black",
-        alpha: float = 1.0,
+        outline_alpha: float = 1.0,
+        fill_alpha: float = 0.0,
     ) -> None:
         """Plot a circle around the network graph to represent the network perimeter.
 
@@ -100,21 +101,24 @@ class NetworkPlotter:
             linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
             linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
             color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
-            alpha (float, optional): Transparency level of the circle outline. Defaults to 1.0.
+            outline_alpha (float, optional): Transparency level of the circle outline. Defaults to 1.0.
+            fill_alpha (float, optional): Transparency level of the circle fill. Defaults to 0.0.
         """
-        # Log the circle border plotting parameters
+        # Log the circle perimeter plotting parameters
         params.log_plotter(
-            border_scale=scale,
-            border_linestyle=linestyle,
-            border_linewidth=linewidth,
-            border_color=(
+            perimeter_type="circle",
+            perimeter_scale=scale,
+            perimeter_linestyle=linestyle,
+            perimeter_linewidth=linewidth,
+            perimeter_color=(
                 "custom" if isinstance(color, (list, tuple, np.ndarray)) else color
             ),  # np.ndarray usually indicates custom colors
-            border_alpha=alpha,
+            perimeter_outline_alpha=outline_alpha,
+            perimeter_fill_alpha=fill_alpha,
         )
 
-        # Convert color to RGBA using the _to_rgba helper function
-        color = _to_rgba(color, alpha)
+        # Convert color to RGBA using the _to_rgba helper function - use outline_alpha for the perimeter
+        color = _to_rgba(color, outline_alpha)
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
@@ -129,9 +133,75 @@ class NetworkPlotter:
             linestyle=linestyle,
             linewidth=linewidth,
             color=color,
-            fill=False,
+            fill=fill_alpha > 0,  # Fill the circle if fill_alpha is greater than 0
         )
+        # Set the transparency of the fill if applicable
+        if fill_alpha > 0:
+            circle.set_facecolor(
+                _to_rgba(color, fill_alpha)
+            )  # Use _to_rgba to set the fill color with transparency
+
         self.ax.add_artist(circle)
+
+    def plot_contour_perimeter(
+        self,
+        scale: float = 1.0,
+        levels: int = 3,
+        bandwidth: float = 0.8,
+        grid_size: int = 250,
+        color: Union[str, List, Tuple, np.ndarray] = "black",
+        linestyle: str = "solid",
+        linewidth: float = 1.5,
+        outline_alpha: float = 1.0,
+        fill_alpha: float = 0.0,
+    ) -> None:
+        """
+        Plot a KDE-based contour around the network graph to represent the network perimeter.
+
+        Args:
+            scale (float, optional): Scaling factor for the perimeter size. Defaults to 1.0.
+            levels (int, optional): Number of contour levels. Defaults to 3.
+            bandwidth (float, optional): Bandwidth for the KDE. Controls smoothness. Defaults to 0.8.
+            grid_size (int, optional): Grid resolution for the KDE. Higher values yield finer contours. Defaults to 250.
+            color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter contour. Defaults to "black".
+            linestyle (str, optional): Line style for the network perimeter contour (e.g., dashed, solid). Defaults to "solid".
+            linewidth (float, optional): Width of the contour's outline. Defaults to 1.5.
+            outline_alpha (float, optional): Transparency level of the contour outline. Defaults to 1.0.
+            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.0.
+        """
+        # Log the contour perimeter plotting parameters
+        params.log_plotter(
+            perimeter_type="contour",
+            perimeter_scale=scale,
+            perimeter_levels=levels,
+            perimeter_bandwidth=bandwidth,
+            perimeter_grid_size=grid_size,
+            perimeter_linestyle=linestyle,
+            perimeter_linewidth=linewidth,
+            perimeter_color=("custom" if isinstance(color, (list, tuple, np.ndarray)) else color),
+            perimeter_outline_alpha=outline_alpha,
+            perimeter_fill_alpha=fill_alpha,
+        )
+
+        # Convert color to RGBA using the _to_rgba helper function - use outline_alpha for the perimeter
+        color = _to_rgba(color, outline_alpha)
+        # Extract node coordinates from the network graph
+        node_coordinates = self.graph.node_coordinates
+        # Scale the node coordinates if needed
+        scaled_coordinates = node_coordinates * scale
+        # Use the existing _draw_kde_contour method
+        self._draw_kde_contour(
+            ax=self.ax,
+            pos=scaled_coordinates,
+            nodes=list(range(len(node_coordinates))),  # All nodes are included
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
+            color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            alpha=fill_alpha,  # Use fill_alpha for the fill
+        )
 
     def plot_network(
         self,
@@ -275,6 +345,8 @@ class NetworkPlotter:
         bandwidth: float = 0.8,
         grid_size: int = 250,
         color: Union[str, List, Tuple, np.ndarray] = "white",
+        linestyle: str = "solid",
+        linewidth: float = 1.5,
         alpha: float = 0.2,
     ) -> None:
         """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
@@ -284,6 +356,8 @@ class NetworkPlotter:
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
             color (str, list, tuple, or np.ndarray, optional): Color of the contours. Can be a single color or an array of colors. Defaults to "white".
+            linestyle (str, optional): Line style for the contours. Defaults to "solid".
+            linewidth (float, optional): Line width for the contours. Defaults to 1.5.
             alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
         """
         # Log the contour plotting parameters
@@ -312,6 +386,8 @@ class NetworkPlotter:
                     levels=levels,
                     bandwidth=bandwidth,
                     grid_size=grid_size,
+                    linestyle=linestyle,
+                    linewidth=linewidth,
                     alpha=alpha,
                 )
 
@@ -322,6 +398,8 @@ class NetworkPlotter:
         bandwidth: float = 0.8,
         grid_size: int = 250,
         color: Union[str, List, Tuple, np.ndarray] = "white",
+        linestyle: str = "solid",
+        linewidth: float = 1.5,
         alpha: float = 0.2,
     ) -> None:
         """Plot a subcontour for a given set of nodes using Kernel Density Estimation (KDE).
@@ -332,6 +410,8 @@ class NetworkPlotter:
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
             color (str, list, tuple, or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
+            linestyle (str, optional): Line style for the contour. Defaults to "solid".
+            linewidth (float, optional): Line width for the contour. Defaults to 1.5.
             alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
 
         Raises:
@@ -359,6 +439,8 @@ class NetworkPlotter:
             levels=levels,
             bandwidth=bandwidth,
             grid_size=grid_size,
+            linestyle=linestyle,
+            linewidth=linewidth,
             alpha=alpha,
         )
 
@@ -371,6 +453,8 @@ class NetworkPlotter:
         bandwidth: float = 0.8,
         grid_size: int = 250,
         color: Union[str, np.ndarray] = "white",
+        linestyle: str = "solid",
+        linewidth: float = 1.5,
         alpha: float = 0.5,
     ) -> None:
         """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
@@ -383,6 +467,8 @@ class NetworkPlotter:
             bandwidth (float, optional): Bandwidth for the KDE. Controls smoothness. Defaults to 0.8.
             grid_size (int, optional): Grid resolution for the KDE. Higher values yield finer contours. Defaults to 250.
             color (str or np.ndarray): Color for the contour. Can be a string or RGBA array. Defaults to "white".
+            linestyle (str, optional): Line style for the contour. Defaults to "solid".
+            linewidth (float, optional): Line width for the contour. Defaults to 1.5.
             alpha (float, optional): Transparency level for the contour fill. Defaults to 0.5.
         """
         # Extract the positions of the specified nodes
@@ -409,8 +495,7 @@ class NetworkPlotter:
         min_density, max_density = z.min(), z.max()
         contour_levels = np.linspace(min_density, max_density, levels)[1:]
         contour_colors = [color for _ in range(levels - 1)]
-
-        # Plot the filled contours if alpha > 0
+        # Plot the filled contours only if alpha > 0
         if alpha > 0:
             ax.contourf(
                 x,
@@ -418,13 +503,20 @@ class NetworkPlotter:
                 z,
                 levels=contour_levels,
                 colors=contour_colors,
-                alpha=alpha,
-                extend="neither",
                 antialiased=True,
+                alpha=alpha,
             )
 
-        # Plot the contour lines without antialiasing for clarity
-        c = ax.contour(x, y, z, levels=contour_levels, colors=contour_colors)
+        # Plot the contour lines without any change in behavior
+        c = ax.contour(
+            x,
+            y,
+            z,
+            levels=contour_levels,
+            colors=contour_colors,
+            linestyles=linestyle,
+            linewidths=linewidth,
+        )
         for i in range(1, len(contour_levels)):
             c.collections[i].set_linewidth(0)
 
