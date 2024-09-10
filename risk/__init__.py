@@ -7,4 +7,4 @@ RISK: RISK Infers Spatial Kinships
 
 from risk.risk import RISK
 
-__version__ = "0.0.6-beta.1"
+__version__ = "0.0.6-beta.2"
