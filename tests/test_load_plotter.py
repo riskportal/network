@@ -535,9 +535,9 @@ def test_plot_contour_perimeter_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width",
+    "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
     [
-        (None, "white", 0.1, "black", "blue", 1.0, 1.0, 100, "o", 0.0),  # Test case 1
+        (None, "white", 0.1, "black", "blue", 1.0, 1.0, 100, "o", 0.0, 1.5),  # Test case 1
         (
             (0.2, 0.6, 0.8),
             (1.0, 1.0, 0.5),
@@ -549,8 +549,9 @@ def test_plot_contour_perimeter_with_custom_params(
             150,
             "^",
             1.0,
+            2.0,
         ),  # Test case 2
-        ("green", "yellow", 0.2, "grey", "red", 0.8, 0.9, 120, "s", 2.0),  # Test case 3
+        ("green", "yellow", 0.2, "grey", "red", 0.8, 0.9, 120, "s", 2.0, 3.0),  # Test case 3
     ],
 )
 def test_plot_network_with_custom_params(
@@ -566,8 +567,9 @@ def test_plot_network_with_custom_params(
     node_size,
     node_shape,
     edge_width,
+    node_edgewidth,
 ):
-    """Test plot_network with different node, edge, and node edge colors, sizes, edge widths, and alpha values.
+    """Test plot_network with different node, edge, and node edge colors, sizes, edge widths, node edge widths, and alpha values.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -582,6 +584,7 @@ def test_plot_network_with_custom_params(
         node_size: The size of the nodes.
         node_shape: The shape of the nodes.
         edge_width: The width of the edges.
+        node_edgewidth: The width of the edges around the nodes.
 
     Returns:
         None
@@ -606,6 +609,7 @@ def test_plot_network_with_custom_params(
             edge_width=edge_width,
             node_color=node_color,
             node_edgecolor=node_edgecolor,
+            node_edgewidth=node_edgewidth,
             edge_color=edge_color,
             node_shape=node_shape,
             node_alpha=node_alpha,
