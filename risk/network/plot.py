@@ -207,6 +207,7 @@ class NetworkPlotter:
         self,
         node_size: Union[int, np.ndarray] = 50,
         node_shape: str = "o",
+        node_edgewidth: float = 1.0,
         edge_width: float = 1.0,
         node_color: Union[str, List, Tuple, np.ndarray] = "white",
         node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
@@ -214,11 +215,12 @@ class NetworkPlotter:
         node_alpha: float = 1.0,
         edge_alpha: float = 1.0,
     ) -> None:
-        """Plot the network graph with customizable node colors, sizes, and edge widths.
+        """Plot the network graph with customizable node colors, sizes, edge widths, and node edge widths.
 
         Args:
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
+            node_edgewidth (float, optional): Width of the node edges. Defaults to 1.0.
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
             node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
             node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
@@ -232,6 +234,7 @@ class NetworkPlotter:
                 "custom" if isinstance(node_size, np.ndarray) else node_size
             ),  # np.ndarray usually indicates custom sizes
             network_node_shape=node_shape,
+            network_node_edgewidth=node_edgewidth,
             network_edge_width=edge_width,
             network_node_color=(
                 "custom" if isinstance(node_color, np.ndarray) else node_color
@@ -245,10 +248,7 @@ class NetworkPlotter:
         # Convert colors to RGBA using the _to_rgba helper function
         # If node_colors was generated using get_annotated_node_colors, its alpha values will override node_alpha
         node_color = _to_rgba(node_color, node_alpha, num_repeats=len(self.graph.network.nodes))
-        # Convert other colors to RGBA using the _to_rgba helper function
-        node_edgecolor = _to_rgba(
-            node_edgecolor, 1.0, num_repeats=len(self.graph.network.nodes)
-        )  # Node edges are usually fully opaque
+        node_edgecolor = _to_rgba(node_edgecolor, 1.0, num_repeats=len(self.graph.network.nodes))
         edge_color = _to_rgba(edge_color, edge_alpha, num_repeats=len(self.graph.network.edges))
 
         # Extract node coordinates from the network graph
@@ -262,6 +262,7 @@ class NetworkPlotter:
             node_shape=node_shape,
             node_color=node_color,
             edgecolors=node_edgecolor,
+            linewidths=node_edgewidth,
             ax=self.ax,
         )
         # Draw the edges of the graph
