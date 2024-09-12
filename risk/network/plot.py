@@ -137,9 +137,7 @@ class NetworkPlotter:
         )
         # Set the transparency of the fill if applicable
         if fill_alpha > 0:
-            circle.set_facecolor(
-                _to_rgba(color, fill_alpha)
-            )  # Use _to_rgba to set the fill color with transparency
+            circle.set_facecolor(_to_rgba(color, fill_alpha))
 
         self.ax.add_artist(circle)
 
@@ -200,7 +198,7 @@ class NetworkPlotter:
             color=color,
             linestyle=linestyle,
             linewidth=linewidth,
-            alpha=fill_alpha,  # Use fill_alpha for the fill
+            alpha=fill_alpha,
         )
 
     def plot_network(
@@ -279,7 +277,7 @@ class NetworkPlotter:
         nodes: List,
         node_size: Union[int, np.ndarray] = 50,
         node_shape: str = "o",
-        node_edgewidth: float = 1.0,  # Added node_edgewidth parameter
+        node_edgewidth: float = 1.0,
         edge_width: float = 1.0,
         node_color: Union[str, List, Tuple, np.ndarray] = "white",
         node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
@@ -313,8 +311,8 @@ class NetworkPlotter:
         if not node_ids:
             raise ValueError("No nodes found in the network graph.")
 
-        # If node_color is an array, match its length to the found node_ids
-        if not isinstance(node_color, str):
+        # Check if node_color is a single color or a list of colors
+        if not isinstance(node_color, (str, tuple, np.ndarray)):
             node_color = [
                 node_color[nodes.index(node)]
                 for node in nodes
@@ -325,6 +323,7 @@ class NetworkPlotter:
         node_color = _to_rgba(node_color, node_alpha, num_repeats=len(node_ids))
         node_edgecolor = _to_rgba(node_edgecolor, 1.0, num_repeats=len(node_ids))
         edge_color = _to_rgba(edge_color, edge_alpha, num_repeats=len(self.graph.network.edges))
+
         # Get the coordinates of the filtered nodes
         node_coordinates = {node_id: self.graph.node_coordinates[node_id] for node_id in node_ids}
 
@@ -358,7 +357,8 @@ class NetworkPlotter:
         color: Union[str, List, Tuple, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 0.2,
+        alpha: float = 1.0,
+        fill_alpha: float = 0.2,
     ) -> None:
         """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
 
@@ -369,7 +369,8 @@ class NetworkPlotter:
             color (str, list, tuple, or np.ndarray, optional): Color of the contours. Can be a single color or an array of colors. Defaults to "white".
             linestyle (str, optional): Line style for the contours. Defaults to "solid".
             linewidth (float, optional): Line width for the contours. Defaults to 1.5.
-            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
+            alpha (float, optional): Transparency level of the contour lines. Defaults to 1.0.
+            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
         """
         # Log the contour plotting parameters
         params.log_plotter(
@@ -380,6 +381,7 @@ class NetworkPlotter:
                 "custom" if isinstance(color, np.ndarray) else color
             ),  # np.ndarray usually indicates custom colors
             contour_alpha=alpha,
+            contour_fill_alpha=fill_alpha,
         )
 
         # Ensure color is converted to RGBA with repetition matching the number of domains
@@ -400,6 +402,7 @@ class NetworkPlotter:
                     linestyle=linestyle,
                     linewidth=linewidth,
                     alpha=alpha,
+                    fill_alpha=fill_alpha,
                 )
 
     def plot_subcontour(
@@ -411,7 +414,8 @@ class NetworkPlotter:
         color: Union[str, List, Tuple, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 0.2,
+        alpha: float = 1.0,
+        fill_alpha: float = 0.2,
     ) -> None:
         """Plot a subcontour for a given set of nodes using Kernel Density Estimation (KDE).
 
@@ -423,7 +427,8 @@ class NetworkPlotter:
             color (str, list, tuple, or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
             linestyle (str, optional): Line style for the contour. Defaults to "solid".
             linewidth (float, optional): Line width for the contour. Defaults to 1.5.
-            alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
+            alpha (float, optional): Transparency level of the contour lines. Defaults to 1.0.
+            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
@@ -453,6 +458,7 @@ class NetworkPlotter:
             linestyle=linestyle,
             linewidth=linewidth,
             alpha=alpha,
+            fill_alpha=fill_alpha,
         )
 
     def _draw_kde_contour(
@@ -466,7 +472,8 @@ class NetworkPlotter:
         color: Union[str, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 0.5,
+        alpha: float = 1.0,
+        fill_alpha: float = 0.2,
     ) -> None:
         """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
 
@@ -480,7 +487,8 @@ class NetworkPlotter:
             color (str or np.ndarray): Color for the contour. Can be a string or RGBA array. Defaults to "white".
             linestyle (str, optional): Line style for the contour. Defaults to "solid".
             linewidth (float, optional): Line width for the contour. Defaults to 1.5.
-            alpha (float, optional): Transparency level for the contour fill. Defaults to 0.5.
+            alpha (float, optional): Transparency level for the contour lines. Defaults to 1.0.
+            fill_alpha (float, optional): Transparency level for the contour fill. Defaults to 0.2.
         """
         # Extract the positions of the specified nodes
         points = np.array([pos[n] for n in nodes])
@@ -506,8 +514,8 @@ class NetworkPlotter:
         min_density, max_density = z.min(), z.max()
         contour_levels = np.linspace(min_density, max_density, levels)[1:]
         contour_colors = [color for _ in range(levels - 1)]
-        # Plot the filled contours only if alpha > 0
-        if alpha > 0:
+        # Plot the filled contours using fill_alpha for transparency
+        if fill_alpha > 0:
             ax.contourf(
                 x,
                 y,
@@ -515,10 +523,10 @@ class NetworkPlotter:
                 levels=contour_levels,
                 colors=contour_colors,
                 antialiased=True,
-                alpha=alpha,
+                alpha=fill_alpha,
             )
 
-        # Plot the contour lines without any change in behavior
+        # Plot the contour lines with the specified alpha for transparency
         c = ax.contour(
             x,
             y,
@@ -527,7 +535,9 @@ class NetworkPlotter:
             colors=contour_colors,
             linestyles=linestyle,
             linewidths=linewidth,
+            alpha=alpha,
         )
+        # Set linewidth for the contour lines to 0 for levels other than the base level
         for i in range(1, len(contour_levels)):
             c.collections[i].set_linewidth(0)
 
@@ -810,13 +820,13 @@ class NetworkPlotter:
         return adjusted_network_colors
 
     def get_annotated_node_sizes(
-        self, enriched_nodesize: int = 50, nonenriched_nodesize: int = 25
+        self, enriched_size: int = 50, nonenriched_size: int = 25
     ) -> np.ndarray:
         """Adjust the sizes of nodes in the network graph based on whether they are enriched or not.
 
         Args:
-            enriched_nodesize (int): Size for enriched nodes. Defaults to 50.
-            nonenriched_nodesize (int): Size for non-enriched nodes. Defaults to 25.
+            enriched_size (int): Size for enriched nodes. Defaults to 50.
+            nonenriched_size (int): Size for non-enriched nodes. Defaults to 25.
 
         Returns:
             np.ndarray: Array of node sizes, with enriched nodes larger than non-enriched ones.
@@ -827,11 +837,11 @@ class NetworkPlotter:
             enriched_nodes.update(nodes)
 
         # Initialize all node sizes to the non-enriched size
-        node_sizes = np.full(len(self.graph.network.nodes), nonenriched_nodesize)
+        node_sizes = np.full(len(self.graph.network.nodes), nonenriched_size)
         # Set the size for enriched nodes
         for node in enriched_nodes:
             if node in self.graph.network.nodes:
-                node_sizes[node] = enriched_nodesize
+                node_sizes[node] = enriched_size
 
         return node_sizes
 
