@@ -3,8 +3,11 @@ tests/conftest
 ~~~~~~~~~~~~~~
 """
 
-import pytest
+import json
 from pathlib import Path
+
+import pytest
+
 from risk import RISK
 
 ROOT_PATH = Path(__file__).resolve().parent / "data"
@@ -106,6 +109,24 @@ def networkx_network(risk_obj, cytoscape_network):
 
 
 # Annotation fixtures
+@pytest.fixture(scope="session")
+def annotation_dict(data_path):
+    """Fixture to load and return annotations from a JSON file as a dictionary.
+
+    Args:
+        data_path: The base path to the directory containing the annotation file.
+
+    Returns:
+        dict: The loaded annotations as a dictionary.
+    """
+    annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
+    # Load the JSON file and return as a dictionary
+    with open(annotation_file, "r") as file:
+        annotation_dict = json.load(file)
+
+    return annotation_dict
+
+
 @pytest.fixture(scope="session")
 def json_annotation(risk_obj, cytoscape_network, data_path):
     """Fixture to load and return annotations from a JSON file.

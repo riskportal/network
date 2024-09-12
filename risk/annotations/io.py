@@ -171,8 +171,8 @@ class AnnotationsIO:
 
         filetype = "Dictionary"
         # Log the loading of the annotations from the dictionary
-        params.log_annotations(filepath="in-memory dictionary", filetype=filetype)
-        _log_loading(filetype, "in-memory dictionary")
+        params.log_annotations(filepath="In-memory dictionary", filetype=filetype)
+        _log_loading(filetype, "In-memory dictionary")
 
         # Load the annotations into the provided network
         annotations_dict = load_annotations(network, content)
