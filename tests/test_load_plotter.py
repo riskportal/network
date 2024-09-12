@@ -844,7 +844,7 @@ def test_plot_subcontour_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth, arrow_style, overlay_ids, ids_to_keep, ids_to_replace",
     [
         (
             None,
@@ -861,7 +861,11 @@ def test_plot_subcontour_with_custom_params(
             "Arial",
             10,
             1,
-        ),  # Test case 1: Annotated label colors, full opacity, max labels 10
+            "->",
+            False,
+            None,
+            None,
+        ),  # Test case 1: Annotated label colors, full opacity, max labels 10, default arrow style
         (
             "red",
             "blue",
@@ -877,7 +881,11 @@ def test_plot_subcontour_with_custom_params(
             "Helvetica",
             12,
             2,
-        ),  # Test case 2: Custom colors, semi-transparent, max labels 5
+            "-|>",
+            True,
+            ["LSM1", "LSM2"],
+            None,
+        ),  # Test case 2: Custom colors, semi-transparent, max labels 5, arrow_style "-|>", with overlay_ids and ids_to_keep
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -893,7 +901,11 @@ def test_plot_subcontour_with_custom_params(
             "Times New Roman",
             14,
             1.5,
-        ),  # Test case 3: Custom RGB colors, with alpha and word limits, max labels 8
+            "<|-",
+            False,
+            ["LSM1", "LSM3"],
+            {"LSM3": "custom label"},
+        ),  # Test case 3: Custom RGB colors, with alpha and word limits, arrow_style "<|-", max labels 8, ids_to_keep, and ids_to_replace
     ],
 )
 def test_plot_labels_with_custom_params(
@@ -913,8 +925,13 @@ def test_plot_labels_with_custom_params(
     font,
     fontsize,
     arrow_linewidth,
+    arrow_style,
+    overlay_ids,
+    ids_to_keep,
+    ids_to_replace,
 ):
-    """Test plot_labels with different label and arrow colors, alpha values, word constraints, max labels, and various style parameters.
+    """Test plot_labels with different label and arrow colors, alpha values, word constraints, max labels, various style parameters,
+       and new params for overlay_ids, ids_to_keep, ids_to_replace, and arrow_style.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -933,6 +950,10 @@ def test_plot_labels_with_custom_params(
         font: Font name for the labels.
         fontsize: Font size for the labels.
         arrow_linewidth: Line width for the arrows pointing to centroids.
+        arrow_style: The style of the arrows (e.g., '->', '-|>', '<|-').
+        overlay_ids: Whether to overlay the domain IDs in the center of the centroids.
+        ids_to_keep: List of IDs to prioritize for labeling.
+        ids_to_replace: Dictionary mapping domain IDs to custom labels.
 
     Returns:
         None
@@ -953,6 +974,7 @@ def test_plot_labels_with_custom_params(
             fontcolor=fontcolor,
             fontalpha=font_alpha,
             arrow_linewidth=arrow_linewidth,
+            arrow_style=arrow_style,
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
             max_labels=max_labels,
@@ -961,6 +983,9 @@ def test_plot_labels_with_custom_params(
             max_word_length=max_word_length,
             min_word_length=min_word_length,
             words_to_omit=["process", "biosynthetic"],
+            overlay_ids=overlay_ids,
+            ids_to_keep=ids_to_keep,
+            ids_to_replace=ids_to_replace,
         )
     finally:
         plt.close("all")
