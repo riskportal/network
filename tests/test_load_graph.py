@@ -24,25 +24,25 @@ def test_load_graph(risk_obj, cytoscape_network, json_annotation):
         edge_length_threshold=0.75,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,  # Perform 100 permutations
+        num_permutations=100,
         random_seed=887,
-        max_workers=4,  # Use 4 processes
+        max_workers=4,
     )
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
         network=cytoscape_network,
         annotations=json_annotation,
         neighborhoods=neighborhoods,
-        tail="right",  # Right tail for enrichment
-        pval_cutoff=0.05,  # p-value cutoff of 0.05
-        fdr_cutoff=1.0,  # FDR cutoff
-        impute_depth=1,  # Set impute depth to 1
-        prune_threshold=0.1,  # Prune threshold set to 0.1
-        linkage_criterion="distance",  # Clustering based on distance
-        linkage_method="average",  # Set linkage method to average
-        linkage_metric="yule",  # Set linkage metric to yule
-        min_cluster_size=5,  # Minimum cluster size set to 5
-        max_cluster_size=1000,  # Maximum cluster size set to 1000
+        tail="right",
+        pval_cutoff=0.05,
+        fdr_cutoff=1.0,
+        impute_depth=1,
+        prune_threshold=0.1,
+        linkage_criterion="distance",
+        linkage_method="average",
+        linkage_metric="yule",
+        min_cluster_size=5,
+        max_cluster_size=1000,
     )
 
     assert graph is not None
@@ -73,25 +73,25 @@ def test_top_annotations_cluster_sizes(risk_obj, cytoscape_network, json_annotat
             edge_length_threshold=0.75,
             score_metric="stdev",
             null_distribution="network",
-            num_permutations=100,  # Perform 100 permutations
+            num_permutations=100,
             random_seed=887,
-            max_workers=4,  # Use 4 processes
+            max_workers=4,
         )
         # Load the graph with the specified parameters
         graph = risk_obj.load_graph(
             network=cytoscape_network,
             annotations=json_annotation,
             neighborhoods=neighborhoods,
-            tail="right",  # Right tail for enrichment
-            pval_cutoff=0.05,  # p-value cutoff of 0.05
-            fdr_cutoff=1.0,  # FDR cutoff
-            impute_depth=1,  # Set impute depth to 1
-            prune_threshold=0.1,  # Prune threshold set to 0.1
-            linkage_criterion="distance",  # Clustering based on distance
-            linkage_method="average",  # Set linkage method to average
-            linkage_metric="yule",  # Set linkage metric to yule
-            min_cluster_size=min_cluster_size,  # Varying minimum cluster size
-            max_cluster_size=max_cluster_size,  # Varying maximum cluster size
+            tail="right",
+            pval_cutoff=0.05,
+            fdr_cutoff=1.0,
+            impute_depth=1,
+            prune_threshold=0.1,
+            linkage_criterion="distance",
+            linkage_method="average",
+            linkage_metric="yule",
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
         )
 
         assert graph is not None

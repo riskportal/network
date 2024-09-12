@@ -217,7 +217,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
         null_distribution="network",
         num_permutations=100,  # Number of permutations
         random_seed=887,
-        max_workers=4,  # Use 4 processes
+        max_workers=4,
     )
     # Build the graph using the neighborhoods
     graph = risk_obj.load_graph(

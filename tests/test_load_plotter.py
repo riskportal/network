@@ -226,9 +226,7 @@ def plot_network(plotter):
     """
     try:
         plotter.plot_network(
-            node_size=plotter.get_annotated_node_sizes(
-                enriched_nodesize=100, nonenriched_nodesize=25
-            ),
+            node_size=plotter.get_annotated_node_sizes(enriched_size=100, nonenriched_size=25),
             node_shape="o",
             edge_width=0.0,
             node_color=plotter.get_annotated_node_colors(
@@ -604,7 +602,7 @@ def test_plot_network_with_custom_params(
 
         plotter.plot_network(
             node_size=plotter.get_annotated_node_sizes(
-                enriched_nodesize=100, nonenriched_nodesize=node_size
+                enriched_size=100, nonenriched_size=node_size
             ),
             edge_width=edge_width,
             node_color=node_color,
@@ -683,27 +681,38 @@ def test_plot_subnetwork_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "color, alpha, levels, bandwidth, grid_size, linestyle, linewidth",
+    "color, alpha, fill_alpha, levels, bandwidth, grid_size, linestyle, linewidth",
     [
-        (None, 0.2, 5, 0.8, 250, "solid", 1.5),  # Test case 1: Annotated colors, alpha 0.2
+        (
+            None,
+            0.2,
+            0.1,
+            5,
+            0.8,
+            250,
+            "solid",
+            1.5,
+        ),  # Test case 1: Annotated colors, alpha 0.2, fill_alpha 0.1
         (
             "red",
             0.5,
+            0.3,
             6,
             1.0,
             300,
             "dashed",
             2.0,
-        ),  # Test case 2: Red contours, alpha 0.5, custom bandwidth and grid size
+        ),  # Test case 2: Red contours, alpha 0.5, fill_alpha 0.3, custom bandwidth and grid size
         (
             (0.2, 0.6, 0.8),
             0.3,
+            0.15,
             4,
             0.6,
             200,
             "dotted",
             1.0,
-        ),  # Test case 3: Light blue (RGB), alpha 0.3, dotted line
+        ),  # Test case 3: Light blue (RGB), alpha 0.3, fill_alpha 0.15, dotted line
     ],
 )
 def test_plot_contours_with_custom_params(
@@ -711,19 +720,21 @@ def test_plot_contours_with_custom_params(
     graph,
     color,
     alpha,
+    fill_alpha,
     levels,
     bandwidth,
     grid_size,
     linestyle,
     linewidth,
 ):
-    """Test plot_contours with different color formats, alpha values, contour levels, bandwidths, grid sizes, and line styles.
+    """Test plot_contours with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which contours will be plotted.
         color: The color of the contours (None for annotated, string, or RGB tuple).
-        alpha: The transparency of the contours.
+        alpha: The transparency of the contour lines.
+        fill_alpha: The transparency of the contour fill.
         levels: The number of contour levels.
         bandwidth: The bandwidth for KDE smoothing.
         grid_size: The grid size for contour resolution.
@@ -743,6 +754,7 @@ def test_plot_contours_with_custom_params(
             bandwidth=bandwidth,
             grid_size=grid_size,
             alpha=alpha,
+            fill_alpha=fill_alpha,
             color=color,
             linestyle=linestyle,
             linewidth=linewidth,
@@ -752,18 +764,28 @@ def test_plot_contours_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "color, alpha, levels, bandwidth, grid_size, linestyle, linewidth",
+    "color, alpha, fill_alpha, levels, bandwidth, grid_size, linestyle, linewidth",
     [
-        ("red", 0.5, 5, 0.8, 250, "solid", 1.5),  # Test case 1: Red with alpha 0.5, solid line
+        (
+            "red",
+            0.5,
+            0.2,
+            5,
+            0.8,
+            250,
+            "solid",
+            1.5,
+        ),  # Test case 1: Red with alpha 0.5, fill_alpha 0.2, solid line
         (
             (0.2, 0.6, 0.8),
             0.3,
+            0.1,
             4,
             1.0,
             300,
             "dashed",
             2.0,
-        ),  # Test case 2: Light blue RGB with alpha 0.3, dashed line
+        ),  # Test case 2: Light blue RGB with alpha 0.3, fill_alpha 0.1, dashed line
     ],
 )
 def test_plot_subcontour_with_custom_params(
@@ -771,19 +793,21 @@ def test_plot_subcontour_with_custom_params(
     graph,
     color,
     alpha,
+    fill_alpha,
     levels,
     bandwidth,
     grid_size,
     linestyle,
     linewidth,
 ):
-    """Test plot_subcontour with different color formats, alpha values, contour levels, bandwidths, grid sizes, and line styles.
+    """Test plot_subcontour with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which subcontours will be plotted.
         color: The color of the subcontours (string or RGB tuple).
-        alpha: The transparency of the subcontours.
+        alpha: The transparency of the contour lines.
+        fill_alpha: The transparency of the contour fill.
         levels: The number of contour levels.
         bandwidth: The bandwidth for KDE smoothing.
         grid_size: The grid size for contour resolution.
@@ -810,6 +834,7 @@ def test_plot_subcontour_with_custom_params(
             bandwidth=bandwidth,
             grid_size=grid_size,
             alpha=alpha,
+            fill_alpha=fill_alpha,
             color=color,
             linestyle=linestyle,
             linewidth=linewidth,
