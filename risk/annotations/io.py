@@ -153,6 +153,35 @@ class AnnotationsIO:
         # Load the annotations into the provided network
         return load_annotations(network, annotations_input)
 
+    def load_dict_annotation(self, content: Dict[str, Any], network: nx.Graph) -> Dict[str, Any]:
+        """Load annotations from a provided dictionary and convert them to a dictionary annotation.
+
+        Args:
+            content (dict): The annotations dictionary to load.
+            network (NetworkX graph): The network to which the annotations are related.
+
+        Returns:
+            dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+        """
+        # Ensure the input content is a dictionary
+        if not isinstance(content, dict):
+            raise TypeError(
+                f"Expected 'content' to be a dictionary, but got {type(content).__name__} instead."
+            )
+
+        filetype = "Dictionary"
+        # Log the loading of the annotations from the dictionary
+        params.log_annotations(filepath="in-memory dictionary", filetype=filetype)
+        _log_loading(filetype, "in-memory dictionary")
+
+        # Load the annotations into the provided network
+        annotations_dict = load_annotations(network, content)
+        # Ensure the output is a dictionary
+        if not isinstance(annotations_dict, dict):
+            raise ValueError("Expected output to be a dictionary")
+
+        return annotations_dict
+
 
 def _load_matrix_file(
     filepath: str,
