@@ -45,9 +45,9 @@ def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
         edge_length_threshold=0.75,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,  # Perform 100 permutations.
+        num_permutations=100,
         random_seed=887,
-        max_workers=4,  # Use 4 processes.
+        max_workers=4,
     )
     graph = risk_obj.load_graph(
         network=network,

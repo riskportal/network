@@ -203,9 +203,9 @@ def test_load_neighborhoods_with_various_distance_metrics(
             edge_length_threshold=0.75,
             score_metric="stdev",
             null_distribution="network",
-            num_permutations=100,  # Perform 100 permutations
+            num_permutations=100,
             random_seed=887,
-            max_workers=4,  # Use 4 processes
+            max_workers=4,
         )
     else:
         neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -215,9 +215,9 @@ def test_load_neighborhoods_with_various_distance_metrics(
             edge_length_threshold=0.75,
             score_metric="stdev",
             null_distribution="network",
-            num_permutations=100,  # Perform 100 permutations
+            num_permutations=100,
             random_seed=887,
-            max_workers=4,  # Use 4 processes
+            max_workers=4,
         )
 
     assert neighborhoods is not None
@@ -247,9 +247,9 @@ def test_load_neighborhoods_with_various_score_metrics(
         edge_length_threshold=0.75,
         score_metric=score_metric,
         null_distribution="network",
-        num_permutations=100,  # Perform 100 permutations
+        num_permutations=100,
         random_seed=887,
-        max_workers=4,  # Use 4 processes
+        max_workers=4,
     )
 
     assert neighborhoods is not None
@@ -279,9 +279,9 @@ def test_load_neighborhoods_with_various_null_distributions(
         edge_length_threshold=0.75,
         score_metric="stdev",  # Using stdev as the score metric
         null_distribution=null_distribution,  # Parametrized null distribution
-        num_permutations=100,  # Perform 100 permutations
+        num_permutations=100,
         random_seed=887,
-        max_workers=4,  # Use 4 processes
+        max_workers=4,
     )
 
     assert neighborhoods is not None
