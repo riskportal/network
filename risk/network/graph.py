@@ -42,12 +42,16 @@ class NetworkGraph:
             node_enrichment_sums (np.ndarray): Array containing the enrichment sums for the nodes.
         """
         self.top_annotations = top_annotations
-        self.domain_to_nodes = self._create_domain_to_nodes_map(domains)
+        self.domain_to_nodes_map = self._create_domain_to_nodes_map(domains)
         self.domains = domains
         self.trimmed_domain_to_term = self._create_domain_to_term_map(trimmed_domains)
         self.trimmed_domains = trimmed_domains
-        self.node_label_to_id_map = node_label_to_id_map
         self.node_enrichment_sums = node_enrichment_sums
+        self.node_id_to_label_map = {v: k for k, v in node_label_to_id_map.items()}
+        self.node_label_to_enrichment_map = dict(
+            zip(node_label_to_id_map.keys(), node_enrichment_sums)
+        )
+        self.node_label_to_id_map = node_label_to_id_map
         # NOTE: self.network and self.node_coordinates are declared in _initialize_network
         self.network = None
         self.node_coordinates = None
@@ -63,12 +67,12 @@ class NetworkGraph:
             dict: A dictionary where keys are domain IDs and values are lists of nodes belonging to each domain.
         """
         cleaned_domains_matrix = domains.reset_index()[["index", "primary domain"]]
-        node_to_domains = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
-        domain_to_nodes = defaultdict(list)
-        for k, v in node_to_domains.items():
-            domain_to_nodes[v].append(k)
+        node_to_domains_map = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
+        domain_to_nodes_map = defaultdict(list)
+        for k, v in node_to_domains_map.items():
+            domain_to_nodes_map[v].append(k)
 
-        return domain_to_nodes
+        return domain_to_nodes_map
 
     def _create_domain_to_term_map(self, trimmed_domains: pd.DataFrame) -> Dict[str, Any]:
         """Create a mapping from domain IDs to their corresponding terms.
@@ -154,7 +158,7 @@ class NetworkGraph:
         # Initialize composite colors array with shape (number of nodes, 4) for RGBA
         composite_colors = np.zeros((num_nodes, 4))
         # Assign colors to nodes based on domain_colors
-        for domain_idx, nodes in self.domain_to_nodes.items():
+        for domain_idx, nodes in self.domain_to_nodes_map.items():
             color = domain_colors[domain_idx]
             for node in nodes:
                 composite_colors[node] = color
@@ -185,7 +189,7 @@ class NetworkGraph:
         domain_colors = _get_colors(
             num_colors_to_generate=len(domains), cmap=cmap, color=color, random_seed=random_seed
         )
-        return dict(zip(self.domain_to_nodes.keys(), domain_colors))
+        return dict(zip(self.domain_to_nodes_map.keys(), domain_colors))
 
 
 def _transform_colors(
