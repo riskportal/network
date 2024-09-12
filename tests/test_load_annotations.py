@@ -24,6 +24,23 @@ def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):
     assert len(annotations) > 0  # Check that annotations are loaded.
 
 
+def test_load_dict_annotation(risk_obj, cytoscape_network, annotation_dict):
+    """Test loading annotations from a dictionary and associating them with a network.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+        annotation_dict: A dictionary containing annotations.
+
+    Returns:
+        None
+    """
+    annotations = risk_obj.load_dict_annotation(content=annotation_dict, network=cytoscape_network)
+
+    assert annotations is not None
+    assert len(annotations) > 0  # Check that annotations are loaded.
+
+
 def test_load_json_annotation(risk_obj, cytoscape_network, data_path):
     """Test loading a JSON annotation file and associating it with a network.
 
