@@ -550,6 +550,7 @@ class NetworkPlotter:
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
         fontalpha: float = 1.0,
         arrow_linewidth: float = 1,
+        arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
         arrow_alpha: float = 1.0,
         max_labels: Union[int, None] = None,
@@ -557,7 +558,10 @@ class NetworkPlotter:
         min_words: int = 1,
         max_word_length: int = 20,
         min_word_length: int = 1,
-        words_to_omit: Union[List[str], None] = None,
+        words_to_omit: Union[List, None] = None,
+        overlay_ids: bool = False,
+        ids_to_keep: Union[List, Tuple, np.ndarray, None] = None,
+        ids_to_replace: Union[Dict, None] = None,
     ) -> None:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
 
@@ -569,6 +573,7 @@ class NetworkPlotter:
             fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
             fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
+            arrow_style (str, optional): Style of the arrows pointing to centroids. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
             arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
@@ -576,7 +581,16 @@ class NetworkPlotter:
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
             max_word_length (int, optional): Maximum number of characters in a word to display. Defaults to 20.
             min_word_length (int, optional): Minimum number of characters in a word to display. Defaults to 1.
-            words_to_omit (List[str], optional): List of words to omit from the labels. Defaults to None.
+            words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
+            overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
+            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
+                you can set `overlay_ids=True`. Defaults to None.
+            ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be space-separated words.
+                If provided, the custom labels will replace the default domain terms. To discover domain IDs, you can set `overlay_ids=True`.
+                Defaults to None.
+
+        Raises:
+            ValueError: If the number of provided `ids_to_keep` exceeds `max_labels`.
         """
         # Log the plotting parameters
         params.log_plotter(
@@ -589,6 +603,7 @@ class NetworkPlotter:
             ),  # np.ndarray usually indicates custom colors
             label_fontalpha=fontalpha,
             label_arrow_linewidth=arrow_linewidth,
+            label_arrow_style=arrow_style,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
             label_arrow_alpha=arrow_alpha,
             label_max_labels=max_labels,
@@ -597,9 +612,12 @@ class NetworkPlotter:
             label_max_word_length=max_word_length,
             label_min_word_length=min_word_length,
             label_words_to_omit=words_to_omit,
+            label_overlay_ids=overlay_ids,
+            label_ids_to_keep=ids_to_keep,
+            label_ids_to_replace=ids_to_replace,
         )
 
-        # Convert colors to RGBA using the _to_rgba helper function, applying alpha separately for font and arrow
+        # Convert colors to RGBA using the _to_rgba helper function
         fontcolor = _to_rgba(fontcolor, fontalpha, num_repeats=len(self.graph.domain_to_nodes_map))
         arrow_color = _to_rgba(
             arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_to_nodes_map)
@@ -615,55 +633,82 @@ class NetworkPlotter:
             if nodes:  # Skip if the domain has no nodes
                 domain_centroids[domain] = self._calculate_domain_centroid(nodes)
 
-        # Initialize empty lists to collect valid indices
+        # Initialize dictionaries and lists for valid indices
         valid_indices = []
         filtered_domain_centroids = {}
         filtered_domain_terms = {}
-        # Loop through domain_centroids with index
-        for idx, (domain, centroid) in enumerate(domain_centroids.items()):
-            # Process the domain term
-            terms = self.graph.trimmed_domain_to_term[domain].split(" ")
-            # Remove words_to_omit
-            if words_to_omit:
-                terms = [term for term in terms if term.lower() not in words_to_omit]
-            # Filter words based on length
-            terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
-            # Trim to max_words
-            terms = terms[:max_words]
-            # Check if the domain passes the word count condition
-            if len(terms) >= min_words:
-                # Add to filtered_domain_centroids
-                filtered_domain_centroids[domain] = centroid
-                # Store the filtered and trimmed terms
-                filtered_domain_terms[domain] = " ".join(terms)
-                # Keep track of the valid index - used for fontcolor and arrow_color
-                valid_indices.append(idx)
+        # Handle the ids_to_keep logic
+        if ids_to_keep:
+            # Check if the number of provided ids_to_keep exceeds max_labels
+            if max_labels is not None and len(ids_to_keep) > max_labels:
+                raise ValueError(
+                    f"Number of provided IDs ({len(ids_to_keep)}) exceeds max_labels ({max_labels})."
+                )
 
-        # If max_labels is specified and less than the available labels
-        if max_labels is not None and max_labels < len(filtered_domain_centroids):
-            step = len(filtered_domain_centroids) / max_labels
-            selected_indices = [int(i * step) for i in range(max_labels)]
-            # Filter the centroids, terms, and valid_indices to only use the selected indices
-            filtered_domain_centroids = {
-                k: v
-                for i, (k, v) in enumerate(filtered_domain_centroids.items())
-                if i in selected_indices
-            }
-            filtered_domain_terms = {
-                k: v
-                for i, (k, v) in enumerate(filtered_domain_terms.items())
-                if i in selected_indices
-            }
-            # Update valid_indices to match selected indices
-            valid_indices = [valid_indices[i] for i in selected_indices]
+            # Process the specified IDs first
+            for domain in ids_to_keep:
+                if domain in self.graph.trimmed_domain_to_term and domain in domain_centroids:
+                    # Handle ids_to_replace logic here for ids_to_keep
+                    if ids_to_replace and domain in ids_to_replace:
+                        terms = ids_to_replace[domain].split(" ")
+                    else:
+                        terms = self.graph.trimmed_domain_to_term[domain].split(" ")
+
+                    # Apply words_to_omit, word length constraints, and max_words
+                    if words_to_omit:
+                        terms = [term for term in terms if term.lower() not in words_to_omit]
+                    terms = [
+                        term for term in terms if min_word_length <= len(term) <= max_word_length
+                    ]
+                    terms = terms[:max_words]
+
+                    # Check if the domain passes the word count condition
+                    if len(terms) >= min_words:
+                        filtered_domain_centroids[domain] = domain_centroids[domain]
+                        filtered_domain_terms[domain] = " ".join(terms)
+                        valid_indices.append(
+                            list(domain_centroids.keys()).index(domain)
+                        )  # Track the valid index
+
+        # Calculate remaining labels to plot after processing ids_to_keep
+        remaining_labels = (
+            max_labels - len(ids_to_keep) if ids_to_keep and max_labels else max_labels
+        )
+        # Process remaining domains to fill in additional labels, if there are slots left
+        if remaining_labels and remaining_labels > 0:
+            for idx, (domain, centroid) in enumerate(domain_centroids.items()):
+                if ids_to_keep and domain in ids_to_keep:
+                    continue  # Skip domains already handled by ids_to_keep
+
+                # Handle ids_to_replace logic first
+                if ids_to_replace and domain in ids_to_replace:
+                    terms = ids_to_replace[domain].split(" ")
+                else:
+                    terms = self.graph.trimmed_domain_to_term[domain].split(" ")
+
+                # Apply words_to_omit, word length constraints, and max_words
+                if words_to_omit:
+                    terms = [term for term in terms if term.lower() not in words_to_omit]
+
+                terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
+                terms = terms[:max_words]
+                # Check if the domain passes the word count condition
+                if len(terms) >= min_words:
+                    filtered_domain_centroids[domain] = centroid
+                    filtered_domain_terms[domain] = " ".join(terms)
+                    valid_indices.append(idx)  # Track the valid index
+
+                # Stop once we've reached the max_labels limit
+                if len(filtered_domain_centroids) >= max_labels:
+                    break
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
-        # Calculate the best positions for labels around the perimeter
+        # Calculate the best positions for labels
         best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
-        # Annotate the network with labels - valid_indices is used for fontcolor and arrow_color
+        # Annotate the network with labels
         for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
             annotations = filtered_domain_terms[domain].split(" ")[:max_words]
@@ -677,8 +722,23 @@ class NetworkPlotter:
                 fontsize=fontsize,
                 fontname=font,
                 color=fontcolor[idx],
-                arrowprops=dict(arrowstyle="->", color=arrow_color[idx], linewidth=arrow_linewidth),
+                arrowprops=dict(
+                    arrowstyle=arrow_style, color=arrow_color[idx], linewidth=arrow_linewidth
+                ),
             )
+            # Overlay domain ID at the centroid if requested
+            if overlay_ids:
+                self.ax.text(
+                    centroid[0],
+                    centroid[1],
+                    domain,
+                    ha="center",
+                    va="center",
+                    fontsize=fontsize,
+                    fontname=font,
+                    color=fontcolor[idx],
+                    alpha=fontalpha,
+                )
 
     def plot_sublabel(
         self,
@@ -698,7 +758,7 @@ class NetworkPlotter:
         """Annotate the network graph with a single label for the given nodes, positioned at a specified radial angle.
 
         Args:
-            nodes (List[str]): List of node labels to be used for calculating the centroid.
+            nodes (List): List of node labels to be used for calculating the centroid.
             label (str): The label to be annotated on the network.
             radial_position (float, optional): Radial angle for positioning the label, in degrees (0-360). Defaults to 0.0.
             scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
