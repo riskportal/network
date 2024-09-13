@@ -656,6 +656,7 @@ def test_plot_subnetwork_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
+        # Nodes are grouped into a single list
         plotter.plot_subnetwork(
             nodes=[
                 "LSM1",
@@ -666,6 +667,31 @@ def test_plot_subnetwork_with_custom_params(
                 "LSM6",
                 "LSM7",
                 "PAT1",
+            ],
+            node_size=node_size,
+            edge_width=edge_width,
+            node_color=node_color,
+            node_edgecolor=node_edgecolor,
+            edge_color=edge_color,
+            node_shape=node_shape,
+            node_alpha=node_alpha,
+            edge_alpha=edge_alpha,
+        )
+        # Nodes are grouped into two lists
+        plotter.plot_subnetwork(
+            nodes=[
+                [
+                    "LSM1",
+                    "LSM2",
+                    "LSM3",
+                ],
+                [
+                    "LSM4",
+                    "LSM5",
+                    "LSM6",
+                    "LSM7",
+                    "PAT1",
+                ],
             ],
             node_size=node_size,
             edge_width=edge_width,
@@ -819,6 +845,7 @@ def test_plot_subcontour_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
+        # Nodes are grouped into a single list
         plotter.plot_subcontour(
             nodes=[
                 "LSM1",
@@ -829,6 +856,31 @@ def test_plot_subcontour_with_custom_params(
                 "LSM6",
                 "LSM7",
                 "PAT1",
+            ],
+            levels=levels,
+            bandwidth=bandwidth,
+            grid_size=grid_size,
+            alpha=alpha,
+            fill_alpha=fill_alpha,
+            color=color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+        )
+        # Nodes are grouped into two lists
+        plotter.plot_subcontour(
+            nodes=[
+                [
+                    "LSM1",
+                    "LSM2",
+                    "LSM3",
+                ],
+                [
+                    "LSM4",
+                    "LSM5",
+                    "LSM6",
+                    "LSM7",
+                    "PAT1",
+                ],
             ],
             levels=levels,
             bandwidth=bandwidth,
@@ -992,7 +1044,7 @@ def test_plot_labels_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, scale, offset, arrow_linewidth, font",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, scale, offset, arrow_linewidth, font, arrow_style",
     [
         (
             "white",
@@ -1005,7 +1057,8 @@ def test_plot_labels_with_custom_params(
             0.10,
             1.5,
             "Arial",
-        ),  # Test case 1: Full opacity, white font and arrow, fontsize 14, radial position 73
+            "->",
+        ),  # Test case 1: Full opacity, white font and arrow, fontsize 14, radial position 73, default arrow style
         (
             "red",
             "blue",
@@ -1017,7 +1070,8 @@ def test_plot_labels_with_custom_params(
             0.12,
             2.0,
             "Helvetica",
-        ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120
+            "-[",
+        ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120, custom arrow style
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -1029,7 +1083,8 @@ def test_plot_labels_with_custom_params(
             0.08,
             1.8,
             "Times New Roman",
-        ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45
+            "<|-",
+        ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45, custom arrow style
     ],
 )
 def test_plot_sublabel_with_custom_params(
@@ -1045,6 +1100,7 @@ def test_plot_sublabel_with_custom_params(
     offset,
     arrow_linewidth,
     font,
+    arrow_style,
 ):
     """Test plot_sublabel with different label and arrow colors, alpha values, label positioning, and other style parameters.
 
@@ -1061,12 +1117,14 @@ def test_plot_sublabel_with_custom_params(
         offset: Offset distance for labels from the perimeter.
         arrow_linewidth: The width of the arrow pointing to the label.
         font: The font used for the label text.
+        arrow_style: The style of the arrow pointing to the label.
 
     Returns:
         None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
+        # Nodes are grouped into a single list
         plotter.plot_sublabel(
             nodes=[
                 "LSM1",
@@ -1089,6 +1147,36 @@ def test_plot_sublabel_with_custom_params(
             arrow_linewidth=arrow_linewidth,
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
+            arrow_style=arrow_style,
+        )
+        # Nodes are grouped into two lists
+        plotter.plot_sublabel(
+            nodes=[
+                [
+                    "LSM1",
+                    "LSM2",
+                    "LSM3",
+                ],
+                [
+                    "LSM4",
+                    "LSM5",
+                    "LSM6",
+                    "LSM7",
+                    "PAT1",
+                ],
+            ],
+            label="LSM1-7-PAT1 Complex",
+            radial_position=radial_position,
+            scale=scale,
+            offset=offset,
+            font=font,
+            fontsize=fontsize,
+            fontcolor=fontcolor,
+            fontalpha=font_alpha,
+            arrow_linewidth=arrow_linewidth,
+            arrow_color=arrow_color,
+            arrow_alpha=arrow_alpha,
+            arrow_style=arrow_style,
         )
     finally:
         plt.close("all")
