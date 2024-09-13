@@ -569,6 +569,8 @@ class NetworkPlotter:
         arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
         arrow_alpha: float = 1.0,
+        arrow_base_shrink: float = 0.0,
+        arrow_tip_shrink: float = 0.0,
         max_labels: Union[int, None] = None,
         max_words: int = 10,
         min_words: int = 1,
@@ -592,6 +594,8 @@ class NetworkPlotter:
             arrow_style (str, optional): Style of the arrows pointing to centroids. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
             arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
+            arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
+            arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
             max_words (int, optional): Maximum number of words in a label. Defaults to 10.
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
@@ -622,6 +626,8 @@ class NetworkPlotter:
             label_arrow_style=arrow_style,
             label_arrow_color="custom" if isinstance(arrow_color, np.ndarray) else arrow_color,
             label_arrow_alpha=arrow_alpha,
+            label_arrow_base_shrink=arrow_base_shrink,
+            label_arrow_tip_shrink=arrow_tip_shrink,
             label_max_labels=max_labels,
             label_max_words=max_words,
             label_min_words=min_words,
@@ -746,7 +752,11 @@ class NetworkPlotter:
                 fontname=font,
                 color=fontcolor[idx],
                 arrowprops=dict(
-                    arrowstyle=arrow_style, color=arrow_color[idx], linewidth=arrow_linewidth
+                    arrowstyle=arrow_style,
+                    color=arrow_color[idx],
+                    linewidth=arrow_linewidth,
+                    shrinkA=arrow_base_shrink,
+                    shrinkB=arrow_tip_shrink,
                 ),
             )
             # Overlay domain ID at the centroid if requested
@@ -778,6 +788,8 @@ class NetworkPlotter:
         arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
         arrow_alpha: float = 1.0,
+        arrow_base_shrink: float = 0.0,
+        arrow_tip_shrink: float = 0.0,
     ) -> None:
         """Annotate the network graph with a label for the given nodes, with one arrow pointing to each centroid of sublists of nodes.
 
@@ -795,6 +807,8 @@ class NetworkPlotter:
             arrow_style (str, optional): Style of the arrows pointing to the centroid. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
             arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
+            arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
+            arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
         """
         # Check if nodes is a list of lists or a flat list
         if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
@@ -844,7 +858,11 @@ class NetworkPlotter:
                 fontname=font,
                 color=fontcolor_rgba,
                 arrowprops=dict(
-                    arrowstyle=arrow_style, color=arrow_color_rgba, linewidth=arrow_linewidth
+                    arrowstyle=arrow_style,
+                    color=arrow_color_rgba,
+                    linewidth=arrow_linewidth,
+                    shrinkA=arrow_base_shrink,
+                    shrinkB=arrow_tip_shrink,
                 ),
             )
 
