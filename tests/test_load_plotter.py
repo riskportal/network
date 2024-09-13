@@ -896,7 +896,7 @@ def test_plot_subcontour_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth, arrow_style, overlay_ids, ids_to_keep, ids_to_replace",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth, arrow_style, arrow_base_shrink, arrow_tip_shrink, overlay_ids, ids_to_keep, ids_to_replace",
     [
         (
             None,
@@ -914,10 +914,12 @@ def test_plot_subcontour_with_custom_params(
             10,
             1,
             "->",
+            5,
+            3,
             False,
             None,
             None,
-        ),  # Test case 1: Annotated label colors, full opacity, max labels 10, default arrow style
+        ),  # Test case 1: Annotated label colors, full opacity, max labels 10, default arrow style, with shrinks
         (
             "red",
             "blue",
@@ -934,10 +936,12 @@ def test_plot_subcontour_with_custom_params(
             12,
             2,
             "-|>",
+            8,
+            4,
             True,
             ["LSM1", "LSM2"],
             None,
-        ),  # Test case 2: Custom colors, semi-transparent, max labels 5, arrow_style "-|>", with overlay_ids and ids_to_keep
+        ),  # Test case 2: Custom colors, semi-transparent, max labels 5, custom arrow style, with overlay_ids and ids_to_keep, with shrinks
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -954,10 +958,12 @@ def test_plot_subcontour_with_custom_params(
             14,
             1.5,
             "<|-",
+            10,
+            5,
             False,
             ["LSM1", "LSM3"],
             {"LSM3": "custom label"},
-        ),  # Test case 3: Custom RGB colors, with alpha and word limits, arrow_style "<|-", max labels 8, ids_to_keep, and ids_to_replace
+        ),  # Test case 3: Custom RGB colors, with alpha and word limits, arrow_style "<|-", max labels 8, ids_to_keep, ids_to_replace, and shrinks
     ],
 )
 def test_plot_labels_with_custom_params(
@@ -978,6 +984,8 @@ def test_plot_labels_with_custom_params(
     fontsize,
     arrow_linewidth,
     arrow_style,
+    arrow_base_shrink,
+    arrow_tip_shrink,
     overlay_ids,
     ids_to_keep,
     ids_to_replace,
@@ -1003,6 +1011,8 @@ def test_plot_labels_with_custom_params(
         fontsize: Font size for the labels.
         arrow_linewidth: Line width for the arrows pointing to centroids.
         arrow_style: The style of the arrows (e.g., '->', '-|>', '<|-').
+        arrow_base_shrink: Distance between the text and the base of the arrow.
+        arrow_tip_shrink: Distance between the tip of the arrow and the centroid.
         overlay_ids: Whether to overlay the domain IDs in the center of the centroids.
         ids_to_keep: List of IDs to prioritize for labeling.
         ids_to_replace: Dictionary mapping domain IDs to custom labels.
@@ -1029,6 +1039,8 @@ def test_plot_labels_with_custom_params(
             arrow_style=arrow_style,
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
+            arrow_base_shrink=arrow_base_shrink,
+            arrow_tip_shrink=arrow_tip_shrink,
             max_labels=max_labels,
             max_words=max_words,
             min_words=min_words,
@@ -1044,7 +1056,7 @@ def test_plot_labels_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, scale, offset, arrow_linewidth, font, arrow_style",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, fontsize, radial_position, scale, offset, arrow_linewidth, font, arrow_style, arrow_base_shrink, arrow_tip_shrink",
     [
         (
             "white",
@@ -1058,7 +1070,9 @@ def test_plot_labels_with_custom_params(
             1.5,
             "Arial",
             "->",
-        ),  # Test case 1: Full opacity, white font and arrow, fontsize 14, radial position 73, default arrow style
+            10,
+            5,
+        ),  # Test case 1, Full opacity, white font and arrow, fontsize 14, radial position 73, default arrow style
         (
             "red",
             "blue",
@@ -1071,7 +1085,9 @@ def test_plot_labels_with_custom_params(
             2.0,
             "Helvetica",
             "-[",
-        ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120, custom arrow style
+            15,
+            10,
+        ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -1084,7 +1100,9 @@ def test_plot_labels_with_custom_params(
             1.8,
             "Times New Roman",
             "<|-",
-        ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45, custom arrow style
+            12,
+            8,
+        ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45, custom RGB colors, arrow style and alpha values
     ],
 )
 def test_plot_sublabel_with_custom_params(
@@ -1101,6 +1119,8 @@ def test_plot_sublabel_with_custom_params(
     arrow_linewidth,
     font,
     arrow_style,
+    arrow_base_shrink,
+    arrow_tip_shrink,
 ):
     """Test plot_sublabel with different label and arrow colors, alpha values, label positioning, and other style parameters.
 
@@ -1118,6 +1138,8 @@ def test_plot_sublabel_with_custom_params(
         arrow_linewidth: The width of the arrow pointing to the label.
         font: The font used for the label text.
         arrow_style: The style of the arrow pointing to the label.
+        arrow_base_shrink: Distance between the text and the base of the arrow.
+        arrow_tip_shrink: Distance between the tip of the arrow and the centroid.
 
     Returns:
         None
@@ -1148,6 +1170,8 @@ def test_plot_sublabel_with_custom_params(
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
             arrow_style=arrow_style,
+            arrow_base_shrink=arrow_base_shrink,
+            arrow_tip_shrink=arrow_tip_shrink,
         )
         # Nodes are grouped into two lists
         plotter.plot_sublabel(
@@ -1177,6 +1201,8 @@ def test_plot_sublabel_with_custom_params(
             arrow_color=arrow_color,
             arrow_alpha=arrow_alpha,
             arrow_style=arrow_style,
+            arrow_base_shrink=arrow_base_shrink,
+            arrow_tip_shrink=arrow_tip_shrink,
         )
     finally:
         plt.close("all")
