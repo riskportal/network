@@ -274,7 +274,7 @@ class NetworkPlotter:
 
     def plot_subnetwork(
         self,
-        nodes: List,
+        nodes: Union[List, Tuple, np.ndarray],
         node_size: Union[int, np.ndarray] = 50,
         node_shape: str = "o",
         node_edgewidth: float = 1.0,
@@ -288,20 +288,24 @@ class NetworkPlotter:
         """Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
         Args:
-            nodes (list): List of node labels to include in the subnetwork.
+            nodes (list, tuple, or np.ndarray): List of node labels to include in the subnetwork. Accepts nested lists.
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             node_edgewidth (float, optional): Width of the node edges. Defaults to 1.0.
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
+            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Defaults to "white".
             node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
             edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
-            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0.
-            edge_alpha (float, optional): Alpha value (transparency) for the edges. Defaults to 1.0.
+            node_alpha (float, optional): Transparency for the nodes. Defaults to 1.0.
+            edge_alpha (float, optional): Transparency for the edges. Defaults to 1.0.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
         """
+        # Flatten nested lists of nodes, if necessary
+        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
+            nodes = [node for sublist in nodes for node in sublist]
+
         # Filter to get node IDs and their coordinates
         node_ids = [
             self.graph.node_label_to_id_map.get(node)
@@ -407,7 +411,7 @@ class NetworkPlotter:
 
     def plot_subcontour(
         self,
-        nodes: List,
+        nodes: Union[List, Tuple, np.ndarray],
         levels: int = 5,
         bandwidth: float = 0.8,
         grid_size: int = 250,
@@ -417,10 +421,10 @@ class NetworkPlotter:
         alpha: float = 1.0,
         fill_alpha: float = 0.2,
     ) -> None:
-        """Plot a subcontour for a given set of nodes using Kernel Density Estimation (KDE).
+        """Plot a subcontour for a given set of nodes or a list of node sets using Kernel Density Estimation (KDE).
 
         Args:
-            nodes (list): List of node labels to plot the contour for.
+            nodes (list, tuple, or np.ndarray): List of node labels or list of lists of node labels to plot the contour for.
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
@@ -433,33 +437,45 @@ class NetworkPlotter:
         Raises:
             ValueError: If no valid nodes are found in the network graph.
         """
-        # Don't log subcontour parameters as they are specific to individual annotations
-        # Filter to get node IDs and their coordinates
-        node_ids = [
-            self.graph.node_label_to_id_map.get(node)
-            for node in nodes
-            if node in self.graph.node_label_to_id_map
-        ]
-        if not node_ids or len(node_ids) == 1:
-            raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
+        # Check if nodes is a list of lists or a flat list
+        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
+            # If it's a list of lists, iterate over sublists
+            node_groups = nodes
+        else:
+            # If it's a flat list of nodes, treat it as a single group
+            node_groups = [nodes]
 
         # Convert color to RGBA using the _to_rgba helper function
-        color = _to_rgba(color, alpha)
-        # Draw the KDE contour for the specified nodes
-        node_coordinates = self.graph.node_coordinates
-        self._draw_kde_contour(
-            self.ax,
-            node_coordinates,
-            node_ids,
-            color=color,
-            levels=levels,
-            bandwidth=bandwidth,
-            grid_size=grid_size,
-            linestyle=linestyle,
-            linewidth=linewidth,
-            alpha=alpha,
-            fill_alpha=fill_alpha,
-        )
+        color_rgba = _to_rgba(color, alpha)
+
+        # Iterate over each group of nodes (either sublists or flat list)
+        for sublist in node_groups:
+            # Filter to get node IDs and their coordinates for each sublist
+            node_ids = [
+                self.graph.node_label_to_id_map.get(node)
+                for node in sublist
+                if node in self.graph.node_label_to_id_map
+            ]
+            if not node_ids or len(node_ids) == 1:
+                raise ValueError(
+                    "No nodes found in the network graph or insufficient nodes to plot."
+                )
+
+            # Draw the KDE contour for the specified nodes
+            node_coordinates = self.graph.node_coordinates
+            self._draw_kde_contour(
+                self.ax,
+                node_coordinates,
+                node_ids,
+                color=color_rgba,
+                levels=levels,
+                bandwidth=bandwidth,
+                grid_size=grid_size,
+                linestyle=linestyle,
+                linewidth=linewidth,
+                alpha=alpha,
+                fill_alpha=fill_alpha,
+            )
 
     def _draw_kde_contour(
         self,
@@ -617,6 +633,10 @@ class NetworkPlotter:
             label_ids_to_replace=ids_to_replace,
         )
 
+        # Set max_labels to the total number of domains if not provided (None)
+        if max_labels is None:
+            max_labels = len(self.graph.domain_to_nodes_map)
+
         # Convert colors to RGBA using the _to_rgba helper function
         fontcolor = _to_rgba(fontcolor, fontalpha, num_repeats=len(self.graph.domain_to_nodes_map))
         arrow_color = _to_rgba(
@@ -639,6 +659,8 @@ class NetworkPlotter:
         filtered_domain_terms = {}
         # Handle the ids_to_keep logic
         if ids_to_keep:
+            # Convert ids_to_keep to remove accidental duplicates
+            ids_to_keep = set(ids_to_keep)
             # Check if the number of provided ids_to_keep exceeds max_labels
             if max_labels is not None and len(ids_to_keep) > max_labels:
                 raise ValueError(
@@ -708,6 +730,7 @@ class NetworkPlotter:
         best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
+
         # Annotate the network with labels
         for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
@@ -742,7 +765,7 @@ class NetworkPlotter:
 
     def plot_sublabel(
         self,
-        nodes: List,
+        nodes: Union[List, Tuple, np.ndarray],
         label: str,
         radial_position: float = 0.0,
         scale: float = 1.05,
@@ -752,13 +775,14 @@ class NetworkPlotter:
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
         fontalpha: float = 1.0,
         arrow_linewidth: float = 1,
+        arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
         arrow_alpha: float = 1.0,
     ) -> None:
-        """Annotate the network graph with a single label for the given nodes, positioned at a specified radial angle.
+        """Annotate the network graph with a label for the given nodes, with one arrow pointing to each centroid of sublists of nodes.
 
         Args:
-            nodes (List): List of node labels to be used for calculating the centroid.
+            nodes (list, tuple, or np.ndarray): List of node labels or list of lists of node labels.
             label (str): The label to be annotated on the network.
             radial_position (float, optional): Radial angle for positioning the label, in degrees (0-360). Defaults to 0.0.
             scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
@@ -768,24 +792,22 @@ class NetworkPlotter:
             fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Defaults to "black".
             fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrow pointing to the centroid. Defaults to 1.
+            arrow_style (str, optional): Style of the arrows pointing to the centroid. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
             arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
         """
-        # Don't log sublabel parameters as they are specific to individual annotations
-        # Map node labels to IDs
-        node_ids = [
-            self.graph.node_label_to_id_map.get(node)
-            for node in nodes
-            if node in self.graph.node_label_to_id_map
-        ]
-        if not node_ids or len(node_ids) == 1:
-            raise ValueError("No nodes found in the network graph or insufficient nodes to plot.")
+        # Check if nodes is a list of lists or a flat list
+        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
+            # If it's a list of lists, iterate over sublists
+            node_groups = nodes
+        else:
+            # If it's a flat list of nodes, treat it as a single group
+            node_groups = [nodes]
 
-        # Convert fontcolor and arrow_color to RGBA using the _to_rgba helper function
-        fontcolor = _to_rgba(fontcolor, fontalpha)
-        arrow_color = _to_rgba(arrow_color, arrow_alpha)
-        # Calculate the centroid of the provided nodes
-        centroid = self._calculate_domain_centroid(node_ids)
+        # Convert fontcolor and arrow_color to RGBA
+        fontcolor_rgba = _to_rgba(fontcolor, fontalpha)
+        arrow_color_rgba = _to_rgba(arrow_color, arrow_alpha)
+
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
         # Convert radial position to radians, adjusting for a 90-degree rotation
@@ -795,19 +817,36 @@ class NetworkPlotter:
             center[1] + (radius + offset) * np.sin(radial_radians),
         )
 
-        # Annotate the network with the label
-        self.ax.annotate(
-            label,
-            xy=centroid,
-            xytext=label_position,
-            textcoords="data",
-            ha="center",
-            va="center",
-            fontsize=fontsize,
-            fontname=font,
-            color=fontcolor,
-            arrowprops=dict(arrowstyle="->", color=arrow_color, linewidth=arrow_linewidth),
-        )
+        # Iterate over each group of nodes (either sublists or flat list)
+        for sublist in node_groups:
+            # Map node labels to IDs
+            node_ids = [
+                self.graph.node_label_to_id_map.get(node)
+                for node in sublist
+                if node in self.graph.node_label_to_id_map
+            ]
+            if not node_ids or len(node_ids) == 1:
+                raise ValueError(
+                    "No nodes found in the network graph or insufficient nodes to plot."
+                )
+
+            # Calculate the centroid of the provided nodes in this sublist
+            centroid = self._calculate_domain_centroid(node_ids)
+            # Annotate the network with the label and an arrow pointing to each centroid
+            self.ax.annotate(
+                label,
+                xy=centroid,
+                xytext=label_position,
+                textcoords="data",
+                ha="center",
+                va="center",
+                fontsize=fontsize,
+                fontname=font,
+                color=fontcolor_rgba,
+                arrowprops=dict(
+                    arrowstyle=arrow_style, color=arrow_color_rgba, linewidth=arrow_linewidth
+                ),
+            )
 
     def _calculate_domain_centroid(self, nodes: List) -> tuple:
         """Calculate the most centrally located node in .
