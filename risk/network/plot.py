@@ -308,9 +308,9 @@ class NetworkPlotter:
 
         # Filter to get node IDs and their coordinates
         node_ids = [
-            self.graph.node_label_to_id_map.get(node)
+            self.graph.node_label_to_node_id_map.get(node)
             for node in nodes
-            if node in self.graph.node_label_to_id_map
+            if node in self.graph.node_label_to_node_id_map
         ]
         if not node_ids:
             raise ValueError("No nodes found in the network graph.")
@@ -320,7 +320,7 @@ class NetworkPlotter:
             node_color = [
                 node_color[nodes.index(node)]
                 for node in nodes
-                if node in self.graph.node_label_to_id_map
+                if node in self.graph.node_label_to_node_id_map
             ]
 
         # Convert colors to RGBA using the _to_rgba helper function
@@ -389,16 +389,16 @@ class NetworkPlotter:
         )
 
         # Ensure color is converted to RGBA with repetition matching the number of domains
-        color = _to_rgba(color, alpha, num_repeats=len(self.graph.domain_to_nodes_map))
+        color = _to_rgba(color, alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map))
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Draw contours for each domain in the network
-        for idx, (_, nodes) in enumerate(self.graph.domain_to_nodes_map.items()):
-            if len(nodes) > 1:
+        for idx, (_, node_ids) in enumerate(self.graph.domain_id_to_node_ids_map.items()):
+            if len(node_ids) > 1:
                 self._draw_kde_contour(
                     self.ax,
                     node_coordinates,
-                    nodes,
+                    node_ids,
                     color=color[idx],
                     levels=levels,
                     bandwidth=bandwidth,
@@ -452,9 +452,9 @@ class NetworkPlotter:
         for sublist in node_groups:
             # Filter to get node IDs and their coordinates for each sublist
             node_ids = [
-                self.graph.node_label_to_id_map.get(node)
+                self.graph.node_label_to_node_id_map.get(node)
                 for node in sublist
-                if node in self.graph.node_label_to_id_map
+                if node in self.graph.node_label_to_node_id_map
             ]
             if not node_ids or len(node_ids) == 1:
                 raise ValueError(
@@ -641,12 +641,14 @@ class NetworkPlotter:
 
         # Set max_labels to the total number of domains if not provided (None)
         if max_labels is None:
-            max_labels = len(self.graph.domain_to_nodes_map)
+            max_labels = len(self.graph.domain_id_to_node_ids_map)
 
         # Convert colors to RGBA using the _to_rgba helper function
-        fontcolor = _to_rgba(fontcolor, fontalpha, num_repeats=len(self.graph.domain_to_nodes_map))
+        fontcolor = _to_rgba(
+            fontcolor, fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
+        )
         arrow_color = _to_rgba(
-            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_to_nodes_map)
+            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
         )
 
         # Normalize words_to_omit to lowercase
@@ -655,9 +657,9 @@ class NetworkPlotter:
 
         # Calculate the center and radius of the network
         domain_centroids = {}
-        for domain, nodes in self.graph.domain_to_nodes_map.items():
-            if nodes:  # Skip if the domain has no nodes
-                domain_centroids[domain] = self._calculate_domain_centroid(nodes)
+        for domain_id, node_ids in self.graph.domain_id_to_node_ids_map.items():
+            if node_ids:  # Skip if the domain has no nodes
+                domain_centroids[domain_id] = self._calculate_domain_centroid(node_ids)
 
         # Initialize dictionaries and lists for valid indices
         valid_indices = []
@@ -675,12 +677,15 @@ class NetworkPlotter:
 
             # Process the specified IDs first
             for domain in ids_to_keep:
-                if domain in self.graph.trimmed_domain_to_term and domain in domain_centroids:
+                if (
+                    domain in self.graph.domain_id_to_domain_terms_map
+                    and domain in domain_centroids
+                ):
                     # Handle ids_to_replace logic here for ids_to_keep
                     if ids_to_replace and domain in ids_to_replace:
                         terms = ids_to_replace[domain].split(" ")
                     else:
-                        terms = self.graph.trimmed_domain_to_term[domain].split(" ")
+                        terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
 
                     # Apply words_to_omit, word length constraints, and max_words
                     if words_to_omit:
@@ -712,7 +717,7 @@ class NetworkPlotter:
                 if ids_to_replace and domain in ids_to_replace:
                     terms = ids_to_replace[domain].split(" ")
                 else:
-                    terms = self.graph.trimmed_domain_to_term[domain].split(" ")
+                    terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
 
                 # Apply words_to_omit, word length constraints, and max_words
                 if words_to_omit:
@@ -835,9 +840,9 @@ class NetworkPlotter:
         for sublist in node_groups:
             # Map node labels to IDs
             node_ids = [
-                self.graph.node_label_to_id_map.get(node)
+                self.graph.node_label_to_node_id_map.get(node)
                 for node in sublist
-                if node in self.graph.node_label_to_id_map
+                if node in self.graph.node_label_to_node_id_map
             ]
             if not node_ids or len(node_ids) == 1:
                 raise ValueError(
@@ -948,10 +953,10 @@ class NetworkPlotter:
         Returns:
             np.ndarray: Array of node sizes, with enriched nodes larger than non-enriched ones.
         """
-        # Merge all enriched nodes from the domain_to_nodes_map dictionary
+        # Merge all enriched nodes from the domain_id_to_node_ids_map dictionary
         enriched_nodes = set()
-        for _, nodes in self.graph.domain_to_nodes_map.items():
-            enriched_nodes.update(nodes)
+        for _, node_ids in self.graph.domain_id_to_node_ids_map.items():
+            enriched_nodes.update(node_ids)
 
         # Initialize all node sizes to the non-enriched size
         node_sizes = np.full(len(self.graph.network.nodes), nonenriched_size)
@@ -1065,10 +1070,10 @@ class NetworkPlotter:
             random_seed=random_seed,
         )
         annotated_colors = []
-        for _, nodes in self.graph.domain_to_nodes_map.items():
-            if len(nodes) > 1:
+        for _, node_ids in self.graph.domain_id_to_node_ids_map.items():
+            if len(node_ids) > 1:
                 # For multi-node domains, choose the brightest color based on RGB sum
-                domain_colors = np.array([node_colors[node] for node in nodes])
+                domain_colors = np.array([node_colors[node] for node in node_ids])
                 brightest_color = domain_colors[
                     np.argmax(domain_colors[:, :3].sum(axis=1))  # Sum the RGB values
                 ]
