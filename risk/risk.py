@@ -343,7 +343,7 @@ class RISK(NetworkIO, AnnotationsIO):
             top_annotations=top_annotations,
             domains=domains,
             trimmed_domains=trimmed_domains,
-            node_label_to_id_map=node_label_to_id,
+            node_label_to_node_id_map=node_label_to_id,
             node_enrichment_sums=node_enrichment_sums,
         )
 
