@@ -7,6 +7,7 @@ import csv
 import json
 import warnings
 from datetime import datetime
+from functools import wraps
 from typing import Any, Dict
 
 import numpy as np
@@ -27,6 +28,7 @@ def _safe_param_export(func):
         function: The wrapped function with error handling.
     """
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
