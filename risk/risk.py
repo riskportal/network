@@ -62,7 +62,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (pd.DataFrame): The matrix of annotations associated with the network.
+            annotations (dict): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
@@ -131,7 +131,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (pd.DataFrame): The matrix of annotations associated with the network.
+            annotations (dict): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
@@ -187,7 +187,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (pd.DataFrame): The matrix of annotations associated with the network.
+            annotations (dict): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
