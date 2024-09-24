@@ -172,9 +172,6 @@ def test_load_neighborhoods_hypergeom_multi_process(risk_obj, cytoscape_network,
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-import pytest
-
-
 @pytest.mark.parametrize(
     "distance_metric",
     ["dijkstra", "louvain", "label_propagation", "markov_clustering", "walktrap", "spinglass"],

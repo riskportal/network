@@ -315,7 +315,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=max_cluster_size,
         )
 
-        print_header(f"Optimizing distance threshold for domains")
+        print_header("Optimizing distance threshold for domains")
         # Define domains in the network using the specified clustering settings
         domains = self._define_domains(
             neighborhoods=processed_neighborhoods,
