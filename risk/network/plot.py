@@ -1123,7 +1123,9 @@ def _to_rgba(
     """
     # Handle single color case (string, RGB, or RGBA)
     if isinstance(color, str) or (
-        isinstance(color, (list, tuple, np.ndarray)) and len(color) in [3, 4]
+        isinstance(color, (list, tuple, np.ndarray))
+        and len(color) in [3, 4]
+        and not any(isinstance(c, (list, tuple, np.ndarray)) for c in color)
     ):
         rgba_color = np.array(mcolors.to_rgba(color))
         # Only set alpha if the input is an RGB color or a string (not RGBA)
