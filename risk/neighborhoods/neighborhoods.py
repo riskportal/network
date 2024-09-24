@@ -200,7 +200,6 @@ def _impute_neighbors_with_similarity(
     depth = 1
     rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
     while len(rows_to_impute) and depth <= max_depth:
-        next_rows_to_impute = []
         # Iterate over all enriched nodes
         for row_index in range(binary_enrichment_matrix.shape[0]):
             if binary_enrichment_matrix[row_index].sum() != 0:
