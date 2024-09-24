@@ -144,6 +144,40 @@ def json_annotation(risk_obj, cytoscape_network, data_path):
 
 
 @pytest.fixture(scope="session")
+def dict_annotation(risk_obj, cytoscape_network):
+    """Load and return annotations from a dictionary.
+
+    Args:
+        risk_obj: The RISK object instance for loading annotations.
+        cytoscape_network: The network to which the annotations will be applied.
+
+    Returns:
+        dict: The loaded annotations object.
+    """
+    annotation_content = {
+        "phosphatidylinositol dephosphorylation": [
+            "IST2",
+            "SCS2",
+            "SCS22",
+            "TCB1",
+            "TCB2",
+            "TCB3",
+            "VPS74",
+        ],
+        "proline catabolic process": ["MPR1", "PUT1", "PUT2", "PUT3"],
+        "chromosome attachment to the nuclear envelope": [
+            "MMS21",
+            "NDJ1",
+            "NFI1",
+            "RTT107",
+            "SIZ1",
+            "SMC6",
+        ],
+    }
+    return risk_obj.load_dict_annotation(content=annotation_content, network=cytoscape_network)
+
+
+@pytest.fixture(scope="session")
 def csv_annotation(risk_obj, cytoscape_network, data_path):
     """Fixture to load and return annotations from a CSV file.
 
