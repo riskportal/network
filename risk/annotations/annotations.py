@@ -132,27 +132,32 @@ def define_top_annotations(
             nx.connected_components(enriched_network), key=len, reverse=True
         )
         size_connected_components = np.array([len(c) for c in connected_components])
+
+        # Filter the size of connected components by min_cluster_size and max_cluster_size
+        filtered_size_connected_components = size_connected_components[
+            (size_connected_components >= min_cluster_size)
+            & (size_connected_components <= max_cluster_size)
+        ]
+        # Calculate the number of connected components and large connected components
         num_connected_components = len(connected_components)
-        num_large_connected_components = np.sum(
-            np.logical_and(
-                size_connected_components >= min_cluster_size,
-                size_connected_components <= max_cluster_size,
-            )
-        )
+        num_large_connected_components = len(filtered_size_connected_components)
+
+        # Assign the number of connected components
         annotations_enrichment_matrix.loc[attribute, "num connected components"] = (
             num_connected_components
         )
-        annotations_enrichment_matrix.at[attribute, "size connected components"] = (
-            size_connected_components
-        )
+        # Filter out attributes with more than one connected component
+        annotations_enrichment_matrix.loc[
+            annotations_enrichment_matrix["num connected components"] > 1, "top attributes"
+        ] = False
+        # Assign the number of large connected components
         annotations_enrichment_matrix.loc[attribute, "num large connected components"] = (
             num_large_connected_components
         )
-
-    # Filter out attributes with more than one connected component
-    annotations_enrichment_matrix.loc[
-        annotations_enrichment_matrix["num connected components"] > 1, "top attributes"
-    ] = False
+        # Assign the size of connected components, ensuring it is always a list
+        annotations_enrichment_matrix.at[attribute, "size connected components"] = (
+            filtered_size_connected_components.tolist()
+        )
 
     return annotations_enrichment_matrix
 
