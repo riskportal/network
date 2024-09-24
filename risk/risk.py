@@ -237,7 +237,7 @@ class RISK(NetworkIO, AnnotationsIO):
         tail: str = "right",  # OPTIONS: "right" (enrichment), "left" (depletion), "both"
         pval_cutoff: float = 0.01,  # OPTIONS: Any value between 0 to 1
         fdr_cutoff: float = 0.9999,  # OPTIONS: Any value between 0 to 1
-        impute_depth: int = 1,
+        impute_depth: int = 0,
         prune_threshold: float = 0.0,
         linkage_criterion: str = "distance",
         linkage_method: str = "average",
@@ -254,7 +254,7 @@ class RISK(NetworkIO, AnnotationsIO):
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
             fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
-            impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
+            impute_depth (int, optional): Depth for imputing neighbors. Defaults to 0.
             prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
             linkage_criterion (str, optional): Clustering criterion for defining domains. Defaults to "distance".
             linkage_method (str, optional): Clustering method to use. Defaults to "average".
