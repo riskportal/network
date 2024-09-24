@@ -55,10 +55,9 @@ class NetworkGraph:
         self.node_label_to_node_id_map = node_label_to_node_id_map
         # NOTE: Below this point, instance attributes (i.e., self) will be used!
         self.domain_id_to_node_labels_map = self._create_domain_id_to_node_labels_map()
-        # self.network and self.node_coordinates are properly declared in _initialize_network
-        self.network = None
-        self.node_coordinates = None
-        self._initialize_network(network)
+        # Unfold the network's 3D coordinates to 2D and extract node coordinates
+        self.network = _unfold_sphere_to_plane(network)
+        self.node_coordinates = _extract_node_coordinates(self.network)
 
     def _create_domain_id_to_node_ids_map(self, domains: pd.DataFrame) -> Dict[str, Any]:
         """Create a mapping from domains to the list of node IDs belonging to each domain.
@@ -108,19 +107,6 @@ class NetworkGraph:
             ]
 
         return domain_id_to_label_map
-
-    def _initialize_network(self, G: nx.Graph) -> None:
-        """Initialize the network by unfolding it and extracting node coordinates.
-
-        Args:
-            G (nx.Graph): The input network graph with 3D node coordinates.
-        """
-        # Unfold the network's 3D coordinates to 2D
-        G_2d = _unfold_sphere_to_plane(G)
-        # Assign the unfolded graph to self.network
-        self.network = G_2d
-        # Extract 2D coordinates of nodes
-        self.node_coordinates = _extract_node_coordinates(G_2d)
 
     def get_domain_colors(
         self,
@@ -200,14 +186,15 @@ class NetworkGraph:
         Returns:
             dict: A dictionary mapping domain keys to their corresponding RGBA colors.
         """
-        # Exclude non-numeric domain columns
-        numeric_domains = [
-            col for col in self.domains.columns if isinstance(col, (int, np.integer))
-        ]
-        domains = np.sort(numeric_domains)
+        # Get colors for each domain based on node positions
         domain_colors = _get_colors(
-            num_colors_to_generate=len(domains), cmap=cmap, color=color, random_seed=random_seed
+            self.network,
+            self.domain_id_to_node_ids_map,
+            cmap=cmap,
+            color=color,
+            random_seed=random_seed,
         )
+        self.network, self.domain_id_to_node_ids_map
         return dict(zip(self.domain_id_to_node_ids_map.keys(), domain_colors))
 
 
@@ -300,35 +287,103 @@ def _extract_node_coordinates(G: nx.Graph) -> np.ndarray:
 
 
 def _get_colors(
-    num_colors_to_generate: int = 10,
+    network,
+    domain_id_to_node_ids_map,
     cmap: str = "gist_rainbow",
     color: Union[str, None] = None,
     random_seed: int = 888,
 ) -> List[Tuple]:
-    """Generate a list of RGBA colors from a specified colormap or use a direct color string.
+    """Generate a list of RGBA colors based on domain centroids, ensuring that domains
+    close in space get maximally separated colors, while keeping some randomness.
 
     Args:
-        num_colors_to_generate (int): The number of colors to generate. Defaults to 10.
+        network (NetworkX graph): The graph representing the network.
+        domain_id_to_node_ids_map (dict): Mapping from domain IDs to lists of node IDs.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str or None, optional): A specific color to use for all generated colors.
         random_seed (int): Seed for random number generation. Defaults to 888.
-            Defaults to None.
 
     Returns:
-        list of tuple: List of RGBA colors.
+        List[Tuple]: List of RGBA colors.
     """
-    # Set random seed for reproducibility
     random.seed(random_seed)
+    # Determine the number of colors to generate based on the number of domains
+    num_colors_to_generate = len(domain_id_to_node_ids_map)
     if color:
-        # If a direct color is provided, generate a list with that color
+        # Generate all colors as the same specified color
         rgba = matplotlib.colors.to_rgba(color)
-        rgbas = [rgba] * num_colors_to_generate
-    else:
-        colormap = matplotlib.colormaps.get_cmap(cmap)
-        # Generate evenly distributed color positions
-        color_positions = np.linspace(0, 1, num_colors_to_generate)
-        random.shuffle(color_positions)  # Shuffle the positions to randomize colors
-        # Generate colors based on shuffled positions
-        rgbas = [colormap(pos) for pos in color_positions]
+        return [rgba] * num_colors_to_generate
 
-    return rgbas
+    # Load colormap
+    colormap = matplotlib.colormaps.get_cmap(cmap)
+    # Step 1: Calculate centroids for each domain
+    centroids = _calculate_centroids(network, domain_id_to_node_ids_map)
+    # Step 2: Calculate pairwise distances between centroids
+    centroid_array = np.array(centroids)
+    dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
+    # Step 3: Generate positions in the colormap, with a focus on centroids that are close
+    remaining_indices = set(range(num_colors_to_generate))
+    # Assign distant colors to close centroids
+    color_positions = _assign_distant_colors(
+        remaining_indices, dist_matrix, colormap, num_colors_to_generate
+    )
+    # Step 4: Add some random jitter to color positions to avoid overly systematic results
+    jitter = np.random.uniform(-0.05, 0.05, size=num_colors_to_generate)
+    color_positions = np.clip(color_positions + jitter, 0, 1)
+
+    # Step 5: Generate colors based on positions
+    return [colormap(pos) for pos in color_positions]
+
+
+def _calculate_centroids(network, domain_id_to_node_ids_map):
+    """Calculate the centroid for each domain based on node x and y coordinates in the network.
+
+    Args:
+        network (NetworkX graph): The graph representing the network.
+        domain_id_to_node_ids_map (dict): Mapping from domain IDs to lists of node IDs.
+
+    Returns:
+        List[Tuple[float, float]]: List of centroids (x, y) for each domain.
+    """
+    centroids = []
+    for domain_id, node_ids in domain_id_to_node_ids_map.items():
+        # Extract x and y coordinates from the network nodes
+        node_positions = np.array(
+            [[network.nodes[node_id]["x"], network.nodes[node_id]["y"]] for node_id in node_ids]
+        )
+        # Compute the centroid as the mean of the x and y coordinates
+        centroid = np.mean(node_positions, axis=0)
+        centroids.append(tuple(centroid))
+
+    return centroids
+
+
+def _assign_distant_colors(remaining_indices, dist_matrix, colormap, num_colors_to_generate):
+    """Assign colors to centroids that are close in space, ensuring stark color differences.
+
+    Args:
+        remaining_indices (set): Indices of centroids left to color.
+        dist_matrix (ndarray): Matrix of pairwise centroid distances.
+        colormap (Colormap): The colormap used to assign colors.
+        num_colors_to_generate (int): Number of colors to generate.
+
+    Returns:
+        np.array: Array of color positions in the colormap.
+    """
+    color_positions = np.zeros(num_colors_to_generate)
+    # Convert the set to a list to index over it
+    remaining_indices = list(remaining_indices)
+    # Sort remaining indices by centroid proximity (based on sum of distances to others)
+    proximity_order = sorted(remaining_indices, key=lambda idx: np.sum(dist_matrix[idx]))
+    # Assign colors starting with the most distant points in proximity order
+    for i, idx in enumerate(proximity_order):
+        color_positions[idx] = i / num_colors_to_generate
+
+    # Adjust colors so that centroids close to one another are maximally distant on the color spectrum
+    half_spectrum = int(num_colors_to_generate / 2)
+    for i in range(half_spectrum):
+        # Split the spectrum so that close centroids are assigned distant colors
+        color_positions[proximity_order[i]] = (i * 2) / num_colors_to_generate
+        color_positions[proximity_order[-(i + 1)]] = ((i * 2) + 1) / num_colors_to_generate
+
+    return color_positions
