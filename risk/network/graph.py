@@ -3,7 +3,6 @@ risk/network/graph
 ~~~~~~~~~~~~~~~~~~
 """
 
-import random
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple, Union
 
@@ -307,7 +306,7 @@ def _get_colors(
         List[Tuple]: List of RGBA colors.
     """
     # Set random seed for reproducibility
-    random.seed(random_seed)
+    np.random.seed(random_seed)
     # Determine the number of colors to generate based on the number of domains
     num_colors_to_generate = len(domain_id_to_node_ids_map)
     if color:
@@ -322,23 +321,15 @@ def _get_colors(
     # Step 2: Calculate pairwise distances between centroids
     centroid_array = np.array(centroids)
     dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
-
-    # Step 3: Generate positions in the colormap, with a focus on centroids that are close
-    remaining_indices = set(range(num_colors_to_generate))
-    # Assign distant colors to close centroids
-    color_positions = _assign_distant_colors(
-        remaining_indices, dist_matrix, colormap, num_colors_to_generate
-    )
-
-    # Step 4: Randomly shuffle color positions to generate a new color palette
-    # while maintaining the dissimilarity between neighboring colors. This shuffling
-    # preserves the relative distances between centroids, ensuring that close centroids
-    # remain visually distinct while introducing randomness into the overall color arrangement.
-    random.shuffle(color_positions)
-    # Ensure that all positions remain between 0 and 1
+    # Step 3: Assign distant colors to close centroids
+    color_positions = _assign_distant_colors(dist_matrix, num_colors_to_generate)
+    # Step 4: Randomly shift the entire color palette while maintaining relative distances
+    global_shift = np.random.uniform(-0.1, 0.1)  # Small global shift to change the overall palette
+    color_positions = (color_positions + global_shift) % 1  # Wrap around to keep within [0, 1]
+    # Step 5: Ensure that all positions remain between 0 and 1
     color_positions = np.clip(color_positions, 0, 1)
 
-    # Step 5: Generate colors based on positions
+    # Step 6: Generate RGBA colors based on positions
     return [colormap(pos) for pos in color_positions]
 
 
@@ -365,28 +356,26 @@ def _calculate_centroids(network, domain_id_to_node_ids_map):
     return centroids
 
 
-def _assign_distant_colors(remaining_indices, dist_matrix, colormap, num_colors_to_generate):
+def _assign_distant_colors(dist_matrix, num_colors_to_generate):
     """Assign colors to centroids that are close in space, ensuring stark color differences.
 
     Args:
-        remaining_indices (set): Indices of centroids left to color.
         dist_matrix (ndarray): Matrix of pairwise centroid distances.
-        colormap (Colormap): The colormap used to assign colors.
         num_colors_to_generate (int): Number of colors to generate.
 
     Returns:
-        np.array: Array of color positions in the colormap.
+        np.array: Array of color positions in the range [0, 1].
     """
     color_positions = np.zeros(num_colors_to_generate)
-    # Convert the set to a list to index over it
-    remaining_indices = list(remaining_indices)
-    # Sort remaining indices by centroid proximity (based on sum of distances to others)
-    proximity_order = sorted(remaining_indices, key=lambda idx: np.sum(dist_matrix[idx]))
-    # Assign colors starting with the most distant points in proximity order
+    # Step 1: Sort indices by centroid proximity (based on sum of distances to others)
+    proximity_order = sorted(
+        range(num_colors_to_generate), key=lambda idx: np.sum(dist_matrix[idx])
+    )
+    # Step 2: Assign colors starting with the most distant points in proximity order
     for i, idx in enumerate(proximity_order):
         color_positions[idx] = i / num_colors_to_generate
 
-    # Adjust colors so that centroids close to one another are maximally distant on the color spectrum
+    # Step 3: Adjust colors so that centroids close to one another are maximally distant on the color spectrum
     half_spectrum = int(num_colors_to_generate / 2)
     for i in range(half_spectrum):
         # Split the spectrum so that close centroids are assigned distant colors
