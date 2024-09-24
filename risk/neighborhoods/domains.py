@@ -23,7 +23,8 @@ def define_domains(
     linkage_method: str,
     linkage_metric: str,
 ) -> pd.DataFrame:
-    """Define domains and assign nodes to these domains based on their enrichment scores and clustering.
+    """Define domains and assign nodes to these domains based on their enrichment scores and clustering,
+    handling errors by assigning unique domains when clustering fails.
 
     Args:
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
@@ -35,31 +36,29 @@ def define_domains(
     Returns:
         pd.DataFrame: DataFrame with the primary domain for each node.
     """
-    # Check if there's more than one column in significant_neighborhoods_enrichment
-    if significant_neighborhoods_enrichment.shape[1] == 1:
-        print("Single annotation detected. Skipping clustering.")
-        top_annotations["domain"] = 1  # Assign a default domain or handle appropriately
-    else:
-        # Perform hierarchical clustering on the binary enrichment matrix
+    try:
+        # Transpose the matrix to cluster annotations
         m = significant_neighborhoods_enrichment[:, top_annotations["top attributes"]].T
         best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
             m, linkage_criterion, linkage_method, linkage_metric
         )
-        try:
-            Z = linkage(m, method=best_linkage, metric=best_metric)
-        except ValueError as e:
-            raise ValueError("No significant annotations found.") from e
-
+        # Perform hierarchical clustering
+        Z = linkage(m, method=best_linkage, metric=best_metric)
         print(
             f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'"
         )
         print(f"Optimal linkage threshold: {round(best_threshold, 3)}")
-
+        # Calculate the optimal threshold for clustering
         max_d_optimal = np.max(Z[:, 2]) * best_threshold
-        domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
         # Assign domains to the annotations matrix
+        domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
         top_annotations["domain"] = 0
         top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
+    except ValueError:
+        # If a ValueError is encountered, handle it by assigning unique domains
+        n_rows = len(top_annotations)
+        print(f"Error encountered. Skipping clustering and assigning {n_rows} unique domains.")
+        top_annotations["domain"] = range(1, n_rows + 1)  # Assign unique domains
 
     # Create DataFrames to store domain information
     node_to_enrichment = pd.DataFrame(
