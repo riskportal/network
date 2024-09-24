@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Tuple
 import networkx as nx
 import numpy as np
 from sklearn.exceptions import DataConversionWarning
+from sklearn.metrics.pairwise import cosine_similarity
 
 from risk.neighborhoods.community import (
     calculate_dijkstra_neighborhoods,
@@ -93,7 +94,7 @@ def _create_percentile_limited_subgraph(G: nx.Graph, edge_length_percentile: flo
 def process_neighborhoods(
     network: nx.Graph,
     neighborhoods: Dict[str, Any],
-    impute_depth: int = 1,
+    impute_depth: int = 0,
     prune_threshold: float = 0.0,
 ) -> Dict[str, Any]:
     """Process neighborhoods based on the imputation and pruning settings.
@@ -101,7 +102,7 @@ def process_neighborhoods(
     Args:
         network (nx.Graph): The network data structure used for imputing and pruning neighbors.
         neighborhoods (dict): Dictionary containing 'enrichment_matrix', 'binary_enrichment_matrix', and 'significant_enrichment_matrix'.
-        impute_depth (int, optional): Depth for imputing neighbors. Defaults to 1.
+        impute_depth (int, optional): Depth for imputing neighbors. Defaults to 0.
         prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
 
     Returns:
@@ -167,55 +168,135 @@ def _impute_neighbors(
             - np.ndarray: The imputed alpha threshold matrix.
             - np.ndarray: The significant enrichment matrix with non-significant entries set to zero.
     """
-    # Calculate shortest distances for each node to determine the distance threshold
-    shortest_distances = []
-    for node in network.nodes():
-        try:
-            neighbors = [
-                n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0
-            ]
-        except IndexError as e:
-            raise IndexError(
-                f"Failed to find neighbors for node '{node}': Ensure that the node exists in the network and that the binary enrichment matrix is correctly indexed."
-            ) from e
-
-        # Calculate the shortest distance to a neighbor
-        if neighbors:
-            shortest_distance = min([_get_euclidean_distance(node, n, network) for n in neighbors])
-            shortest_distances.append(shortest_distance)
-
-    depth = 1
-    rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
-    while len(rows_to_impute) and depth <= max_depth:
-        next_rows_to_impute = []
-        for row_index in rows_to_impute:
-            neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
-            valid_neighbors = [
-                n
-                for n in neighbors
-                if n != row_index
-                and binary_enrichment_matrix[n].sum() != 0
-                and enrichment_matrix[n].sum() != 0
-            ]
-            if valid_neighbors:
-                closest_neighbor = min(
-                    valid_neighbors, key=lambda n: _get_euclidean_distance(row_index, n, network)
-                )
-                # Impute the row with the closest valid neighbor's data
-                enrichment_matrix[row_index] = enrichment_matrix[closest_neighbor]
-                binary_enrichment_matrix[row_index] = binary_enrichment_matrix[
-                    closest_neighbor
-                ] / np.sqrt(depth + 1)
-            else:
-                next_rows_to_impute.append(row_index)
-
-        rows_to_impute = next_rows_to_impute
-        depth += 1
-
+    # Calculate the distance threshold value based on the shortest distances
+    enrichment_matrix, binary_enrichment_matrix = _impute_neighbors_with_similarity(
+        network, enrichment_matrix, binary_enrichment_matrix, max_depth=max_depth
+    )
     # Create a matrix where non-significant entries are set to zero
     significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
 
     return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
+
+
+def _impute_neighbors_with_similarity(
+    network: nx.Graph,
+    enrichment_matrix: np.ndarray,
+    binary_enrichment_matrix: np.ndarray,
+    max_depth: int = 3,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Impute non-enriched nodes based on the closest enriched neighbors' profiles and their similarity.
+
+    Args:
+        network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
+        enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
+        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        max_depth (int): Maximum depth of nodes to traverse for imputing values.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: A tuple containing:
+            - The imputed enrichment matrix.
+            - The imputed alpha threshold matrix.
+    """
+    depth = 1
+    rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
+    while len(rows_to_impute) and depth <= max_depth:
+        next_rows_to_impute = []
+        # Iterate over all enriched nodes
+        for row_index in range(binary_enrichment_matrix.shape[0]):
+            if binary_enrichment_matrix[row_index].sum() != 0:
+                enrichment_matrix, binary_enrichment_matrix = _process_node_imputation(
+                    row_index, network, enrichment_matrix, binary_enrichment_matrix, depth
+                )
+
+        # Update rows to impute for the next iteration
+        rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
+        depth += 1
+
+    return enrichment_matrix, binary_enrichment_matrix
+
+
+def _process_node_imputation(
+    row_index: int,
+    network: nx.Graph,
+    enrichment_matrix: np.ndarray,
+    binary_enrichment_matrix: np.ndarray,
+    depth: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Process the imputation for a single node based on its enriched neighbors.
+
+    Args:
+        row_index (int): The index of the enriched node being processed.
+        network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
+        enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
+        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        depth (int): Current depth for traversal.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: The modified enrichment matrix and binary threshold matrix.
+    """
+    # Check neighbors at the current depth
+    neighbors = nx.single_source_shortest_path_length(network, row_index, cutoff=depth)
+    # Filter annotated neighbors (already enriched)
+    annotated_neighbors = [
+        n
+        for n in neighbors
+        if n != row_index
+        and binary_enrichment_matrix[n].sum() != 0
+        and enrichment_matrix[n].sum() != 0
+    ]
+    # Filter non-enriched neighbors
+    valid_neighbors = [
+        n
+        for n in neighbors
+        if n != row_index
+        and binary_enrichment_matrix[n].sum() == 0
+        and enrichment_matrix[n].sum() == 0
+    ]
+    # If there are valid non-enriched neighbors
+    if valid_neighbors and annotated_neighbors:
+        # Calculate distances to annotated neighbors
+        distances_to_annotated = [
+            _get_euclidean_distance(row_index, n, network) for n in annotated_neighbors
+        ]
+        # Calculate the IQR to identify outliers
+        q1, q3 = np.percentile(distances_to_annotated, [25, 75])
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        # Filter valid non-enriched neighbors that fall within the IQR bounds
+        valid_neighbors_within_iqr = [
+            n
+            for n in valid_neighbors
+            if lower_bound <= _get_euclidean_distance(row_index, n, network) <= upper_bound
+        ]
+        # If there are any valid neighbors within the IQR
+        if valid_neighbors_within_iqr:
+            # If more than one valid neighbor is within the IQR, compute pairwise cosine similarities
+            if len(valid_neighbors_within_iqr) > 1:
+                # Find the most similar neighbor based on pairwise cosine similarities
+                def sum_pairwise_cosine_similarities(neighbor):
+                    return sum(
+                        cosine_similarity(
+                            enrichment_matrix[neighbor].reshape(1, -1),
+                            enrichment_matrix[other_neighbor].reshape(1, -1),
+                        )[0][0]
+                        for other_neighbor in valid_neighbors_within_iqr
+                        if other_neighbor != neighbor
+                    )
+
+                most_similar_neighbor = max(
+                    valid_neighbors_within_iqr, key=sum_pairwise_cosine_similarities
+                )
+            else:
+                most_similar_neighbor = valid_neighbors_within_iqr[0]
+
+            # Impute the most similar non-enriched neighbor with the enriched node's data, scaled by depth
+            enrichment_matrix[most_similar_neighbor] = enrichment_matrix[row_index] / np.sqrt(
+                depth + 1
+            )
+            binary_enrichment_matrix[most_similar_neighbor] = binary_enrichment_matrix[row_index]
+
+    return enrichment_matrix, binary_enrichment_matrix
 
 
 def _prune_neighbors(
@@ -240,27 +321,27 @@ def _prune_neighbors(
     """
     # Identify indices with non-zero rows in the binary enrichment matrix
     non_zero_indices = np.where(binary_enrichment_matrix.sum(axis=1) != 0)[0]
-    average_distances = []
+    median_distances = []
     for node in non_zero_indices:
         neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
         if neighbors:
-            average_distance = np.mean(
+            median_distance = np.median(
                 [_get_euclidean_distance(node, n, network) for n in neighbors]
             )
-            average_distances.append(average_distance)
+            median_distances.append(median_distance)
 
     # Calculate the distance threshold value based on rank
-    distance_threshold_value = _calculate_threshold(average_distances, 1 - distance_threshold)
+    distance_threshold_value = _calculate_threshold(median_distances, 1 - distance_threshold)
     # Prune nodes that are outliers based on the distance threshold
     for row_index in non_zero_indices:
         neighbors = [
             n for n in network.neighbors(row_index) if binary_enrichment_matrix[n].sum() != 0
         ]
         if neighbors:
-            average_distance = np.mean(
+            median_distance = np.median(
                 [_get_euclidean_distance(row_index, n, network) for n in neighbors]
             )
-            if average_distance >= distance_threshold_value:
+            if median_distance >= distance_threshold_value:
                 enrichment_matrix[row_index] = 0
                 binary_enrichment_matrix[row_index] = 0
 
@@ -305,18 +386,18 @@ def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
     )
 
 
-def _calculate_threshold(average_distances: List, distance_threshold: float) -> float:
-    """Calculate the distance threshold based on the given average distances and a percentile threshold.
+def _calculate_threshold(median_distances: List, distance_threshold: float) -> float:
+    """Calculate the distance threshold based on the given median distances and a percentile threshold.
 
     Args:
-        average_distances (list): An array of average distances.
+        median_distances (list): An array of median distances.
         distance_threshold (float): A percentile threshold (0 to 1) used to determine the distance cutoff.
 
     Returns:
         float: The calculated distance threshold value.
     """
-    # Sort the average distances
-    sorted_distances = np.sort(average_distances)
+    # Sort the median distances
+    sorted_distances = np.sort(median_distances)
     # Compute the rank percentiles for the sorted distances
     rank_percentiles = np.linspace(0, 1, len(sorted_distances))
     # Interpolating the ranks to 1000 evenly spaced percentiles
