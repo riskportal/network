@@ -306,6 +306,7 @@ def _get_colors(
     Returns:
         List[Tuple]: List of RGBA colors.
     """
+    # Set random seed for reproducibility
     random.seed(random_seed)
     # Determine the number of colors to generate based on the number of domains
     num_colors_to_generate = len(domain_id_to_node_ids_map)
@@ -321,15 +322,21 @@ def _get_colors(
     # Step 2: Calculate pairwise distances between centroids
     centroid_array = np.array(centroids)
     dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
+
     # Step 3: Generate positions in the colormap, with a focus on centroids that are close
     remaining_indices = set(range(num_colors_to_generate))
     # Assign distant colors to close centroids
     color_positions = _assign_distant_colors(
         remaining_indices, dist_matrix, colormap, num_colors_to_generate
     )
-    # Step 4: Add some random jitter to color positions to avoid overly systematic results
-    jitter = np.random.uniform(-0.05, 0.05, size=num_colors_to_generate)
-    color_positions = np.clip(color_positions + jitter, 0, 1)
+
+    # Step 4: Randomly shuffle color positions to generate a new color palette
+    # while maintaining the dissimilarity between neighboring colors. This shuffling
+    # preserves the relative distances between centroids, ensuring that close centroids
+    # remain visually distinct while introducing randomness into the overall color arrangement.
+    random.shuffle(color_positions)
+    # Ensure that all positions remain between 0 and 1
+    color_positions = np.clip(color_positions, 0, 1)
 
     # Step 5: Generate colors based on positions
     return [colormap(pos) for pos in color_positions]
