@@ -20,9 +20,9 @@ from risk.neighborhoods import (
 from risk.network import NetworkIO, NetworkGraph, NetworkPlotter
 from risk.stats import (
     calculate_significance_matrices,
-    compute_fisher_exact_test,
     compute_hypergeom_test,
     compute_permutation_test,
+    compute_poisson_test,
 )
 
 
@@ -44,6 +44,104 @@ class RISK(NetworkIO, AnnotationsIO):
     def params(self):
         """Access the logged parameters."""
         return params
+
+    def load_neighborhoods_by_hypergeom(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: str = "dijkstra",
+        louvain_resolution: float = 0.1,
+        edge_length_threshold: float = 0.5,
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the hypergeometric test.
+
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (dict): The annotations associated with the network.
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            dict: Computed significance of neighborhoods.
+        """
+        print_header("Running hypergeometric test")
+        # Log neighborhood analysis parameters
+        params.log_neighborhoods(
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            edge_length_threshold=edge_length_threshold,
+            statistical_test_function="hypergeom",
+            random_seed=random_seed,
+        )
+
+        # Load neighborhoods based on the network and distance metric
+        neighborhoods = self._load_neighborhoods(
+            network,
+            distance_metric,
+            louvain_resolution=louvain_resolution,
+            edge_length_threshold=edge_length_threshold,
+            random_seed=random_seed,
+        )
+        # Run hypergeometric test to compute neighborhood significance
+        neighborhood_significance = compute_hypergeom_test(
+            neighborhoods=neighborhoods,
+            annotations=annotations["matrix"],
+        )
+
+        # Return the computed neighborhood significance
+        return neighborhood_significance
+
+    def load_neighborhoods_by_poisson(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: str = "dijkstra",
+        louvain_resolution: float = 0.1,
+        edge_length_threshold: float = 0.5,
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the Poisson test.
+
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (dict): The annotations associated with the network.
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            dict: Computed significance of neighborhoods.
+        """
+        print_header("Running Poisson test")
+        # Log neighborhood analysis parameters
+        params.log_neighborhoods(
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            edge_length_threshold=edge_length_threshold,
+            statistical_test_function="poisson",
+            random_seed=random_seed,
+        )
+
+        # Load neighborhoods based on the network and distance metric
+        neighborhoods = self._load_neighborhoods(
+            network,
+            distance_metric,
+            louvain_resolution=louvain_resolution,
+            edge_length_threshold=edge_length_threshold,
+            random_seed=random_seed,
+        )
+        # Run Poisson test to compute neighborhood significance
+        neighborhood_significance = compute_poisson_test(
+            neighborhoods=neighborhoods,
+            annotations=annotations["matrix"],
+        )
+
+        # Return the computed neighborhood significance
+        return neighborhood_significance
 
     def load_neighborhoods_by_permutation(
         self,
@@ -111,118 +209,6 @@ class RISK(NetworkIO, AnnotationsIO):
             null_distribution=null_distribution,
             num_permutations=num_permutations,
             random_seed=random_seed,
-            max_workers=max_workers,
-        )
-
-        # Return the computed neighborhood significance
-        return neighborhood_significance
-
-    def load_neighborhoods_by_fisher_exact(
-        self,
-        network: nx.Graph,
-        annotations: Dict[str, Any],
-        distance_metric: str = "dijkstra",
-        louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
-        random_seed: int = 888,
-        max_workers: int = 1,
-    ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the Fisher's exact test.
-
-        Args:
-            network (nx.Graph): The network graph.
-            annotations (dict): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
-            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
-
-        Returns:
-            dict: Computed significance of neighborhoods.
-        """
-        print_header("Running Fisher's exact test")
-        # Log neighborhood analysis parameters
-        params.log_neighborhoods(
-            distance_metric=distance_metric,
-            louvain_resolution=louvain_resolution,
-            edge_length_threshold=edge_length_threshold,
-            statistical_test_function="fisher_exact",
-            random_seed=random_seed,
-            max_workers=max_workers,
-        )
-
-        # Load neighborhoods based on the network and distance metric
-        neighborhoods = self._load_neighborhoods(
-            network,
-            distance_metric,
-            louvain_resolution=louvain_resolution,
-            edge_length_threshold=edge_length_threshold,
-            random_seed=random_seed,
-        )
-
-        # Log and display Fisher's exact test settings
-        print(f"Maximum workers: {max_workers}")
-        # Run Fisher's exact test to compute neighborhood significance
-        neighborhood_significance = compute_fisher_exact_test(
-            neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
-            max_workers=max_workers,
-        )
-
-        # Return the computed neighborhood significance
-        return neighborhood_significance
-
-    def load_neighborhoods_by_hypergeom(
-        self,
-        network: nx.Graph,
-        annotations: Dict[str, Any],
-        distance_metric: str = "dijkstra",
-        louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
-        random_seed: int = 888,
-        max_workers: int = 1,
-    ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the hypergeometric test.
-
-        Args:
-            network (nx.Graph): The network graph.
-            annotations (dict): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
-            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-            max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
-
-        Returns:
-            dict: Computed significance of neighborhoods.
-        """
-        print_header("Running hypergeometric test")
-        # Log neighborhood analysis parameters
-        params.log_neighborhoods(
-            distance_metric=distance_metric,
-            louvain_resolution=louvain_resolution,
-            edge_length_threshold=edge_length_threshold,
-            statistical_test_function="hypergeom",
-            random_seed=random_seed,
-            max_workers=max_workers,
-        )
-
-        # Load neighborhoods based on the network and distance metric
-        neighborhoods = self._load_neighborhoods(
-            network,
-            distance_metric,
-            louvain_resolution=louvain_resolution,
-            edge_length_threshold=edge_length_threshold,
-            random_seed=random_seed,
-        )
-
-        # Log and display hypergeometric test settings
-        print(f"Maximum workers: {max_workers}")
-        # Run hypergeometric test to compute neighborhood significance
-        neighborhood_significance = compute_hypergeom_test(
-            neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
             max_workers=max_workers,
         )
 
