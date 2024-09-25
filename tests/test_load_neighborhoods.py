@@ -64,8 +64,8 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-def test_load_neighborhoods_hypergeom_single_process(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using a single process with the hypergeometric test.
+def test_load_neighborhoods_hypergeom(risk_obj, cytoscape_network, json_annotation):
+    """Test loading neighborhoods using the hypergeometric test.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -75,7 +75,6 @@ def test_load_neighborhoods_hypergeom_single_process(risk_obj, cytoscape_network
     Returns:
         None
     """
-    # Load neighborhoods with the hypergeometric test using 1 process
     neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
         network=cytoscape_network,
         annotations=json_annotation,
@@ -83,15 +82,14 @@ def test_load_neighborhoods_hypergeom_single_process(risk_obj, cytoscape_network
         louvain_resolution=0.01,
         edge_length_threshold=0.25,
         random_seed=887,
-        max_workers=1,  # Single process
     )
 
     assert neighborhoods is not None
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-def test_load_neighborhoods_hypergeom_multi_process(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using multiple processes with the hypergeometric test.
+def test_load_neighborhoods_poisson(risk_obj, cytoscape_network, json_annotation):
+    """Test loading neighborhoods using the Poisson test.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -101,15 +99,13 @@ def test_load_neighborhoods_hypergeom_multi_process(risk_obj, cytoscape_network,
     Returns:
         None
     """
-    # Load neighborhoods with the hypergeometric test using 4 processes
-    neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
+    neighborhoods = risk_obj.load_neighborhoods_by_poisson(
         network=cytoscape_network,
         annotations=json_annotation,
         distance_metric="markov_clustering",
         louvain_resolution=0.01,
         edge_length_threshold=0.25,
         random_seed=887,
-        max_workers=4,  # Four processes
     )
 
     assert neighborhoods is not None
