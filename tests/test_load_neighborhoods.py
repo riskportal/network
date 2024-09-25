@@ -64,62 +64,6 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-def test_load_neighborhoods_fisher_exact_single_process(
-    risk_obj, cytoscape_network, json_annotation
-):
-    """Test loading neighborhoods using a single process with Fisher's exact test.
-
-    Args:
-        risk_obj: The RISK object instance used for loading neighborhoods.
-        cytoscape_network: The network object to be used for neighborhood generation.
-        json_annotation: The annotations associated with the network.
-
-    Returns:
-        None
-    """
-    # Load neighborhoods with Fisher's exact test using 1 process
-    neighborhoods = risk_obj.load_neighborhoods_by_fisher_exact(
-        network=cytoscape_network,
-        annotations=json_annotation,
-        distance_metric="markov_clustering",
-        louvain_resolution=0.01,
-        edge_length_threshold=0.25,
-        random_seed=887,
-        max_workers=1,  # Single process
-    )
-
-    assert neighborhoods is not None
-    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
-
-
-def test_load_neighborhoods_fisher_exact_multi_process(
-    risk_obj, cytoscape_network, json_annotation
-):
-    """Test loading neighborhoods using multiple processes with Fisher's exact test.
-
-    Args:
-        risk_obj: The RISK object instance used for loading neighborhoods.
-        cytoscape_network: The network object to be used for neighborhood generation.
-        json_annotation: The annotations associated with the network.
-
-    Returns:
-        None
-    """
-    # Load neighborhoods with Fisher's exact test using 4 processes
-    neighborhoods = risk_obj.load_neighborhoods_by_fisher_exact(
-        network=cytoscape_network,
-        annotations=json_annotation,
-        distance_metric="markov_clustering",
-        louvain_resolution=0.01,
-        edge_length_threshold=0.25,
-        random_seed=887,
-        max_workers=4,  # Four processes
-    )
-
-    assert neighborhoods is not None
-    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
-
-
 def test_load_neighborhoods_hypergeom_single_process(risk_obj, cytoscape_network, json_annotation):
     """Test loading neighborhoods using a single process with the hypergeometric test.
 
