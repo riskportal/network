@@ -9,6 +9,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import pandas as pd
 from scipy.ndimage import label
 from scipy.stats import gaussian_kde
 
@@ -601,7 +602,7 @@ class NetworkPlotter:
             min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
             max_word_length (int, optional): Maximum number of characters in a word to display. Defaults to 20.
             min_word_length (int, optional): Minimum number of characters in a word to display. Defaults to 1.
-            words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
+            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
             ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
                 you can set `overlay_ids=True`. Defaults to None.
@@ -710,6 +711,9 @@ class NetworkPlotter:
         # Process remaining domains to fill in additional labels, if there are slots left
         if remaining_labels and remaining_labels > 0:
             for idx, (domain, centroid) in enumerate(domain_centroids.items()):
+                # Check if the domain is NaN and continue if true
+                if pd.isna(domain) or (isinstance(domain, float) and np.isnan(domain)):
+                    continue  # Skip NaN domains
                 if ids_to_keep and domain in ids_to_keep:
                     continue  # Skip domains already handled by ids_to_keep
 
