@@ -6,13 +6,18 @@ tests/test_load_neighborhoods
 import pytest
 
 
-def test_load_neighborhoods_single_process(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using a single process with the permutation test.
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_single_process(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test loading neighborhoods using a single process with the permutation test with multiple
+    null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the permutation test (either 'network' or 'annotations').
 
     Returns:
         None
@@ -21,11 +26,11 @@ def test_load_neighborhoods_single_process(risk_obj, cytoscape_network, json_ann
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",
+        distance_metric="louvain",
         louvain_resolution=0.01,
         edge_length_threshold=0.25,
         score_metric="stdev",
-        null_distribution="network",
+        null_distribution=null_distribution,
         num_permutations=10,  # Set to 10 permutations as requested
         random_seed=887,
         max_workers=1,  # Single process
@@ -50,7 +55,7 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",
+        distance_metric="louvain",
         louvain_resolution=0.01,
         edge_length_threshold=0.25,
         score_metric="stdev",
@@ -64,13 +69,17 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-def test_load_neighborhoods_hypergeom(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using the hypergeometric test.
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_hypergeom(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test loading neighborhoods using the hypergeometric test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the hypergeometric test (either 'network' or 'annotations').
 
     Returns:
         None
@@ -78,9 +87,10 @@ def test_load_neighborhoods_hypergeom(risk_obj, cytoscape_network, json_annotati
     neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",
+        distance_metric="louvain",
         louvain_resolution=0.01,
         edge_length_threshold=0.25,
+        null_distribution=null_distribution,
         random_seed=887,
     )
 
@@ -88,13 +98,17 @@ def test_load_neighborhoods_hypergeom(risk_obj, cytoscape_network, json_annotati
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-def test_load_neighborhoods_poisson(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using the Poisson test.
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_poisson(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test loading neighborhoods using the Poisson test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the Poisson test (either 'network' or 'annotations').
 
     Returns:
         None
@@ -102,9 +116,10 @@ def test_load_neighborhoods_poisson(risk_obj, cytoscape_network, json_annotation
     neighborhoods = risk_obj.load_neighborhoods_by_poisson(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",
+        distance_metric="louvain",
         louvain_resolution=0.01,
-        edge_length_threshold=0.25,
+        edge_length_threshold=0.15,
+        null_distribution=null_distribution,
         random_seed=887,
     )
 
@@ -114,7 +129,14 @@ def test_load_neighborhoods_poisson(risk_obj, cytoscape_network, json_annotation
 
 @pytest.mark.parametrize(
     "distance_metric",
-    ["dijkstra", "louvain", "label_propagation", "markov_clustering", "walktrap", "spinglass"],
+    [
+        "greedy_modularity",
+        "louvain",
+        "label_propagation",
+        "markov_clustering",
+        "walktrap",
+        "spinglass",
+    ],
 )
 def test_load_neighborhoods_with_various_distance_metrics(
     risk_obj, cytoscape_network, json_annotation, distance_metric
@@ -180,7 +202,7 @@ def test_load_neighborhoods_with_various_score_metrics(
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",  # Using markov_clustering as the distance metric
+        distance_metric="louvain",  # Using markov_clustering as the distance metric
         edge_length_threshold=0.75,
         score_metric=score_metric,
         null_distribution="network",
@@ -212,7 +234,7 @@ def test_load_neighborhoods_with_various_null_distributions(
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="markov_clustering",  # Using markov_clustering as the distance metric
+        distance_metric="louvain",  # Using markov_clustering as the distance metric
         edge_length_threshold=0.75,
         score_metric="stdev",  # Using stdev as the score metric
         null_distribution=null_distribution,  # Parametrized null distribution
