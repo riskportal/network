@@ -3,6 +3,7 @@ risk/neighborhoods/neighborhoods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import random
 import warnings
 from typing import Any, Dict, List, Tuple
 
@@ -12,7 +13,7 @@ from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics.pairwise import cosine_similarity
 
 from risk.neighborhoods.community import (
-    calculate_dijkstra_neighborhoods,
+    calculate_greedy_modularity_neighborhoods,
     calculate_label_propagation_neighborhoods,
     calculate_louvain_neighborhoods,
     calculate_markov_clustering_neighborhoods,
@@ -26,7 +27,7 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 def get_network_neighborhoods(
     network: nx.Graph,
-    distance_metric: str = "dijkstra",
+    distance_metric: str = "louvain",
     edge_length_threshold: float = 1.0,
     louvain_resolution: float = 1.0,
     random_seed: int = 888,
@@ -35,8 +36,8 @@ def get_network_neighborhoods(
 
     Args:
         network (nx.Graph): The network graph.
-        distance_metric (str): The distance metric to use ('euclidean', 'dijkstra', 'louvain', 'affinity_propagation',
-            'label_propagation', 'markov_clustering', 'walktrap', 'spinglass').
+        distance_metric (str): The distance metric to use ('greedy_modularity', 'louvain', 'label_propagation',
+            'markov_clustering', 'walktrap', 'spinglass').
         edge_length_threshold (float): The edge length threshold for the neighborhoods.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
         random_seed (int, optional): Random seed for methods requiring random initialization. Defaults to 888.
@@ -44,10 +45,17 @@ def get_network_neighborhoods(
     Returns:
         np.ndarray: Neighborhood matrix calculated based on the selected distance metric.
     """
-    network = _create_percentile_limited_subgraph(network, edge_length_threshold)
+    # Set random seed for reproducibility in all methods besides Louvain, which requires a separate seed
+    random.seed(random_seed)
+    np.random.seed(random_seed)
 
-    if distance_metric == "dijkstra":
-        return calculate_dijkstra_neighborhoods(network)
+    # Create a subgraph based on the edge length percentile threshold
+    network = _create_percentile_limited_subgraph(
+        network, edge_length_percentile=edge_length_threshold
+    )
+
+    if distance_metric == "greedy_modularity":
+        return calculate_greedy_modularity_neighborhoods(network)
     if distance_metric == "louvain":
         return calculate_louvain_neighborhoods(network, louvain_resolution, random_seed=random_seed)
     if distance_metric == "label_propagation":
@@ -60,33 +68,43 @@ def get_network_neighborhoods(
         return calculate_spinglass_neighborhoods(network)
 
     raise ValueError(
-        "Incorrect distance metric specified. Please choose from 'dijkstra', 'louvain',"
+        "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'louvain',"
         "'label_propagation', 'markov_clustering', 'walktrap', 'spinglass'."
     )
 
 
 def _create_percentile_limited_subgraph(G: nx.Graph, edge_length_percentile: float) -> nx.Graph:
-    """Calculate the edge length corresponding to the given percentile of edge lengths in the graph
-    and create a subgraph with all nodes and edges below this length.
+    """Create a subgraph containing all nodes and edges where the edge length is below the
+    specified percentile of all edge lengths in the input graph.
 
     Args:
-        G (nx.Graph): The input graph.
-        edge_length_percentile (float): The percentile to calculate (between 0 and 1).
+        G (nx.Graph): The input graph with 'length' attributes on edges.
+        edge_length_percentile (float): The percentile (between 0 and 1) to filter edges by length.
 
     Returns:
-        nx.Graph: A subgraph with all nodes and edges below the edge length corresponding to the given percentile.
+        nx.Graph: A subgraph with all nodes and edges where the edge length is below the
+        calculated threshold length.
     """
-    # Extract edge lengths from the graph
+    # Extract edge lengths and handle missing lengths
     edge_lengths = [d["length"] for _, _, d in G.edges(data=True) if "length" in d]
+    if not edge_lengths:
+        raise ValueError(
+            "No edge lengths found in the graph. Ensure edges have 'length' attributes."
+        )
+
     # Calculate the specific edge length for the given percentile
     percentile_length = np.percentile(edge_lengths, edge_length_percentile * 100)
-    # Create a new graph with all nodes from the original graph
+    # Create the subgraph by directly filtering edges during iteration
     subgraph = nx.Graph()
-    subgraph.add_nodes_from(G.nodes(data=True))
-    # Add edges to the subgraph if they are below the specified percentile length
+    subgraph.add_nodes_from(G.nodes(data=True))  # Retain all nodes from the original graph
+    # Add edges below the specified percentile length in a single pass
     for u, v, d in G.edges(data=True):
         if d.get("length", 1) <= percentile_length:
             subgraph.add_edge(u, v, **d)
+
+    # Return the subgraph; optionally check if it's too sparse
+    if subgraph.number_of_edges() == 0:
+        raise Warning("The resulting subgraph has no edges. Consider adjusting the percentile.")
 
     return subgraph
 
