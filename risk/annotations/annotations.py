@@ -39,7 +39,7 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
         annotations_input (dict): A dictionary with annotations.
 
     Returns:
-        dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+        dict: A dictionary containing ordered nodes, ordered annotations, and the binary annotations matrix.
     """
     # Flatten the dictionary to a list of tuples for easier DataFrame creation
     flattened_annotations = [
@@ -66,7 +66,8 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
     # Extract ordered nodes and annotations
     ordered_nodes = tuple(annotations_pivot.index)
     ordered_annotations = tuple(annotations_pivot.columns)
-    annotations_pivot_numpy = annotations_pivot.fillna(0).to_numpy()
+    # Convert the annotations_pivot matrix to a numpy array and ensure it's binary
+    annotations_pivot_numpy = (annotations_pivot.fillna(0).to_numpy() > 0).astype(int)
 
     return {
         "ordered_nodes": ordered_nodes,
