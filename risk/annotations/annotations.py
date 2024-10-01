@@ -163,8 +163,8 @@ def define_top_annotations(
 
 
 def get_description(words_column: pd.Series) -> str:
-    """Process input Series to identify and return the top N frequent, significant words,
-    filtering based on stopwords and similarity (Jaccard index).
+    """Process input Series to identify and return the top frequent, significant words,
+    filtering based on stopwords and gracefully handling numerical strings.
 
     Args:
         words_column (pd.Series): A pandas Series containing strings to process.
@@ -172,19 +172,30 @@ def get_description(words_column: pd.Series) -> str:
     Returns:
         str: A coherent description formed from the most frequent and significant words.
     """
-    # Define stopwords
-    stop_words = set(stopwords.words("english"))
-    # Tokenize the concatenated string and filter out stopwords and non-alphabetic words
+    # Concatenate all rows into a single string and tokenize into words
+    all_words = words_column.str.cat(sep=" ")
+    tokens = word_tokenize(all_words)
+
+    # Check if all tokens are numeric strings or contain a mixture of strings and numbers
+    numeric_tokens = [token for token in tokens if token.replace(".", "", 1).isdigit()]
+    non_numeric_tokens = [token for token in tokens if not token.replace(".", "", 1).isdigit()]
+    # If there's only one unique numeric value, return it directly as a string
+    unique_numeric_values = set(numeric_tokens)
+    if len(unique_numeric_values) == 1:
+        return f"{list(unique_numeric_values)[0]}"
+
+    # Allow the inclusion of both alphabetic and numeric tokens if mixture is detected
     words = [
         (
             word.lower() if word.istitle() else word
         )  # Lowercase all words except proper nouns (e.g., RNA, mRNA)
-        for word in word_tokenize(words_column.str.cat(sep=" "))
-        if word.isalpha() and word.lower() not in stop_words
+        for word in tokens
+        if word.isalpha()
+        or word.replace(".", "", 1).isdigit()  # Keep alphabetic words and numeric strings
     ]
-    # Simplify the word list to remove similar words based on the Jaccard index and generate coherent description
-    simplified_words = _simplify_word_list(words, threshold=0.90)
-    description = _generate_coherent_description(simplified_words)
+    # Generate a coherent description from the processed words
+    description = _generate_coherent_description(words)
+
     return description
 
 
@@ -242,25 +253,28 @@ def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
 
 
 def _generate_coherent_description(words: List[str]) -> str:
-    """Generate a coherent description from a list of words.
+    """Generate a coherent description from a list of words or numerical string values.
+    If there is only one unique entry, return it directly.
 
     Args:
-        words (list of str): A list of words from which to generate the description.
+        words (list): A list of words or numerical string values.
 
     Returns:
         str: A coherent description formed by arranging the words in a logical sequence.
     """
-    # Count the frequency of each word
+    # If there are no words or the input is invalid, raise an error
+    if not words or not isinstance(words, list) or not all(isinstance(word, str) for word in words):
+        raise ValueError("Input must be a list of strings.")
+
+    # If there's only one unique word, return it directly (even if it's a number-like string)
+    unique_words = set(words)
+    if len(unique_words) == 1:
+        return list(unique_words)[0]
+
+    # Count the frequency of each word and sort them by frequency
     word_counts = Counter(words)
-    # Get the most common words
     most_common_words = [word for word, _ in word_counts.most_common()]
-    # Filter out common stopwords
-    stop_words = set(stopwords.words("english"))
-    filtered_words = [word for word in most_common_words if word.lower() not in stop_words]
-    # Generate permutations of the filtered words to find a logical order
-    perm = permutations(filtered_words)
-    # Assume the first permutation as the logical sequence (since they're all equally likely without additional context)
-    logical_sequence = next(perm)
-    # Join the words to form a coherent description
-    description = " ".join(logical_sequence)
+    # Join the most common words to form a coherent description based on frequency
+    description = " ".join(most_common_words)
+
     return description
