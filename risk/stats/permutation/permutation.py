@@ -28,7 +28,7 @@ def compute_permutation_test(
         neighborhoods (np.ndarray): Binary matrix representing neighborhoods.
         annotations (np.ndarray): Binary matrix representing annotations.
         score_metric (str, optional): Metric to use for scoring ('sum', 'mean', etc.). Defaults to "sum".
-        null_distribution (str, optional): Type of null distribution ('network' or other). Defaults to "network".
+        null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
         num_permutations (int, optional): Number of permutations to run. Defaults to 1000.
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
         max_workers (int, optional): Number of workers for multiprocessing. Defaults to 1.
@@ -78,7 +78,7 @@ def _run_permutation_test(
         neighborhoods (np.ndarray): The neighborhood matrix.
         annotations (np.ndarray): The annotation matrix.
         neighborhood_score_func (Callable): Function to calculate neighborhood scores.
-        null_distribution (str, optional): Type of null distribution. Defaults to "network".
+        null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
         num_permutations (int, optional): Number of permutations. Defaults to 1000.
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
         max_workers (int, optional): Number of workers for multiprocessing. Defaults to 4.
@@ -91,8 +91,12 @@ def _run_permutation_test(
     # Determine the indices to use based on the null distribution type
     if null_distribution == "network":
         idxs = range(annotations.shape[0])
-    else:
+    elif null_distribution == "annotations":
         idxs = np.nonzero(np.sum(~np.isnan(annotations), axis=1))[0]
+    else:
+        raise ValueError(
+            "Invalid null_distribution value. Choose either 'network' or 'annotations'."
+        )
 
     # Replace NaNs with zeros in the annotations matrix
     annotations[np.isnan(annotations)] = 0

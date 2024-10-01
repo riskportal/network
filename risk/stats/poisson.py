@@ -9,32 +9,39 @@ import numpy as np
 from scipy.stats import poisson
 
 
-def compute_poisson_test(neighborhoods: np.ndarray, annotations: np.ndarray) -> Dict[str, Any]:
-    """Compute Poisson test for enrichment and depletion in neighborhoods.
+def compute_poisson_test(
+    neighborhoods: np.ndarray, annotations: np.ndarray, null_distribution: str = "network"
+) -> Dict[str, Any]:
+    """Compute Poisson test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
-        neighborhoods (np.ndarray): Binary matrix representing neighborhoods, where rows are nodes
-            and columns are neighborhoods. Entries indicate the presence (1) or absence (0) of a node
-            in a neighborhood.
-        annotations (np.ndarray): Binary matrix representing annotations, where rows are nodes
-            and columns are annotations. Entries indicate the presence (1) or absence (0) of a node
-            being annotated.
+        neighborhoods (np.ndarray): Binary matrix representing neighborhoods.
+        annotations (np.ndarray): Binary matrix representing annotations.
+        null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
 
     Returns:
-        Dict[str, Any]: A dictionary with two keys:
-            - "enrichment_pvals" (np.ndarray): P-values for enrichment, indicating the probability
-              of observing more annotations in a neighborhood than expected under the Poisson distribution.
-            - "depletion_pvals" (np.ndarray): P-values for depletion, indicating the probability of
-              observing fewer annotations in a neighborhood than expected under the Poisson distribution.
+        dict: Dictionary containing depletion and enrichment p-values.
     """
+    # Ensure both matrices are binary (presence/absence)
     neighborhoods = (neighborhoods > 0).astype(int)
     annotations = (annotations > 0).astype(int)
-    annotated_in_neighborhood = np.dot(neighborhoods, annotations)
-    lambda_expected = np.mean(annotated_in_neighborhood, axis=0)
-    # Enrichment (observing more than expected)
-    enrichment_pvals = 1 - poisson.cdf(annotated_in_neighborhood - 1, lambda_expected)
+    # Matrix multiplication to get the number of annotated nodes in each neighborhood
+    annotated_in_neighborhood = neighborhoods @ annotations
 
-    # Depletion (observing fewer than expected)
+    # Compute lambda_expected based on the chosen null distribution
+    if null_distribution == "network":
+        # Use the mean across neighborhoods (axis=1)
+        lambda_expected = np.mean(annotated_in_neighborhood, axis=1, keepdims=True)
+    elif null_distribution == "annotations":
+        # Use the mean across annotations (axis=0)
+        lambda_expected = np.mean(annotated_in_neighborhood, axis=0, keepdims=True)
+    else:
+        raise ValueError(
+            "Invalid null_distribution value. Choose either 'network' or 'annotations'."
+        )
+
+    # Compute p-values for enrichment and depletion using Poisson distribution
+    enrichment_pvals = 1 - poisson.cdf(annotated_in_neighborhood - 1, lambda_expected)
     depletion_pvals = poisson.cdf(annotated_in_neighborhood, lambda_expected)
 
     return {"enrichment_pvals": enrichment_pvals, "depletion_pvals": depletion_pvals}
