@@ -49,9 +49,10 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "dijkstra",
+        distance_metric: str = "louvain",
         louvain_resolution: float = 0.1,
         edge_length_threshold: float = 0.5,
+        null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
         """Load significant neighborhoods for the network using the hypergeometric test.
@@ -59,9 +60,10 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (dict): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -74,6 +76,7 @@ class RISK(NetworkIO, AnnotationsIO):
             louvain_resolution=louvain_resolution,
             edge_length_threshold=edge_length_threshold,
             statistical_test_function="hypergeom",
+            null_distribution=null_distribution,
             random_seed=random_seed,
         )
 
@@ -89,6 +92,7 @@ class RISK(NetworkIO, AnnotationsIO):
         neighborhood_significance = compute_hypergeom_test(
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
+            null_distribution=null_distribution,
         )
 
         # Return the computed neighborhood significance
@@ -98,9 +102,10 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "dijkstra",
+        distance_metric: str = "louvain",
         louvain_resolution: float = 0.1,
         edge_length_threshold: float = 0.5,
+        null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
         """Load significant neighborhoods for the network using the Poisson test.
@@ -108,9 +113,10 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (dict): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -123,6 +129,7 @@ class RISK(NetworkIO, AnnotationsIO):
             louvain_resolution=louvain_resolution,
             edge_length_threshold=edge_length_threshold,
             statistical_test_function="poisson",
+            null_distribution=null_distribution,
             random_seed=random_seed,
         )
 
@@ -138,6 +145,7 @@ class RISK(NetworkIO, AnnotationsIO):
         neighborhood_significance = compute_poisson_test(
             neighborhoods=neighborhoods,
             annotations=annotations["matrix"],
+            null_distribution=null_distribution,
         )
 
         # Return the computed neighborhood significance
@@ -147,7 +155,7 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "dijkstra",
+        distance_metric: str = "louvain",
         louvain_resolution: float = 0.1,
         edge_length_threshold: float = 0.5,
         score_metric: str = "sum",
@@ -161,11 +169,11 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (dict): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
             score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
-            null_distribution (str, optional): Distribution used for permutation tests. Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             num_permutations (int, optional): Number of permutations for significance testing. Defaults to 1000.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
@@ -366,7 +374,7 @@ class RISK(NetworkIO, AnnotationsIO):
     def _load_neighborhoods(
         self,
         network: nx.Graph,
-        distance_metric: str = "dijkstra",
+        distance_metric: str = "louvain",
         louvain_resolution: float = 0.1,
         edge_length_threshold: float = 0.5,
         random_seed: int = 888,
@@ -376,7 +384,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): The matrix of annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "dijkstra".
+            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
