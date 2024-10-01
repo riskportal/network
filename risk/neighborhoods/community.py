@@ -7,32 +7,29 @@ import community as community_louvain
 import networkx as nx
 import numpy as np
 import markov_clustering as mc
-from networkx.algorithms.community import asyn_lpa_communities
+from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities
 
 
-def calculate_dijkstra_neighborhoods(network: nx.Graph) -> np.ndarray:
-    """Calculate neighborhoods using Dijkstra's shortest path distances.
+def calculate_greedy_modularity_neighborhoods(network: nx.Graph) -> np.ndarray:
+    """Calculate neighborhoods using the Greedy Modularity method.
 
     Args:
-        network (nx.Graph): The network graph.
+        network (nx.Graph): The network graph to analyze for community structure.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on Dijkstra's distances.
+        np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
     """
-    # Compute Dijkstra's distance for all pairs of nodes in the network
-    all_dijkstra_paths = dict(nx.all_pairs_dijkstra_path_length(network, weight="length"))
+    # Detect communities using the Greedy Modularity method
+    communities = greedy_modularity_communities(network)
+    # Create a mapping from node to community
+    community_dict = {node: idx for idx, community in enumerate(communities) for node in community}
+    # Create a binary neighborhood matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
-
-    # Populate the neighborhoods matrix based on Dijkstra's distances
-    for source, targets in all_dijkstra_paths.items():
-        max_length = max(targets.values()) if targets else 1  # Handle cases with no targets
-        for target, length in targets.items():
-            if np.isnan(length):
-                neighborhoods[source, target] = max_length  # Use max distance for NaN
-            elif length == 0:
-                neighborhoods[source, target] = 1  # Assign 1 for zero-length paths (self-loops)
-            else:
-                neighborhoods[source, target] = 1 / length  # Inverse of the distance
+    node_index = {node: i for i, node in enumerate(network.nodes())}
+    for node_i, community_i in community_dict.items():
+        for node_j, community_j in community_dict.items():
+            if community_i == community_j:
+                neighborhoods[node_index[node_i], node_index[node_j]] = 1
 
     return neighborhoods
 
@@ -44,21 +41,19 @@ def calculate_label_propagation_neighborhoods(network: nx.Graph) -> np.ndarray:
         network (nx.Graph): The network graph.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on Label Propagation.
+        np.ndarray: Binary neighborhood matrix on Label Propagation.
     """
     # Apply Label Propagation
     communities = nx.algorithms.community.label_propagation.label_propagation_communities(network)
-
     # Create a mapping from node to community
     community_dict = {}
     for community_id, community in enumerate(communities):
         for node in community:
             community_dict[node] = community_id
 
-    # Create a neighborhood matrix
+    # Create a binary neighborhood matrix
     num_nodes = network.number_of_nodes()
     neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
     # Assign neighborhoods based on community labels
     for node_i, community_i in community_dict.items():
         for node_j, community_j in community_dict.items():
@@ -79,14 +74,14 @@ def calculate_louvain_neighborhoods(
         random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on the Louvain method.
+        np.ndarray: Binary neighborhood matrix on the Louvain method.
     """
     # Apply Louvain method to partition the network
     partition = community_louvain.best_partition(
         network, resolution=resolution, random_state=random_seed
     )
+    # Create a binary neighborhood matrix
     neighborhoods = np.zeros((network.number_of_nodes(), network.number_of_nodes()), dtype=int)
-
     # Assign neighborhoods based on community partitions
     for node_i, community_i in partition.items():
         for node_j, community_j in partition.items():
@@ -103,7 +98,7 @@ def calculate_markov_clustering_neighborhoods(network: nx.Graph) -> np.ndarray:
         network (nx.Graph): The network graph.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on Markov Clustering.
+        np.ndarray: Binary neighborhood matrix on Markov Clustering.
     """
     # Convert the graph to an adjacency matrix
     adjacency_matrix = nx.to_numpy_array(network)
@@ -111,17 +106,15 @@ def calculate_markov_clustering_neighborhoods(network: nx.Graph) -> np.ndarray:
     result = mc.run_mcl(adjacency_matrix)  # Run MCL with default parameters
     # Get clusters
     clusters = mc.get_clusters(result)
-
     # Create a community label for each node
     community_dict = {}
     for community_id, community in enumerate(clusters):
         for node in community:
             community_dict[node] = community_id
 
-    # Create a neighborhood matrix
+    # Create a binary neighborhood matrix
     num_nodes = network.number_of_nodes()
     neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
     # Assign neighborhoods based on community labels
     for node_i, community_i in community_dict.items():
         for node_j, community_j in community_dict.items():
@@ -138,21 +131,19 @@ def calculate_spinglass_neighborhoods(network: nx.Graph) -> np.ndarray:
         network (nx.Graph): The network graph.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on Spin Glass communities.
+        np.ndarray: Binary neighborhood matrix on Spin Glass communities.
     """
     # Use the asynchronous label propagation algorithm as a proxy for Spin Glass
     communities = asyn_lpa_communities(network)
-
     # Create a community label for each node
     community_dict = {}
     for community_id, community in enumerate(communities):
         for node in community:
             community_dict[node] = community_id
 
-    # Create a neighborhood matrix
+    # Create a binary neighborhood matrix
     num_nodes = network.number_of_nodes()
     neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
     # Assign neighborhoods based on community labels
     for node_i, community_i in community_dict.items():
         for node_j, community_j in community_dict.items():
@@ -169,21 +160,19 @@ def calculate_walktrap_neighborhoods(network: nx.Graph) -> np.ndarray:
         network (nx.Graph): The network graph.
 
     Returns:
-        np.ndarray: Neighborhood matrix based on Walktrap communities.
+        np.ndarray: Binary neighborhood matrix on Walktrap communities.
     """
     # Use the asynchronous label propagation algorithm as a proxy for Walktrap
     communities = asyn_lpa_communities(network)
-
     # Create a community label for each node
     community_dict = {}
     for community_id, community in enumerate(communities):
         for node in community:
             community_dict[node] = community_id
 
-    # Create a neighborhood matrix
+    # Create a binary neighborhood matrix
     num_nodes = network.number_of_nodes()
     neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
     # Assign neighborhoods based on community labels
     for node_i, community_i in community_dict.items():
         for node_j, community_j in community_dict.items():
