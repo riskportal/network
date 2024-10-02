@@ -22,9 +22,6 @@ def compute_poisson_test(
     Returns:
         dict: Dictionary containing depletion and enrichment p-values.
     """
-    # Ensure both matrices are binary (presence/absence)
-    neighborhoods = (neighborhoods > 0).astype(int)
-    annotations = (annotations > 0).astype(int)
     # Matrix multiplication to get the number of annotated nodes in each neighborhood
     annotated_in_neighborhood = neighborhoods @ annotations
 
