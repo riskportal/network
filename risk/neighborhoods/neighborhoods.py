@@ -54,10 +54,10 @@ def get_network_neighborhoods(
         network, edge_length_percentile=edge_length_threshold
     )
 
-    if distance_metric == "greedy_modularity":
-        return calculate_greedy_modularity_neighborhoods(network)
     if distance_metric == "louvain":
         return calculate_louvain_neighborhoods(network, louvain_resolution, random_seed=random_seed)
+    if distance_metric == "greedy_modularity":
+        return calculate_greedy_modularity_neighborhoods(network)
     if distance_metric == "label_propagation":
         return calculate_label_propagation_neighborhoods(network)
     if distance_metric == "markov_clustering":
