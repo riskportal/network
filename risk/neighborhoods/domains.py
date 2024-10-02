@@ -4,6 +4,7 @@ risk/neighborhoods/domains
 """
 
 from contextlib import suppress
+from itertools import product
 from tqdm import tqdm
 from typing import Tuple
 
@@ -165,21 +166,20 @@ def _optimize_silhouette_across_linkage_and_metrics(
     total_combinations = len(linkage_methods) * len(linkage_metrics)
 
     # Evaluating optimal linkage method and metric
-    for method in tqdm(
-        linkage_methods,
+    for method, metric in tqdm(
+        product(linkage_methods, linkage_metrics),
         desc="Evaluating optimal linkage method and metric",
         total=total_combinations,
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
     ):
-        for metric in linkage_metrics:
-            with suppress(Exception):
-                Z = linkage(m, method=method, metric=metric)
-                threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
-                if score > best_overall_score:
-                    best_overall_score = score
-                    best_overall_threshold = threshold
-                    best_overall_method = method
-                    best_overall_metric = metric
+        with suppress(Exception):
+            Z = linkage(m, method=method, metric=metric)
+            threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+            if score > best_overall_score:
+                best_overall_score = score
+                best_overall_threshold = threshold
+                best_overall_method = method
+                best_overall_metric = metric
 
     return best_overall_method, best_overall_metric, best_overall_threshold
 
