@@ -22,9 +22,7 @@ def compute_hypergeom_test(
     Returns:
         dict: Dictionary containing depletion and enrichment p-values.
     """
-    # Ensure both matrices are binary (presence/absence)
-    neighborhoods = (neighborhoods > 0).astype(int)
-    annotations = (annotations > 0).astype(int)
+    # Get the total number of nodes in the network
     total_node_count = neighborhoods.shape[0]
 
     if null_distribution == "network":
