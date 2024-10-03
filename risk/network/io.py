@@ -16,7 +16,7 @@ import networkx as nx
 import pandas as pd
 
 from risk.network.geometry import assign_edge_lengths
-from risk.log import params, print_header
+from risk.log import params, logger, log_header
 
 
 class NetworkIO:
@@ -57,9 +57,8 @@ class NetworkIO:
             weight_label=weight_label,
         )
 
-    @classmethod
+    @staticmethod
     def load_gpickle_network(
-        cls,
         filepath: str,
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
@@ -80,7 +79,7 @@ class NetworkIO:
         Returns:
             nx.Graph: Loaded and processed network.
         """
-        networkio = cls(
+        networkio = NetworkIO(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
@@ -109,9 +108,8 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(G)
 
-    @classmethod
+    @staticmethod
     def load_networkx_network(
-        cls,
         network: nx.Graph,
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
@@ -132,7 +130,7 @@ class NetworkIO:
         Returns:
             nx.Graph: Loaded and processed network.
         """
-        networkio = cls(
+        networkio = NetworkIO(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
@@ -158,9 +156,8 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(network)
 
-    @classmethod
+    @staticmethod
     def load_cytoscape_network(
-        cls,
         filepath: str,
         source_label: str = "source",
         target_label: str = "target",
@@ -187,7 +184,7 @@ class NetworkIO:
         Returns:
             nx.Graph: Loaded and processed network.
         """
-        networkio = cls(
+        networkio = NetworkIO(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
@@ -312,9 +309,8 @@ class NetworkIO:
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
 
-    @classmethod
+    @staticmethod
     def load_cytoscape_json_network(
-        cls,
         filepath: str,
         source_label: str = "source",
         target_label: str = "target",
@@ -339,7 +335,7 @@ class NetworkIO:
         Returns:
             NetworkX graph: Loaded and processed network.
         """
-        networkio = cls(
+        networkio = NetworkIO(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
@@ -455,10 +451,10 @@ class NetworkIO:
         # Log the number of nodes and edges before and after cleaning
         num_final_nodes = G.number_of_nodes()
         num_final_edges = G.number_of_edges()
-        print(f"Initial node count: {num_initial_nodes}")
-        print(f"Final node count: {num_final_nodes}")
-        print(f"Initial edge count: {num_initial_edges}")
-        print(f"Final edge count: {num_final_edges}")
+        logger.debug(f"Initial node count: {num_initial_nodes}")
+        logger.debug(f"Final node count: {num_final_nodes}")
+        logger.debug(f"Initial edge count: {num_initial_edges}")
+        logger.debug(f"Final edge count: {num_final_edges}")
 
     def _assign_edge_weights(self, G: nx.Graph) -> None:
         """Assign weights to the edges in the graph.
@@ -476,7 +472,7 @@ class NetworkIO:
             )  # Default to 1.0 if 'weight' not present
 
         if self.include_edge_weight and missing_weights:
-            print(f"Total edges missing weights: {missing_weights}")
+            logger.debug(f"Total edges missing weights: {missing_weights}")
 
     def _validate_nodes(self, G: nx.Graph) -> None:
         """Validate the graph structure and attributes.
@@ -514,14 +510,14 @@ class NetworkIO:
             filetype (str): The type of the file being loaded (e.g., 'CSV', 'JSON').
             filepath (str, optional): The path to the file being loaded. Defaults to "".
         """
-        print_header("Loading network")
-        print(f"Filetype: {filetype}")
+        log_header("Loading network")
+        logger.debug(f"Filetype: {filetype}")
         if filepath:
-            print(f"Filepath: {filepath}")
-        print(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
+            logger.debug(f"Filepath: {filepath}")
+        logger.debug(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
         if self.include_edge_weight:
-            print(f"Weight label: {self.weight_label}")
-        print(f"Minimum edges per node: {self.min_edges_per_node}")
-        print(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
+            logger.debug(f"Weight label: {self.weight_label}")
+        logger.debug(f"Minimum edges per node: {self.min_edges_per_node}")
+        logger.debug(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
         if self.compute_sphere:
-            print(f"Surface depth: {self.surface_depth}")
+            logger.debug(f"Surface depth: {self.surface_depth}")
