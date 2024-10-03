@@ -1,6 +1,6 @@
 """
-risk/stats/permutation/test_function
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/stats/permutation/test_functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import numpy as np
