@@ -12,7 +12,7 @@ from typing import Any, Dict
 
 import numpy as np
 
-from .console import print_header
+from .config import logger, log_header
 
 # Suppress all warnings - this is to resolve warnings from multiprocessing
 warnings.filterwarnings("ignore")
@@ -35,11 +35,11 @@ def _safe_param_export(func):
             filepath = (
                 kwargs.get("filepath") or args[1]
             )  # Assuming filepath is always the second argument
-            print(f"Parameters successfully exported to filepath: {filepath}")
+            logger.info(f"Parameters successfully exported to filepath: {filepath}")
             return result
         except Exception as e:
             filepath = kwargs.get("filepath") or args[1]
-            print(f"An error occurred while exporting parameters to {filepath}: {e}")
+            logger.error(f"An error occurred while exporting parameters to {filepath}: {e}")
             return None
 
     return wrapper
@@ -161,7 +161,7 @@ class Params:
         Returns:
             dict: A dictionary containing the processed parameters.
         """
-        print_header("Loading parameters")
+        log_header("Loading parameters")
         return _convert_ndarray_to_list(
             {
                 "annotations": self.annotations,
