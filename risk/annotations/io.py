@@ -12,7 +12,7 @@ import networkx as nx
 import pandas as pd
 
 from risk.annotations.annotations import load_annotations
-from risk.log import params, print_header
+from risk.log import params, logger, log_header
 
 
 class AnnotationsIO:
@@ -218,7 +218,7 @@ def _log_loading(filetype: str, filepath: str = "") -> None:
         filetype (str): The type of the file being loaded (e.g., 'Cytoscape').
         filepath (str, optional): The path to the file being loaded.
     """
-    print_header("Loading annotations")
-    print(f"Filetype: {filetype}")
+    log_header("Loading annotations")
+    logger.debug(f"Filetype: {filetype}")
     if filepath:
-        print(f"Filepath: {filepath}")
+        logger.debug(f"Filepath: {filepath}")

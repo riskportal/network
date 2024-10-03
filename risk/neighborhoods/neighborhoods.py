@@ -20,6 +20,7 @@ from risk.neighborhoods.community import (
     calculate_spinglass_neighborhoods,
     calculate_walktrap_neighborhoods,
 )
+from risk.log import logger
 
 # Suppress DataConversionWarning
 warnings.filterwarnings(action="ignore", category=DataConversionWarning)
@@ -129,7 +130,7 @@ def process_neighborhoods(
     enrichment_matrix = neighborhoods["enrichment_matrix"]
     binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
     significant_enrichment_matrix = neighborhoods["significant_enrichment_matrix"]
-    print(f"Imputation depth: {impute_depth}")
+    logger.debug(f"Imputation depth: {impute_depth}")
     if impute_depth:
         (
             enrichment_matrix,
@@ -142,7 +143,7 @@ def process_neighborhoods(
             max_depth=impute_depth,
         )
 
-    print(f"Pruning threshold: {prune_threshold}")
+    logger.debug(f"Pruning threshold: {prune_threshold}")
     if prune_threshold:
         (
             enrichment_matrix,
