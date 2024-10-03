@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from risk.annotations import AnnotationsIO, define_top_annotations
-from risk.log import params, print_header
+from risk.log import params, logger, log_header, set_global_verbosity
 from risk.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
@@ -33,16 +33,32 @@ class RISK(NetworkIO, AnnotationsIO):
     and performing network-based statistical analysis, such as neighborhood significance testing.
     """
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the RISK class with configuration settings."""
+    def __init__(self, *args, verbose: bool = True, **kwargs):
+        """Initialize the RISK class with configuration settings.
+
+        Args:
+            verbose (bool): If False, suppresses all log messages to the console. Defaults to True.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Note:
+            - All *args and **kwargs are passed to NetworkIO's __init__ method.
+            - AnnotationsIO does not take any arguments and is initialized without them.
+        """
+        # Set global verbosity for logging
+        set_global_verbosity(verbose)
         # Initialize and log network parameters
         params.initialize()
-        # Initialize the parent classes
+        # Use super() to call NetworkIO's __init__ with the given arguments and keyword arguments
         super().__init__(*args, **kwargs)
 
     @property
-    def params(self):
-        """Access the logged parameters."""
+    def params(self) -> params:
+        """Access the logged network parameters.
+
+        Returns:
+            Params: An instance of the Params class with logged parameters and methods to access or update them.
+        """
         return params
 
     def load_neighborhoods_by_hypergeom(
@@ -69,7 +85,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             dict: Computed significance of neighborhoods.
         """
-        print_header("Running hypergeometric test")
+        log_header("Running hypergeometric test")
         # Log neighborhood analysis parameters
         params.log_neighborhoods(
             distance_metric=distance_metric,
@@ -122,7 +138,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             dict: Computed significance of neighborhoods.
         """
-        print_header("Running Poisson test")
+        log_header("Running Poisson test")
         # Log neighborhood analysis parameters
         params.log_neighborhoods(
             distance_metric=distance_metric,
@@ -181,7 +197,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             dict: Computed significance of neighborhoods.
         """
-        print_header("Running permutation test")
+        log_header("Running permutation test")
         # Log neighborhood analysis parameters
         params.log_neighborhoods(
             distance_metric=distance_metric,
@@ -205,10 +221,10 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Log and display permutation test settings
-        print(f"Neighborhood scoring metric: '{score_metric}'")
-        print(f"Null distribution: '{null_distribution}'")
-        print(f"Number of permutations: {num_permutations}")
-        print(f"Maximum workers: {max_workers}")
+        logger.debug(f"Neighborhood scoring metric: '{score_metric}'")
+        logger.debug(f"Null distribution: '{null_distribution}'")
+        logger.debug(f"Number of permutations: {num_permutations}")
+        logger.debug(f"Maximum workers: {max_workers}")
         # Run permutation test to compute neighborhood significance
         neighborhood_significance = compute_permutation_test(
             neighborhoods=neighborhoods,
@@ -260,7 +276,7 @@ class RISK(NetworkIO, AnnotationsIO):
             NetworkGraph: A fully initialized and processed NetworkGraph object.
         """
         # Log the parameters and display headers
-        print_header("Finding significant neighborhoods")
+        log_header("Finding significant neighborhoods")
         params.log_graph(
             tail=tail,
             pval_cutoff=pval_cutoff,
@@ -274,9 +290,9 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=max_cluster_size,
         )
 
-        print(f"p-value cutoff: {pval_cutoff}")
-        print(f"FDR BH cutoff: {fdr_cutoff}")
-        print(
+        logger.debug(f"p-value cutoff: {pval_cutoff}")
+        logger.debug(f"FDR BH cutoff: {fdr_cutoff}")
+        logger.debug(
             f"Significance tail: '{tail}' ({'enrichment' if tail == 'right' else 'depletion' if tail == 'left' else 'both'})"
         )
         # Calculate significant neighborhoods based on the provided parameters
@@ -288,7 +304,7 @@ class RISK(NetworkIO, AnnotationsIO):
             fdr_cutoff=fdr_cutoff,
         )
 
-        print_header("Processing neighborhoods")
+        log_header("Processing neighborhoods")
         # Process neighborhoods by imputing and pruning based on the given settings
         processed_neighborhoods = process_neighborhoods(
             network=network,
@@ -297,9 +313,9 @@ class RISK(NetworkIO, AnnotationsIO):
             prune_threshold=prune_threshold,
         )
 
-        print_header("Finding top annotations")
-        print(f"Min cluster size: {min_cluster_size}")
-        print(f"Max cluster size: {max_cluster_size}")
+        log_header("Finding top annotations")
+        logger.debug(f"Min cluster size: {min_cluster_size}")
+        logger.debug(f"Max cluster size: {max_cluster_size}")
         # Define top annotations based on processed neighborhoods
         top_annotations = self._define_top_annotations(
             network=network,
@@ -309,7 +325,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=max_cluster_size,
         )
 
-        print_header("Optimizing distance threshold for domains")
+        log_header("Optimizing distance threshold for domains")
         # Define domains in the network using the specified clustering settings
         domains = self._define_domains(
             neighborhoods=processed_neighborhoods,
@@ -357,7 +373,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             NetworkPlotter: A NetworkPlotter object configured with the given parameters.
         """
-        print_header("Loading plotter")
+        log_header("Loading plotter")
         # Log the plotter settings
         params.log_plotter(
             figsize=figsize,
@@ -398,9 +414,9 @@ class RISK(NetworkIO, AnnotationsIO):
         else:
             for_print_distance_metric = distance_metric
         # Log and display neighborhood settings
-        print(f"Distance metric: '{for_print_distance_metric}'")
-        print(f"Edge length threshold: {edge_length_threshold}")
-        print(f"Random seed: {random_seed}")
+        logger.debug(f"Distance metric: '{for_print_distance_metric}'")
+        logger.debug(f"Edge length threshold: {edge_length_threshold}")
+        logger.debug(f"Random seed: {random_seed}")
 
         # Compute neighborhoods based on the network and distance metric
         neighborhoods = get_network_neighborhoods(

@@ -15,6 +15,7 @@ from sklearn.metrics import silhouette_score
 
 from risk.annotations import get_description
 from risk.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
+from risk.log import logger
 
 
 def define_domains(
@@ -45,10 +46,10 @@ def define_domains(
         )
         # Perform hierarchical clustering
         Z = linkage(m, method=best_linkage, metric=best_metric)
-        print(
+        logger.debug(
             f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'"
         )
-        print(f"Optimal linkage threshold: {round(best_threshold, 3)}")
+        logger.debug(f"Optimal linkage threshold: {round(best_threshold, 3)}")
         # Calculate the optimal threshold for clustering
         max_d_optimal = np.max(Z[:, 2]) * best_threshold
         # Assign domains to the annotations matrix
@@ -58,7 +59,9 @@ def define_domains(
     except ValueError:
         # If a ValueError is encountered, handle it by assigning unique domains
         n_rows = len(top_annotations)
-        print(f"Error encountered. Skipping clustering and assigning {n_rows} unique domains.")
+        logger.error(
+            f"Error encountered. Skipping clustering and assigning {n_rows} unique domains."
+        )
         top_annotations["domain"] = range(1, n_rows + 1)  # Assign unique domains
 
     # Create DataFrames to store domain information
