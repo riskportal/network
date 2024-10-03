@@ -177,19 +177,18 @@ def get_description(words_column: pd.Series) -> str:
     all_words = words_column.str.cat(sep=" ")
     tokens = word_tokenize(all_words)
 
-    # Check if all tokens are numeric strings or contain a mixture of strings and numbers
+    # Separate numeric tokens
     numeric_tokens = [token for token in tokens if token.replace(".", "", 1).isdigit()]
-    non_numeric_tokens = [token for token in tokens if not token.replace(".", "", 1).isdigit()]
     # If there's only one unique numeric value, return it directly as a string
     unique_numeric_values = set(numeric_tokens)
     if len(unique_numeric_values) == 1:
         return f"{list(unique_numeric_values)[0]}"
 
-    # Allow the inclusion of both alphabetic and numeric tokens if mixture is detected
+    # Ensure that all values in 'words' are strings and include both alphabetic and numeric tokens
     words = [
-        (
+        str(
             word.lower() if word.istitle() else word
-        )  # Lowercase all words except proper nouns (e.g., RNA, mRNA)
+        )  # Convert to string and lowercase all words except proper nouns (e.g., RNA, mRNA)
         for word in tokens
         if word.isalpha()
         or word.replace(".", "", 1).isdigit()  # Keep alphabetic words and numeric strings
@@ -263,11 +262,11 @@ def _generate_coherent_description(words: List[str]) -> str:
     Returns:
         str: A coherent description formed by arranging the words in a logical sequence.
     """
-    # If there are no words or the input is invalid, raise an error
-    if not words or not isinstance(words, list) or not all(isinstance(word, str) for word in words):
-        raise ValueError("Input must be a list of strings.")
+    # If there are no words, return a keyword indicating no data is available
+    if not words:
+        return "N/A"
 
-    # If there's only one unique word, return it directly (even if it's a number-like string)
+    # If there's only one unique word, return it directly
     unique_words = set(words)
     if len(unique_words) == 1:
         return list(unique_words)[0]
