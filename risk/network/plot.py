@@ -10,10 +10,11 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
+from scipy import linalg
 from scipy.ndimage import label
 from scipy.stats import gaussian_kde
 
-from risk.log import params
+from risk.log import params, logger
 from risk.network.graph import NetworkGraph
 
 
@@ -85,6 +86,83 @@ class NetworkPlotter:
         ax.patch.set_visible(False)  # Hide the axis background
 
         return ax
+
+    def plot_title(
+        self,
+        title: Union[str, None] = None,
+        subtitle: Union[str, None] = None,
+        title_fontsize: int = 20,
+        subtitle_fontsize: int = 14,
+        font: str = "Arial",
+        title_color: str = "black",
+        subtitle_color: str = "gray",
+        title_y: float = 0.975,
+        title_space_offset: float = 0.075,
+        subtitle_offset: float = 0.025,
+    ) -> None:
+        """Plot title and subtitle on the network graph with customizable parameters.
+
+        Args:
+            title (str, optional): Title of the plot. Defaults to None.
+            subtitle (str, optional): Subtitle of the plot. Defaults to None.
+            title_fontsize (int, optional): Font size for the title. Defaults to 16.
+            subtitle_fontsize (int, optional): Font size for the subtitle. Defaults to 12.
+            font (str, optional): Font family used for both title and subtitle. Defaults to "Arial".
+            title_color (str, optional): Color of the title text. Defaults to "black".
+            subtitle_color (str, optional): Color of the subtitle text. Defaults to "gray".
+            title_y (float, optional): Y-axis position of the title. Defaults to 0.975.
+            title_space_offset (float, optional): Fraction of figure height to leave for the space above the plot. Defaults to 0.075.
+            subtitle_offset (float, optional): Offset factor to position the subtitle below the title. Defaults to 0.025.
+        """
+        # Log the title and subtitle parameters
+        params.log_plotter(
+            title=title,
+            subtitle=subtitle,
+            title_fontsize=title_fontsize,
+            subtitle_fontsize=subtitle_fontsize,
+            title_subtitle_font=font,
+            title_color=title_color,
+            subtitle_color=subtitle_color,
+            subtitle_offset=subtitle_offset,
+            title_y=title_y,
+            title_space_offset=title_space_offset,
+        )
+
+        # Get the current figure and axis dimensions
+        fig = self.ax.figure
+        # Use a tight layout to ensure that title and subtitle do not overlap with the original plot
+        fig.tight_layout(
+            rect=[0, 0, 1, 1 - title_space_offset]
+        )  # Leave space above the plot for title
+
+        # Plot title if provided
+        if title:
+            # Set the title using figure's suptitle to ensure centering
+            self.ax.figure.suptitle(
+                title,
+                fontsize=title_fontsize,
+                color=title_color,
+                fontname=font,
+                x=0.5,  # Center the title horizontally
+                ha="center",
+                va="top",
+                y=title_y,
+            )
+
+        # Plot subtitle if provided
+        if subtitle:
+            # Calculate the subtitle's y position based on title's position and subtitle_offset
+            subtitle_y_position = title_y - subtitle_offset
+            self.ax.figure.text(
+                0.5,  # Ensure horizontal centering for subtitle
+                subtitle_y_position,
+                subtitle,
+                ha="center",
+                va="top",
+                fontname=font,
+                fontsize=subtitle_fontsize,
+                color=subtitle_color,
+            )
 
     def plot_circle_perimeter(
         self,
@@ -510,26 +588,52 @@ class NetworkPlotter:
         # Extract the positions of the specified nodes
         points = np.array([pos[n] for n in nodes])
         if len(points) <= 1:
-            return  # Not enough points to form a contour
+            return None  # Not enough points to form a contour
 
+        # Check if the KDE forms a single connected component
         connected = False
+        z = None  # Initialize z to None to avoid UnboundLocalError
         while not connected and bandwidth <= 100.0:
-            # Perform KDE on the points with the given bandwidth
-            kde = gaussian_kde(points.T, bw_method=bandwidth)
-            xmin, ymin = points.min(axis=0) - bandwidth
-            xmax, ymax = points.max(axis=0) + bandwidth
-            x, y = np.mgrid[
-                xmin : xmax : complex(0, grid_size), ymin : ymax : complex(0, grid_size)
-            ]
-            z = kde(np.vstack([x.ravel(), y.ravel()])).reshape(x.shape)
-            # Check if the KDE forms a single connected component
-            connected = _is_connected(z)
-            if not connected:
-                bandwidth += 0.05  # Increase bandwidth slightly and retry
+            try:
+                # Perform KDE on the points with the given bandwidth
+                kde = gaussian_kde(points.T, bw_method=bandwidth)
+                xmin, ymin = points.min(axis=0) - bandwidth
+                xmax, ymax = points.max(axis=0) + bandwidth
+                x, y = np.mgrid[
+                    xmin : xmax : complex(0, grid_size), ymin : ymax : complex(0, grid_size)
+                ]
+                z = kde(np.vstack([x.ravel(), y.ravel()])).reshape(x.shape)
+                # Check if the KDE forms a single connected component
+                connected = _is_connected(z)
+                if not connected:
+                    bandwidth += 0.05  # Increase bandwidth slightly and retry
+            except linalg.LinAlgError:
+                bandwidth += 0.05  # Increase bandwidth and retry
+            except Exception as e:
+                # Catch any other exceptions and log them
+                logger.error(f"Unexpected error when drawing KDE contour: {e}")
+                return None
+
+        # If z is still None, the KDE computation failed
+        if z is None:
+            logger.error("Failed to compute KDE. Skipping contour plot for these nodes.")
+            return None
 
         # Define contour levels based on the density
         min_density, max_density = z.min(), z.max()
+        if min_density == max_density:
+            logger.warning(
+                "Contour levels could not be created due to lack of variation in density."
+            )
+            return None
+
+        # Create contour levels based on the density values
         contour_levels = np.linspace(min_density, max_density, levels)[1:]
+        if len(contour_levels) < 2 or not np.all(np.diff(contour_levels) > 0):
+            logger.error("Contour levels must be strictly increasing. Skipping contour plot.")
+            return None
+
+        # Set the contour color and linestyle
         contour_colors = [color for _ in range(levels - 1)]
         # Plot the filled contours using fill_alpha for transparency
         if fill_alpha > 0:
@@ -554,6 +658,7 @@ class NetworkPlotter:
             linewidths=linewidth,
             alpha=alpha,
         )
+
         # Set linewidth for the contour lines to 0 for levels other than the base level
         for i in range(1, len(contour_levels)):
             c.collections[i].set_linewidth(0)
@@ -1090,14 +1195,16 @@ class NetworkPlotter:
         return np.array(annotated_colors)
 
     @staticmethod
-    def savefig(*args, **kwargs) -> None:
-        """Save the current plot to a file.
+    def savefig(*args, pad_inches: float = 0.5, dpi: int = 100, **kwargs) -> None:
+        """Save the current plot to a file with additional export options.
 
         Args:
             *args: Positional arguments passed to `plt.savefig`.
+            pad_inches (float, optional): Padding around the figure when saving. Defaults to 0.5.
+            dpi (int, optional): Dots per inch (DPI) for the exported image. Defaults to 300.
             **kwargs: Keyword arguments passed to `plt.savefig`, such as filename and format.
         """
-        plt.savefig(*args, bbox_inches="tight", **kwargs)
+        plt.savefig(*args, bbox_inches="tight", pad_inches=pad_inches, dpi=dpi, **kwargs)
 
     @staticmethod
     def show(*args, **kwargs) -> None:
