@@ -4,7 +4,7 @@ risk/annotations/annotations
 """
 
 from collections import Counter
-from itertools import compress, permutations
+from itertools import compress
 from typing import Any, Dict, List, Set
 
 import networkx as nx
