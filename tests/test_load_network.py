@@ -6,6 +6,23 @@ tests/test_load_network
 import pytest
 
 
+@pytest.mark.parametrize("verbose_setting", [True, False])
+def test_initialize_risk(risk, verbose_setting):
+    """Test RISK instance initialization with verbose parameter.
+
+    Args:
+        verbose_setting: Boolean value to set verbosity of the RISK instance.
+
+    Returns:
+        None
+    """
+    try:
+        risk_instance = risk(verbose=verbose_setting)
+        assert risk_instance is not None
+    except Exception:
+        pytest.fail(f"RISK failed to initialize with verbose={verbose_setting}")
+
+
 def test_load_cytoscape_network(risk_obj, data_path):
     """Test loading a Cytoscape network from a .cys file.
 
