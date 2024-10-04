@@ -33,24 +33,17 @@ class RISK(NetworkIO, AnnotationsIO):
     and performing network-based statistical analysis, such as neighborhood significance testing.
     """
 
-    def __init__(self, *args, verbose: bool = True, **kwargs):
+    def __init__(self, verbose: bool = True):
         """Initialize the RISK class with configuration settings.
 
         Args:
             verbose (bool): If False, suppresses all log messages to the console. Defaults to True.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Note:
-            - All *args and **kwargs are passed to NetworkIO's __init__ method.
-            - AnnotationsIO does not take any arguments and is initialized without them.
         """
         # Set global verbosity for logging
         set_global_verbosity(verbose)
         # Initialize and log network parameters
         params.initialize()
-        # Use super() to call NetworkIO's __init__ with the given arguments and keyword arguments
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     @property
     def params(self) -> params:
