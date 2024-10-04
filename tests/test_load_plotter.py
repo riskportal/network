@@ -7,148 +7,8 @@ import matplotlib.pyplot as plt
 import pytest
 
 
-def test_initialize_plotter(risk_obj, graph):
-    """Test initializing the plotter object with a graph.
-
-    Args:
-        risk_obj: The RISK object instance used for initializing the plotter.
-        graph: The graph object to be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-    assert hasattr(plotter, "graph")  # Check that the plotter has a graph attribute
-
-
-def test_plot_circle_perimeter(risk_obj, graph):
-    """Test plotting a circle perimeter around the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object to be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_circle_perimeter(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_contour_perimeter(risk_obj, graph):
-    """Test plotting a contour perimeter around the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object to be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_contour_perimeter(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_network(risk_obj, graph):
-    """Test plotting the full network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object to be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_network(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_subnetwork(risk_obj, graph):
-    """Test plotting a subnetwork using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object containing the subnetwork to be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_subnetwork(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_contours(risk_obj, graph):
-    """Test plotting contours on the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object on which contours will be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_contours(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_subcontour(risk_obj, graph):
-    """Test plotting subcontours on the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object on which subcontours will be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_subcontour(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_labels(risk_obj, graph):
-    """Test plotting labels on the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object on which labels will be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_labels(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
-
-
-def test_plot_sublabel(risk_obj, graph):
-    """Test plotting a sublabel on the network using the plotter.
-
-    Args:
-        risk_obj: The RISK object instance used for plotting.
-        graph: The graph object on which the sublabel will be plotted.
-
-    Returns:
-        None
-    """
-    plotter = initialize_plotter(risk_obj, graph)
-    plot_sublabel(plotter)
-
-    assert plotter is not None  # Ensure the plotter is initialized
+# NOTE: Displaying plots during testing can cause the program to hang. Avoid including plot displays in tests.
+# Now, let's test the plotter with different custom settings.
 
 
 def initialize_plotter(risk, graph):
@@ -166,6 +26,32 @@ def initialize_plotter(risk, graph):
         figsize=(15, 15),
         background_color="black",
     )
+
+
+def plot_title(plotter):
+    """Plot a title and subtitle on the network graph with preset parameters.
+
+    Args:
+        plotter: The initialized plotter object.
+
+    Returns:
+        None
+    """
+    try:
+        plotter.plot_title(
+            title="Yeast Interactome Network",
+            subtitle="Michaelis et al., 2023",
+            title_fontsize=20,
+            subtitle_fontsize=14,
+            font="Arial",
+            title_color="black",
+            subtitle_color="gray",
+            title_y=0.975,
+            title_space_offset=0.075,
+            subtitle_offset=0.025,
+        )
+    finally:
+        plt.close("all")
 
 
 def plot_circle_perimeter(plotter):
@@ -400,8 +286,244 @@ def plot_sublabel(plotter):
         plt.close("all")
 
 
-# NOTE: Displaying plots during testing can cause the program to hang. Avoid including plot displays in tests.
-# Now, let's test the plotter with different custom settings.
+def test_initialize_plotter(risk_obj, graph):
+    """Test initializing the plotter object with a graph.
+
+    Args:
+        risk_obj: The RISK object instance used for initializing the plotter.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+    assert hasattr(plotter, "graph")  # Check that the plotter has a graph attribute
+
+
+def test_plot_title(risk_obj, graph):
+    """Test the basic plotting of title and subtitle on the network graph.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_title(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_circle_perimeter(risk_obj, graph):
+    """Test plotting a circle perimeter around the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_circle_perimeter(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_contour_perimeter(risk_obj, graph):
+    """Test plotting a contour perimeter around the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_contour_perimeter(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_network(risk_obj, graph):
+    """Test plotting the full network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_network(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_subnetwork(risk_obj, graph):
+    """Test plotting a subnetwork using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object containing the subnetwork to be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_subnetwork(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_contours(risk_obj, graph):
+    """Test plotting contours on the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which contours will be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_contours(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_subcontour(risk_obj, graph):
+    """Test plotting subcontours on the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which subcontours will be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_subcontour(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_labels(risk_obj, graph):
+    """Test plotting labels on the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which labels will be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_labels(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+def test_plot_sublabel(risk_obj, graph):
+    """Test plotting a sublabel on the network using the plotter.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object on which the sublabel will be plotted.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    plot_sublabel(plotter)
+
+    assert plotter is not None  # Ensure the plotter is initialized
+
+
+@pytest.mark.parametrize(
+    "title, subtitle, title_fontsize, subtitle_fontsize, title_color, subtitle_color, title_y, title_space_offset, subtitle_offset, font",
+    [
+        (
+            "Metabolic Network",
+            "Enrichment Analysis",
+            16,
+            12,
+            "white",
+            "red",
+            0.95,
+            0.05,
+            0.03,
+            "Arial",
+        ),  # Test case 1
+        (
+            "Cluster Analysis",
+            "K-means Results",
+            20,
+            14,
+            "yellow",
+            "blue",
+            0.975,
+            0.075,
+            0.025,
+            "Verdana",
+        ),  # Test case 2
+    ],
+)
+def test_plot_title_with_custom_params(
+    risk_obj,
+    graph,
+    title,
+    subtitle,
+    title_fontsize,
+    subtitle_fontsize,
+    title_color,
+    subtitle_color,
+    title_y,
+    title_space_offset,
+    subtitle_offset,
+    font,
+):
+    """Test the plot_title method with different title and subtitle configurations.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+        title (str): The title of the plot.
+        subtitle (str): The subtitle of the plot.
+        title_fontsize (int): Font size of the title.
+        subtitle_fontsize (int): Font size of the subtitle.
+        title_color (str): Color of the title text.
+        subtitle_color (str): Color of the subtitle text.
+        title_y (float): Position of the title in figure coordinates (0-1).
+        title_space_offset (float): Fraction of figure height to leave for the space above the plot.
+        subtitle_offset (float): Offset factor to position the subtitle below the title.
+        font (str): Font family used for both title and subtitle.
+
+    Returns:
+        None
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    try:
+        plotter.plot_title(
+            title=title,
+            subtitle=subtitle,
+            title_fontsize=title_fontsize,
+            subtitle_fontsize=subtitle_fontsize,
+            title_color=title_color,
+            subtitle_color=subtitle_color,
+            title_y=title_y,
+            title_space_offset=title_space_offset,
+            subtitle_offset=subtitle_offset,
+            font=font,
+        )
+    finally:
+        plt.close("all")
 
 
 @pytest.mark.parametrize(

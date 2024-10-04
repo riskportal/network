@@ -24,19 +24,23 @@ def data_path():
 
 
 @pytest.fixture(scope="session")
+def risk():
+    """Fixture to return the uninitialized RISK object.
+
+    Returns:
+        RISK: The uninitialized RISK object instance.
+    """
+    return RISK
+
+
+@pytest.fixture(scope="session")
 def risk_obj():
     """Fixture to initialize and return the RISK object.
 
     Returns:
         RISK: The initialized RISK object instance.
     """
-    return RISK(
-        compute_sphere=True,
-        surface_depth=0.1,
-        min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
-    )
+    return RISK(verbose=False)
 
 
 # Network fixtures
@@ -57,6 +61,11 @@ def cytoscape_network(risk_obj, data_path):
         source_label="source",
         target_label="target",
         view_name="",
+        compute_sphere=True,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
     )
 
 
@@ -76,6 +85,11 @@ def cytoscape_json_network(risk_obj, data_path):
         filepath=str(network_file),
         source_label="source",
         target_label="target",
+        compute_sphere=True,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
     )
 
 
@@ -91,7 +105,14 @@ def gpickle_network(risk_obj, data_path):
         Network: The loaded network object.
     """
     network_file = data_path / "gpickle" / "michaelis_2023.gpickle"
-    return risk_obj.load_gpickle_network(filepath=str(network_file))
+    return risk_obj.load_gpickle_network(
+        filepath=str(network_file),
+        compute_sphere=True,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -105,7 +126,14 @@ def networkx_network(risk_obj, cytoscape_network):
     Returns:
         NetworkXGraph: The network object converted to a NetworkX graph.
     """
-    return risk_obj.load_networkx_network(network=cytoscape_network)
+    return risk_obj.load_networkx_network(
+        network=cytoscape_network,
+        compute_sphere=True,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
+    )
 
 
 # Annotation fixtures
