@@ -46,7 +46,7 @@ def define_domains(
         )
         # Perform hierarchical clustering
         Z = linkage(m, method=best_linkage, metric=best_metric)
-        logger.debug(
+        logger.warning(
             f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'"
         )
         logger.debug(f"Optimal linkage threshold: {round(best_threshold, 3)}")

@@ -25,12 +25,12 @@ class AnnotationsIO:
     def __init__(self):
         pass
 
-    def load_json_annotation(self, filepath: str, network: nx.Graph) -> Dict[str, Any]:
+    def load_json_annotation(self, network: nx.Graph, filepath: str) -> Dict[str, Any]:
         """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:
-            filepath (str): Path to the JSON annotations file.
             network (NetworkX graph): The network to which the annotations are related.
+            filepath (str): Path to the JSON annotations file.
 
         Returns:
             dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
@@ -49,8 +49,8 @@ class AnnotationsIO:
 
     def load_excel_annotation(
         self,
-        filepath: str,
         network: nx.Graph,
+        filepath: str,
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         sheet_name: str = "Sheet1",
@@ -59,8 +59,8 @@ class AnnotationsIO:
         """Load annotations from an Excel file and associate them with the network.
 
         Args:
-            filepath (str): Path to the Excel annotations file.
             network (nx.Graph): The NetworkX graph to which the annotations are related.
+            filepath (str): Path to the Excel annotations file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             sheet_name (str, optional): The name of the Excel sheet to load (default is 'Sheet1').
@@ -87,8 +87,8 @@ class AnnotationsIO:
 
     def load_csv_annotation(
         self,
-        filepath: str,
         network: nx.Graph,
+        filepath: str,
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
@@ -96,8 +96,8 @@ class AnnotationsIO:
         """Load annotations from a CSV file and associate them with the network.
 
         Args:
-            filepath (str): Path to the CSV annotations file.
             network (nx.Graph): The NetworkX graph to which the annotations are related.
+            filepath (str): Path to the CSV annotations file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
@@ -121,8 +121,8 @@ class AnnotationsIO:
 
     def load_tsv_annotation(
         self,
-        filepath: str,
         network: nx.Graph,
+        filepath: str,
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
@@ -130,8 +130,8 @@ class AnnotationsIO:
         """Load annotations from a TSV file and associate them with the network.
 
         Args:
-            filepath (str): Path to the TSV annotations file.
             network (nx.Graph): The NetworkX graph to which the annotations are related.
+            filepath (str): Path to the TSV annotations file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
@@ -153,12 +153,12 @@ class AnnotationsIO:
         # Load the annotations into the provided network
         return load_annotations(network, annotations_input)
 
-    def load_dict_annotation(self, content: Dict[str, Any], network: nx.Graph) -> Dict[str, Any]:
+    def load_dict_annotation(self, network: nx.Graph, content: Dict[str, Any]) -> Dict[str, Any]:
         """Load annotations from a provided dictionary and convert them to a dictionary annotation.
 
         Args:
-            content (dict): The annotations dictionary to load.
             network (NetworkX graph): The network to which the annotations are related.
+            content (dict): The annotations dictionary to load.
 
         Returns:
             dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
