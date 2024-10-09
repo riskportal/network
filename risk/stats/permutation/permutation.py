@@ -133,6 +133,7 @@ def _run_permutation_test(
                     observed_neighborhood_scores,
                     neighborhood_score_func,
                     subset_size + (1 if i < remainder else 0),
+                    num_permutations,
                     progress_counter,
                     max_workers,
                     rng,  # Pass the random number generator to each worker
@@ -144,11 +145,9 @@ def _run_permutation_test(
             results = pool.starmap_async(_permutation_process_subset, params_list, chunksize=1)
 
             # Update progress bar based on progress_counter
-            # NOTE: Waiting for results to be ready while updating progress bar gives a big improvement
-            # in performance, especially for large number of permutations and workers
             while not results.ready():
                 progress.update(progress_counter.value - progress.n)
-                results.wait(0.05)  # Wait for 50ms
+                results.wait(0.1)  # Wait for 100ms
             # Ensure progress bar reaches 100%
             progress.update(total_progress - progress.n)
 
@@ -167,6 +166,7 @@ def _permutation_process_subset(
     observed_neighborhood_scores: np.ndarray,
     neighborhood_score_func: Callable,
     subset_size: int,
+    num_permutations: int,
     progress_counter: ValueProxy,
     max_workers: int,
     rng: np.random.Generator,
@@ -180,6 +180,7 @@ def _permutation_process_subset(
         observed_neighborhood_scores (np.ndarray): Observed neighborhood scores.
         neighborhood_score_func (Callable): Function to calculate neighborhood scores.
         subset_size (int): Number of permutations to run in this subset.
+        num_permutations (int): Number of total permutations across all subsets.
         progress_counter (multiprocessing.managers.ValueProxy): Shared counter for tracking progress.
         max_workers (int): Number of workers for multiprocessing.
         rng (np.random.Generator): Random number generator object.
@@ -190,11 +191,15 @@ def _permutation_process_subset(
     # Initialize local count matrices for this worker
     local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
+
     # NOTE: Limit the number of threads used by NumPy's BLAS implementation to 1 when more than one worker is used.
-    # This can help prevent oversubscription of CPU resources during multiprocessing, ensuring that each process
-    # doesn't use more than one CPU core.
     limits = None if max_workers == 1 else 1
     with threadpool_limits(limits=limits, user_api="blas"):
+        # Initialize a local counter for batched progress updates
+        local_progress = 0
+        # Calculate the modulo value based on total permutations for 1/100th frequency updates
+        modulo_value = max(1, num_permutations // 100)
+
         for _ in range(subset_size):
             # Permute the annotation matrix using the RNG
             annotation_matrix_permut = annotation_matrix[rng.permutation(idxs)]
@@ -212,7 +217,15 @@ def _permutation_process_subset(
                 local_counts_enrichment,
                 permuted_neighborhood_scores >= observed_neighborhood_scores,
             )
-            # Update the shared progress counter
-            progress_counter.value += 1
+
+            # Update local progress counter
+            local_progress += 1
+            # Update shared progress counter every 1/100th of total permutations
+            if local_progress % modulo_value == 0:
+                progress_counter.value += modulo_value
+
+        # Final progress update for any remaining iterations
+        if local_progress % modulo_value != 0:
+            progress_counter.value += modulo_value
 
     return local_counts_depletion, local_counts_enrichment
