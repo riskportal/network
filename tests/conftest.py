@@ -46,7 +46,7 @@ def risk_obj():
 # Network fixtures
 @pytest.fixture(scope="session")
 def cytoscape_network(risk_obj, data_path):
-    """Fixture to load and return the network from a Cytoscape file.
+    """Fixture to load and return a spherical network from a Cytoscape file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.

@@ -3,6 +3,7 @@ tests/test_load_network
 ~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import networkx as nx
 import pytest
 
 
@@ -104,6 +105,107 @@ def test_load_networkx_network(risk_obj, cytoscape_network):
     for edge in network.edges:
         # Check that each edge in the original network is in the RISK network
         assert edge in network.edges
+
+
+def test_node_positions_constant_after_networkx_load(risk_obj, cytoscape_network):
+    """Test that the original network retains its node positions ('x' and 'y') after being passed to
+    the loading function.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        network: The NetworkX graph object to be loaded into the RISK network.
+
+    Returns:
+        None
+    """
+    # Store the original positions of nodes from the cytoscape_network
+    original_positions = {
+        node: (cytoscape_network.nodes[node]["x"], cytoscape_network.nodes[node]["y"])
+        for node in cytoscape_network.nodes
+    }
+    # Pass the network to the load function, and ignore the returned network
+    _ = risk_obj.load_networkx_network(network=cytoscape_network)
+
+    # Ensure that the original network (cytoscape_network) still has the same node positions
+    for node in cytoscape_network.nodes:
+        assert (
+            "x" in cytoscape_network.nodes[node]
+        ), f"Original node {node} missing 'x' attribute after loading"
+        assert (
+            "y" in cytoscape_network.nodes[node]
+        ), f"Original node {node} missing 'y' attribute after loading"
+        assert (
+            cytoscape_network.nodes[node]["x"] == original_positions[node][0]
+        ), f"Original node {node} 'x' position changed"
+        assert (
+            cytoscape_network.nodes[node]["y"] == original_positions[node][1]
+        ), f"Original node {node} 'y' position changed"
+
+
+def test_attribute_fallback_mechanism(risk_obj, data_path):
+    """Test attribute fallback mechanism by assigning 'x' and 'y' as 'pos' and
+    using 'label' as the node ID after loading two networks with different configurations.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: Path to the data directory containing the network files.
+
+    Returns:
+        None
+    """
+    # Load the original network from the Cytoscape file with sphere set to False
+    network_file = data_path / "cytoscape" / "michaelis_2023.cys"
+    cytoscape_network = risk_obj.load_cytoscape_network(
+        filepath=str(network_file),
+        source_label="source",
+        target_label="target",
+        view_name="",
+        compute_sphere=False,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
+    )
+
+    # Track the original node labels in the label order (before modifying the network)
+    label_order = []
+    # Modify the cytoscape_network by converting 'x' and 'y' to 'pos' and using 'label' as the node ID
+    for node in list(cytoscape_network.nodes):
+        attrs = cytoscape_network.nodes[node]
+        # Assign 'x' and 'y' as 'pos' tuple and remove 'x' and 'y'
+        if "x" in attrs and "y" in attrs:
+            attrs["pos"] = (attrs.pop("x"), attrs.pop("y"))
+
+        # Assign the 'label' attribute to the node ID and store the old node label in label_order
+        label_order.append(attrs["label"])  # Store the original node ID label
+        if "label" in attrs:
+            new_node_id = attrs.pop("label")
+            nx.relabel_nodes(cytoscape_network, {node: new_node_id}, copy=False)
+
+    # Load the modified network with the sphere calculation disabled to preserve node positions
+    network = risk_obj.load_networkx_network(
+        network=cytoscape_network,
+        compute_sphere=False,
+        surface_depth=0.1,
+        min_edges_per_node=0,
+        include_edge_weight=False,
+        weight_label="weight",
+    )
+
+    # Test the fallback mechanism for 'pos' -> 'x' and 'y' and ensure the new node 'label' matches the old node IDs
+    for index, (node, attrs) in enumerate(network.nodes(data=True)):
+        # Check that 'x' and 'y' are correctly extracted from 'pos'
+        assert "x" in attrs, f"Node {node} is missing 'x' after fallback."
+        assert "y" in attrs, f"Node {node} is missing 'y' after fallback."
+        # Check that the 'pos' tuple was converted correctly to 'x' and 'y'
+        assert "pos" in attrs
+        assert attrs["x"] == attrs["pos"][0], f"Node {node} 'x' not correctly extracted from 'pos'."
+        assert attrs["y"] == attrs["pos"][1], f"Node {node} 'y' not correctly extracted from 'pos'."
+        # Check if the reloaded node's 'label' matches the original node ID
+        expected_node_id = label_order[index]
+        assert (
+            attrs["label"] == expected_node_id
+        ), f"Node {node} 'label' doesn't match the expected node ID {expected_node_id}."
 
 
 @pytest.mark.parametrize("min_edges", [1, 5, 10])
