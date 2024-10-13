@@ -153,8 +153,10 @@ class NetworkIO:
         params.log_network(filetype=filetype)
         self._log_loading(filetype)
 
+        # Important: Make a copy of the network to avoid modifying the original
+        network_copy = network.copy()
         # Initialize the graph
-        return self._initialize_graph(network)
+        return self._initialize_graph(network_copy)
 
     @staticmethod
     def load_cytoscape_network(
@@ -475,16 +477,50 @@ class NetworkIO:
             logger.debug(f"Total edges missing weights: {missing_weights}")
 
     def _validate_nodes(self, G: nx.Graph) -> None:
-        """Validate the graph structure and attributes.
+        """Validate the graph structure and attributes with attribute fallback for positions and labels.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
+        # Keep track of nodes missing labels
+        nodes_with_missing_labels = []
+
         for node, attrs in G.nodes(data=True):
-            assert (
-                "x" in attrs and "y" in attrs
-            ), f"Node {node} is missing 'x' or 'y' position attributes."
-            assert "label" in attrs, f"Node {node} is missing a 'label' attribute."
+            # Attribute fallback for 'x' and 'y' attributes
+            if "x" not in attrs or "y" not in attrs:
+                if (
+                    "pos" in attrs
+                    and isinstance(attrs["pos"], (tuple, list))
+                    and len(attrs["pos"]) >= 2
+                ):
+                    attrs["x"], attrs["y"] = attrs["pos"][
+                        :2
+                    ]  # Use only x and y, ignoring z if present
+                else:
+                    raise ValueError(
+                        f"Node {node} is missing 'x', 'y', and a valid 'pos' attribute."
+                    )
+
+            # Attribute fallback for 'label' attribute
+            if "label" not in attrs:
+                # Try alternative attribute names for label
+                if "name" in attrs:
+                    attrs["label"] = attrs["name"]
+                elif "id" in attrs:
+                    attrs["label"] = attrs["id"]
+                else:
+                    # Collect nodes with missing labels
+                    nodes_with_missing_labels.append(node)
+                    attrs["label"] = str(node)  # Use node ID as the label
+
+        # Issue a single warning if any labels were missing
+        if nodes_with_missing_labels:
+            total_nodes = len(G.nodes)
+            fraction_missing_labels = len(nodes_with_missing_labels) / total_nodes
+            logger.warning(
+                f"{len(nodes_with_missing_labels)} out of {total_nodes} nodes "
+                f"({fraction_missing_labels:.2%}) were missing 'label' attributes and were assigned node IDs."
+            )
 
     def _assign_edge_lengths(self, G: nx.Graph) -> None:
         """Prepare the network by adjusting surface depth and calculating edge lengths.
