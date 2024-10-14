@@ -1,5 +1,11 @@
 # RISK
 
+<p align="center">
+  <img src="https://i.imgur.com/8TleEJs.png" width="50%" />
+</p>
+
+<br>
+
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 [![pypiv](https://img.shields.io/pypi/v/risk-network.svg)](https://pypi.python.org/pypi/risk-network)
 ![License](https://img.shields.io/badge/license-GPLv3-purple)
