@@ -15,6 +15,14 @@
 - **Tutorial**: An interactive Jupyter notebook tutorial can be found at [Tutorial link].
 We highly recommend new users to consult the documentation and tutorial early on to fully leverage RISK's capabilities.
 
+## Installation
+
+RISK is compatible with Python 3.8 and later versions and operates on all major operating systems. Install RISK via pip:
+
+```bash
+pip install risk-network
+```
+
 ## Features
 
 - **Comprehensive Network Analysis**: Analyze biological networks such as protein–protein interaction (PPI) and gene regulatory networks, as well as non-biological networks.
@@ -23,14 +31,6 @@ We highly recommend new users to consult the documentation and tutorial early on
 - **Efficient Data Handling**: Optimized for large datasets, supporting multiple file formats such as JSON, CSV, TSV, Excel, Cytoscape, and GPickle.
 - **Statistical Analysis**: Integrated statistical tests, including hypergeometric, permutation, and Poisson tests, to assess the significance of enriched regions.
 - **Cross-Domain Applicability**: Suitable for network analysis across biological and non-biological domains, including social and communication networks.
-
-## Installation
-
-RISK is compatible with Python 3.8 and later versions and operates on all major operating systems. Install RISK via pip:
-
-```bash
-pip install risk-network
-```
 
 ## Example Usage
 
