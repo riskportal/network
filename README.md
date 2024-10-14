@@ -79,7 +79,7 @@ We welcome contributions from the community. Please use the following resources:
 
 ## Support
 
-If you encounter issues or have suggestions for new features, please use the [Issues Tracker]((https://github.com/irahorecka/risk/issues)) on GitHub.
+If you encounter issues or have suggestions for new features, please use the [Issues Tracker](https://github.com/irahorecka/risk/issues) on GitHub.
 
 ## License
 
