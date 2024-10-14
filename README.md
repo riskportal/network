@@ -38,7 +38,7 @@ We applied RISK to a *Saccharomyces cerevisiae* protein–protein interaction ne
 
 ![RISK Main Figure](https://i.imgur.com/TUVfvfH.jpeg)
 
-RISK successfully detected both known and potentially novel functional clusters within the yeast interactome. Clusters related to Golgi transport and actin nucleation were clearly defined and closely located, showcasing RISK's ability to map well-characterized interactions. Additionally, RISK identified links between mRNA processing pathways and vesicle trafficking proteins, consistent with recent studies demonstrating the role of vesicles in mRNA localization and stability. This highlights RISK's potential to uncover new insights in complex biological systems.
+RISK successfully detected both known and novel functional clusters within the yeast interactome. Clusters related to Golgi transport and actin nucleation were clearly defined and closely located, showcasing RISK's ability to map well-characterized interactions. Additionally, RISK identified links between mRNA processing pathways and vesicle trafficking proteins, consistent with recent studies demonstrating the role of vesicles in mRNA localization and stability.
 
 ## Software Architecture and Implementation
 
