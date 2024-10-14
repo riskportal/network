@@ -3,6 +3,7 @@ risk/network/plot
 ~~~~~~~~~~~~~~~~~
 """
 
+from functools import lru_cache
 from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.colors as mcolors
@@ -818,7 +819,8 @@ class NetworkPlotter:
         # Annotate the network with labels
         for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
-            annotations = filtered_domain_terms[domain].split(" ")[:max_words]
+            # Split by special key to split annotation into multiple lines
+            annotations = filtered_domain_terms[domain].split("::::")
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -1002,7 +1004,7 @@ class NetworkPlotter:
         Raises:
             ValueError: If the number of provided `ids_to_keep` exceeds `max_labels`.
         """
-        # Convert ids_to_keep to remove accidental duplicates
+        # Convert ids_to_keep to a set for faster, unique lookups
         ids_to_keep = set(ids_to_keep) if ids_to_keep else set()
         # Check if the number of provided ids_to_keep exceeds max_labels
         if max_labels is not None and len(ids_to_keep) > max_labels:
@@ -1010,28 +1012,19 @@ class NetworkPlotter:
                 f"Number of provided IDs ({len(ids_to_keep)}) exceeds max_labels ({max_labels})."
             )
 
-        # Process the specified IDs first
+        # Process each domain in ids_to_keep
         for domain in ids_to_keep:
             if domain in self.graph.domain_id_to_domain_terms_map and domain in domain_centroids:
-                # Handle ids_to_replace logic here for ids_to_keep
-                if ids_to_replace and domain in ids_to_replace:
-                    terms = ids_to_replace[domain].split(" ")
-                else:
-                    terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
-
-                # Apply words_to_omit, word length constraints, and max_words
-                if words_to_omit:
-                    terms = [term for term in terms if term.lower() not in words_to_omit]
-                terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
-                terms = terms[:max_words]
-
-                # Check if the domain passes the word count condition
-                if len(terms) >= min_words:
-                    filtered_domain_centroids[domain] = domain_centroids[domain]
-                    filtered_domain_terms[domain] = " ".join(terms)
-                    valid_indices.append(
-                        list(domain_centroids.keys()).index(domain)
-                    )  # Track the valid index
+                filtered_domain_terms[domain] = self._process_terms(
+                    domain=domain,
+                    ids_to_replace=ids_to_replace,
+                    words_to_omit=words_to_omit,
+                    min_word_length=min_word_length,
+                    max_word_length=max_word_length,
+                    max_words=max_words,
+                )
+                filtered_domain_centroids[domain] = domain_centroids[domain]
+                valid_indices.append(list(domain_centroids.keys()).index(domain))
 
     def _process_remaining_domains(
         self,
@@ -1074,27 +1067,57 @@ class NetworkPlotter:
             if ids_to_keep and domain in ids_to_keep:
                 continue  # Skip domains already handled by ids_to_keep
 
-            # Handle ids_to_replace logic first
-            if ids_to_replace and domain in ids_to_replace:
-                terms = ids_to_replace[domain].split(" ")
-            else:
-                terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
+            filtered_domain_terms[domain] = self._process_terms(
+                domain=domain,
+                ids_to_replace=ids_to_replace,
+                words_to_omit=words_to_omit,
+                min_word_length=min_word_length,
+                max_word_length=max_word_length,
+                max_words=max_words,
+            )
+            filtered_domain_centroids[domain] = centroid
+            valid_indices.append(idx)
 
-            # Apply words_to_omit, word length constraints, and max_words
-            if words_to_omit:
-                terms = [term for term in terms if term.lower() not in words_to_omit]
+    def _process_terms(
+        self,
+        domain: str,
+        ids_to_replace: Union[Dict[str, str], None],
+        words_to_omit: Union[List[str], None],
+        min_word_length: int,
+        max_word_length: int,
+        max_words: int,
+    ) -> List[str]:
+        """Process terms for a domain, applying word length constraints and combining words where appropriate.
 
-            terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
-            terms = terms[:max_words]
-            # Check if the domain passes the word count condition
-            if len(terms) >= min_words:
-                filtered_domain_centroids[domain] = centroid
-                filtered_domain_terms[domain] = " ".join(terms)
-                valid_indices.append(idx)  # Track the valid index
+        Args:
+            domain (str): The domain being processed.
+            ids_to_replace (dict, optional): Dictionary mapping domain IDs to custom labels.
+            words_to_omit (list, optional): List of words to omit from the labels.
+            min_word_length (int): Minimum allowed word length.
+            max_word_length (int): Maximum allowed word length.
+            max_words (int): Maximum number of words allowed.
 
-            # Stop once we've reached the max_labels limit
-            if len(filtered_domain_centroids) >= max_labels:
-                break
+        Returns:
+            list: Processed terms, with words combined if necessary to fit within constraints.
+        """
+        # Handle ids_to_replace logic
+        if ids_to_replace and domain in ids_to_replace:
+            terms = ids_to_replace[domain].split(" ")
+        else:
+            terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
+
+        # Apply words_to_omit and word length constraints
+        if words_to_omit:
+            terms = [
+                term
+                for term in terms
+                if term.lower() not in words_to_omit and len(term) >= min_word_length
+            ]
+
+        # Use the combine_words function directly to handle word combinations and length constraints
+        compressed_terms = _combine_words(tuple(terms), max_word_length, max_words)
+
+        return compressed_terms
 
     def get_annotated_node_colors(
         self,
@@ -1406,6 +1429,59 @@ def _calculate_bounding_box(
     # Calculate the radius of the bounding box, adjusted by the margin
     radius = max(x_max - x_min, y_max - y_min) / 2 * radius_margin
     return center, radius
+
+
+def _combine_words(words: List[str], max_length: int, max_words: int) -> str:
+    """Combine words to fit within the max_length and max_words constraints,
+    and separate the final output by ':' for plotting.
+
+    Args:
+        words (List[str]): List of words to combine.
+        max_length (int): Maximum allowed length for a combined line.
+        max_words (int): Maximum number of lines (words) allowed.
+
+    Returns:
+        str: String of combined words separated by ':' for line breaks.
+    """
+
+    def try_combinations(words_batch: List[str]) -> List[str]:
+        """Try to combine words within a batch and return them with combined words separated by ':'."""
+        combined_lines = []
+        i = 0
+        while i < len(words_batch):
+            current_word = words_batch[i]
+            combined_word = current_word  # Start with the current word
+            # Try to combine more words if possible, and ensure the combination fits within max_length
+            for j in range(i + 1, len(words_batch)):
+                next_word = words_batch[j]
+                if len(combined_word) + len(next_word) + 2 <= max_length:  # +2 for ', '
+                    combined_word = f"{combined_word} {next_word}"
+                    i += 1  # Move past the combined word
+                else:
+                    break  # Stop combining if the length is exceeded
+
+            combined_lines.append(combined_word)  # Add the combined word or single word
+            i += 1  # Move to the next word
+
+            # Stop if we've reached the max_words limit
+            if len(combined_lines) >= max_words:
+                break
+
+        return combined_lines
+
+    # Main logic: start with max_words number of words
+    combined_lines = try_combinations(words[:max_words])
+    remaining_words = words[max_words:]  # Remaining words after the initial batch
+
+    # Continue pulling more words until we fill the lines
+    while remaining_words and len(combined_lines) < max_words:
+        available_slots = max_words - len(combined_lines)
+        words_to_add = remaining_words[:available_slots]
+        remaining_words = remaining_words[available_slots:]
+        combined_lines += try_combinations(words_to_add)
+
+    # Join the final combined lines with '::::', a special separator for line breaks
+    return "::::".join(combined_lines[:max_words])
 
 
 def _calculate_best_label_positions(
