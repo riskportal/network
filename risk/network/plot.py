@@ -748,15 +748,6 @@ class NetworkPlotter:
         # Set max_labels to the total number of domains if not provided (None)
         if max_labels is None:
             max_labels = len(self.graph.domain_id_to_node_ids_map)
-
-        # Convert colors to RGBA using the _to_rgba helper function
-        fontcolor = _to_rgba(
-            fontcolor, fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
-        )
-        arrow_color = _to_rgba(
-            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
-        )
-
         # Normalize words_to_omit to lowercase
         if words_to_omit:
             words_to_omit = set(word.lower() for word in words_to_omit)
@@ -773,82 +764,55 @@ class NetworkPlotter:
         filtered_domain_terms = {}
         # Handle the ids_to_keep logic
         if ids_to_keep:
-            # Convert ids_to_keep to remove accidental duplicates
-            ids_to_keep = set(ids_to_keep)
-            # Check if the number of provided ids_to_keep exceeds max_labels
-            if max_labels is not None and len(ids_to_keep) > max_labels:
-                raise ValueError(
-                    f"Number of provided IDs ({len(ids_to_keep)}) exceeds max_labels ({max_labels})."
-                )
-
-            # Process the specified IDs first
-            for domain in ids_to_keep:
-                if (
-                    domain in self.graph.domain_id_to_domain_terms_map
-                    and domain in domain_centroids
-                ):
-                    # Handle ids_to_replace logic here for ids_to_keep
-                    if ids_to_replace and domain in ids_to_replace:
-                        terms = ids_to_replace[domain].split(" ")
-                    else:
-                        terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
-
-                    # Apply words_to_omit, word length constraints, and max_words
-                    if words_to_omit:
-                        terms = [term for term in terms if term.lower() not in words_to_omit]
-                    terms = [
-                        term for term in terms if min_word_length <= len(term) <= max_word_length
-                    ]
-                    terms = terms[:max_words]
-
-                    # Check if the domain passes the word count condition
-                    if len(terms) >= min_words:
-                        filtered_domain_centroids[domain] = domain_centroids[domain]
-                        filtered_domain_terms[domain] = " ".join(terms)
-                        valid_indices.append(
-                            list(domain_centroids.keys()).index(domain)
-                        )  # Track the valid index
+            # Process the ids_to_keep first INPLACE
+            self._process_ids_to_keep(
+                ids_to_keep,
+                max_labels,
+                domain_centroids,
+                ids_to_replace,
+                words_to_omit,
+                min_word_length,
+                max_word_length,
+                max_words,
+                min_words,
+                filtered_domain_centroids,
+                filtered_domain_terms,
+                valid_indices,
+            )
 
         # Calculate remaining labels to plot after processing ids_to_keep
         remaining_labels = (
             max_labels - len(ids_to_keep) if ids_to_keep and max_labels else max_labels
         )
-        # Process remaining domains to fill in additional labels, if there are slots left
+        # Process remaining domains INPLACE to fill in additional labels, if there are slots left
         if remaining_labels and remaining_labels > 0:
-            for idx, (domain, centroid) in enumerate(domain_centroids.items()):
-                # Check if the domain is NaN and continue if true
-                if pd.isna(domain) or (isinstance(domain, float) and np.isnan(domain)):
-                    continue  # Skip NaN domains
-                if ids_to_keep and domain in ids_to_keep:
-                    continue  # Skip domains already handled by ids_to_keep
-
-                # Handle ids_to_replace logic first
-                if ids_to_replace and domain in ids_to_replace:
-                    terms = ids_to_replace[domain].split(" ")
-                else:
-                    terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
-
-                # Apply words_to_omit, word length constraints, and max_words
-                if words_to_omit:
-                    terms = [term for term in terms if term.lower() not in words_to_omit]
-
-                terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
-                terms = terms[:max_words]
-                # Check if the domain passes the word count condition
-                if len(terms) >= min_words:
-                    filtered_domain_centroids[domain] = centroid
-                    filtered_domain_terms[domain] = " ".join(terms)
-                    valid_indices.append(idx)  # Track the valid index
-
-                # Stop once we've reached the max_labels limit
-                if len(filtered_domain_centroids) >= max_labels:
-                    break
+            self._process_remaining_domains(
+                domain_centroids,
+                ids_to_keep,
+                ids_to_replace,
+                words_to_omit,
+                min_word_length,
+                max_word_length,
+                max_words,
+                min_words,
+                max_labels,
+                filtered_domain_centroids,
+                filtered_domain_terms,
+                valid_indices,
+            )
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
         # Calculate the best positions for labels
         best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
+        )
+        # Convert colors to RGBA using the _to_rgba helper function
+        fontcolor = _to_rgba(
+            fontcolor, fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
+        )
+        arrow_color = _to_rgba(
+            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
         )
 
         # Annotate the network with labels
@@ -1000,6 +964,137 @@ class NetworkPlotter:
         # Map the domain to the coordinates of its central node
         domain_central_node = node_positions[central_node_idx]
         return domain_central_node
+
+    def _process_ids_to_keep(
+        self,
+        ids_to_keep: Union[List[str], Tuple[str], np.ndarray, None],
+        max_labels: Union[int, None],
+        domain_centroids: Dict[str, np.ndarray],
+        ids_to_replace: Union[Dict[str, str], None],
+        words_to_omit: Union[List[str], None],
+        min_word_length: int,
+        max_word_length: int,
+        max_words: int,
+        min_words: int,
+        filtered_domain_centroids: Dict[str, np.ndarray],
+        filtered_domain_terms: Dict[str, str],
+        valid_indices: List[int],
+    ) -> None:
+        """Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
+
+        Args:
+            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled.
+            max_labels (int, optional): Maximum number of labels allowed.
+            domain_centroids (dict): Mapping of domains to their centroids.
+            ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
+            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
+            min_word_length (int): Minimum allowed word length.
+            max_word_length (int): Maximum allowed word length.
+            max_words (int): Maximum number of words allowed.
+            min_words (int): Minimum number of words required for a domain.
+            filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
+            filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
+            valid_indices (list): List to store valid indices (output).
+
+        Note:
+            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
+
+        Raises:
+            ValueError: If the number of provided `ids_to_keep` exceeds `max_labels`.
+        """
+        # Convert ids_to_keep to remove accidental duplicates
+        ids_to_keep = set(ids_to_keep) if ids_to_keep else set()
+        # Check if the number of provided ids_to_keep exceeds max_labels
+        if max_labels is not None and len(ids_to_keep) > max_labels:
+            raise ValueError(
+                f"Number of provided IDs ({len(ids_to_keep)}) exceeds max_labels ({max_labels})."
+            )
+
+        # Process the specified IDs first
+        for domain in ids_to_keep:
+            if domain in self.graph.domain_id_to_domain_terms_map and domain in domain_centroids:
+                # Handle ids_to_replace logic here for ids_to_keep
+                if ids_to_replace and domain in ids_to_replace:
+                    terms = ids_to_replace[domain].split(" ")
+                else:
+                    terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
+
+                # Apply words_to_omit, word length constraints, and max_words
+                if words_to_omit:
+                    terms = [term for term in terms if term.lower() not in words_to_omit]
+                terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
+                terms = terms[:max_words]
+
+                # Check if the domain passes the word count condition
+                if len(terms) >= min_words:
+                    filtered_domain_centroids[domain] = domain_centroids[domain]
+                    filtered_domain_terms[domain] = " ".join(terms)
+                    valid_indices.append(
+                        list(domain_centroids.keys()).index(domain)
+                    )  # Track the valid index
+
+    def _process_remaining_domains(
+        self,
+        domain_centroids: Dict[str, np.ndarray],
+        ids_to_keep: Union[List[str], Tuple[str], np.ndarray, None],
+        ids_to_replace: Union[Dict[str, str], None],
+        words_to_omit: Union[List[str], None],
+        min_word_length: int,
+        max_word_length: int,
+        max_words: int,
+        min_words: int,
+        max_labels: Union[int, None],
+        filtered_domain_centroids: Dict[str, np.ndarray],
+        filtered_domain_terms: Dict[str, str],
+        valid_indices: List[int],
+    ) -> None:
+        """Process remaining domains to fill in additional labels, if there are slots left.
+
+        Args:
+            domain_centroids (dict): Mapping of domains to their centroids.
+            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. Defaults to None.
+            ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
+            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
+            min_word_length (int): Minimum allowed word length.
+            max_word_length (int): Maximum allowed word length.
+            max_words (int): Maximum number of words allowed.
+            min_words (int): Minimum number of words required for a domain.
+            max_labels (int, optional): Maximum number of labels allowed. Defaults to None.
+            filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
+            filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
+            valid_indices (list): List to store valid indices (output).
+
+        Note:
+            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
+        """
+        for idx, (domain, centroid) in enumerate(domain_centroids.items()):
+            # Check if the domain is NaN and continue if true
+            if pd.isna(domain) or (isinstance(domain, float) and np.isnan(domain)):
+                continue  # Skip NaN domains
+            if ids_to_keep and domain in ids_to_keep:
+                continue  # Skip domains already handled by ids_to_keep
+
+            # Handle ids_to_replace logic first
+            if ids_to_replace and domain in ids_to_replace:
+                terms = ids_to_replace[domain].split(" ")
+            else:
+                terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
+
+            # Apply words_to_omit, word length constraints, and max_words
+            if words_to_omit:
+                terms = [term for term in terms if term.lower() not in words_to_omit]
+
+            terms = [term for term in terms if min_word_length <= len(term) <= max_word_length]
+            terms = terms[:max_words]
+            # Check if the domain passes the word count condition
+            if len(terms) >= min_words:
+                filtered_domain_centroids[domain] = centroid
+                filtered_domain_terms[domain] = " ".join(terms)
+                valid_indices.append(idx)  # Track the valid index
+
+            # Stop once we've reached the max_labels limit
+            if len(filtered_domain_centroids) >= max_labels:
+                break
 
     def get_annotated_node_colors(
         self,
