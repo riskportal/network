@@ -148,27 +148,6 @@ class NetworkGraph:
 
         return transformed_colors
 
-    def _get_composite_node_colors(self, domain_colors: np.ndarray) -> np.ndarray:
-        """Generate composite colors for nodes based on domain colors and counts.
-
-        Args:
-            domain_colors (np.ndarray): Array of colors corresponding to each domain.
-
-        Returns:
-            np.ndarray: Array of composite colors for each node.
-        """
-        # Determine the number of nodes
-        num_nodes = len(self.node_coordinates)
-        # Initialize composite colors array with shape (number of nodes, 4) for RGBA
-        composite_colors = np.zeros((num_nodes, 4))
-        # Assign colors to nodes based on domain_colors
-        for domain_id, nodes in self.domain_id_to_node_ids_map.items():
-            color = domain_colors[domain_id]
-            for node in nodes:
-                composite_colors[node] = color
-
-        return composite_colors
-
     def _get_domain_colors(
         self,
         cmap: str = "gist_rainbow",
@@ -193,8 +172,28 @@ class NetworkGraph:
             color=color,
             random_seed=random_seed,
         )
-        self.network, self.domain_id_to_node_ids_map
         return dict(zip(self.domain_id_to_node_ids_map.keys(), domain_colors))
+
+    def _get_composite_node_colors(self, domain_colors: np.ndarray) -> np.ndarray:
+        """Generate composite colors for nodes based on domain colors and counts.
+
+        Args:
+            domain_colors (np.ndarray): Array of colors corresponding to each domain.
+
+        Returns:
+            np.ndarray: Array of composite colors for each node.
+        """
+        # Determine the number of nodes
+        num_nodes = len(self.node_coordinates)
+        # Initialize composite colors array with shape (number of nodes, 4) for RGBA
+        composite_colors = np.zeros((num_nodes, 4))
+        # Assign colors to nodes based on domain_colors
+        for domain_id, nodes in self.domain_id_to_node_ids_map.items():
+            color = domain_colors[domain_id]
+            for node in nodes:
+                composite_colors[node] = color
+
+        return composite_colors
 
 
 def _transform_colors(
