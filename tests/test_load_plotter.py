@@ -25,6 +25,7 @@ def initialize_plotter(risk, graph):
         graph=graph,
         figsize=(15, 15),
         background_color="black",
+        background_alpha=1.0,
     )
 
 
@@ -531,12 +532,12 @@ def test_plot_title_with_custom_params(
     [
         (
             "white",
-            1.0,
-            0.0,
+            None,
+            None,
             1.05,
             "solid",
             1.5,
-        ),  # Test case 1: White color, full perimeter opacity, no fill
+        ),  # Test case 1
         (
             (0.5, 0.8, 1.0),
             0.5,
@@ -544,7 +545,7 @@ def test_plot_title_with_custom_params(
             1.1,
             "dashed",
             2.0,
-        ),  # Test case 2: Light blue RGB, semi-transparent perimeter and fill
+        ),  # Test case 2
     ],
 )
 def test_plot_circle_perimeter_with_custom_params(
@@ -590,9 +591,9 @@ def test_plot_circle_perimeter_with_custom_params(
             "black",
             "solid",
             1.5,
-            1.0,
-            0.0,
-        ),  # Test case 1: Black solid line, full opacity, no fill
+            None,
+            None,
+        ),  # Test case 1
         (
             1.1,
             5,
@@ -601,9 +602,9 @@ def test_plot_circle_perimeter_with_custom_params(
             (0.5, 0.8, 1.0),
             "dashed",
             2.0,
-            0.7,
+            1.0,
             0.5,
-        ),  # Test case 2: Light blue contour with semi-transparent perimeter and fill
+        ),  # Test case 2
     ],
 )
 def test_plot_contour_perimeter_with_custom_params(
@@ -657,7 +658,7 @@ def test_plot_contour_perimeter_with_custom_params(
 @pytest.mark.parametrize(
     "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
     [
-        (None, "white", 0.1, "black", "blue", 1.0, 1.0, 100, "o", 0.0, 1.5),  # Test case 1
+        (None, "white", None, "black", "blue", None, None, 100, "o", 0.0, 1.5),  # Test case 1
         (
             (0.2, 0.6, 0.8),
             (1.0, 1.0, 0.5),
@@ -742,7 +743,7 @@ def test_plot_network_with_custom_params(
 @pytest.mark.parametrize(
     "node_color, edge_color, node_edgecolor, node_size, edge_width, node_alpha, edge_alpha, node_shape",
     [
-        ("white", "black", "blue", 250, 0.0, 1.0, 1.0, "^"),
+        ("white", "black", "blue", 250, 0.0, None, None, "^"),
         ((0.2, 0.6, 0.8), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), 300, 0.5, 0.5, 0.5, "s"),
         ("green", "gray", "red", 200, 1.0, 0.8, 0.9, "o"),
     ],
@@ -833,14 +834,14 @@ def test_plot_subnetwork_with_custom_params(
     [
         (
             None,
-            0.2,
-            0.1,
+            None,
+            None,
             5,
             0.8,
             250,
             "solid",
             1.5,
-        ),  # Test case 1: Annotated colors, alpha 0.2, fill_alpha 0.1
+        ),  # Test case 1
         (
             "red",
             0.5,
@@ -850,7 +851,7 @@ def test_plot_subnetwork_with_custom_params(
             300,
             "dashed",
             2.0,
-        ),  # Test case 2: Red contours, alpha 0.5, fill_alpha 0.3, custom bandwidth and grid size
+        ),  # Test case 2
         (
             (0.2, 0.6, 0.8),
             0.3,
@@ -860,7 +861,7 @@ def test_plot_subnetwork_with_custom_params(
             200,
             "dotted",
             1.0,
-        ),  # Test case 3: Light blue (RGB), alpha 0.3, fill_alpha 0.15, dotted line
+        ),  # Test case 3
     ],
 )
 def test_plot_contours_with_custom_params(
@@ -916,14 +917,14 @@ def test_plot_contours_with_custom_params(
     [
         (
             "red",
-            0.5,
-            0.2,
+            None,
+            None,
             5,
             0.8,
             250,
             "solid",
             1.5,
-        ),  # Test case 1: Red with alpha 0.5, fill_alpha 0.2, solid line
+        ),  # Test case 1
         (
             (0.2, 0.6, 0.8),
             0.3,
@@ -933,7 +934,7 @@ def test_plot_contours_with_custom_params(
             300,
             "dashed",
             2.0,
-        ),  # Test case 2: Light blue RGB with alpha 0.3, fill_alpha 0.1, dashed line
+        ),  # Test case 2
     ],
 )
 def test_plot_subcontour_with_custom_params(
@@ -1023,8 +1024,8 @@ def test_plot_subcontour_with_custom_params(
         (
             None,
             None,
-            1.0,
-            1.0,
+            None,
+            None,
             10,
             2,
             4,
@@ -1041,7 +1042,7 @@ def test_plot_subcontour_with_custom_params(
             False,
             None,
             None,
-        ),  # Test case 1: Annotated label colors, full opacity, max labels 10, default arrow style, with shrinks
+        ),  # Test case 1
         (
             "red",
             "blue",
@@ -1063,7 +1064,7 @@ def test_plot_subcontour_with_custom_params(
             True,
             ["LSM1", "LSM2"],
             None,
-        ),  # Test case 2: Custom colors, semi-transparent, max labels 5, custom arrow style, with overlay_ids and ids_to_keep, with shrinks
+        ),  # Test case 2
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -1085,7 +1086,7 @@ def test_plot_subcontour_with_custom_params(
             False,
             ["LSM1", "LSM3"],
             {"LSM3": "custom label"},
-        ),  # Test case 3: Custom RGB colors, with alpha and word limits, arrow_style "<|-", max labels 8, ids_to_keep, ids_to_replace, and shrinks
+        ),  # Test case 3
     ],
 )
 def test_plot_labels_with_custom_params(
@@ -1183,8 +1184,8 @@ def test_plot_labels_with_custom_params(
         (
             "white",
             "white",
-            1.0,
-            1.0,
+            None,
+            None,
             14,
             73,
             1.6,
@@ -1194,7 +1195,7 @@ def test_plot_labels_with_custom_params(
             "->",
             10,
             5,
-        ),  # Test case 1, Full opacity, white font and arrow, fontsize 14, radial position 73, default arrow style
+        ),  # Test case 1
         (
             "red",
             "blue",
@@ -1209,7 +1210,7 @@ def test_plot_labels_with_custom_params(
             "-[",
             15,
             10,
-        ),  # Test case 2: Semi-transparent, red font, blue arrow, fontsize 16, radial position 120
+        ),  # Test case 2
         (
             (0.2, 0.6, 0.8),
             (1.0, 0.0, 0.0),
@@ -1224,7 +1225,7 @@ def test_plot_labels_with_custom_params(
             "<|-",
             12,
             8,
-        ),  # Test case 3: Custom RGB colors, with alpha and fontsize 18, radial position 45, custom RGB colors, arrow style and alpha values
+        ),  # Test case 3
     ],
 )
 def test_plot_sublabel_with_custom_params(
