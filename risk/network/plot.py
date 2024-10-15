@@ -42,7 +42,7 @@ class NetworkPlotter:
             figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
-                any existing alpha values. Defaults to 1.0.
+                any existing alpha values found in background_color. Defaults to 1.0.
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
@@ -58,7 +58,7 @@ class NetworkPlotter:
         graph: NetworkGraph,
         figsize: Tuple,
         background_color: Union[str, List, Tuple, np.ndarray],
-        background_alpha: Union[float, None] = 1.0,
+        background_alpha: Union[float, None],
     ) -> plt.Axes:
         """Set up the plot with figure size and background color.
 
@@ -67,7 +67,7 @@ class NetworkPlotter:
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any
-            existing alpha values found in background_color. Defaults to 1.0.
+            existing alpha values found in background_color.
 
         Returns:
             plt.Axes: The axis object for the plot.
