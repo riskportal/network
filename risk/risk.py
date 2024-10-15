@@ -3,7 +3,7 @@ risk/risk
 ~~~~~~~~~
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -355,6 +355,7 @@ class RISK(NetworkIO, AnnotationsIO):
         graph: NetworkGraph,
         figsize: Tuple = (10, 10),
         background_color: str = "white",
+        background_alpha: Union[float, None] = 1.0,
     ) -> NetworkPlotter:
         """Get a NetworkPlotter object for plotting.
 
@@ -362,6 +363,8 @@ class RISK(NetworkIO, AnnotationsIO):
             graph (NetworkGraph): The graph to plot.
             figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
+            background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
+                any existing alpha values found in background_color. Defaults to 1.0.
 
         Returns:
             NetworkPlotter: A NetworkPlotter object configured with the given parameters.
@@ -378,6 +381,7 @@ class RISK(NetworkIO, AnnotationsIO):
             graph,
             figsize=figsize,
             background_color=background_color,
+            background_alpha=background_alpha,
         )
 
     def _load_neighborhoods(

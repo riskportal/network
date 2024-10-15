@@ -213,6 +213,8 @@ class NetworkPlotter:
 
         # Convert color to RGBA using the _to_rgba helper function - use outline_alpha for the perimeter
         color = _to_rgba(color=color, alpha=outline_alpha)
+        # Set the fill_alpha to 0 if not provided
+        fill_alpha = fill_alpha if fill_alpha is not None else 0.0
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
@@ -676,7 +678,7 @@ class NetworkPlotter:
         # Set the contour color and linestyle
         contour_colors = [color for _ in range(levels - 1)]
         # Plot the filled contours using fill_alpha for transparency
-        if fill_alpha > 0:
+        if fill_alpha and fill_alpha > 0:
             ax.contourf(
                 x,
                 y,
