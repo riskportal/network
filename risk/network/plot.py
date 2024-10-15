@@ -3,7 +3,6 @@ risk/network/plot
 ~~~~~~~~~~~~~~~~~
 """
 
-from functools import lru_cache
 from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.colors as mcolors
@@ -17,6 +16,8 @@ from scipy.stats import gaussian_kde
 
 from risk.log import params, logger
 from risk.network.graph import NetworkGraph
+
+TERM_DELIMITER = "::::"  # String used to separate multiple domain terms when constructing composite domain labels
 
 
 class NetworkPlotter:
@@ -679,10 +680,10 @@ class NetworkPlotter:
         arrow_base_shrink: float = 0.0,
         arrow_tip_shrink: float = 0.0,
         max_labels: Union[int, None] = None,
-        max_words: int = 10,
-        min_words: int = 1,
-        max_word_length: int = 20,
-        min_word_length: int = 1,
+        max_label_lines: Union[int, None] = None,
+        min_label_lines: int = 1,
+        max_chars_per_line: Union[int, None] = None,
+        min_chars_per_line: int = 1,
         words_to_omit: Union[List, None] = None,
         overlay_ids: bool = False,
         ids_to_keep: Union[List, Tuple, np.ndarray, None] = None,
@@ -704,10 +705,10 @@ class NetworkPlotter:
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
-            max_words (int, optional): Maximum number of words in a label. Defaults to 10.
-            min_words (int, optional): Minimum number of words required to display a label. Defaults to 1.
-            max_word_length (int, optional): Maximum number of characters in a word to display. Defaults to 20.
-            min_word_length (int, optional): Minimum number of characters in a word to display. Defaults to 1.
+            max_label_lines (int, optional): Maximum number of lines in a label. Defaults to None (no limit).
+            min_label_lines (int, optional): Minimum number of lines in a label. Defaults to 1.
+            max_chars_per_line (int, optional): Maximum number of characters in a line to display. Defaults to None (no limit).
+            min_chars_per_line (int, optional): Minimum number of characters in a line to display. Defaults to 1.
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
             ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
@@ -736,19 +737,26 @@ class NetworkPlotter:
             label_arrow_base_shrink=arrow_base_shrink,
             label_arrow_tip_shrink=arrow_tip_shrink,
             label_max_labels=max_labels,
-            label_max_words=max_words,
-            label_min_words=min_words,
-            label_max_word_length=max_word_length,
-            label_min_word_length=min_word_length,
+            label_min_label_lines=min_label_lines,
+            label_max_label_lines=max_label_lines,
+            label_max_chars_per_line=max_chars_per_line,
+            label_min_chars_per_line=min_chars_per_line,
             label_words_to_omit=words_to_omit,
             label_overlay_ids=overlay_ids,
             label_ids_to_keep=ids_to_keep,
             label_ids_to_replace=ids_to_replace,
         )
 
+        # Convert ids_to_keep to a tuple if it is not None
+        ids_to_keep = tuple(ids_to_keep) if ids_to_keep else tuple()
         # Set max_labels to the total number of domains if not provided (None)
         if max_labels is None:
             max_labels = len(self.graph.domain_id_to_node_ids_map)
+        # Set max_label_lines and max_chars_per_line to large numbers if not provided (None)
+        if max_label_lines is None:
+            max_label_lines = int(1e6)
+        if max_chars_per_line is None:
+            max_chars_per_line = int(1e6)
         # Normalize words_to_omit to lowercase
         if words_to_omit:
             words_to_omit = set(word.lower() for word in words_to_omit)
@@ -760,25 +768,25 @@ class NetworkPlotter:
                 domain_centroids[domain_id] = self._calculate_domain_centroid(node_ids)
 
         # Initialize dictionaries and lists for valid indices
-        valid_indices = []
-        filtered_domain_centroids = {}
-        filtered_domain_terms = {}
+        valid_indices = []  # List of valid indices to plot colors and arrows
+        filtered_domain_centroids = {}  # Filtered domain centroids to plot
+        filtered_domain_terms = {}  # Filtered domain terms to plot
         # Handle the ids_to_keep logic
         if ids_to_keep:
             # Process the ids_to_keep first INPLACE
             self._process_ids_to_keep(
-                ids_to_keep,
-                max_labels,
-                domain_centroids,
-                ids_to_replace,
-                words_to_omit,
-                min_word_length,
-                max_word_length,
-                max_words,
-                min_words,
-                filtered_domain_centroids,
-                filtered_domain_terms,
-                valid_indices,
+                ids_to_keep=ids_to_keep,
+                domain_centroids=domain_centroids,
+                ids_to_replace=ids_to_replace,
+                words_to_omit=words_to_omit,
+                max_labels=max_labels,
+                min_label_lines=min_label_lines,
+                max_label_lines=max_label_lines,
+                min_chars_per_line=min_chars_per_line,
+                max_chars_per_line=max_chars_per_line,
+                filtered_domain_centroids=filtered_domain_centroids,
+                filtered_domain_terms=filtered_domain_terms,
+                valid_indices=valid_indices,
             )
 
         # Calculate remaining labels to plot after processing ids_to_keep
@@ -788,19 +796,18 @@ class NetworkPlotter:
         # Process remaining domains INPLACE to fill in additional labels, if there are slots left
         if remaining_labels and remaining_labels > 0:
             self._process_remaining_domains(
-                domain_centroids,
-                ids_to_keep,
-                ids_to_replace,
-                words_to_omit,
-                min_word_length,
-                max_word_length,
-                max_words,
-                min_words,
-                max_labels,
-                filtered_domain_centroids,
-                filtered_domain_terms,
-                valid_indices,
-                remaining_labels,
+                domain_centroids=domain_centroids,
+                ids_to_keep=ids_to_keep,
+                ids_to_replace=ids_to_replace,
+                words_to_omit=words_to_omit,
+                remaining_labels=remaining_labels,
+                min_chars_per_line=min_chars_per_line,
+                max_chars_per_line=max_chars_per_line,
+                max_label_lines=max_label_lines,
+                min_label_lines=min_label_lines,
+                filtered_domain_centroids=filtered_domain_centroids,
+                filtered_domain_terms=filtered_domain_terms,
+                valid_indices=valid_indices,
             )
 
         # Calculate the bounding box around the network
@@ -820,8 +827,8 @@ class NetworkPlotter:
         # Annotate the network with labels
         for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
-            # Split by special key to split annotation into multiple lines
-            annotations = filtered_domain_terms[domain].split("::::")
+            # Split by special key TERM_DELIMITER to split annotation into multiple lines
+            annotations = filtered_domain_terms[domain].split(TERM_DELIMITER)
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -970,15 +977,15 @@ class NetworkPlotter:
 
     def _process_ids_to_keep(
         self,
-        ids_to_keep: Union[List[str], Tuple[str], np.ndarray, None],
-        max_labels: Union[int, None],
+        ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
         domain_centroids: Dict[str, np.ndarray],
         ids_to_replace: Union[Dict[str, str], None],
         words_to_omit: Union[List[str], None],
-        min_word_length: int,
-        max_word_length: int,
-        max_words: int,
-        min_words: int,
+        max_labels: Union[int, None],
+        min_label_lines: int,
+        max_label_lines: int,
+        min_chars_per_line: int,
+        max_chars_per_line: int,
         filtered_domain_centroids: Dict[str, np.ndarray],
         filtered_domain_terms: Dict[str, str],
         valid_indices: List[int],
@@ -986,15 +993,15 @@ class NetworkPlotter:
         """Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
 
         Args:
-            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled.
-            max_labels (int, optional): Maximum number of labels allowed.
+            ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             domain_centroids (dict): Mapping of domains to their centroids.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
-            min_word_length (int): Minimum allowed word length.
-            max_word_length (int): Maximum allowed word length.
-            max_words (int): Maximum number of words allowed.
-            min_words (int): Minimum number of words required for a domain.
+            max_labels (int, optional): Maximum number of labels allowed.
+            min_label_lines (int): Minimum number of lines in a label.
+            max_label_lines (int): Maximum number of lines in a label.
+            min_chars_per_line (int): Minimum number of characters in a line to display.
+            max_chars_per_line (int): Maximum number of characters in a line to display.
             filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
             valid_indices (list): List to store valid indices (output).
@@ -1005,8 +1012,6 @@ class NetworkPlotter:
         Raises:
             ValueError: If the number of provided `ids_to_keep` exceeds `max_labels`.
         """
-        # Convert ids_to_keep to a set for faster, unique lookups
-        ids_to_keep = set(ids_to_keep) if ids_to_keep else set()
         # Check if the number of provided ids_to_keep exceeds max_labels
         if max_labels is not None and len(ids_to_keep) > max_labels:
             raise ValueError(
@@ -1016,49 +1021,51 @@ class NetworkPlotter:
         # Process each domain in ids_to_keep
         for domain in ids_to_keep:
             if domain in self.graph.domain_id_to_domain_terms_map and domain in domain_centroids:
-                filtered_domain_terms[domain] = self._process_terms(
+                domain_terms = self._process_terms(
                     domain=domain,
                     ids_to_replace=ids_to_replace,
                     words_to_omit=words_to_omit,
-                    min_word_length=min_word_length,
-                    max_word_length=max_word_length,
-                    max_words=max_words,
+                    max_label_lines=max_label_lines,
+                    min_chars_per_line=min_chars_per_line,
+                    max_chars_per_line=max_chars_per_line,
                 )
-                filtered_domain_centroids[domain] = domain_centroids[domain]
-                valid_indices.append(list(domain_centroids.keys()).index(domain))
+                num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
+                # Check if the number of lines in the label is greater than or equal to the minimum
+                if num_domain_lines >= min_label_lines:
+                    filtered_domain_terms[domain] = domain_terms
+                    filtered_domain_centroids[domain] = domain_centroids[domain]
+                    valid_indices.append(list(domain_centroids.keys()).index(domain))
 
     def _process_remaining_domains(
         self,
         domain_centroids: Dict[str, np.ndarray],
-        ids_to_keep: Union[List[str], Tuple[str], np.ndarray, None],
+        ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
         ids_to_replace: Union[Dict[str, str], None],
         words_to_omit: Union[List[str], None],
-        min_word_length: int,
-        max_word_length: int,
-        max_words: int,
-        min_words: int,
-        max_labels: Union[int, None],
+        remaining_labels: int,
+        min_label_lines: int,
+        max_label_lines: int,
+        min_chars_per_line: int,
+        max_chars_per_line: int,
         filtered_domain_centroids: Dict[str, np.ndarray],
         filtered_domain_terms: Dict[str, str],
         valid_indices: List[int],
-        remaining_labels: int,
     ) -> None:
         """Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
 
         Args:
             domain_centroids (dict): Mapping of domains to their centroids.
-            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. Defaults to None.
+            ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
-            min_word_length (int): Minimum allowed word length.
-            max_word_length (int): Maximum allowed word length.
-            max_words (int): Maximum number of words allowed.
-            min_words (int): Minimum number of words required for a domain.
-            max_labels (int, optional): Maximum number of labels allowed. Defaults to None.
+            remaining_labels (int): The remaining number of labels that can be generated.
+            min_label_lines (int): Minimum number of lines in a label.
+            max_label_lines (int): Maximum number of lines in a label.
+            min_chars_per_line (int): Minimum number of characters in a line to display.
+            max_chars_per_line (int): Maximum number of characters in a line to display.
             filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
             valid_indices (list): List to store valid indices (output).
-            remaining_labels (int): The remaining number of labels that can be generated.
         """
         # Counter to track how many labels have been created
         label_count = 0
@@ -1106,28 +1113,33 @@ class NetworkPlotter:
         # Process the selected domains and add to filtered lists
         for domain in selected_domains:
             centroid = remaining_domains[domain]
-            filtered_domain_terms[domain] = self._process_terms(
+            domain_terms = self._process_terms(
                 domain=domain,
                 ids_to_replace=ids_to_replace,
                 words_to_omit=words_to_omit,
-                min_word_length=min_word_length,
-                max_word_length=max_word_length,
-                max_words=max_words,
+                max_label_lines=max_label_lines,
+                min_chars_per_line=min_chars_per_line,
+                max_chars_per_line=max_chars_per_line,
             )
-            filtered_domain_centroids[domain] = centroid
-            valid_indices.append(list(domain_centroids.keys()).index(domain))
-            label_count += 1
-            if label_count >= remaining_labels:
-                break
+            num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
+            # Check if the number of lines in the label is greater than or equal to the minimum
+            if num_domain_lines >= min_label_lines:
+                filtered_domain_centroids[domain] = centroid
+                filtered_domain_terms[domain] = domain_terms
+                valid_indices.append(list(domain_centroids.keys()).index(domain))
+
+                label_count += 1
+                if label_count >= remaining_labels:
+                    break
 
     def _process_terms(
         self,
         domain: str,
         ids_to_replace: Union[Dict[str, str], None],
         words_to_omit: Union[List[str], None],
-        min_word_length: int,
-        max_word_length: int,
-        max_words: int,
+        max_label_lines: int,
+        min_chars_per_line: int,
+        max_chars_per_line: int,
     ) -> List[str]:
         """Process terms for a domain, applying word length constraints and combining words where appropriate.
 
@@ -1135,9 +1147,9 @@ class NetworkPlotter:
             domain (str): The domain being processed.
             ids_to_replace (dict, optional): Dictionary mapping domain IDs to custom labels.
             words_to_omit (list, optional): List of words to omit from the labels.
-            min_word_length (int): Minimum allowed word length.
-            max_word_length (int): Maximum allowed word length.
-            max_words (int): Maximum number of words allowed.
+            max_label_lines (int): Maximum number of lines in a label.
+            min_chars_per_line (int): Minimum number of characters in a line to display.
+            max_chars_per_line (int): Maximum number of characters in a line to display.
 
         Returns:
             list: Processed terms, with words combined if necessary to fit within constraints.
@@ -1153,11 +1165,11 @@ class NetworkPlotter:
             terms = [
                 term
                 for term in terms
-                if term.lower() not in words_to_omit and len(term) >= min_word_length
+                if term.lower() not in words_to_omit and len(term) >= min_chars_per_line
             ]
 
         # Use the combine_words function directly to handle word combinations and length constraints
-        compressed_terms = _combine_words(tuple(terms), max_word_length, max_words)
+        compressed_terms = _combine_words(tuple(terms), max_chars_per_line, max_label_lines)
 
         return compressed_terms
 
@@ -1475,14 +1487,14 @@ def _calculate_bounding_box(
     return center, radius
 
 
-def _combine_words(words: List[str], max_length: int, max_words: int) -> str:
-    """Combine words to fit within the max_length and max_words constraints,
+def _combine_words(words: List[str], max_length: int, max_label_lines: int) -> str:
+    """Combine words to fit within the max_length and max_label_lines constraints,
     and separate the final output by ':' for plotting.
 
     Args:
         words (List[str]): List of words to combine.
         max_length (int): Maximum allowed length for a combined line.
-        max_words (int): Maximum number of lines (words) allowed.
+        max_label_lines (int): Maximum number of lines in a label.
 
     Returns:
         str: String of combined words separated by ':' for line breaks.
@@ -1507,25 +1519,25 @@ def _combine_words(words: List[str], max_length: int, max_words: int) -> str:
             combined_lines.append(combined_word)  # Add the combined word or single word
             i += 1  # Move to the next word
 
-            # Stop if we've reached the max_words limit
-            if len(combined_lines) >= max_words:
+            # Stop if we've reached the max_label_lines limit
+            if len(combined_lines) >= max_label_lines:
                 break
 
         return combined_lines
 
-    # Main logic: start with max_words number of words
-    combined_lines = try_combinations(words[:max_words])
-    remaining_words = words[max_words:]  # Remaining words after the initial batch
+    # Main logic: start with max_label_lines number of words
+    combined_lines = try_combinations(words[:max_label_lines])
+    remaining_words = words[max_label_lines:]  # Remaining words after the initial batch
 
     # Continue pulling more words until we fill the lines
-    while remaining_words and len(combined_lines) < max_words:
-        available_slots = max_words - len(combined_lines)
+    while remaining_words and len(combined_lines) < max_label_lines:
+        available_slots = max_label_lines - len(combined_lines)
         words_to_add = remaining_words[:available_slots]
         remaining_words = remaining_words[available_slots:]
         combined_lines += try_combinations(words_to_add)
 
-    # Join the final combined lines with '::::', a special separator for line breaks
-    return "::::".join(combined_lines[:max_words])
+    # Join the final combined lines with TERM_DELIMITER, a special separator for line breaks
+    return TERM_DELIMITER.join(combined_lines[:max_label_lines])
 
 
 def _calculate_best_label_positions(
