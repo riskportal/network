@@ -33,7 +33,7 @@ class NetworkPlotter:
         graph: NetworkGraph,
         figsize: Tuple = (10, 10),
         background_color: Union[str, List, Tuple, np.ndarray] = "white",
-        background_alpha: float = 1.0,
+        background_alpha: Union[float, None] = 1.0,
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
@@ -41,7 +41,8 @@ class NetworkPlotter:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
-            background_alpha (float, optional): Transparency level of the background color. Defaults to 1.0.
+            background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
+                any existing alpha values. Defaults to 1.0.
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
@@ -57,7 +58,7 @@ class NetworkPlotter:
         graph: NetworkGraph,
         figsize: Tuple,
         background_color: Union[str, List, Tuple, np.ndarray],
-        background_alpha: float = 1.0,
+        background_alpha: Union[float, None] = 1.0,
     ) -> plt.Axes:
         """Set up the plot with figure size and background color.
 
@@ -65,7 +66,8 @@ class NetworkPlotter:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
-            background_alpha (float, optional): Transparency level of the background color. Defaults to 1.0.
+            background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any
+            existing alpha values found in background_color. Defaults to 1.0.
 
         Returns:
             plt.Axes: The axis object for the plot.
@@ -181,8 +183,8 @@ class NetworkPlotter:
         linestyle: str = "dashed",
         linewidth: float = 1.5,
         color: Union[str, List, Tuple, np.ndarray] = "black",
-        outline_alpha: float = 1.0,
-        fill_alpha: float = 0.0,
+        outline_alpha: Union[float, None] = 1.0,
+        fill_alpha: Union[float, None] = 0.0,
     ) -> None:
         """Plot a circle around the network graph to represent the network perimeter.
 
@@ -191,8 +193,10 @@ class NetworkPlotter:
             linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
             linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
             color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
-            outline_alpha (float, optional): Transparency level of the circle outline. Defaults to 1.0.
-            fill_alpha (float, optional): Transparency level of the circle fill. Defaults to 0.0.
+            outline_alpha (float, None, optional): Transparency level of the circle outline. If provided, it overrides any existing alpha
+                values found in color. Defaults to 1.0.
+            fill_alpha (float, None, optional): Transparency level of the circle fill. If provided, it overrides any existing alpha values
+                found in color. Defaults to 0.0.
         """
         # Log the circle perimeter plotting parameters
         params.log_plotter(
@@ -240,8 +244,8 @@ class NetworkPlotter:
         color: Union[str, List, Tuple, np.ndarray] = "black",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        outline_alpha: float = 1.0,
-        fill_alpha: float = 0.0,
+        outline_alpha: Union[float, None] = 1.0,
+        fill_alpha: Union[float, None] = 0.0,
     ) -> None:
         """
         Plot a KDE-based contour around the network graph to represent the network perimeter.
@@ -254,8 +258,10 @@ class NetworkPlotter:
             color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter contour. Defaults to "black".
             linestyle (str, optional): Line style for the network perimeter contour (e.g., dashed, solid). Defaults to "solid".
             linewidth (float, optional): Width of the contour's outline. Defaults to 1.5.
-            outline_alpha (float, optional): Transparency level of the contour outline. Defaults to 1.0.
-            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.0.
+            outline_alpha (float, None, optional): Transparency level of the contour outline. If provided, it overrides any existing
+                alpha values found in color. Defaults to 1.0.
+            fill_alpha (float, None, optional): Transparency level of the contour fill. If provided, it overrides any existing alpha
+                values found in color. Defaults to 0.0.
         """
         # Log the contour perimeter plotting parameters
         params.log_plotter(
@@ -300,8 +306,8 @@ class NetworkPlotter:
         node_color: Union[str, List, Tuple, np.ndarray] = "white",
         node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
         edge_color: Union[str, List, Tuple, np.ndarray] = "black",
-        node_alpha: float = 1.0,
-        edge_alpha: float = 1.0,
+        node_alpha: Union[float, None] = 1.0,
+        edge_alpha: Union[float, None] = 1.0,
     ) -> None:
         """Plot the network graph with customizable node colors, sizes, edge widths, and node edge widths.
 
@@ -310,11 +316,14 @@ class NetworkPlotter:
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             node_edgewidth (float, optional): Width of the node edges. Defaults to 1.0.
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors. Defaults to "white".
+            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors.
+                Defaults to "white".
             node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
             edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
-            node_alpha (float, optional): Alpha value (transparency) for the nodes. Defaults to 1.0. Annotated node_color alphas will override this value.
-            edge_alpha (float, optional): Alpha value (transparency) for the edges. Defaults to 1.0.
+            node_alpha (float, None, optional): Alpha value (transparency) for the nodes. If provided, it overrides any existing alpha
+                values found in node_color. Defaults to 1.0. Annotated node_color alphas will override this value.
+            edge_alpha (float, None, optional): Alpha value (transparency) for the edges. If provided, it overrides any existing alpha
+                values found in edge_color. Defaults to 1.0.
         """
         # Log the plotting parameters
         params.log_plotter(
@@ -378,8 +387,8 @@ class NetworkPlotter:
         node_color: Union[str, List, Tuple, np.ndarray] = "white",
         node_edgecolor: Union[str, List, Tuple, np.ndarray] = "black",
         edge_color: Union[str, List, Tuple, np.ndarray] = "black",
-        node_alpha: float = 1.0,
-        edge_alpha: float = 1.0,
+        node_alpha: Union[float, None] = None,
+        edge_alpha: Union[float, None] = None,
     ) -> None:
         """Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
@@ -392,8 +401,10 @@ class NetworkPlotter:
             node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Defaults to "white".
             node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
             edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
-            node_alpha (float, optional): Transparency for the nodes. Defaults to 1.0.
-            edge_alpha (float, optional): Transparency for the edges. Defaults to 1.0.
+            node_alpha (float, None, optional): Transparency for the nodes. If provided, it overrides any existing alpha values
+                found in node_color. Defaults to 1.0.
+            edge_alpha (float, None, optional): Transparency for the edges. If provided, it overrides any existing alpha values
+                found in node_color. Defaults to 1.0.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
@@ -459,8 +470,8 @@ class NetworkPlotter:
         color: Union[str, List, Tuple, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 1.0,
-        fill_alpha: float = 0.2,
+        alpha: Union[float, None] = 1.0,
+        fill_alpha: Union[float, None] = None,
     ) -> None:
         """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
 
@@ -468,11 +479,14 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            color (str, list, tuple, or np.ndarray, optional): Color of the contours. Can be a single color or an array of colors. Defaults to "white".
+            color (str, list, tuple, or np.ndarray, optional): Color of the contours. Can be a single color or an array of colors.
+                Defaults to "white".
             linestyle (str, optional): Line style for the contours. Defaults to "solid".
             linewidth (float, optional): Line width for the contours. Defaults to 1.5.
-            alpha (float, optional): Transparency level of the contour lines. Defaults to 1.0.
-            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
+            alpha (float, None, optional): Transparency level of the contour lines. If provided, it overrides any existing alpha values
+                found in color. Defaults to 1.0.
+            fill_alpha (float, None, optional): Transparency level of the contour fill. If provided, it overrides any existing alpha
+                values found in color. Defaults to None.
         """
         # Log the contour plotting parameters
         params.log_plotter(
@@ -518,8 +532,8 @@ class NetworkPlotter:
         color: Union[str, List, Tuple, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 1.0,
-        fill_alpha: float = 0.2,
+        alpha: Union[float, None] = 1.0,
+        fill_alpha: Union[float, None] = None,
     ) -> None:
         """Plot a subcontour for a given set of nodes or a list of node sets using Kernel Density Estimation (KDE).
 
@@ -528,11 +542,14 @@ class NetworkPlotter:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
             bandwidth (float, optional): Bandwidth for KDE. Controls the smoothness of the contour. Defaults to 0.8.
             grid_size (int, optional): Resolution of the grid for KDE. Higher values create finer contours. Defaults to 250.
-            color (str, list, tuple, or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array. Defaults to "white".
+            color (str, list, tuple, or np.ndarray, optional): Color of the contour. Can be a string (e.g., 'white') or RGBA array.
+                Defaults to "white".
             linestyle (str, optional): Line style for the contour. Defaults to "solid".
             linewidth (float, optional): Line width for the contour. Defaults to 1.5.
-            alpha (float, optional): Transparency level of the contour lines. Defaults to 1.0.
-            fill_alpha (float, optional): Transparency level of the contour fill. Defaults to 0.2.
+            alpha (float, None, optional): Transparency level of the contour lines. If provided, it overrides any existing alpha values
+                found in color. Defaults to 1.0.
+            fill_alpha (float, None, optional): Transparency level of the contour fill. If provided, it overrides any existing alpha
+            values found in color. Defaults to None.
 
         Raises:
             ValueError: If no valid nodes are found in the network graph.
@@ -588,8 +605,8 @@ class NetworkPlotter:
         color: Union[str, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: float = 1.0,
-        fill_alpha: float = 0.2,
+        alpha: Union[float, None] = 1.0,
+        fill_alpha: Union[float, None] = 0.2,
     ) -> None:
         """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
 
@@ -603,8 +620,10 @@ class NetworkPlotter:
             color (str or np.ndarray): Color for the contour. Can be a string or RGBA array. Defaults to "white".
             linestyle (str, optional): Line style for the contour. Defaults to "solid".
             linewidth (float, optional): Line width for the contour. Defaults to 1.5.
-            alpha (float, optional): Transparency level for the contour lines. Defaults to 1.0.
-            fill_alpha (float, optional): Transparency level for the contour fill. Defaults to 0.2.
+            alpha (float, None, optional): Transparency level for the contour lines. If provided, it overrides any existing alpha
+                values found in color. Defaults to 1.0.
+            fill_alpha (float, None, optional): Transparency level for the contour fill. If provided, it overrides any existing
+                alpha values found in color. Defaults to 0.2.
         """
         # Extract the positions of the specified nodes
         points = np.array([pos[n] for n in nodes])
@@ -691,11 +710,11 @@ class NetworkPlotter:
         font: str = "Arial",
         fontsize: int = 10,
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
-        fontalpha: float = 1.0,
+        fontalpha: Union[float, None] = 1.0,
         arrow_linewidth: float = 1,
         arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
-        arrow_alpha: float = 1.0,
+        arrow_alpha: Union[float, None] = 1.0,
         arrow_base_shrink: float = 0.0,
         arrow_tip_shrink: float = 0.0,
         max_labels: Union[int, None] = None,
@@ -715,12 +734,15 @@ class NetworkPlotter:
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
             fontsize (int, optional): Font size for the labels. Defaults to 10.
-            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array. Defaults to "black".
-            fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
+            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array.
+                Defaults to "black".
+            fontalpha (float, None, optional): Transparency level for the font color. If provided, it overrides any existing alpha
+                values found in fontcolor. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
             arrow_style (str, optional): Style of the arrows pointing to centroids. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
-            arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
+            arrow_alpha (float, None, optional): Transparency level for the arrow color. If provided, it overrides any existing alpha
+                values found in arrow_color. Defaults to 1.0.
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
@@ -732,9 +754,9 @@ class NetworkPlotter:
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
             ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
                 you can set `overlay_ids=True`. Defaults to None.
-            ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be space-separated words.
-                If provided, the custom labels will replace the default domain terms. To discover domain IDs, you can set `overlay_ids=True`.
-                Defaults to None.
+            ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be
+                space-separated words. If provided, the custom labels will replace the default domain terms. To discover domain IDs, you
+                can set `overlay_ids=True`. Defaults to None.
 
         Raises:
             ValueError: If the number of provided `ids_to_keep` exceeds `max_labels`.
@@ -895,11 +917,11 @@ class NetworkPlotter:
         font: str = "Arial",
         fontsize: int = 10,
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
-        fontalpha: float = 1.0,
+        fontalpha: Union[float, None] = 1.0,
         arrow_linewidth: float = 1,
         arrow_style: str = "->",
         arrow_color: Union[str, List, Tuple, np.ndarray] = "black",
-        arrow_alpha: float = 1.0,
+        arrow_alpha: Union[float, None] = 1.0,
         arrow_base_shrink: float = 0.0,
         arrow_tip_shrink: float = 0.0,
     ) -> None:
@@ -914,11 +936,13 @@ class NetworkPlotter:
             font (str, optional): Font name for the label. Defaults to "Arial".
             fontsize (int, optional): Font size for the label. Defaults to 10.
             fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Defaults to "black".
-            fontalpha (float, optional): Transparency level for the font color. Defaults to 1.0.
+            fontalpha (float, None, optional): Transparency level for the font color. If provided, it overrides any existing alpha values found
+                in fontalpha. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrow pointing to the centroid. Defaults to 1.
             arrow_style (str, optional): Style of the arrows pointing to the centroid. Defaults to "->".
             arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
-            arrow_alpha (float, optional): Transparency level for the arrow color. Defaults to 1.0.
+            arrow_alpha (float, None, optional): Transparency level for the arrow color. If provided, it overrides any existing alpha values
+                found in arrow_alpha. Defaults to 1.0.
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
         """
@@ -1275,9 +1299,9 @@ class NetworkPlotter:
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
-        alpha: float = 1.0,
+        alpha: Union[float, None] = 1.0,
         nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
-        nonenriched_alpha: float = 1.0,
+        nonenriched_alpha: Union[float, None] = 1.0,
         random_seed: int = 888,
     ) -> np.ndarray:
         """Adjust the colors of nodes in the network graph based on enrichment.
@@ -1288,9 +1312,11 @@ class NetworkPlotter:
             min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
             max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
             scale_factor (float, optional): Factor for adjusting the color scaling intensity. Defaults to 1.0.
-            alpha (float, optional): Alpha value for enriched nodes. Defaults to 1.0.
+            alpha (float, None, optional): Alpha value for enriched nodes. If provided, it overrides any existing alpha values
+                found in color. Defaults to 1.0.
             nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Defaults to "white".
-            nonenriched_alpha (float, optional): Alpha value for non-enriched nodes. Defaults to 1.0.
+            nonenriched_alpha (float, None, optional): Alpha value for non-enriched nodes. If provided, it overrides any existing
+                alpha values found in nonenriched_color. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -1493,7 +1519,8 @@ def _to_rgba(
 
     Args:
         color (Union[str, list, tuple, np.ndarray]): The color(s) to convert. Can be a string, list, tuple, or np.ndarray.
-        alpha (float, None, optional): Alpha value (transparency) to apply. If provided, it overrides any existing alpha values.
+        alpha (float, None, optional): Alpha value (transparency) to apply. If provided, it overrides any existing alpha values
+            found in color.
         num_repeats (int, None, optional): If provided, the color(s) will be repeated this many times. Defaults to None.
 
     Returns:
@@ -1502,6 +1529,7 @@ def _to_rgba(
 
     def convert_to_rgba(c: Union[str, List, Tuple, np.ndarray]) -> np.ndarray:
         """Convert a single color to RGBA format, handling strings, hex, and RGB/RGBA lists."""
+        # Note: if no alpha is provided, the default alpha value is 1.0 by mcolors.to_rgba
         if isinstance(c, str):
             # Convert color names or hex values (e.g., 'red', '#FF5733') to RGBA
             rgba = np.array(mcolors.to_rgba(c))
