@@ -783,7 +783,7 @@ class NetworkPlotter:
 
         # Calculate remaining labels to plot after processing ids_to_keep
         remaining_labels = (
-            max_labels - len(ids_to_keep) if ids_to_keep and max_labels else max_labels
+            max_labels - len(valid_indices) if valid_indices and max_labels else max_labels
         )
         # Process remaining domains INPLACE to fill in additional labels, if there are slots left
         if remaining_labels and remaining_labels > 0:
@@ -800,6 +800,7 @@ class NetworkPlotter:
                 filtered_domain_centroids,
                 filtered_domain_terms,
                 valid_indices,
+                remaining_labels,
             )
 
         # Calculate the bounding box around the network
@@ -1040,8 +1041,9 @@ class NetworkPlotter:
         filtered_domain_centroids: Dict[str, np.ndarray],
         filtered_domain_terms: Dict[str, str],
         valid_indices: List[int],
+        remaining_labels: int,
     ) -> None:
-        """Process remaining domains to fill in additional labels, if there are slots left.
+        """Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
 
         Args:
             domain_centroids (dict): Mapping of domains to their centroids.
@@ -1056,17 +1058,54 @@ class NetworkPlotter:
             filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
             valid_indices (list): List to store valid indices (output).
-
-        Note:
-            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
+            remaining_labels (int): The remaining number of labels that can be generated.
         """
-        for idx, (domain, centroid) in enumerate(domain_centroids.items()):
-            # Check if the domain is NaN and continue if true
-            if pd.isna(domain) or (isinstance(domain, float) and np.isnan(domain)):
-                continue  # Skip NaN domains
-            if ids_to_keep and domain in ids_to_keep:
-                continue  # Skip domains already handled by ids_to_keep
+        # Counter to track how many labels have been created
+        label_count = 0
+        # Collect domains not in ids_to_keep
+        remaining_domains = {
+            domain: centroid
+            for domain, centroid in domain_centroids.items()
+            if domain not in ids_to_keep and not pd.isna(domain)
+        }
 
+        # Function to calculate distance between two centroids
+        def calculate_distance(centroid1, centroid2):
+            return np.linalg.norm(centroid1 - centroid2)
+
+        # Find the farthest apart domains using centroids
+        if remaining_domains and remaining_labels:
+            selected_domains = []
+            first_domain = next(iter(remaining_domains))  # Pick the first domain to start
+            selected_domains.append(first_domain)
+
+            while len(selected_domains) < remaining_labels:
+                farthest_domain = None
+                max_distance = -1
+                # Find the domain farthest from any already selected domain
+                for candidate_domain, candidate_centroid in remaining_domains.items():
+                    if candidate_domain in selected_domains:
+                        continue
+
+                    # Calculate the minimum distance to any selected domain
+                    min_distance = min(
+                        calculate_distance(candidate_centroid, remaining_domains[dom])
+                        for dom in selected_domains
+                    )
+                    # Update the farthest domain if the minimum distance is greater
+                    if min_distance > max_distance:
+                        max_distance = min_distance
+                        farthest_domain = candidate_domain
+
+                # Add the farthest domain to the selected domains
+                if farthest_domain:
+                    selected_domains.append(farthest_domain)
+                else:
+                    break  # No more domains to select
+
+        # Process the selected domains and add to filtered lists
+        for domain in selected_domains:
+            centroid = remaining_domains[domain]
             filtered_domain_terms[domain] = self._process_terms(
                 domain=domain,
                 ids_to_replace=ids_to_replace,
@@ -1076,7 +1115,10 @@ class NetworkPlotter:
                 max_words=max_words,
             )
             filtered_domain_centroids[domain] = centroid
-            valid_indices.append(idx)
+            valid_indices.append(list(domain_centroids.keys()).index(domain))
+            label_count += 1
+            if label_count >= remaining_labels:
+                break
 
     def _process_terms(
         self,
