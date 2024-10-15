@@ -239,10 +239,10 @@ def plot_labels(plotter):
             arrow_linewidth=1,
             arrow_color=plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887),
             max_labels=10,
-            max_words=4,
-            min_words=2,
-            max_word_length=20,
-            min_word_length=3,
+            min_label_lines=2,
+            max_label_lines=4,
+            min_chars_per_line=3,
+            max_chars_per_line=20,
             words_to_omit=["process", "biosynthetic"],
         )
     finally:
@@ -1018,17 +1018,17 @@ def test_plot_subcontour_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "fontcolor, arrow_color, font_alpha, arrow_alpha, min_words, max_words, min_word_length, max_word_length, max_labels, scale, offset, font, fontsize, arrow_linewidth, arrow_style, arrow_base_shrink, arrow_tip_shrink, overlay_ids, ids_to_keep, ids_to_replace",
+    "fontcolor, arrow_color, font_alpha, arrow_alpha, max_labels, min_label_lines, max_label_lines, min_chars_per_line, max_chars_per_line, scale, offset, font, fontsize, arrow_linewidth, arrow_style, arrow_base_shrink, arrow_tip_shrink, overlay_ids, ids_to_keep, ids_to_replace",
     [
         (
             None,
             None,
             1.0,
             1.0,
+            10,
             2,
             4,
             3,
-            10,
             10,
             1.25,
             0.10,
@@ -1047,11 +1047,11 @@ def test_plot_subcontour_with_custom_params(
             "blue",
             0.5,
             0.5,
+            5,
             1,
             5,
             4,
             15,
-            5,
             1.5,
             0.15,
             "Helvetica",
@@ -1069,11 +1069,11 @@ def test_plot_subcontour_with_custom_params(
             (1.0, 0.0, 0.0),
             0.3,
             0.3,
+            8,
             3,
             6,
             2,
             20,
-            8,
             1.35,
             0.12,
             "Times New Roman",
@@ -1095,11 +1095,11 @@ def test_plot_labels_with_custom_params(
     arrow_color,
     font_alpha,
     arrow_alpha,
-    min_words,
-    max_words,
-    min_word_length,
-    max_word_length,
     max_labels,
+    min_label_lines,
+    max_label_lines,
+    min_chars_per_line,
+    max_chars_per_line,
     scale,
     offset,
     font,
@@ -1122,11 +1122,11 @@ def test_plot_labels_with_custom_params(
         arrow_color: The color of the label arrows (None for annotated, string, or RGB tuple).
         font_alpha: The transparency of the label text.
         arrow_alpha: The transparency of the label arrows.
-        min_words: Minimum number of words in the label.
-        max_words: Maximum number of words in the label.
-        min_word_length: Minimum length of each word.
-        max_word_length: Maximum length of each word.
         max_labels: Maximum number of labels to display.
+        min_label_lines: Minimum number of words in the label.
+        max_label_lines: Maximum number of words in the label.
+        min_chars_per_line: Minimum length of each word.
+        max_chars_per_line: Maximum length of each word.
         scale: Scale factor for positioning labels around the perimeter.
         offset: Offset distance for labels from the perimeter.
         font: Font name for the labels.
@@ -1164,10 +1164,10 @@ def test_plot_labels_with_custom_params(
             arrow_base_shrink=arrow_base_shrink,
             arrow_tip_shrink=arrow_tip_shrink,
             max_labels=max_labels,
-            max_words=max_words,
-            min_words=min_words,
-            max_word_length=max_word_length,
-            min_word_length=min_word_length,
+            max_label_lines=max_label_lines,
+            min_label_lines=min_label_lines,
+            max_chars_per_line=max_chars_per_line,
+            min_chars_per_line=min_chars_per_line,
             words_to_omit=["process", "biosynthetic"],
             overlay_ids=overlay_ids,
             ids_to_keep=ids_to_keep,
