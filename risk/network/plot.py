@@ -33,6 +33,7 @@ class NetworkPlotter:
         graph: NetworkGraph,
         figsize: Tuple = (10, 10),
         background_color: Union[str, List, Tuple, np.ndarray] = "white",
+        background_alpha: float = 1.0,
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
@@ -40,16 +41,23 @@ class NetworkPlotter:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
+            background_alpha (float, optional): Transparency level of the background color. Defaults to 1.0.
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
-        self.ax = self._initialize_plot(graph, figsize, background_color)
+        self.ax = self._initialize_plot(
+            graph=graph,
+            figsize=figsize,
+            background_color=background_color,
+            background_alpha=background_alpha,
+        )
 
     def _initialize_plot(
         self,
         graph: NetworkGraph,
         figsize: Tuple,
         background_color: Union[str, List, Tuple, np.ndarray],
+        background_alpha: float = 1.0,
     ) -> plt.Axes:
         """Set up the plot with figure size and background color.
 
@@ -57,6 +65,7 @@ class NetworkPlotter:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
             background_color (str): Background color of the plot.
+            background_alpha (float, optional): Transparency level of the background color. Defaults to 1.0.
 
         Returns:
             plt.Axes: The axis object for the plot.
@@ -76,7 +85,7 @@ class NetworkPlotter:
 
         # Set the background color of the plot
         # Convert color to RGBA using the _to_rgba helper function
-        fig.patch.set_facecolor(_to_rgba(background_color, 1.0))
+        fig.patch.set_facecolor(_to_rgba(color=background_color, alpha=background_alpha))
         ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
         # Remove axis spines for a cleaner look
         for spine in ax.spines.values():
@@ -199,7 +208,7 @@ class NetworkPlotter:
         )
 
         # Convert color to RGBA using the _to_rgba helper function - use outline_alpha for the perimeter
-        color = _to_rgba(color, outline_alpha)
+        color = _to_rgba(color=color, alpha=outline_alpha)
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
@@ -218,7 +227,7 @@ class NetworkPlotter:
         )
         # Set the transparency of the fill if applicable
         if fill_alpha > 0:
-            circle.set_facecolor(_to_rgba(color, fill_alpha))
+            circle.set_facecolor(_to_rgba(color=color, alpha=fill_alpha))
 
         self.ax.add_artist(circle)
 
@@ -263,7 +272,7 @@ class NetworkPlotter:
         )
 
         # Convert color to RGBA using the _to_rgba helper function - use outline_alpha for the perimeter
-        color = _to_rgba(color, outline_alpha)
+        color = _to_rgba(color=color, alpha=outline_alpha)
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Scale the node coordinates if needed
@@ -326,9 +335,15 @@ class NetworkPlotter:
 
         # Convert colors to RGBA using the _to_rgba helper function
         # If node_colors was generated using get_annotated_node_colors, its alpha values will override node_alpha
-        node_color = _to_rgba(node_color, node_alpha, num_repeats=len(self.graph.network.nodes))
-        node_edgecolor = _to_rgba(node_edgecolor, 1.0, num_repeats=len(self.graph.network.nodes))
-        edge_color = _to_rgba(edge_color, edge_alpha, num_repeats=len(self.graph.network.edges))
+        node_color = _to_rgba(
+            color=node_color, alpha=node_alpha, num_repeats=len(self.graph.network.nodes)
+        )
+        node_edgecolor = _to_rgba(
+            color=node_edgecolor, alpha=1.0, num_repeats=len(self.graph.network.nodes)
+        )
+        edge_color = _to_rgba(
+            color=edge_color, alpha=edge_alpha, num_repeats=len(self.graph.network.edges)
+        )
 
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
@@ -405,9 +420,11 @@ class NetworkPlotter:
             ]
 
         # Convert colors to RGBA using the _to_rgba helper function
-        node_color = _to_rgba(node_color, node_alpha, num_repeats=len(node_ids))
-        node_edgecolor = _to_rgba(node_edgecolor, 1.0, num_repeats=len(node_ids))
-        edge_color = _to_rgba(edge_color, edge_alpha, num_repeats=len(self.graph.network.edges))
+        node_color = _to_rgba(color=node_color, alpha=node_alpha, num_repeats=len(node_ids))
+        node_edgecolor = _to_rgba(color=node_edgecolor, alpha=1.0, num_repeats=len(node_ids))
+        edge_color = _to_rgba(
+            color=edge_color, alpha=edge_alpha, num_repeats=len(self.graph.network.edges)
+        )
 
         # Get the coordinates of the filtered nodes
         node_coordinates = {node_id: self.graph.node_coordinates[node_id] for node_id in node_ids}
@@ -470,7 +487,9 @@ class NetworkPlotter:
         )
 
         # Ensure color is converted to RGBA with repetition matching the number of domains
-        color = _to_rgba(color, alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map))
+        color = _to_rgba(
+            color=color, alpha=alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
+        )
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Draw contours for each domain in the network
@@ -527,7 +546,7 @@ class NetworkPlotter:
             node_groups = [nodes]
 
         # Convert color to RGBA using the _to_rgba helper function
-        color_rgba = _to_rgba(color, alpha)
+        color_rgba = _to_rgba(color=color, alpha=alpha)
 
         # Iterate over each group of nodes (either sublists or flat list)
         for sublist in node_groups:
@@ -816,12 +835,14 @@ class NetworkPlotter:
         best_label_positions = _calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
-        # Convert colors to RGBA using the _to_rgba helper function
+        # Convert all domain colors to RGBA using the _to_rgba helper function
         fontcolor = _to_rgba(
-            fontcolor, fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
+            color=fontcolor, alpha=fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
         )
         arrow_color = _to_rgba(
-            arrow_color, arrow_alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
+            color=arrow_color,
+            alpha=arrow_alpha,
+            num_repeats=len(self.graph.domain_id_to_node_ids_map),
         )
 
         # Annotate the network with labels
@@ -847,8 +868,11 @@ class NetworkPlotter:
                     shrinkB=arrow_tip_shrink,
                 ),
             )
-            # Overlay domain ID at the centroid if requested
-            if overlay_ids:
+
+        # Overlay domain ID at the centroid regardless of max_labels if requested
+        if overlay_ids:
+            for idx, domain in enumerate(self.graph.domain_id_to_node_ids_map):
+                centroid = domain_id_to_centroid_map[domain]
                 self.ax.text(
                     centroid[0],
                     centroid[1],
@@ -907,8 +931,8 @@ class NetworkPlotter:
             node_groups = [nodes]
 
         # Convert fontcolor and arrow_color to RGBA
-        fontcolor_rgba = _to_rgba(fontcolor, fontalpha)
-        arrow_color_rgba = _to_rgba(arrow_color, arrow_alpha)
+        fontcolor_rgba = _to_rgba(color=fontcolor, alpha=fontalpha)
+        arrow_color_rgba = _to_rgba(color=arrow_color, alpha=arrow_alpha)
 
         # Calculate the bounding box around the network
         center, radius = _calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
@@ -1284,11 +1308,11 @@ class NetworkPlotter:
         # Apply the alpha value for enriched nodes
         network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
         # Convert the non-enriched color to RGBA using the _to_rgba helper function
-        nonenriched_color = _to_rgba(nonenriched_color, nonenriched_alpha)
+        nonenriched_color = _to_rgba(color=nonenriched_color, alpha=nonenriched_alpha)
         # Adjust node colors: replace any fully black nodes (RGB == 0) with the non-enriched color and its alpha
         adjusted_network_colors = np.where(
             np.all(network_colors[:, :3] == 0, axis=1, keepdims=True),  # Check RGB values only
-            np.array([nonenriched_color]),  # Apply the non-enriched color with alpha
+            np.array(nonenriched_color),  # Apply the non-enriched color with alpha
             network_colors,  # Keep the original colors for enriched nodes
         )
         return adjusted_network_colors
@@ -1462,62 +1486,65 @@ class NetworkPlotter:
 
 def _to_rgba(
     color: Union[str, List, Tuple, np.ndarray],
-    alpha: float = 1.0,
+    alpha: Union[float, None] = None,
     num_repeats: Union[int, None] = None,
 ) -> np.ndarray:
-    """Convert a color or array of colors to RGBA format, applying alpha only if the color is RGB.
+    """Convert color(s) to RGBA format, applying alpha and repeating as needed.
 
     Args:
         color (Union[str, list, tuple, np.ndarray]): The color(s) to convert. Can be a string, list, tuple, or np.ndarray.
-        alpha (float, optional): Alpha value (transparency) to apply if the color is in RGB format. Defaults to 1.0.
-        num_repeats (int or None, optional): If provided, the color will be repeated this many times. Defaults to None.
+        alpha (float, None, optional): Alpha value (transparency) to apply. If provided, it overrides any existing alpha values.
+        num_repeats (int, None, optional): If provided, the color(s) will be repeated this many times. Defaults to None.
 
     Returns:
-        np.ndarray: The RGBA color or array of RGBA colors.
+        np.ndarray: Array of RGBA colors repeated `num_repeats` times, if applicable.
     """
-    # Handle single color case (string, RGB, or RGBA)
-    if isinstance(color, str) or (
-        isinstance(color, (list, tuple, np.ndarray))
-        and len(color) in [3, 4]
-        and not any(isinstance(c, (list, tuple, np.ndarray)) for c in color)
+
+    def convert_to_rgba(c: Union[str, List, Tuple, np.ndarray]) -> np.ndarray:
+        """Convert a single color to RGBA format, handling strings, hex, and RGB/RGBA lists."""
+        if isinstance(c, str):
+            # Convert color names or hex values (e.g., 'red', '#FF5733') to RGBA
+            rgba = np.array(mcolors.to_rgba(c))
+        elif isinstance(c, (list, tuple, np.ndarray)) and len(c) in [3, 4]:
+            # Convert RGB (3) or RGBA (4) values to RGBA format
+            rgba = np.array(mcolors.to_rgba(c))
+        else:
+            raise ValueError(
+                f"Invalid color format: {c}. Must be a valid string or RGB/RGBA sequence."
+            )
+
+        if alpha is not None:  # Override alpha if provided
+            rgba[3] = alpha
+        return rgba
+
+    # If color is a 2D array of RGBA values, convert it to a list of lists
+    if isinstance(color, np.ndarray) and color.ndim == 2 and color.shape[1] == 4:
+        color = [list(c) for c in color]
+
+    # Handle a single color (string or RGB/RGBA list/tuple)
+    if isinstance(color, (str, list, tuple)) and not any(
+        isinstance(c, (list, tuple, np.ndarray)) for c in color
     ):
-        rgba_color = np.array(mcolors.to_rgba(color))
-        # Only set alpha if the input is an RGB color or a string (not RGBA)
-        if len(rgba_color) == 4 and (
-            len(color) == 3 or isinstance(color, str)
-        ):  # If it's RGB or a string, set the alpha
-            rgba_color[3] = alpha
+        rgba_color = convert_to_rgba(color)
+        if num_repeats:
+            return np.tile(
+                rgba_color, (num_repeats, 1)
+            )  # Repeat the color if num_repeats is provided
+        return np.array([rgba_color])  # Return a single color wrapped in a numpy array
 
-        # Repeat the color if num_repeats argument is provided
-        if num_repeats is not None:
-            return np.array([rgba_color] * num_repeats)
-
-        return rgba_color
-
-    # Handle array of colors case (including strings, RGB, and RGBA)
+    # Handle a list/array of colors
     elif isinstance(color, (list, tuple, np.ndarray)):
-        rgba_colors = []
-        for i in range(num_repeats):
-            # Reiterate over the colors if the number of repeats exceeds the number of colors
-            c = color[i % len(color)]
-            # Ensure each element is either a valid string or a list/tuple of length 3 (RGB) or 4 (RGBA)
-            if isinstance(c, str) or (
-                isinstance(c, (list, tuple, np.ndarray)) and len(c) in [3, 4]
-            ):
-                rgba_c = np.array(mcolors.to_rgba(c))
-                # Apply alpha only to RGB colors (not RGBA) and strings
-                if len(rgba_c) == 4 and (len(c) == 3 or isinstance(c, str)):
-                    rgba_c[3] = alpha
+        rgba_colors = np.array(
+            [convert_to_rgba(c) for c in color]
+        )  # Convert each color in the list to RGBA
+        # Handle repetition if num_repeats is provided
+        if num_repeats:
+            repeated_colors = np.array(
+                [rgba_colors[i % len(rgba_colors)] for i in range(num_repeats)]
+            )
+            return repeated_colors
 
-                rgba_colors.append(rgba_c)
-            else:
-                raise ValueError(f"Invalid color: {c}. Must be a valid RGB/RGBA or string color.")
-
-        # Repeat the colors if num_repeats argument is provided
-        if num_repeats is not None and len(rgba_colors) == 1:
-            return np.array([rgba_colors[0]] * num_repeats)
-
-        return np.array(rgba_colors)
+        return rgba_colors
 
     else:
         raise ValueError("Color must be a valid RGB/RGBA or array of RGB/RGBA colors.")
