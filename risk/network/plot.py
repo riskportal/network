@@ -705,10 +705,10 @@ class NetworkPlotter:
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
             max_labels (int, optional): Maximum number of labels to plot. Defaults to None (no limit).
-            max_label_lines (int, optional): Maximum number of lines in a label. Defaults to None (no limit).
             min_label_lines (int, optional): Minimum number of lines in a label. Defaults to 1.
-            max_chars_per_line (int, optional): Maximum number of characters in a line to display. Defaults to None (no limit).
+            max_label_lines (int, optional): Maximum number of lines in a label. Defaults to None (no limit).
             min_chars_per_line (int, optional): Minimum number of characters in a line to display. Defaults to 1.
+            max_chars_per_line (int, optional): Maximum number of characters in a line to display. Defaults to None (no limit).
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
             ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
@@ -761,11 +761,11 @@ class NetworkPlotter:
         if words_to_omit:
             words_to_omit = set(word.lower() for word in words_to_omit)
 
-        # Calculate the center and radius of the network
-        domain_centroids = {}
+        # Calculate the center and radius of domains to position labels around the network
+        domain_id_to_centroid_map = {}
         for domain_id, node_ids in self.graph.domain_id_to_node_ids_map.items():
             if node_ids:  # Skip if the domain has no nodes
-                domain_centroids[domain_id] = self._calculate_domain_centroid(node_ids)
+                domain_id_to_centroid_map[domain_id] = self._calculate_domain_centroid(node_ids)
 
         # Initialize dictionaries and lists for valid indices
         valid_indices = []  # List of valid indices to plot colors and arrows
@@ -775,8 +775,8 @@ class NetworkPlotter:
         if ids_to_keep:
             # Process the ids_to_keep first INPLACE
             self._process_ids_to_keep(
+                domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_keep=ids_to_keep,
-                domain_centroids=domain_centroids,
                 ids_to_replace=ids_to_replace,
                 words_to_omit=words_to_omit,
                 max_labels=max_labels,
@@ -796,7 +796,7 @@ class NetworkPlotter:
         # Process remaining domains INPLACE to fill in additional labels, if there are slots left
         if remaining_labels and remaining_labels > 0:
             self._process_remaining_domains(
-                domain_centroids=domain_centroids,
+                domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_keep=ids_to_keep,
                 ids_to_replace=ids_to_replace,
                 words_to_omit=words_to_omit,
@@ -977,8 +977,8 @@ class NetworkPlotter:
 
     def _process_ids_to_keep(
         self,
+        domain_id_to_centroid_map: Dict[str, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
-        domain_centroids: Dict[str, np.ndarray],
         ids_to_replace: Union[Dict[str, str], None],
         words_to_omit: Union[List[str], None],
         max_labels: Union[int, None],
@@ -993,8 +993,8 @@ class NetworkPlotter:
         """Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
 
         Args:
+            domain_id_to_centroid_map (dict): Mapping of domain IDs to their centroids.
             ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
-            domain_centroids (dict): Mapping of domains to their centroids.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
             max_labels (int, optional): Maximum number of labels allowed.
@@ -1020,25 +1020,30 @@ class NetworkPlotter:
 
         # Process each domain in ids_to_keep
         for domain in ids_to_keep:
-            if domain in self.graph.domain_id_to_domain_terms_map and domain in domain_centroids:
-                domain_terms = self._process_terms(
+            if (
+                domain in self.graph.domain_id_to_domain_terms_map
+                and domain in domain_id_to_centroid_map
+            ):
+                domain_centroid = domain_id_to_centroid_map[domain]
+                # No need to filter the domain terms if it is in ids_to_keep
+                _ = self._validate_and_update_domain(
                     domain=domain,
+                    domain_centroid=domain_centroid,
+                    domain_id_to_centroid_map=domain_id_to_centroid_map,
                     ids_to_replace=ids_to_replace,
                     words_to_omit=words_to_omit,
+                    min_label_lines=min_label_lines,
                     max_label_lines=max_label_lines,
                     min_chars_per_line=min_chars_per_line,
                     max_chars_per_line=max_chars_per_line,
+                    filtered_domain_centroids=filtered_domain_centroids,
+                    filtered_domain_terms=filtered_domain_terms,
+                    valid_indices=valid_indices,
                 )
-                num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
-                # Check if the number of lines in the label is greater than or equal to the minimum
-                if num_domain_lines >= min_label_lines:
-                    filtered_domain_terms[domain] = domain_terms
-                    filtered_domain_centroids[domain] = domain_centroids[domain]
-                    valid_indices.append(list(domain_centroids.keys()).index(domain))
 
     def _process_remaining_domains(
         self,
-        domain_centroids: Dict[str, np.ndarray],
+        domain_id_to_centroid_map: Dict[str, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
         ids_to_replace: Union[Dict[str, str], None],
         words_to_omit: Union[List[str], None],
@@ -1054,7 +1059,7 @@ class NetworkPlotter:
         """Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
 
         Args:
-            domain_centroids (dict): Mapping of domains to their centroids.
+            domain_id_to_centroid_map (dict): Mapping of domain IDs to their centroids.
             ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
@@ -1066,13 +1071,16 @@ class NetworkPlotter:
             filtered_domain_centroids (dict): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (dict): Dictionary to store filtered domain terms (output).
             valid_indices (list): List to store valid indices (output).
+
+        Note:
+            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
         """
         # Counter to track how many labels have been created
         label_count = 0
         # Collect domains not in ids_to_keep
         remaining_domains = {
             domain: centroid
-            for domain, centroid in domain_centroids.items()
+            for domain, centroid in domain_id_to_centroid_map.items()
             if domain not in ids_to_keep and not pd.isna(domain)
         }
 
@@ -1112,25 +1120,88 @@ class NetworkPlotter:
 
         # Process the selected domains and add to filtered lists
         for domain in selected_domains:
-            centroid = remaining_domains[domain]
-            domain_terms = self._process_terms(
+            domain_centroid = remaining_domains[domain]
+            is_domain_valid = self._validate_and_update_domain(
                 domain=domain,
+                domain_centroid=domain_centroid,
+                domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_replace=ids_to_replace,
                 words_to_omit=words_to_omit,
+                min_label_lines=min_label_lines,
                 max_label_lines=max_label_lines,
                 min_chars_per_line=min_chars_per_line,
                 max_chars_per_line=max_chars_per_line,
+                filtered_domain_centroids=filtered_domain_centroids,
+                filtered_domain_terms=filtered_domain_terms,
+                valid_indices=valid_indices,
             )
-            num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
-            # Check if the number of lines in the label is greater than or equal to the minimum
-            if num_domain_lines >= min_label_lines:
-                filtered_domain_centroids[domain] = centroid
-                filtered_domain_terms[domain] = domain_terms
-                valid_indices.append(list(domain_centroids.keys()).index(domain))
-
+            # Increment the label count if the domain is valid
+            if is_domain_valid:
                 label_count += 1
                 if label_count >= remaining_labels:
                     break
+
+    def _validate_and_update_domain(
+        self,
+        domain: str,
+        domain_centroid: np.ndarray,
+        domain_id_to_centroid_map: Dict[str, np.ndarray],
+        ids_to_replace: Union[Dict[str, str], None],
+        words_to_omit: Union[List[str], None],
+        min_label_lines: int,
+        max_label_lines: int,
+        min_chars_per_line: int,
+        max_chars_per_line: int,
+        filtered_domain_centroids: Dict[str, np.ndarray],
+        filtered_domain_terms: Dict[str, str],
+        valid_indices: List[int],
+    ) -> bool:
+        """Validate and process the domain terms, updating relevant dictionaries if valid.
+
+        Args:
+            domain (str): Domain ID to process.
+            domain_centroid (np.ndarray): Centroid position of the domain.
+            domain_id_to_centroid_map (dict): Mapping of domain IDs to their centroids.
+            ids_to_replace (Union[Dict[str, str], None]): A dictionary mapping domain IDs to custom labels.
+            words_to_omit (Union[List[str], None]): List of words to omit from the labels.
+            min_label_lines (int): Minimum number of lines required in a label.
+            max_label_lines (int): Maximum number of lines allowed in a label.
+            min_chars_per_line (int): Minimum number of characters allowed per line.
+            max_chars_per_line (int): Maximum number of characters allowed per line.
+            filtered_domain_centroids (Dict[str, np.ndarray]): Dictionary to store valid domain centroids.
+            filtered_domain_terms (Dict[str, str]): Dictionary to store valid domain terms.
+            valid_indices (List[int]): List of valid domain indices.
+
+        Returns:
+            bool: True if the domain is valid and added to the filtered dictionaries, False otherwise.
+
+        Note:
+            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
+        """
+        # Process the domain terms
+        domain_terms = self._process_terms(
+            domain=domain,
+            ids_to_replace=ids_to_replace,
+            words_to_omit=words_to_omit,
+            max_label_lines=max_label_lines,
+            min_chars_per_line=min_chars_per_line,
+            max_chars_per_line=max_chars_per_line,
+        )
+        # If domain_terms is empty, skip further processing
+        if not domain_terms:
+            return False
+
+        # Split the terms by TERM_DELIMITER and count the number of lines
+        num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
+        # Check if the number of lines is greater than or equal to the minimum
+        if num_domain_lines >= min_label_lines:
+            filtered_domain_centroids[domain] = domain_centroid
+            filtered_domain_terms[domain] = domain_terms
+            # Add the index of the domain to the valid indices list
+            valid_indices.append(list(domain_id_to_centroid_map.keys()).index(domain))
+            return True
+
+        return False
 
     def _process_terms(
         self,
@@ -1152,7 +1223,7 @@ class NetworkPlotter:
             max_chars_per_line (int): Maximum number of characters in a line to display.
 
         Returns:
-            list: Processed terms, with words combined if necessary to fit within constraints.
+            str: Processed terms separated by TERM_DELIMITER, with words combined if necessary to fit within constraints.
         """
         # Handle ids_to_replace logic
         if ids_to_replace and domain in ids_to_replace:
@@ -1487,13 +1558,13 @@ def _calculate_bounding_box(
     return center, radius
 
 
-def _combine_words(words: List[str], max_length: int, max_label_lines: int) -> str:
-    """Combine words to fit within the max_length and max_label_lines constraints,
-    and separate the final output by ':' for plotting.
+def _combine_words(words: List[str], max_chars_per_line: int, max_label_lines: int) -> str:
+    """Combine words to fit within the max_chars_per_line and max_label_lines constraints,
+    and separate the final output by TERM_DELIMITER for plotting.
 
     Args:
         words (List[str]): List of words to combine.
-        max_length (int): Maximum allowed length for a combined line.
+        max_chars_per_line (int): Maximum number of characters in a line to display.
         max_label_lines (int): Maximum number of lines in a label.
 
     Returns:
@@ -1510,14 +1581,18 @@ def _combine_words(words: List[str], max_length: int, max_label_lines: int) -> s
             # Try to combine more words if possible, and ensure the combination fits within max_length
             for j in range(i + 1, len(words_batch)):
                 next_word = words_batch[j]
-                if len(combined_word) + len(next_word) + 2 <= max_length:  # +2 for ', '
+                # Ensure that the combined word fits within the max_chars_per_line limit
+                if len(combined_word) + len(next_word) + 1 <= max_chars_per_line:  # +1 for space
                     combined_word = f"{combined_word} {next_word}"
                     i += 1  # Move past the combined word
                 else:
                     break  # Stop combining if the length is exceeded
 
-            combined_lines.append(combined_word)  # Add the combined word or single word
-            i += 1  # Move to the next word
+            # Add the combined word only if it fits within the max_chars_per_line limit
+            if len(combined_word) <= max_chars_per_line:
+                combined_lines.append(combined_word)  # Add the combined word
+            # Move to the next word
+            i += 1
 
             # Stop if we've reached the max_label_lines limit
             if len(combined_lines) >= max_label_lines:
