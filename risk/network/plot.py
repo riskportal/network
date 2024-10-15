@@ -1372,7 +1372,9 @@ def _to_rgba(
     # Handle array of colors case (including strings, RGB, and RGBA)
     elif isinstance(color, (list, tuple, np.ndarray)):
         rgba_colors = []
-        for c in color:
+        for i in range(num_repeats):
+            # Reiterate over the colors if the number of repeats exceeds the number of colors
+            c = color[i % len(color)]
             # Ensure each element is either a valid string or a list/tuple of length 3 (RGB) or 4 (RGBA)
             if isinstance(c, str) or (
                 isinstance(c, (list, tuple, np.ndarray)) and len(c) in [3, 4]
