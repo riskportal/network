@@ -17,8 +17,8 @@
 
 ## Documentation and Tutorial
 
-- **Documentation**: Comprehensive documentation is available at [Documentation link].
-- **Tutorial**: An interactive Jupyter notebook tutorial can be found at [Tutorial link].
+- **Documentation**: Comprehensive documentation is available [here](Documentation link).
+- **Tutorial**: An interactive Jupyter notebook tutorial can be found [here](https://github.com/risportal/network-tutorial).
 We highly recommend new users to consult the documentation and tutorial early on to fully leverage RISK's capabilities.
 
 ## Installation
@@ -42,7 +42,7 @@ pip install risk-network
 
 We applied RISK to a *Saccharomyces cerevisiae* protein–protein interaction network, revealing both established and novel functional relationships. The visualization below highlights key biological processes such as ribosomal assembly and mitochondrial organization.
 
-![RISK Main Figure](https://i.imgur.com/TUVfvfH.jpeg)
+![RISK Main Figure](https://i.imgur.com/5OP3Hqe.jpeg)
 
 RISK successfully detected both known and novel functional clusters within the yeast interactome. Clusters related to Golgi transport and actin nucleation were clearly defined and closely located, showcasing RISK's ability to map well-characterized interactions. Additionally, RISK identified links between mRNA processing pathways and vesicle trafficking proteins, consistent with recent studies demonstrating the role of vesicles in mRNA localization and stability.
 
