@@ -8,6 +8,7 @@ from typing import List, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
+from risk.log import params
 from risk.network.graph import NetworkGraph
 from risk.network.plot.canvas import Canvas
 from risk.network.plot.contour import Contour
@@ -30,6 +31,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         figsize: Tuple = (10, 10),
         background_color: Union[str, List, Tuple, np.ndarray] = "white",
         background_alpha: Union[float, None] = 1.0,
+        pad: float = 0.3,
     ) -> None:
         """Initialize the NetworkPlotter with a NetworkGraph object and plotting parameters.
 
@@ -39,6 +41,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
             background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.
+            pad (float, optional): Padding value to adjust the axis limits. Defaults to 0.3.
         """
         self.graph = graph
         # Initialize the plot with the specified parameters
@@ -47,6 +50,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
             figsize=figsize,
             background_color=background_color,
             background_alpha=background_alpha,
+            pad=pad,
         )
         super().__init__(graph=graph, ax=self.ax)
 
@@ -56,6 +60,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         figsize: Tuple,
         background_color: Union[str, List, Tuple, np.ndarray],
         background_alpha: Union[float, None],
+        pad: float,
     ) -> plt.Axes:
         """Set up the plot with figure size and background color.
 
@@ -65,10 +70,19 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
             background_color (str): Background color of the plot.
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any
             existing alpha values found in background_color.
+            pad (float, optional): Padding value to adjust the axis limits.
 
         Returns:
             plt.Axes: The axis object for the plot.
         """
+        # Log the plotter settings
+        params.log_plotter(
+            figsize=figsize,
+            background_color=background_color,
+            background_alpha=background_alpha,
+            pad=pad,
+        )
+
         # Extract node coordinates from the network graph
         node_coordinates = graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
@@ -78,8 +92,8 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()  # Adjust subplot parameters to give specified padding
         # Set axis limits based on the calculated bounding box and radius
-        ax.set_xlim([center[0] - radius - 0.3, center[0] + radius + 0.3])
-        ax.set_ylim([center[1] - radius - 0.3, center[1] + radius + 0.3])
+        ax.set_xlim([center[0] - radius - pad, center[0] + radius + pad])
+        ax.set_ylim([center[1] - radius - pad, center[1] + radius + pad])
         ax.set_aspect("equal")  # Ensure the aspect ratio is equal
 
         # Set the background color of the plot

@@ -356,6 +356,7 @@ class RISK(NetworkIO, AnnotationsIO):
         figsize: Tuple = (10, 10),
         background_color: str = "white",
         background_alpha: Union[float, None] = 1.0,
+        pad: float = 0.3,
     ) -> NetworkPlotter:
         """Get a NetworkPlotter object for plotting.
 
@@ -365,16 +366,12 @@ class RISK(NetworkIO, AnnotationsIO):
             background_color (str, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.
+            pad (float, optional): Padding value to adjust the axis limits. Defaults to 0.3.
 
         Returns:
             NetworkPlotter: A NetworkPlotter object configured with the given parameters.
         """
         log_header("Loading plotter")
-        # Log the plotter settings
-        params.log_plotter(
-            figsize=figsize,
-            background_color=background_color,
-        )
 
         # Initialize and return a NetworkPlotter object
         return NetworkPlotter(
@@ -382,6 +379,7 @@ class RISK(NetworkIO, AnnotationsIO):
             figsize=figsize,
             background_color=background_color,
             background_alpha=background_alpha,
+            pad=pad,
         )
 
     def _load_neighborhoods(
