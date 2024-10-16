@@ -44,8 +44,8 @@ class Canvas:
         Args:
             title (str, optional): Title of the plot. Defaults to None.
             subtitle (str, optional): Subtitle of the plot. Defaults to None.
-            title_fontsize (int, optional): Font size for the title. Defaults to 16.
-            subtitle_fontsize (int, optional): Font size for the subtitle. Defaults to 12.
+            title_fontsize (int, optional): Font size for the title. Defaults to 20.
+            subtitle_fontsize (int, optional): Font size for the subtitle. Defaults to 14.
             font (str, optional): Font family used for both title and subtitle. Defaults to "Arial".
             title_color (str, optional): Color of the title text. Defaults to "black".
             subtitle_color (str, optional): Color of the subtitle text. Defaults to "gray".
@@ -90,11 +90,14 @@ class Canvas:
 
         # Plot subtitle if provided
         if subtitle:
-            # Calculate the subtitle's y position based on title's position and subtitle_offset
-            subtitle_y_position = title_y - subtitle_offset
+            # Calculate the subtitle's y position based on the midpoint of the title and subtitle_offset
+            # Calculate the approximate height of the title in relative axis units
+            title_height = title_fontsize / fig.bbox.height
+            # Position the subtitle relative to the title's center (title_y - half the title height)
+            subtitle_y_position = title_y - (title_height / 2) - subtitle_offset
             self.ax.figure.text(
                 0.5,  # Ensure horizontal centering for subtitle
-                subtitle_y_position,
+                subtitle_y_position,  # Position subtitle based on the center of the title
                 subtitle,
                 ha="center",
                 va="top",
