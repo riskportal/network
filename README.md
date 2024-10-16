@@ -1,4 +1,4 @@
-# RISK
+# RISK Network
 
 <p align="center">
   <img src="https://i.imgur.com/8TleEJs.png" width="50%" />
