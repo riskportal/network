@@ -208,8 +208,8 @@ class Canvas:
             perimeter_fill_alpha=fill_alpha,
         )
 
-        # Convert color to RGBA using the to_rgba helper function - use outline_alpha for the perimeter
-        color = to_rgba(color=color, alpha=outline_alpha)
+        # Convert color to RGBA using outline_alpha for the line (outline)
+        outline_color = to_rgba(color=color)
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Scale the node coordinates if needed
@@ -222,8 +222,9 @@ class Canvas:
             levels=levels,
             bandwidth=bandwidth,
             grid_size=grid_size,
-            color=color,
+            color=outline_color,
             linestyle=linestyle,
             linewidth=linewidth,
-            alpha=fill_alpha,
+            alpha=outline_alpha,
+            fill_alpha=fill_alpha,
         )
