@@ -462,9 +462,10 @@ class Labels:
         def calculate_distance(centroid1, centroid2):
             return np.linalg.norm(centroid1 - centroid2)
 
+        # Domains to plot on network
+        selected_domains = []
         # Find the farthest apart domains using centroids
         if remaining_domains and remaining_labels:
-            selected_domains = []
             first_domain = next(iter(remaining_domains))  # Pick the first domain to start
             selected_domains.append(first_domain)
 
