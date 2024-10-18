@@ -216,8 +216,16 @@ def _transform_colors(
     Returns:
         np.ndarray: The transformed array of RGBA colors with adjusted intensities.
     """
+    # Ensure that min_scale is less than max_scale
     if min_scale == max_scale:
         min_scale = max_scale - 10e-6  # Avoid division by zero
+
+    # Replace black colors (#000000) with very dark grey (#1A1A1A)
+    black_color = np.array([0.0, 0.0, 0.0])  # Pure black RGB
+    dark_grey = np.array([0.1, 0.1, 0.1])  # Very dark grey RGB (#1A1A1A)
+    # Check where colors are black (very close to [0, 0, 0]) and replace with dark grey
+    is_black = np.all(colors[:, :3] == black_color, axis=1)
+    colors[is_black, :3] = dark_grey
 
     # Normalize the enrichment sums to the range [0, 1]
     normalized_sums = enrichment_sums / np.max(enrichment_sums)
