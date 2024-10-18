@@ -121,7 +121,7 @@ def trim_domains_and_top_annotations(
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
     # Multiply 'words' column by normalized values
     top_annotations["words"] = top_annotations.apply(
-        lambda row: " ".join([row["words"]] * row["normalized_value"]), axis=1
+        lambda row: " ".join([str(row["words"])] * row["normalized_value"]), axis=1
     )
 
     # Generate domain labels
