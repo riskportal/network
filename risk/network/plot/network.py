@@ -10,7 +10,7 @@ import numpy as np
 
 from risk.log import params
 from risk.network.graph import NetworkGraph
-from risk.network.plot.utils import to_rgba
+from risk.network.plot.utils.color import get_domain_colors, to_rgba
 
 
 class Network:
@@ -222,7 +222,8 @@ class Network:
             np.ndarray: Array of RGBA colors adjusted for enrichment status.
         """
         # Get the initial domain colors for each node, which are returned as RGBA
-        network_colors = self.graph.get_domain_colors(
+        network_colors = get_domain_colors(
+            graph=self.graph,
             cmap=cmap,
             color=color,
             min_scale=min_scale,

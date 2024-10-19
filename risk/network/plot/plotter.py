@@ -14,7 +14,8 @@ from risk.network.plot.canvas import Canvas
 from risk.network.plot.contour import Contour
 from risk.network.plot.labels import Labels
 from risk.network.plot.network import Network
-from risk.network.plot.utils import calculate_bounding_box, to_rgba
+from risk.network.plot.utils.color import to_rgba
+from risk.network.plot.utils.layout import calculate_bounding_box
 
 
 class NetworkPlotter(Canvas, Network, Contour, Labels):
