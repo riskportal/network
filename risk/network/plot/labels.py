@@ -34,7 +34,7 @@ class Labels:
         scale: float = 1.05,
         offset: float = 0.10,
         font: str = "Arial",
-        fontcase: Union[str, None] = None,
+        fontcase: Union[str, Dict[str, str], None] = None,
         fontsize: int = 10,
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
         fontalpha: Union[float, None] = 1.0,
@@ -60,8 +60,10 @@ class Labels:
             scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
-            fontcase (str, None, optional): Case transformation for the labels. Can be "capitalize", "lower", "title",
-                "upper", or None. Defaults to None.
+            fontcase (Union[str, Dict[str, str], None]): Defines how to transform the case of words.
+                - If a string (e.g., 'upper', 'lower', 'title'), applies the transformation to all words.
+                - If a dictionary, maps specific cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
+                - If None, no transformation is applied.
             fontsize (int, optional): Font size for the labels. Defaults to 10.
             fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array.
                 Defaults to "black".
@@ -855,23 +857,41 @@ def _swap_and_evaluate(
     return _calculate_total_distance(swapped_positions, domain_centroids)
 
 
-def _apply_str_transformation(words: List[str], transformation: str) -> List[str]:
+def _apply_str_transformation(
+    words: List[str], transformation: Union[str, Dict[str, str]]
+) -> List[str]:
     """Apply a user-specified case transformation to each word in the list without appending duplicates.
 
     Args:
         words (List[str]): A list of words to transform.
-        transformation (str): The case transformation to apply (e.g., 'lower', 'upper', 'title', 'capitalize').
+        transformation (Union[str, Dict[str, str]]): A single transformation (e.g., 'lower', 'upper', 'title', 'capitalize')
+            or a dictionary mapping cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
 
     Returns:
         List[str]: A list of transformed words with no duplicates.
     """
     transformed_words = []
     for word in words:
-        if hasattr(word, transformation):
-            transformed_word = getattr(word, transformation)()  # Apply the string method
+        transformed_word = word  # Start with the original word
+        # If transformation is a string, apply it to all words
+        if isinstance(transformation, str):
+            if hasattr(word, transformation):
+                transformed_word = getattr(
+                    word, transformation
+                )()  # Apply the single transformation
 
-            # Only append if the transformed word is not already in the list
-            if transformed_word not in transformed_words:
-                transformed_words.append(transformed_word)
+        # If transformation is a dictionary, apply case-specific transformations
+        elif isinstance(transformation, dict):
+            for case_type, transform in transformation.items():
+                if case_type == "lower" and word.islower() and transform:
+                    transformed_word = getattr(word, transform)()
+                elif case_type == "upper" and word.isupper() and transform:
+                    transformed_word = getattr(word, transform)()
+                elif case_type == "title" and word.istitle() and transform:
+                    transformed_word = getattr(word, transform)()
+
+        # Only append if the transformed word is not already in the list
+        if transformed_word not in transformed_words:
+            transformed_words.append(transformed_word)
 
     return transformed_words
