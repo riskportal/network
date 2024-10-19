@@ -234,12 +234,22 @@ class Network:
         network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
         # Convert the non-enriched color to RGBA using the to_rgba helper function
         nonenriched_color = to_rgba(color=nonenriched_color, alpha=nonenriched_alpha)
-        # Adjust node colors: replace any fully black nodes (RGB == 0) with the non-enriched color and its alpha
+
+        # Compute the sum of RGB values for each color (ignoring alpha)
+        color_sums = network_colors[:, :3].sum(axis=1)
+        # Find the index of the darkest color (the lowest sum of RGB values)
+        darkest_color_index = np.argmin(color_sums)
+        # Extract the darkest color's RGB values
+        darkest_color = network_colors[darkest_color_index, :3]
+        # Adjust node colors: replace the darkest color with the non-enriched color
         adjusted_network_colors = np.where(
-            np.all(network_colors[:, :3] == 0, axis=1, keepdims=True),  # Check RGB values only
+            np.all(
+                network_colors[:, :3] == darkest_color, axis=1, keepdims=True
+            ),  # Check if the color matches the darkest color
             np.array(nonenriched_color),  # Apply the non-enriched color with alpha
             network_colors,  # Keep the original colors for enriched nodes
         )
+
         return adjusted_network_colors
 
     def get_annotated_node_sizes(
