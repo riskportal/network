@@ -878,28 +878,35 @@ def _apply_str_transformation(
     Returns:
         List[str]: A list of transformed words with no duplicates.
     """
+    # Initialize a list to store transformed words
     transformed_words = []
     for word in words:
-        # Convert the word to a string if it is not already
-        word = str(word)
-        transformed_word = word  # Start with the original word
-        # If transformation is a string, apply it to all words
-        if isinstance(transformation, str):
-            if hasattr(word, transformation):
-                transformed_word = getattr(
-                    word, transformation
-                )()  # Apply the single transformation
+        # Split word into subwords by space
+        subwords = word.split(" ")
+        transformed_subwords = []
+        # Apply transformation to each subword
+        for subword in subwords:
+            transformed_subword = subword  # Start with the original subword
+            # If transformation is a string, apply it to all subwords
+            if isinstance(transformation, str):
+                if hasattr(subword, transformation):
+                    transformed_subword = getattr(subword, transformation)()
 
-        # If transformation is a dictionary, apply case-specific transformations
-        elif isinstance(transformation, dict):
-            for case_type, transform in transformation.items():
-                if case_type == "lower" and word.islower() and transform:
-                    transformed_word = getattr(word, transform)()
-                elif case_type == "upper" and word.isupper() and transform:
-                    transformed_word = getattr(word, transform)()
-                elif case_type == "title" and word.istitle() and transform:
-                    transformed_word = getattr(word, transform)()
+            # If transformation is a dictionary, apply case-specific transformations
+            elif isinstance(transformation, dict):
+                for case_type, transform in transformation.items():
+                    if case_type == "lower" and subword.islower() and transform:
+                        transformed_subword = getattr(subword, transform)()
+                    elif case_type == "upper" and subword.isupper() and transform:
+                        transformed_subword = getattr(subword, transform)()
+                    elif case_type == "title" and subword.istitle() and transform:
+                        transformed_subword = getattr(subword, transform)()
 
+            # Append the transformed subword to the list
+            transformed_subwords.append(transformed_subword)
+
+        # Rejoin the transformed subwords into a single string to preserve structure
+        transformed_word = " ".join(transformed_subwords)
         # Only append if the transformed word is not already in the list
         if transformed_word not in transformed_words:
             transformed_words.append(transformed_word)
