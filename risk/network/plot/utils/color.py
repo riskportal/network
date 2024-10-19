@@ -1,6 +1,6 @@
 """
-risk/network/plot/utils/plot
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/plot/utils/color
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict, List, Tuple, Union
