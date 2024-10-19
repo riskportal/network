@@ -11,7 +11,8 @@ import pandas as pd
 
 from risk.log import params
 from risk.network.graph import NetworkGraph
-from risk.network.plot.utils import calculate_bounding_box, get_annotated_domain_colors, to_rgba
+from risk.network.plot.utils.color import get_annotated_domain_colors, to_rgba
+from risk.network.plot.utils.layout import calculate_bounding_box
 
 TERM_DELIMITER = "::::"  # String used to separate multiple domain terms when constructing composite domain labels
 
