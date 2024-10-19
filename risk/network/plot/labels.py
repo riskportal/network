@@ -872,6 +872,8 @@ def _apply_str_transformation(
     """
     transformed_words = []
     for word in words:
+        # Convert the word to a string if it is not already
+        word = str(word)
         transformed_word = word  # Start with the original word
         # If transformation is a string, apply it to all words
         if isinstance(transformation, str):
