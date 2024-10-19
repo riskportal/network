@@ -34,6 +34,7 @@ class Labels:
         scale: float = 1.05,
         offset: float = 0.10,
         font: str = "Arial",
+        fontcase: Union[str, None] = None,
         fontsize: int = 10,
         fontcolor: Union[str, List, Tuple, np.ndarray] = "black",
         fontalpha: Union[float, None] = 1.0,
@@ -59,6 +60,8 @@ class Labels:
             scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
+            fontcase (str, None, optional): Case transformation for the labels. Can be "capitalize", "lower", "title",
+                "upper", or None. Defaults to None.
             fontsize (int, optional): Font size for the labels. Defaults to 10.
             fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array.
                 Defaults to "black".
@@ -92,6 +95,7 @@ class Labels:
             label_perimeter_scale=scale,
             label_offset=offset,
             label_font=font,
+            label_fontcase=fontcase,
             label_fontsize=fontsize,
             label_fontcolor=(
                 "custom" if isinstance(fontcolor, np.ndarray) else fontcolor
@@ -198,6 +202,8 @@ class Labels:
             centroid = filtered_domain_centroids[domain]
             # Split by special key TERM_DELIMITER to split annotation into multiple lines
             annotations = filtered_domain_terms[domain].split(TERM_DELIMITER)
+            if fontcase is not None:
+                annotations = _apply_str_transformation(words=annotations, transformation=fontcase)
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -847,3 +853,25 @@ def _swap_and_evaluate(
     )
     # Calculate and return the total distance after the swap
     return _calculate_total_distance(swapped_positions, domain_centroids)
+
+
+def _apply_str_transformation(words: List[str], transformation: str) -> List[str]:
+    """Apply a user-specified case transformation to each word in the list without appending duplicates.
+
+    Args:
+        words (List[str]): A list of words to transform.
+        transformation (str): The case transformation to apply (e.g., 'lower', 'upper', 'title', 'capitalize').
+
+    Returns:
+        List[str]: A list of transformed words with no duplicates.
+    """
+    transformed_words = []
+    for word in words:
+        if hasattr(word, transformation):
+            transformed_word = getattr(word, transformation)()  # Apply the string method
+
+            # Only append if the transformed word is not already in the list
+            if transformed_word not in transformed_words:
+                transformed_words.append(transformed_word)
+
+    return transformed_words

@@ -186,9 +186,7 @@ def get_description(words_column: pd.Series) -> str:
 
     # Ensure that all values in 'words' are strings and include both alphabetic and numeric tokens
     words = [
-        str(
-            word.lower() if word.istitle() else word
-        )  # Convert to string and lowercase all words except proper nouns (e.g., RNA, mRNA)
+        str(word)  # Convert to string to ensure consistent processing
         for word in tokens
         if word.isalpha()
         or word.replace(".", "", 1).isdigit()  # Keep alphabetic words and numeric strings
