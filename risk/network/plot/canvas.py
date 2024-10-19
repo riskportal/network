@@ -34,8 +34,8 @@ class Canvas:
         title_fontsize: int = 20,
         subtitle_fontsize: int = 14,
         font: str = "Arial",
-        title_color: str = "black",
-        subtitle_color: str = "gray",
+        title_color: Union[str, list, tuple, np.ndarray] = "black",
+        subtitle_color: Union[str, list, tuple, np.ndarray] = "gray",
         title_y: float = 0.975,
         title_space_offset: float = 0.075,
         subtitle_offset: float = 0.025,
@@ -48,8 +48,10 @@ class Canvas:
             title_fontsize (int, optional): Font size for the title. Defaults to 20.
             subtitle_fontsize (int, optional): Font size for the subtitle. Defaults to 14.
             font (str, optional): Font family used for both title and subtitle. Defaults to "Arial".
-            title_color (str, optional): Color of the title text. Defaults to "black".
-            subtitle_color (str, optional): Color of the subtitle text. Defaults to "gray".
+            title_color (str, list, tuple, or np.ndarray, optional): Color of the title text. Can be a string or an array of colors.
+                Defaults to "black".
+            subtitle_color (str, list, tuple, or np.ndarray, optional): Color of the subtitle text. Can be a string or an array of colors.
+                Defaults to "gray".
             title_y (float, optional): Y-axis position of the title. Defaults to 0.975.
             title_space_offset (float, optional): Fraction of figure height to leave for the space above the plot. Defaults to 0.075.
             subtitle_offset (float, optional): Offset factor to position the subtitle below the title. Defaults to 0.025.
@@ -142,7 +144,9 @@ class Canvas:
         )
 
         # Convert color to RGBA using the to_rgba helper function - use outline_alpha for the perimeter
-        color = to_rgba(color=color, alpha=outline_alpha)
+        color = to_rgba(
+            color=color, alpha=outline_alpha, num_repeats=1
+        )  # num_repeats=1 for a single color
         # Set the fill_alpha to 0 if not provided
         fill_alpha = fill_alpha if fill_alpha is not None else 0.0
         # Extract node coordinates from the network graph
@@ -163,7 +167,9 @@ class Canvas:
         )
         # Set the transparency of the fill if applicable
         if fill_alpha > 0:
-            circle.set_facecolor(to_rgba(color=color, alpha=fill_alpha))
+            circle.set_facecolor(
+                to_rgba(color=color, alpha=fill_alpha, num_repeats=1)
+            )  # num_repeats=1 for a single color
 
         self.ax.add_artist(circle)
 
@@ -210,7 +216,7 @@ class Canvas:
         )
 
         # Convert color to RGBA using outline_alpha for the line (outline)
-        outline_color = to_rgba(color=color)
+        outline_color = to_rgba(color=color, num_repeats=1)  # num_repeats=1 for a single color
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Scale the node coordinates if needed

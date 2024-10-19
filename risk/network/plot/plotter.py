@@ -59,7 +59,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         self,
         graph: NetworkGraph,
         figsize: Tuple,
-        background_color: Union[str, List, Tuple, np.ndarray],
+        background_color: Union[str, list, tuple, np.ndarray],
         background_alpha: Union[float, None],
         pad: float,
     ) -> plt.Axes:
@@ -68,9 +68,9 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
-            background_color (str): Background color of the plot.
-            background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any
-            existing alpha values found in background_color.
+            background_color (str, list, tuple, or np.ndarray): Background color of the plot. Can be a single color or an array of colors.
+            background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any existing
+                alpha values found in `background_color`.
             pad (float, optional): Padding value to adjust the axis limits.
 
         Returns:
@@ -99,7 +99,9 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
 
         # Set the background color of the plot
         # Convert color to RGBA using the to_rgba helper function
-        fig.patch.set_facecolor(to_rgba(color=background_color, alpha=background_alpha))
+        fig.patch.set_facecolor(
+            to_rgba(color=background_color, alpha=background_alpha, num_repeats=1)
+        )  # num_repeats=1 for single color
         ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
         # Remove axis spines for a cleaner look
         for spine in ax.spines.values():

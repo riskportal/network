@@ -47,8 +47,10 @@ class Network:
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
             node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors.
                 Defaults to "white".
-            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
-            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
+            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Can be a single color or an array of colors.
+                Defaults to "black".
+            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Can be a single color or an array of colors.
+                Defaults to "black".
             node_alpha (float, None, optional): Alpha value (transparency) for the nodes. If provided, it overrides any existing alpha
                 values found in node_color. Defaults to 1.0. Annotated node_color alphas will override this value.
             edge_alpha (float, None, optional): Alpha value (transparency) for the edges. If provided, it overrides any existing alpha
@@ -194,12 +196,12 @@ class Network:
     def get_annotated_node_colors(
         self,
         cmap: str = "gist_rainbow",
-        color: Union[str, None] = None,
+        color: Union[str, list, tuple, np.ndarray, None] = None,
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
         alpha: Union[float, None] = 1.0,
-        nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
+        nonenriched_color: Union[str, list, tuple, np.ndarray] = "white",
         nonenriched_alpha: Union[float, None] = 1.0,
         random_seed: int = 888,
     ) -> np.ndarray:
@@ -207,15 +209,17 @@ class Network:
 
         Args:
             cmap (str, optional): Colormap to use for coloring the nodes. Defaults to "gist_rainbow".
-            color (str or None, optional): Color to use for the nodes. If None, the colormap will be used. Defaults to None.
+            color (str, list, tuple, np.ndarray, or None, optional): Color to use for the nodes. Can be a single color or an array of colors.
+                If None, the colormap will be used. Defaults to None.
             min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
             max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
             scale_factor (float, optional): Factor for adjusting the color scaling intensity. Defaults to 1.0.
-            alpha (float, None, optional): Alpha value for enriched nodes. If provided, it overrides any existing alpha values
-                found in color. Defaults to 1.0.
-            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Defaults to "white".
-            nonenriched_alpha (float, None, optional): Alpha value for non-enriched nodes. If provided, it overrides any existing
-                alpha values found in nonenriched_color. Defaults to 1.0.
+            alpha (float, None, optional): Alpha value for enriched nodes. If provided, it overrides any existing alpha values found in `color`.
+                Defaults to 1.0.
+            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Can be a single color or an array of colors.
+                Defaults to "white".
+            nonenriched_alpha (float, None, optional): Alpha value for non-enriched nodes. If provided, it overrides any existing alpha values found
+                in `nonenriched_color`. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -234,7 +238,9 @@ class Network:
         # Apply the alpha value for enriched nodes
         network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
         # Convert the non-enriched color to RGBA using the to_rgba helper function
-        nonenriched_color = to_rgba(color=nonenriched_color, alpha=nonenriched_alpha)
+        nonenriched_color = to_rgba(
+            color=nonenriched_color, alpha=nonenriched_alpha, num_repeats=1
+        )  # num_repeats=1 for a single color
         # Adjust node colors: replace any nodes where all three RGB values are equal and less than 0.1
         # 0.1 is a predefined threshold for the minimum color intensity
         adjusted_network_colors = np.where(
