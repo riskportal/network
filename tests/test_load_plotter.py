@@ -665,11 +665,12 @@ def test_plot_contour_perimeter_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "node_color, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
+    "node_color, cmap, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
     [
-        (None, "white", None, "black", "blue", None, None, 100, "o", 0.0, 1.5),  # Test case 1
+        (None, "gist_rainbow", "white", None, "black", "blue", None, None, 100, "o", 0.0, 1.5),
         (
-            (0.2, 0.6, 0.8),
+            [(0.2, 0.6, 0.8)],
+            None,
             (1.0, 1.0, 0.5),
             0.5,
             (1.0, 0.0, 0.0),
@@ -680,14 +681,56 @@ def test_plot_contour_perimeter_with_custom_params(
             "^",
             1.0,
             2.0,
-        ),  # Test case 2
-        ("green", "yellow", 0.2, "grey", "red", 0.8, 0.9, 120, "s", 2.0, 3.0),  # Test case 3
+        ),
+        (
+            ["green", "blue", "red"],
+            None,
+            "yellow",
+            0.2,
+            "grey",
+            "red",
+            0.8,
+            0.9,
+            120,
+            "s",
+            2.0,
+            3.0,
+        ),
+        (
+            [(0.1, 0.2, 0.3, 0.8), (0.3, 0.4, 0.5, 1.0)],
+            None,
+            "yellow",
+            0.4,
+            "grey",
+            "black",
+            0.7,
+            0.5,
+            100,
+            "o",
+            1.0,
+            2.0,
+        ),
+        (
+            ["red", "green", "blue"],
+            "viridis",
+            "white",
+            None,
+            "black",
+            "blue",
+            None,
+            None,
+            100,
+            "o",
+            1.0,
+            2.0,
+        ),
     ],
 )
 def test_plot_network_with_custom_params(
     risk_obj,
     graph,
     node_color,
+    cmap,
     nonenriched_color,
     nonenriched_alpha,
     edge_color,
@@ -705,6 +748,7 @@ def test_plot_network_with_custom_params(
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
         node_color: The color of the network nodes.
+        cmap: Colormap to use for node colors if node_color is None.
         nonenriched_color: The color for non-enriched nodes.
         nonenriched_alpha: The transparency of the non-enriched nodes.
         edge_color: The color of the network edges.
@@ -721,17 +765,17 @@ def test_plot_network_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        if node_color is None:
-            node_color = plotter.get_annotated_node_colors(
-                cmap="gist_rainbow",
-                min_scale=0.5,
-                max_scale=1.0,
-                scale_factor=0.5,
-                nonenriched_color=nonenriched_color,
-                nonenriched_alpha=nonenriched_alpha,
-                random_seed=887,
-            )
-
+        # Directly use get_annotated_node_colors to test stuffing different color formats
+        node_color = plotter.get_annotated_node_colors(
+            cmap=cmap,  # Use cmap if provided
+            color=node_color,  # If node_color is a list of colors, test passing it directly
+            min_scale=0.5,
+            max_scale=1.0,
+            scale_factor=0.5,
+            nonenriched_color=nonenriched_color,
+            nonenriched_alpha=nonenriched_alpha,
+            random_seed=887,
+        )
         plotter.plot_network(
             node_size=plotter.get_annotated_node_sizes(
                 enriched_size=100, nonenriched_size=node_size
@@ -841,36 +885,20 @@ def test_plot_subnetwork_with_custom_params(
 @pytest.mark.parametrize(
     "color, alpha, fill_alpha, levels, bandwidth, grid_size, linestyle, linewidth",
     [
+        (None, None, None, 5, 0.8, 250, "solid", 1.5),  # Test case with annotated colors
+        ("red", 0.5, 0.3, 6, 1.0, 300, "dashed", 2.0),  # Single string color
+        ((0.2, 0.6, 0.8), 0.3, 0.15, 4, 0.6, 200, "dotted", 1.0),  # RGB tuple
+        (["red", "green", "blue"], 0.7, 0.4, 8, 1.2, 350, "dashdot", 1.8),  # List of string colors
         (
-            None,
-            None,
-            None,
-            5,
-            0.8,
-            250,
-            "solid",
-            1.5,
-        ),  # Test case 1
-        (
-            "red",
+            [(0.1, 0.2, 0.3, 0.8), (0.4, 0.5, 0.6, 1.0)],
+            0.9,
             0.5,
-            0.3,
-            6,
-            1.0,
-            300,
-            "dashed",
-            2.0,
-        ),  # Test case 2
-        (
-            (0.2, 0.6, 0.8),
-            0.3,
-            0.15,
-            4,
-            0.6,
-            200,
-            "dotted",
-            1.0,
-        ),  # Test case 3
+            10,
+            0.9,
+            280,
+            "solid",
+            1.2,
+        ),  # List of RGBA colors
     ],
 )
 def test_plot_contours_with_custom_params(
@@ -904,16 +932,22 @@ def test_plot_contours_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        if color is None:
-            color = plotter.get_annotated_contour_colors(cmap="gist_rainbow", random_seed=887)
-
+        # Directly use get_annotated_contour_colors to test stuffing different color formats
+        contour_colors = plotter.get_annotated_contour_colors(
+            cmap="gist_rainbow",  # Use cmap if color is None
+            color=color,  # If color is a list of colors, test passing it directly
+            min_scale=0.8,
+            max_scale=1.0,
+            scale_factor=1.0,
+            random_seed=887,
+        )
         plotter.plot_contours(
             levels=levels,
             bandwidth=bandwidth,
             grid_size=grid_size,
             alpha=alpha,
             fill_alpha=fill_alpha,
-            color=color,
+            color=contour_colors,
             linestyle=linestyle,
             linewidth=linewidth,
         )
@@ -1052,7 +1086,7 @@ def test_plot_subcontour_with_custom_params(
             False,
             None,
             None,
-        ),  # Test case 1
+        ),  # Test case 1 (annotated colors)
         (
             1.5,
             0.15,
@@ -1075,7 +1109,7 @@ def test_plot_subcontour_with_custom_params(
             True,
             ["LSM1", "LSM2"],
             None,
-        ),  # Test case 2
+        ),  # Test case 2 (single color)
         (
             1.35,
             0.12,
@@ -1098,7 +1132,53 @@ def test_plot_subcontour_with_custom_params(
             False,
             ["LSM1", "LSM3"],
             {"LSM3": "custom label"},
-        ),  # Test case 3
+        ),  # Test case 3 (RGB color)
+        (
+            1.4,
+            0.11,
+            "Courier New",
+            None,
+            11,
+            ["red", "green", "blue"],
+            0.7,
+            1,
+            "->",
+            ["yellow", "cyan", "magenta"],
+            0.7,
+            7,
+            4,
+            6,
+            2,
+            5,
+            3,
+            12,
+            True,
+            None,
+            None,
+        ),  # Test case 4 (list of colors)
+        (
+            1.2,
+            0.09,
+            "Verdana",
+            None,
+            13,
+            [(0.1, 0.2, 0.3, 0.8), (0.4, 0.5, 0.6, 1.0)],
+            0.9,
+            2,
+            "-|>",
+            [(0.5, 0.5, 0.5, 0.5), (0.8, 0.2, 0.3, 1.0)],
+            0.9,
+            9,
+            5,
+            7,
+            3,
+            6,
+            4,
+            18,
+            False,
+            None,
+            None,
+        ),  # Test case 5 (list of RGBA colors)
     ],
 )
 def test_plot_labels_with_custom_params(
@@ -1126,30 +1206,31 @@ def test_plot_labels_with_custom_params(
     ids_to_keep,
     ids_to_replace,
 ):
-    """Test plot_labels with different label and arrow colors, alpha values, word constraints, max labels, various style parameters,
-       and new params for overlay_ids, ids_to_keep, ids_to_replace, and arrow_style.
+    """Test plot_labels with varying label and arrow customization options, including font colors, alpha values, label placement
+        constraints, and additional style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which labels will be plotted.
-        fontcolor: The color of the label text (None for annotated, string, or RGB tuple).
-        arrow_color: The color of the label arrows (None for annotated, string, or RGB tuple).
-        font_alpha: The transparency of the label text.
-        arrow_alpha: The transparency of the label arrows.
-        max_labels: Maximum number of labels to display.
-        min_label_lines: Minimum number of words in the label.
-        max_label_lines: Maximum number of words in the label.
-        min_chars_per_line: Minimum length of each word.
-        max_chars_per_line: Maximum length of each word.
         scale: Scale factor for positioning labels around the perimeter.
         offset: Offset distance for labels from the perimeter.
         font: Font name for the labels.
+        fontcase: Text transformation for the font (e.g., uppercase, lowercase).
         fontsize: Font size for the labels.
+        fontcolor: The color of the label text (None for annotated, string, or RGB tuple).
+        font_alpha: The transparency of the label text.
         arrow_linewidth: Line width for the arrows pointing to centroids.
         arrow_style: The style of the arrows (e.g., '->', '-|>', '<|-').
+        arrow_color: The color of the label arrows (None for annotated, string, or RGB tuple).
+        arrow_alpha: The transparency of the label arrows.
         arrow_base_shrink: Distance between the text and the base of the arrow.
         arrow_tip_shrink: Distance between the tip of the arrow and the centroid.
-        overlay_ids: Whether to overlay the domain IDs in the center of the centroids.
+        max_labels: Maximum number of labels to display.
+        min_label_lines: Minimum number of words per label.
+        max_label_lines: Maximum number of words per label.
+        min_chars_per_line: Minimum character count per word in the label.
+        max_chars_per_line: Maximum character count per word in the label.
+        overlay_ids: Whether to overlay domain IDs in the center of the centroids.
         ids_to_keep: List of IDs to prioritize for labeling.
         ids_to_replace: Dictionary mapping domain IDs to custom labels.
 
@@ -1158,12 +1239,23 @@ def test_plot_labels_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        if fontcolor is None:
-            fontcolor = plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887)
-
-        if arrow_color is None:
-            arrow_color = plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887)
-
+        # Directly use get_annotated_label_colors to test stuffing different color formats
+        fontcolor = plotter.get_annotated_label_colors(
+            cmap="gist_rainbow",  # Use cmap if provided
+            color=fontcolor,  # If fontcolor is a list of colors, test passing it directly
+            min_scale=0.5,
+            max_scale=1.0,
+            scale_factor=0.5,
+            random_seed=887,
+        )
+        arrow_color = plotter.get_annotated_label_colors(
+            cmap="gist_rainbow",  # Use cmap if provided
+            color=arrow_color,  # If arrow_color is a list of colors, test passing it directly
+            min_scale=0.5,
+            max_scale=1.0,
+            scale_factor=0.5,
+            random_seed=887,
+        )
         plotter.plot_labels(
             scale=scale,
             offset=offset,
