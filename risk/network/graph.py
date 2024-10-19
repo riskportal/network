@@ -203,7 +203,8 @@ def _transform_colors(
     max_scale: float = 1.0,
     scale_factor: float = 1.0,
 ) -> np.ndarray:
-    """Transform colors using power scaling to emphasize high enrichment sums more.
+    """Transform colors using power scaling to emphasize high enrichment sums more. Black colors are replaced with
+    very dark grey to avoid issues with color scaling (rgb(0.1, 0.1, 0.1)).
 
     Args:
         colors (np.ndarray): An array of RGBA colors.
