@@ -159,7 +159,7 @@ class Params:
         """Load and process various parameters, converting any np.ndarray values to lists.
 
         Returns:
-            dict: A dictionary containing the processed parameters.
+            Dict[str, Any]: A dictionary containing the processed parameters.
         """
         log_header("Loading parameters")
         return _convert_ndarray_to_list(
@@ -174,14 +174,14 @@ class Params:
         )
 
 
-def _convert_ndarray_to_list(d: Any) -> Any:
+def _convert_ndarray_to_list(d: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively convert all np.ndarray values in the dictionary to lists.
 
     Args:
-        d (dict): The dictionary to process.
+        d (Dict[str, Any]): The dictionary to process.
 
     Returns:
-        dict: The processed dictionary with np.ndarray values converted to lists.
+        Dict[str, Any]: The processed dictionary with np.ndarray values converted to lists.
     """
     if isinstance(d, dict):
         # Recursively process each value in the dictionary

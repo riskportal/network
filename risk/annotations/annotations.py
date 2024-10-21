@@ -36,10 +36,11 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
     """Convert annotations input to a DataFrame and reindex based on the network's node labels.
 
     Args:
-        annotations_input (dict): A dictionary with annotations.
+        network (nx.Graph): The network graph.
+        annotations_input (Dict[str, Any]): A dictionary with annotations.
 
     Returns:
-        dict: A dictionary containing ordered nodes, ordered annotations, and the binary annotations matrix.
+        Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the binary annotations matrix.
     """
     # Flatten the dictionary to a list of tuples for easier DataFrame creation
     flattened_annotations = [
@@ -255,7 +256,7 @@ def _generate_coherent_description(words: List[str]) -> str:
     If there is only one unique entry, return it directly.
 
     Args:
-        words (list): A list of words or numerical string values.
+        words (List): A list of words or numerical string values.
 
     Returns:
         str: A coherent description formed by arranging the words in a logical sequence.

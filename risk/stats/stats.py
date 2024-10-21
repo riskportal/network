@@ -3,7 +3,7 @@ risk/stats/stats
 ~~~~~~~~~~~~~~~~
 """
 
-from typing import Union
+from typing import Any, Dict, Union
 
 import numpy as np
 from statsmodels.stats.multitest import fdrcorrection
@@ -15,7 +15,7 @@ def calculate_significance_matrices(
     tail: str = "right",
     pval_cutoff: float = 0.05,
     fdr_cutoff: float = 0.05,
-) -> dict:
+) -> Dict[str, Any]:
     """Calculate significance matrices based on p-values and specified tail.
 
     Args:
@@ -26,8 +26,8 @@ def calculate_significance_matrices(
         fdr_cutoff (float, optional): Cutoff for FDR significance if applied. Defaults to 0.05.
 
     Returns:
-        dict: Dictionary containing the enrichment matrix, binary significance matrix,
-              and the matrix of significant enrichment values.
+        Dict[str, Any]: Dictionary containing the enrichment matrix, binary significance matrix,
+            and the matrix of significant enrichment values.
     """
     if fdr_cutoff < 1.0:
         # Apply FDR correction to depletion p-values

@@ -3,7 +3,7 @@ risk/stats/poisson
 ~~~~~~~~~~~~~~~~~~
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 from scipy.stats import poisson
@@ -20,7 +20,7 @@ def compute_poisson_test(
         null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
 
     Returns:
-        dict: Dictionary containing depletion and enrichment p-values.
+        Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
     # Matrix multiplication to get the number of annotated nodes in each neighborhood
     annotated_in_neighborhood = neighborhoods @ annotations

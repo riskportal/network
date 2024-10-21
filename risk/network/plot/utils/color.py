@@ -124,7 +124,7 @@ def _get_domain_colors(
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     random_seed: int = 888,
-) -> Dict[str, Any]:
+) -> Dict[int, Any]:
     """Get colors for each domain.
 
     Args:
@@ -135,7 +135,7 @@ def _get_domain_colors(
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
     Returns:
-        dict: A dictionary mapping domain keys to their corresponding RGBA colors.
+        Dict[int, Any]: A dictionary mapping domain keys to their corresponding RGBA colors.
     """
     # Get colors for each domain based on node positions
     domain_colors = _get_colors(
@@ -215,7 +215,7 @@ def _get_colors(
 
     Args:
         network (NetworkX graph): The graph representing the network.
-        domain_id_to_node_ids_map (dict): Mapping from domain IDs to lists of node IDs.
+        domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for the domains.
             If None, the colormap will be used. Defaults to None.

@@ -68,7 +68,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (dict): The annotations associated with the network.
+            annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
@@ -76,7 +76,7 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
-            dict: Computed significance of neighborhoods.
+            Dict[str, Any]: Computed significance of neighborhoods.
         """
         log_header("Running hypergeometric test")
         # Log neighborhood analysis parameters
@@ -121,7 +121,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (dict): The annotations associated with the network.
+            annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
@@ -129,7 +129,7 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
-            dict: Computed significance of neighborhoods.
+            Dict[str, Any]: Computed significance of neighborhoods.
         """
         log_header("Running Poisson test")
         # Log neighborhood analysis parameters
@@ -177,7 +177,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (dict): The annotations associated with the network.
+            annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
@@ -188,7 +188,7 @@ class RISK(NetworkIO, AnnotationsIO):
             max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
 
         Returns:
-            dict: Computed significance of neighborhoods.
+            Dict[str, Any]: Computed significance of neighborhoods.
         """
         log_header("Running permutation test")
         # Log neighborhood analysis parameters
@@ -253,7 +253,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): DataFrame containing annotation data for the network.
-            neighborhoods (dict): Neighborhood enrichment data.
+            neighborhoods (Dict[str, Any]): Neighborhood enrichment data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
             fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
@@ -437,13 +437,13 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (dict): Annotations data for the network.
-            neighborhoods (dict): Neighborhood enrichment data.
+            annotations (Dict[str, Any]): Annotations data for the network.
+            neighborhoods (Dict[str, Any]): Neighborhood enrichment data.
             min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
         Returns:
-            dict: Top annotations identified within the network.
+            Dict[str, Any]: Top annotations identified within the network.
         """
         # Extract necessary data from annotations and neighborhoods
         ordered_annotations = annotations["ordered_annotations"]
@@ -470,7 +470,7 @@ class RISK(NetworkIO, AnnotationsIO):
         """Define domains in the network based on enrichment data.
 
         Args:
-            neighborhoods (dict): Enrichment data for neighborhoods.
+            neighborhoods (Dict[str, Any]): Enrichment data for neighborhoods.
             top_annotations (pd.DataFrame): Enrichment matrix for top annotations.
             linkage_criterion (str): Clustering criterion for defining domains.
             linkage_method (str): Clustering method to use.

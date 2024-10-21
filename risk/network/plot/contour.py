@@ -181,7 +181,7 @@ class Contour:
         Args:
             ax (plt.Axes): The axis to draw the contour on.
             pos (np.ndarray): Array of node positions (x, y).
-            nodes (list): List of node indices to include in the contour.
+            nodes (List): List of node indices to include in the contour.
             levels (int, optional): Number of contour levels. Defaults to 5.
             bandwidth (float, optional): Bandwidth for the KDE. Controls smoothness. Defaults to 0.8.
             grid_size (int, optional): Grid resolution for the KDE. Higher values yield finer contours. Defaults to 250.
