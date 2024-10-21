@@ -33,7 +33,7 @@ class AnnotationsIO:
             filepath (str): Path to the JSON annotations file.
 
         Returns:
-            dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
         """
         filetype = "JSON"
         # Log the loading of the JSON file
@@ -158,10 +158,10 @@ class AnnotationsIO:
 
         Args:
             network (NetworkX graph): The network to which the annotations are related.
-            content (dict): The annotations dictionary to load.
+            content (Dict[str, Any]): The annotations dictionary to load.
 
         Returns:
-            dict: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
         """
         # Ensure the input content is a dictionary
         if not isinstance(content, dict):

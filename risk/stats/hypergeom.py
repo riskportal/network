@@ -20,7 +20,7 @@ def compute_hypergeom_test(
         null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
 
     Returns:
-        dict: Dictionary containing depletion and enrichment p-values.
+        Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
     # Get the total number of nodes in the network
     total_node_count = neighborhoods.shape[0]

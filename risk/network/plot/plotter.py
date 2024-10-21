@@ -67,7 +67,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
 
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
-            figsize (tuple): Size of the figure in inches (width, height).
+            figsize (Tuple): Size of the figure in inches (width, height).
             background_color (str, List, Tuple, or np.ndarray): Background color of the plot. Can be a single color or an array of colors.
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any existing
                 alpha values found in `background_color`.

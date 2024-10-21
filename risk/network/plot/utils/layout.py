@@ -35,7 +35,7 @@ def calculate_centroids(network, domain_id_to_node_ids_map):
 
     Args:
         network (NetworkX graph): The graph representing the network.
-        domain_id_to_node_ids_map (dict): Mapping from domain IDs to lists of node IDs.
+        domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
 
     Returns:
         List[Tuple[float, float]]: List of centroids (x, y) for each domain.

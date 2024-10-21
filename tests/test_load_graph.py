@@ -218,7 +218,7 @@ def _check_component_sizes(size_connected_components, min_cluster_size, max_clus
     """Check whether components in `size_connected_components` are within the size range.
 
     Args:
-        size_connected_components (list): A list of component sizes (can be list or int).
+        size_connected_components (List): A list of component sizes (can be list or int).
         min_cluster_size (int): The minimum allowed size for components.
         max_cluster_size (int): The maximum allowed size for components.
 

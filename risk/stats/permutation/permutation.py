@@ -35,7 +35,7 @@ def compute_permutation_test(
         max_workers (int, optional): Number of workers for multiprocessing. Defaults to 1.
 
     Returns:
-        dict: Dictionary containing depletion and enrichment p-values.
+        Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
     # Ensure that the matrices are in the correct format and free of NaN values
     neighborhoods = neighborhoods.astype(np.float32)

@@ -120,12 +120,12 @@ def process_neighborhoods(
 
     Args:
         network (nx.Graph): The network data structure used for imputing and pruning neighbors.
-        neighborhoods (dict): Dictionary containing 'enrichment_matrix', 'binary_enrichment_matrix', and 'significant_enrichment_matrix'.
+        neighborhoods (Dict[str, Any]): Dictionary containing 'enrichment_matrix', 'binary_enrichment_matrix', and 'significant_enrichment_matrix'.
         impute_depth (int, optional): Depth for imputing neighbors. Defaults to 0.
         prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
 
     Returns:
-        dict: Processed neighborhoods data, including the updated matrices and enrichment counts.
+        Dict[str, Any]: Processed neighborhoods data, including the updated matrices and enrichment counts.
     """
     enrichment_matrix = neighborhoods["enrichment_matrix"]
     binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
@@ -408,7 +408,7 @@ def _calculate_threshold(median_distances: List, distance_threshold: float) -> f
     """Calculate the distance threshold based on the given median distances and a percentile threshold.
 
     Args:
-        median_distances (list): An array of median distances.
+        median_distances (List): An array of median distances.
         distance_threshold (float): A percentile threshold (0 to 1) used to determine the distance cutoff.
 
     Returns:
