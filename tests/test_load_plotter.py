@@ -118,6 +118,8 @@ def plot_network(plotter):
             edge_width=0.0,
             node_color=plotter.get_annotated_node_colors(
                 cmap="gist_rainbow",
+                blend_colors=True,
+                blend_gamma=2.2,
                 min_scale=0.25,
                 max_scale=1.0,
                 scale_factor=0.5,
@@ -769,6 +771,8 @@ def test_plot_network_with_custom_params(
         node_color = plotter.get_annotated_node_colors(
             cmap=cmap,  # Use cmap if provided
             color=node_color,  # If node_color is a list of colors, test passing it directly
+            blend_colors=True,
+            blend_gamma=2.2,
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,
@@ -936,6 +940,8 @@ def test_plot_contours_with_custom_params(
         contour_colors = plotter.get_annotated_contour_colors(
             cmap="gist_rainbow",  # Use cmap if color is None
             color=color,  # If color is a list of colors, test passing it directly
+            blend_colors=False,
+            blend_gamma=2.2,
             min_scale=0.8,
             max_scale=1.0,
             scale_factor=1.0,
@@ -1243,6 +1249,8 @@ def test_plot_labels_with_custom_params(
         fontcolor = plotter.get_annotated_label_colors(
             cmap="gist_rainbow",  # Use cmap if provided
             color=fontcolor,  # If fontcolor is a list of colors, test passing it directly
+            blend_colors=True,
+            blend_gamma=2.2,
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,
@@ -1251,6 +1259,8 @@ def test_plot_labels_with_custom_params(
         arrow_color = plotter.get_annotated_label_colors(
             cmap="gist_rainbow",  # Use cmap if provided
             color=arrow_color,  # If arrow_color is a list of colors, test passing it directly
+            blend_colors=False,
+            blend_gamma=2.2,
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,

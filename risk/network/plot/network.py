@@ -45,11 +45,11 @@ class Network:
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             node_edgewidth (float, optional): Width of the node edges. Defaults to 1.0.
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors.
+            node_color (str, List, Tuple, or np.ndarray, optional): Color of the nodes. Can be a single color or an array of colors.
                 Defaults to "white".
-            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Can be a single color or an array of colors.
+            node_edgecolor (str, List, Tuple, or np.ndarray, optional): Color of the node edges. Can be a single color or an array of colors.
                 Defaults to "black".
-            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Can be a single color or an array of colors.
+            edge_color (str, List, Tuple, or np.ndarray, optional): Color of the edges. Can be a single color or an array of colors.
                 Defaults to "black".
             node_alpha (float, None, optional): Alpha value (transparency) for the nodes. If provided, it overrides any existing alpha
                 values found in node_color. Defaults to 1.0. Annotated node_color alphas will override this value.
@@ -124,14 +124,14 @@ class Network:
         """Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
         Args:
-            nodes (list, tuple, or np.ndarray): List of node labels to include in the subnetwork. Accepts nested lists.
+            nodes (List, Tuple, or np.ndarray): List of node labels to include in the subnetwork. Accepts nested lists.
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
             node_shape (str, optional): Shape of the nodes. Defaults to "o".
             node_edgewidth (float, optional): Width of the node edges. Defaults to 1.0.
             edge_width (float, optional): Width of the edges. Defaults to 1.0.
-            node_color (str, list, tuple, or np.ndarray, optional): Color of the nodes. Defaults to "white".
-            node_edgecolor (str, list, tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
-            edge_color (str, list, tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
+            node_color (str, List, Tuple, or np.ndarray, optional): Color of the nodes. Defaults to "white".
+            node_edgecolor (str, List, Tuple, or np.ndarray, optional): Color of the node edges. Defaults to "black".
+            edge_color (str, List, Tuple, or np.ndarray, optional): Color of the edges. Defaults to "black".
             node_alpha (float, None, optional): Transparency for the nodes. If provided, it overrides any existing alpha values
                 found in node_color. Defaults to 1.0.
             edge_alpha (float, None, optional): Transparency for the edges. If provided, it overrides any existing alpha values
@@ -141,7 +141,7 @@ class Network:
             ValueError: If no valid nodes are found in the network graph.
         """
         # Flatten nested lists of nodes, if necessary
-        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
+        if any(isinstance(item, (List, Tuple, np.ndarray)) for item in nodes):
             nodes = [node for sublist in nodes for node in sublist]
 
         # Filter to get node IDs and their coordinates
@@ -154,7 +154,7 @@ class Network:
             raise ValueError("No nodes found in the network graph.")
 
         # Check if node_color is a single color or a list of colors
-        if not isinstance(node_color, (str, tuple, np.ndarray)):
+        if not isinstance(node_color, (str, Tuple, np.ndarray)):
             node_color = [
                 node_color[nodes.index(node)]
                 for node in nodes
@@ -196,12 +196,14 @@ class Network:
     def get_annotated_node_colors(
         self,
         cmap: str = "gist_rainbow",
-        color: Union[str, list, tuple, np.ndarray, None] = None,
+        color: Union[str, List, Tuple, np.ndarray, None] = None,
+        blend_colors: bool = False,
+        blend_gamma: float = 2.2,
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
         alpha: Union[float, None] = 1.0,
-        nonenriched_color: Union[str, list, tuple, np.ndarray] = "white",
+        nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
         nonenriched_alpha: Union[float, None] = 1.0,
         random_seed: int = 888,
     ) -> np.ndarray:
@@ -209,14 +211,16 @@ class Network:
 
         Args:
             cmap (str, optional): Colormap to use for coloring the nodes. Defaults to "gist_rainbow".
-            color (str, list, tuple, np.ndarray, or None, optional): Color to use for the nodes. Can be a single color or an array of colors.
+            color (str, List, Tuple, np.ndarray, or None, optional): Color to use for the nodes. Can be a single color or an array of colors.
                 If None, the colormap will be used. Defaults to None.
+            blend_colors (bool, optional): Whether to blend colors for nodes with multiple domains. Defaults to False.
+            blend_gamma (float, optional): Gamma correction factor for perceptual color blending. Defaults to 2.2.
             min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
             max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
             scale_factor (float, optional): Factor for adjusting the color scaling intensity. Defaults to 1.0.
             alpha (float, None, optional): Alpha value for enriched nodes. If provided, it overrides any existing alpha values found in `color`.
                 Defaults to 1.0.
-            nonenriched_color (str, list, tuple, or np.ndarray, optional): Color for non-enriched nodes. Can be a single color or an array of colors.
+            nonenriched_color (str, List, Tuple, or np.ndarray, optional): Color for non-enriched nodes. Can be a single color or an array of colors.
                 Defaults to "white".
             nonenriched_alpha (float, None, optional): Alpha value for non-enriched nodes. If provided, it overrides any existing alpha values found
                 in `nonenriched_color`. Defaults to 1.0.
@@ -230,6 +234,8 @@ class Network:
             graph=self.graph,
             cmap=cmap,
             color=color,
+            blend_colors=blend_colors,
+            blend_gamma=blend_gamma,
             min_scale=min_scale,
             max_scale=max_scale,
             scale_factor=scale_factor,
