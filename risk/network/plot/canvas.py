@@ -34,8 +34,8 @@ class Canvas:
         title_fontsize: int = 20,
         subtitle_fontsize: int = 14,
         font: str = "Arial",
-        title_color: Union[str, list, tuple, np.ndarray] = "black",
-        subtitle_color: Union[str, list, tuple, np.ndarray] = "gray",
+        title_color: Union[str, List, Tuple, np.ndarray] = "black",
+        subtitle_color: Union[str, List, Tuple, np.ndarray] = "gray",
         title_y: float = 0.975,
         title_space_offset: float = 0.075,
         subtitle_offset: float = 0.025,
@@ -48,9 +48,9 @@ class Canvas:
             title_fontsize (int, optional): Font size for the title. Defaults to 20.
             subtitle_fontsize (int, optional): Font size for the subtitle. Defaults to 14.
             font (str, optional): Font family used for both title and subtitle. Defaults to "Arial".
-            title_color (str, list, tuple, or np.ndarray, optional): Color of the title text. Can be a string or an array of colors.
+            title_color (str, List, Tuple, or np.ndarray, optional): Color of the title text. Can be a string or an array of colors.
                 Defaults to "black".
-            subtitle_color (str, list, tuple, or np.ndarray, optional): Color of the subtitle text. Can be a string or an array of colors.
+            subtitle_color (str, List, Tuple, or np.ndarray, optional): Color of the subtitle text. Can be a string or an array of colors.
                 Defaults to "gray".
             title_y (float, optional): Y-axis position of the title. Defaults to 0.975.
             title_space_offset (float, optional): Fraction of figure height to leave for the space above the plot. Defaults to 0.075.
@@ -124,7 +124,7 @@ class Canvas:
             scale (float, optional): Scaling factor for the perimeter diameter. Defaults to 1.0.
             linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
             linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
-            color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
+            color (str, List, Tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
             outline_alpha (float, None, optional): Transparency level of the circle outline. If provided, it overrides any existing alpha
                 values found in color. Defaults to 1.0.
             fill_alpha (float, None, optional): Transparency level of the circle fill. If provided, it overrides any existing alpha values
@@ -137,7 +137,7 @@ class Canvas:
             perimeter_linestyle=linestyle,
             perimeter_linewidth=linewidth,
             perimeter_color=(
-                "custom" if isinstance(color, (list, tuple, np.ndarray)) else color
+                "custom" if isinstance(color, (List, Tuple, np.ndarray)) else color
             ),  # np.ndarray usually indicates custom colors
             perimeter_outline_alpha=outline_alpha,
             perimeter_fill_alpha=fill_alpha,
@@ -193,7 +193,7 @@ class Canvas:
             levels (int, optional): Number of contour levels. Defaults to 3.
             bandwidth (float, optional): Bandwidth for the KDE. Controls smoothness. Defaults to 0.8.
             grid_size (int, optional): Grid resolution for the KDE. Higher values yield finer contours. Defaults to 250.
-            color (str, list, tuple, or np.ndarray, optional): Color of the network perimeter contour. Defaults to "black".
+            color (str, List, Tuple, or np.ndarray, optional): Color of the network perimeter contour. Defaults to "black".
             linestyle (str, optional): Line style for the network perimeter contour (e.g., dashed, solid). Defaults to "solid".
             linewidth (float, optional): Width of the contour's outline. Defaults to 1.5.
             outline_alpha (float, None, optional): Transparency level of the contour outline. If provided, it overrides any existing
@@ -210,7 +210,7 @@ class Canvas:
             perimeter_grid_size=grid_size,
             perimeter_linestyle=linestyle,
             perimeter_linewidth=linewidth,
-            perimeter_color=("custom" if isinstance(color, (list, tuple, np.ndarray)) else color),
+            perimeter_color=("custom" if isinstance(color, (List, Tuple, np.ndarray)) else color),
             perimeter_outline_alpha=outline_alpha,
             perimeter_fill_alpha=fill_alpha,
         )

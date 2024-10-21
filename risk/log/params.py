@@ -193,5 +193,5 @@ def _convert_ndarray_to_list(d: Any) -> Any:
         # Convert numpy arrays to lists
         return d.tolist()
     else:
-        # Return the value unchanged if it's not a dict, list, or ndarray
+        # Return the value unchanged if it's not a dict, List, or ndarray
         return d
