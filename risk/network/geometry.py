@@ -68,6 +68,7 @@ def assign_edge_lengths(
             v_coords = np.append(v_coords, G_depth.nodes[v].get("z", 0))
 
         distance = compute_distance(u_coords, v_coords, is_sphere=compute_sphere)
+        # Assign edge lengths to the original graph
         if include_edge_weight:
             # Square root of the normalized weight is used to minimize the effect of large weights
             G.edges[u, v]["length"] = distance / np.sqrt(G.edges[u, v]["normalized_weight"] + 1e-6)
