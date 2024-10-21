@@ -46,6 +46,9 @@ class NetworkGraph:
             trimmed_domains
         )
         self.node_enrichment_sums = node_enrichment_sums
+        self.node_id_to_domain_ids_and_enrichments_map = (
+            self._create_node_id_to_domain_ids_and_enrichments(domains)
+        )
         self.node_id_to_node_label_map = {v: k for k, v in node_label_to_node_id_map.items()}
         self.node_label_to_enrichment_map = dict(
             zip(node_label_to_node_id_map.keys(), node_enrichment_sums)
@@ -91,6 +94,40 @@ class NetworkGraph:
                 trimmed_domains["label"],
             )
         )
+
+    def _create_node_id_to_domain_ids_and_enrichments(
+        self, domains: pd.DataFrame
+    ) -> Dict[int, Dict]:
+        """Creates a dictionary mapping each node ID to its corresponding domain IDs and enrichment values.
+
+        Args:
+            domains (pd.DataFrame): A DataFrame containing domain information for each node. Assumes the last
+                two columns are 'all domains' and 'primary domain', which are excluded from processing.
+
+        Returns:
+            dict: A dictionary where the key is the node ID (index of the DataFrame), and the value is another dictionary
+                with 'domain' (a list of domain IDs with non-zero enrichment) and 'enrichment'
+                (a dict of domain IDs and their corresponding enrichment values).
+        """
+        # Initialize an empty dictionary to store the result
+        node_id_to_domain_ids_and_enrichments = {}
+        # Get the list of domain columns (excluding 'all domains' and 'primary domain')
+        domain_columns = domains.columns[
+            :-2
+        ]  # The last two columns are 'all domains' and 'primary domain'
+        # Iterate over each row in the dataframe
+        for idx, row in domains.iterrows():
+            # Get the domains (column names) where the enrichment score is greater than 0
+            all_domains = domain_columns[row[domain_columns] > 0].tolist()
+            # Get the enrichment values for those domains
+            enrichment_values = row[all_domains].to_dict()
+            # Store the result in the dictionary with index as the key
+            node_id_to_domain_ids_and_enrichments[idx] = {
+                "domains": all_domains,  # The column names where enrichment > 0
+                "enrichments": enrichment_values,  # The actual enrichment values for those columns
+            }
+
+        return node_id_to_domain_ids_and_enrichments
 
     def _create_domain_id_to_node_labels_map(self) -> Dict[int, List[str]]:
         """Create a map from domain IDs to node labels.

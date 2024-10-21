@@ -66,13 +66,13 @@ class Labels:
                 - If a dictionary, maps specific cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
                 - If None, no transformation is applied.
             fontsize (int, optional): Font size for the labels. Defaults to 10.
-            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array.
+            fontcolor (str, List, Tuple, or np.ndarray, optional): Color of the label text. Can be a string or RGBA array.
                 Defaults to "black".
             fontalpha (float, None, optional): Transparency level for the font color. If provided, it overrides any existing alpha
                 values found in fontcolor. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrows pointing to centroids. Defaults to 1.
             arrow_style (str, optional): Style of the arrows pointing to centroids. Defaults to "->".
-            arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
+            arrow_color (str, List, Tuple, or np.ndarray, optional): Color of the arrows. Defaults to "black".
             arrow_alpha (float, None, optional): Transparency level for the arrow color. If provided, it overrides any existing alpha
                 values found in arrow_color. Defaults to 1.0.
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
@@ -82,9 +82,9 @@ class Labels:
             max_label_lines (int, optional): Maximum number of lines in a label. Defaults to None (no limit).
             min_chars_per_line (int, optional): Minimum number of characters in a line to display. Defaults to 1.
             max_chars_per_line (int, optional): Maximum number of characters in a line to display. Defaults to None (no limit).
-            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
+            words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
-            ids_to_keep (list, tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
+            ids_to_keep (List, Tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
                 you can set `overlay_ids=True`. Defaults to None.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be
                 space-separated words. If provided, the custom labels will replace the default domain terms. To discover domain IDs, you
@@ -263,26 +263,26 @@ class Labels:
         """Annotate the network graph with a label for the given nodes, with one arrow pointing to each centroid of sublists of nodes.
 
         Args:
-            nodes (list, tuple, or np.ndarray): List of node labels or list of lists of node labels.
+            nodes (List, Tuple, or np.ndarray): List of node labels or list of lists of node labels.
             label (str): The label to be annotated on the network.
             radial_position (float, optional): Radial angle for positioning the label, in degrees (0-360). Defaults to 0.0.
             scale (float, optional): Scale factor for positioning the label around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for the label from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the label. Defaults to "Arial".
             fontsize (int, optional): Font size for the label. Defaults to 10.
-            fontcolor (str, list, tuple, or np.ndarray, optional): Color of the label text. Defaults to "black".
+            fontcolor (str, List, Tuple, or np.ndarray, optional): Color of the label text. Defaults to "black".
             fontalpha (float, None, optional): Transparency level for the font color. If provided, it overrides any existing alpha values found
                 in fontalpha. Defaults to 1.0.
             arrow_linewidth (float, optional): Line width of the arrow pointing to the centroid. Defaults to 1.
             arrow_style (str, optional): Style of the arrows pointing to the centroid. Defaults to "->".
-            arrow_color (str, list, tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
+            arrow_color (str, List, Tuple, or np.ndarray, optional): Color of the arrow. Defaults to "black".
             arrow_alpha (float, None, optional): Transparency level for the arrow color. If provided, it overrides any existing alpha values
                 found in arrow_alpha. Defaults to 1.0.
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
         """
         # Check if nodes is a list of lists or a flat list
-        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
+        if any(isinstance(item, (List, Tuple, np.ndarray)) for item in nodes):
             # If it's a list of lists, iterate over sublists
             node_groups = nodes
             # Convert fontcolor and arrow_color to RGBA arrays to match the number of groups
@@ -383,9 +383,9 @@ class Labels:
 
         Args:
             domain_id_to_centroid_map (dict): Mapping of domain IDs to their centroids.
-            ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
+            ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
-            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
+            words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
             max_labels (int, optional): Maximum number of labels allowed.
             min_label_lines (int): Minimum number of lines in a label.
             max_label_lines (int): Maximum number of lines in a label.
@@ -449,9 +449,9 @@ class Labels:
 
         Args:
             domain_id_to_centroid_map (dict): Mapping of domain IDs to their centroids.
-            ids_to_keep (list, tuple, or np.ndarray, optional): IDs of domains that must be labeled.
+            ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_replace (dict, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
-            words_to_omit (list, optional): List of words to omit from the labels. Defaults to None.
+            words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
             remaining_labels (int): The remaining number of labels that can be generated.
             min_label_lines (int): Minimum number of lines in a label.
             max_label_lines (int): Maximum number of lines in a label.
@@ -607,7 +607,7 @@ class Labels:
         Args:
             domain (str): The domain being processed.
             ids_to_replace (dict, optional): Dictionary mapping domain IDs to custom labels.
-            words_to_omit (list, optional): List of words to omit from the labels.
+            words_to_omit (List, optional): List of words to omit from the labels.
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
             max_chars_per_line (int): Maximum number of characters in a line to display.
@@ -637,7 +637,9 @@ class Labels:
     def get_annotated_label_colors(
         self,
         cmap: str = "gist_rainbow",
-        color: Union[str, list, tuple, np.ndarray, None] = None,
+        color: Union[str, List, Tuple, np.ndarray, None] = None,
+        blend_colors: bool = False,
+        blend_gamma: float = 2.2,
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
@@ -647,8 +649,10 @@ class Labels:
 
         Args:
             cmap (str, optional): Name of the colormap to use for generating label colors. Defaults to "gist_rainbow".
-            color (str, list, tuple, np.ndarray, or None, optional): Color to use for the labels. Can be a single color or an array
+            color (str, List, Tuple, np.ndarray, or None, optional): Color to use for the labels. Can be a single color or an array
                 of colors. If None, the colormap will be used. Defaults to None.
+            blend_colors (bool, optional): Whether to blend colors for nodes with multiple domains. Defaults to False.
+            blend_gamma (float, optional): Gamma correction factor for perceptual color blending. Defaults to 2.2.
             min_scale (float, optional): Minimum intensity scale for the colors generated by the colormap.
                 Controls the dimmest colors. Defaults to 0.8.
             max_scale (float, optional): Maximum intensity scale for the colors generated by the colormap.
@@ -664,6 +668,8 @@ class Labels:
             graph=self.graph,
             cmap=cmap,
             color=color,
+            blend_colors=blend_colors,
+            blend_gamma=blend_gamma,
             min_scale=min_scale,
             max_scale=max_scale,
             scale_factor=scale_factor,
@@ -768,7 +774,7 @@ def _calculate_equidistant_positions_around_center(
         num_domains (int): The number of positions (or domains) to calculate.
 
     Returns:
-        list[np.ndarray]: List of positions (as 2D numpy arrays) around the center.
+        List[np.ndarray]: List of positions (as 2D numpy arrays) around the center.
     """
     # Calculate equidistant angles in radians around the center
     angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
