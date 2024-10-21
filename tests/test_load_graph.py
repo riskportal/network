@@ -69,7 +69,8 @@ def test_top_annotations_cluster_sizes_with_json_annotation(
         neighborhoods = risk_obj.load_neighborhoods_by_permutation(
             network=cytoscape_network,
             annotations=json_annotation,
-            distance_metric="louvain",
+            # Test multiple distance metrics
+            distance_metric=["louvain", "label_propagation"],
             louvain_resolution=8,
             edge_length_threshold=0.75,
             score_metric="stdev",
@@ -167,9 +168,11 @@ def test_top_annotations_cluster_sizes_with_dict_annotation(
         neighborhoods = risk_obj.load_neighborhoods_by_permutation(
             network=cytoscape_network,
             annotations=dict_annotation,
-            distance_metric="louvain",
+            # Test multiple distance metrics
+            distance_metric=["louvain", "label_propagation"],
             louvain_resolution=8,
-            edge_length_threshold=0.75,
+            # Test multiple edge length thresholds
+            edge_length_threshold=[0.75, 0.25],
             score_metric="stdev",
             null_distribution="network",
             num_permutations=100,
