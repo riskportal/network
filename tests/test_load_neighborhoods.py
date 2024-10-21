@@ -128,56 +128,63 @@ def test_load_neighborhoods_poisson(
 
 
 @pytest.mark.parametrize(
-    "distance_metric",
+    "distance_metric, edge_length_threshold",
     [
-        "greedy_modularity",
-        "louvain",
-        "label_propagation",
-        "markov_clustering",
-        "walktrap",
-        "spinglass",
+        ("greedy_modularity", 0.75),
+        ("louvain", 0.80),
+        ("label_propagation", 0.70),
+        ("markov_clustering", 0.65),
+        ("walktrap", 0.85),
+        ("spinglass", 0.90),
+        (["louvain"], [0.75]),
+        (["louvain", "label_propagation"], [0.75, 0.70]),
+        (["louvain", "markov_clustering"], [0.75, 0.65]),
+        (["label_propagation", "walktrap", "spinglass"], [0.70, 0.85, 0.90]),
+        (
+            ["louvain", "label_propagation", "markov_clustering", "walktrap", "spinglass"],
+            [0.75, 0.70, 0.65, 0.85, 0.90],
+        ),
+        (
+            [
+                "louvain",
+                "label_propagation",
+                "markov_clustering",
+                "walktrap",
+                "spinglass",
+                "greedy_modularity",
+            ],
+            [0.75, 0.70, 0.65, 0.85, 0.90, 0.80],
+        ),
     ],
 )
 def test_load_neighborhoods_with_various_distance_metrics(
-    risk_obj, cytoscape_network, json_annotation, distance_metric
+    risk_obj, cytoscape_network, json_annotation, distance_metric, edge_length_threshold
 ):
-    """Test loading neighborhoods using various distance metrics.
+    """Test loading neighborhoods using various distance metrics with matching edge length thresholds.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
-        distance_metric: The specific distance metric to be used for generating neighborhoods.
+        distance_metric: The specific distance metric(s) to be used for generating neighborhoods.
+        edge_length_threshold: The edge length threshold(s) corresponding to each distance metric.
 
     Returns:
         None
     """
-    # Load neighborhoods with the current distance metric
-    if distance_metric == "louvain":
-        neighborhoods = risk_obj.load_neighborhoods_by_permutation(
-            network=cytoscape_network,
-            annotations=json_annotation,
-            distance_metric=distance_metric,
-            louvain_resolution=8,
-            edge_length_threshold=0.75,
-            score_metric="stdev",
-            null_distribution="network",
-            num_permutations=100,
-            random_seed=887,
-            max_workers=4,
-        )
-    else:
-        neighborhoods = risk_obj.load_neighborhoods_by_permutation(
-            network=cytoscape_network,
-            annotations=json_annotation,
-            distance_metric=distance_metric,
-            edge_length_threshold=0.75,
-            score_metric="stdev",
-            null_distribution="network",
-            num_permutations=100,
-            random_seed=887,
-            max_workers=4,
-        )
+    # Load neighborhoods with the current distance metric(s) and matching edge length threshold(s)
+    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric=distance_metric,
+        louvain_resolution=8,
+        edge_length_threshold=edge_length_threshold,
+        score_metric="stdev",
+        null_distribution="network",
+        num_permutations=100,
+        random_seed=887,
+        max_workers=4,
+    )
 
     assert neighborhoods is not None
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
