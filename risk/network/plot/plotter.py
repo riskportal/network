@@ -38,8 +38,8 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
 
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
-            figsize (tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
-            background_color (str, list, tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
+            figsize (Tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
+            background_color (str, List, Tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.
             pad (float, optional): Padding value to adjust the axis limits. Defaults to 0.3.
@@ -59,7 +59,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         self,
         graph: NetworkGraph,
         figsize: Tuple,
-        background_color: Union[str, list, tuple, np.ndarray],
+        background_color: Union[str, List, Tuple, np.ndarray],
         background_alpha: Union[float, None],
         pad: float,
     ) -> plt.Axes:
@@ -68,7 +68,7 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
         Args:
             graph (NetworkGraph): The network data and attributes to be visualized.
             figsize (tuple): Size of the figure in inches (width, height).
-            background_color (str, list, tuple, or np.ndarray): Background color of the plot. Can be a single color or an array of colors.
+            background_color (str, List, Tuple, or np.ndarray): Background color of the plot. Can be a single color or an array of colors.
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any existing
                 alpha values found in `background_color`.
             pad (float, optional): Padding value to adjust the axis limits.

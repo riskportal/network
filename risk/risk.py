@@ -362,7 +362,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             graph (NetworkGraph): The graph to plot.
-            figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
+            figsize (Tuple, optional): Size of the figure. Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.

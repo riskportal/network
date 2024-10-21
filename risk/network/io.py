@@ -491,7 +491,7 @@ class NetworkIO:
             if "x" not in attrs or "y" not in attrs:
                 if (
                     "pos" in attrs
-                    and isinstance(attrs["pos"], (list, tuple, np.ndarray))
+                    and isinstance(attrs["pos"], (List, Tuple, np.ndarray))
                     and len(attrs["pos"]) >= 2
                 ):
                     attrs["x"], attrs["y"] = attrs["pos"][
