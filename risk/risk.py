@@ -395,9 +395,13 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): The matrix of annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
