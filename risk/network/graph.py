@@ -71,7 +71,7 @@ class NetworkGraph:
         """
         cleaned_domains_matrix = domains.reset_index()[["index", "primary domain"]]
         node_to_domains_map = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
-        domain_id_to_node_ids_map = defaultdict(List)
+        domain_id_to_node_ids_map = defaultdict(list)
         for k, v in node_to_domains_map.items():
             domain_id_to_node_ids_map[v].append(k)
 
