@@ -5,7 +5,7 @@ risk/neighborhoods/neighborhoods
 
 import random
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -28,50 +28,82 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 
 def get_network_neighborhoods(
     network: nx.Graph,
-    distance_metric: str = "louvain",
-    edge_length_threshold: float = 1.0,
+    distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+    edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 1.0,
     louvain_resolution: float = 1.0,
     random_seed: int = 888,
 ) -> np.ndarray:
-    """Calculate the neighborhoods for each node in the network based on the specified distance metric.
+    """Calculate the combined neighborhoods for each node based on the specified community detection algorithm(s).
 
     Args:
         network (nx.Graph): The network graph.
-        distance_metric (str): The distance metric to use ('greedy_modularity', 'louvain', 'label_propagation',
-            'markov_clustering', 'walktrap', 'spinglass').
-        edge_length_threshold (float): The edge length threshold for the neighborhoods.
+        distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+            metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+            'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
+        edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+            Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+            Defaults to 1.0.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
         random_seed (int, optional): Random seed for methods requiring random initialization. Defaults to 888.
 
     Returns:
-        np.ndarray: Neighborhood matrix calculated based on the selected distance metric.
+        np.ndarray: Summed neighborhood matrix from all selected algorithms.
     """
-    # Set random seed for reproducibility in all methods besides Louvain, which requires a separate seed
+    # Set random seed for reproducibility
     random.seed(random_seed)
     np.random.seed(random_seed)
 
-    # Create a subgraph based on the edge length percentile threshold
-    network = _create_percentile_limited_subgraph(
-        network, edge_length_percentile=edge_length_threshold
-    )
+    # Ensure distance_metric is a list/tuple for multi-algorithm handling
+    if isinstance(distance_metric, (str, np.ndarray)):
+        distance_metric = [distance_metric]
+    # Ensure edge_length_threshold is a list/tuple for multi-threshold handling
+    if isinstance(edge_length_threshold, (float, int)):
+        edge_length_threshold = [edge_length_threshold] * len(distance_metric)
+    # Check that the number of distance metrics matches the number of edge length thresholds
+    if len(distance_metric) != len(edge_length_threshold):
+        raise ValueError(
+            "The number of distance metrics must match the number of edge length thresholds."
+        )
 
-    if distance_metric == "louvain":
-        return calculate_louvain_neighborhoods(network, louvain_resolution, random_seed=random_seed)
-    if distance_metric == "greedy_modularity":
-        return calculate_greedy_modularity_neighborhoods(network)
-    if distance_metric == "label_propagation":
-        return calculate_label_propagation_neighborhoods(network)
-    if distance_metric == "markov_clustering":
-        return calculate_markov_clustering_neighborhoods(network)
-    if distance_metric == "walktrap":
-        return calculate_walktrap_neighborhoods(network)
-    if distance_metric == "spinglass":
-        return calculate_spinglass_neighborhoods(network)
+    # Initialize combined neighborhood matrix
+    num_nodes = network.number_of_nodes()
+    combined_neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
 
-    raise ValueError(
-        "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'louvain',"
-        "'label_propagation', 'markov_clustering', 'walktrap', 'spinglass'."
-    )
+    # Loop through each distance metric and corresponding edge length threshold
+    for metric, threshold in zip(distance_metric, edge_length_threshold):
+        # Create a subgraph based on the specific edge length threshold for this algorithm
+        subgraph = _create_percentile_limited_subgraph(network, edge_length_percentile=threshold)
+        # Call the appropriate neighborhood function based on the metric
+        if metric == "louvain":
+            neighborhoods = calculate_louvain_neighborhoods(
+                subgraph, louvain_resolution, random_seed=random_seed
+            )
+        elif metric == "greedy_modularity":
+            neighborhoods = calculate_greedy_modularity_neighborhoods(subgraph)
+        elif metric == "label_propagation":
+            neighborhoods = calculate_label_propagation_neighborhoods(subgraph)
+        elif metric == "markov_clustering":
+            neighborhoods = calculate_markov_clustering_neighborhoods(subgraph)
+        elif metric == "walktrap":
+            neighborhoods = calculate_walktrap_neighborhoods(subgraph)
+        elif metric == "spinglass":
+            neighborhoods = calculate_spinglass_neighborhoods(subgraph)
+        else:
+            raise ValueError(
+                "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'louvain',"
+                "'label_propagation', 'markov_clustering', 'walktrap', 'spinglass'."
+            )
+
+        # Sum the neighborhood matrices
+        combined_neighborhoods += neighborhoods
+
+    # Ensure that the maximum value in each row is set to 1
+    # This ensures that for each row, only the strongest relationship (the maximum value) is retained,
+    # while all other values are reset to 0. This transformation simplifies the neighborhood matrix by
+    # focusing on the most significant connection per row.
+    combined_neighborhoods = _set_max_to_one(combined_neighborhoods)
+
+    return combined_neighborhoods
 
 
 def _create_percentile_limited_subgraph(G: nx.Graph, edge_length_percentile: float) -> nx.Graph:
@@ -108,6 +140,25 @@ def _create_percentile_limited_subgraph(G: nx.Graph, edge_length_percentile: flo
         raise Warning("The resulting subgraph has no edges. Consider adjusting the percentile.")
 
     return subgraph
+
+
+def _set_max_to_one(matrix: np.ndarray) -> np.ndarray:
+    """For each row in the input matrix, set the maximum value(s) to 1 and all other values to 0.
+
+    Args:
+        matrix (np.ndarray): A 2D numpy array representing the neighborhood matrix.
+
+    Returns:
+        np.ndarray: The modified matrix where only the maximum value(s) in each row is set to 1, and others are set to 0.
+    """
+    # Find the maximum value in each row (column-wise max operation)
+    max_values = np.max(matrix, axis=1, keepdims=True)
+    # Create a boolean mask where elements are True if they are the max value in their row
+    max_mask = matrix == max_values
+    # Set all elements to 0, and then set the maximum value positions to 1
+    matrix[:] = 0  # Set everything to 0
+    matrix[max_mask] = 1  # Set only the max values to 1
+    return matrix
 
 
 def process_neighborhoods(
