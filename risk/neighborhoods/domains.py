@@ -76,6 +76,10 @@ def define_domains(
     t_idxmax = node_to_domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
 
+    # Assign all domains where the score is greater than 0
+    node_to_domain["all domains"] = node_to_domain.loc[:, 1:].apply(
+        lambda row: list(row[row > 0].index), axis=1
+    )
     # Assign primary domain
     node_to_domain["primary domain"] = t_idxmax
 
@@ -97,7 +101,7 @@ def trim_domains_and_top_annotations(
         max_cluster_size (int, optional): Maximum size of a cluster to be retained. Defaults to 1000.
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing:
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing:
             - Trimmed annotations (pd.DataFrame)
             - Trimmed domains (pd.DataFrame)
             - A DataFrame with domain labels (pd.DataFrame)
@@ -154,7 +158,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
         linkage_metric (str): Linkage metric for clustering.
 
     Returns:
-        tuple[str, str, float]: A tuple containing:
+        Tuple[str, str, float]: A tuple containing:
             - Best linkage method (str)
             - Best linkage metric (str)
             - Best threshold (float)
@@ -208,7 +212,7 @@ def _find_best_silhouette_score(
         resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.001.
 
     Returns:
-        tuple[float, float]: A tuple containing:
+        Tuple[float, float]: A tuple containing:
             - Best threshold (float): The threshold that yields the best silhouette score.
             - Best silhouette score (float): The highest silhouette score achieved.
     """
