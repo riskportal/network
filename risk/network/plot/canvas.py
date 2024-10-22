@@ -137,7 +137,7 @@ class Canvas:
             perimeter_linestyle=linestyle,
             perimeter_linewidth=linewidth,
             perimeter_color=(
-                "custom" if isinstance(color, (List, Tuple, np.ndarray)) else color
+                "custom" if isinstance(color, (list, tuple, np.ndarray)) else color
             ),  # np.ndarray usually indicates custom colors
             perimeter_outline_alpha=outline_alpha,
             perimeter_fill_alpha=fill_alpha,
@@ -210,7 +210,7 @@ class Canvas:
             perimeter_grid_size=grid_size,
             perimeter_linestyle=linestyle,
             perimeter_linewidth=linewidth,
-            perimeter_color=("custom" if isinstance(color, (List, Tuple, np.ndarray)) else color),
+            perimeter_color=("custom" if isinstance(color, (list, tuple, np.ndarray)) else color),
             perimeter_outline_alpha=outline_alpha,
             perimeter_fill_alpha=fill_alpha,
         )

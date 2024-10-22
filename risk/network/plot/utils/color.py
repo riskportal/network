@@ -377,7 +377,7 @@ def to_rgba(
         if isinstance(c, str):
             # Convert color names or hex values (e.g., 'red', '#FF5733') to RGBA
             rgba = np.array(mcolors.to_rgba(c))
-        elif isinstance(c, (List, Tuple, np.ndarray)) and len(c) in [3, 4]:
+        elif isinstance(c, (list, tuple, np.ndarray)) and len(c) in [3, 4]:
             # Convert RGB (3) or RGBA (4) values to RGBA format
             rgba = np.array(mcolors.to_rgba(c))
         else:
@@ -396,8 +396,8 @@ def to_rgba(
     # Handle a single color (string or RGB/RGBA list/tuple)
     if (
         isinstance(color, str)
-        or isinstance(color, (List, Tuple, np.ndarray))
-        and not any(isinstance(c, (str, List, Tuple, np.ndarray)) for c in color)
+        or isinstance(color, (list, tuple, np.ndarray))
+        and not any(isinstance(c, (str, list, tuple, np.ndarray)) for c in color)
     ):
         rgba_color = convert_to_rgba(color)
         if num_repeats:
@@ -407,7 +407,7 @@ def to_rgba(
         return np.array([rgba_color])  # Return a single color wrapped in a numpy array
 
     # Handle a list/array of colors
-    elif isinstance(color, (List, Tuple, np.ndarray)):
+    elif isinstance(color, (list, tuple, np.ndarray)):
         rgba_colors = np.array(
             [convert_to_rgba(c) for c in color]
         )  # Convert each color in the list to RGBA

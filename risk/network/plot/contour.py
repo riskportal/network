@@ -122,7 +122,7 @@ class Contour:
             ValueError: If no valid nodes are found in the network graph.
         """
         # Check if nodes is a list of lists or a flat list
-        if any(isinstance(item, (List, Tuple, np.ndarray)) for item in nodes):
+        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
             # If it's a list of lists, iterate over sublists
             node_groups = nodes
             # Convert color to RGBA arrays to match the number of groups
