@@ -75,13 +75,13 @@ class Network:
 
         # Convert colors to RGBA using the to_rgba helper function
         # If node_colors was generated using get_annotated_node_colors, its alpha values will override node_alpha
-        node_color = to_rgba(
+        node_color_rgba = to_rgba(
             color=node_color, alpha=node_alpha, num_repeats=len(self.graph.network.nodes)
         )
-        node_edgecolor = to_rgba(
+        node_edgecolor_rgba = to_rgba(
             color=node_edgecolor, alpha=1.0, num_repeats=len(self.graph.network.nodes)
         )
-        edge_color = to_rgba(
+        edge_color_rgba = to_rgba(
             color=edge_color, alpha=edge_alpha, num_repeats=len(self.graph.network.edges)
         )
 
@@ -94,8 +94,8 @@ class Network:
             pos=node_coordinates,
             node_size=node_size,
             node_shape=node_shape,
-            node_color=node_color,
-            edgecolors=node_edgecolor,
+            node_color=node_color_rgba,
+            edgecolors=node_edgecolor_rgba,
             linewidths=node_edgewidth,
             ax=self.ax,
         )
@@ -104,7 +104,7 @@ class Network:
             self.graph.network,
             pos=node_coordinates,
             width=edge_width,
-            edge_color=edge_color,
+            edge_color=edge_color_rgba,
             ax=self.ax,
         )
 
@@ -162,9 +162,9 @@ class Network:
             ]
 
         # Convert colors to RGBA using the to_rgba helper function
-        node_color = to_rgba(color=node_color, alpha=node_alpha, num_repeats=len(node_ids))
-        node_edgecolor = to_rgba(color=node_edgecolor, alpha=1.0, num_repeats=len(node_ids))
-        edge_color = to_rgba(
+        node_color_rgba = to_rgba(color=node_color, alpha=node_alpha, num_repeats=len(node_ids))
+        node_edgecolor_rgba = to_rgba(color=node_edgecolor, alpha=1.0, num_repeats=len(node_ids))
+        edge_color_rgba = to_rgba(
             color=edge_color, alpha=edge_alpha, num_repeats=len(self.graph.network.edges)
         )
 
@@ -178,8 +178,8 @@ class Network:
             nodelist=node_ids,
             node_size=node_size,
             node_shape=node_shape,
-            node_color=node_color,
-            edgecolors=node_edgecolor,
+            node_color=node_color_rgba,
+            edgecolors=node_edgecolor_rgba,
             linewidths=node_edgewidth,
             ax=self.ax,
         )
@@ -189,7 +189,7 @@ class Network:
             subgraph,
             pos=node_coordinates,
             width=edge_width,
-            edge_color=edge_color,
+            edge_color=edge_color_rgba,
             ax=self.ax,
         )
 
@@ -244,7 +244,7 @@ class Network:
         # Apply the alpha value for enriched nodes
         network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
         # Convert the non-enriched color to RGBA using the to_rgba helper function
-        nonenriched_color = to_rgba(
+        nonenriched_color_rgba = to_rgba(
             color=nonenriched_color, alpha=nonenriched_alpha, num_repeats=1
         )  # num_repeats=1 for a single color
         # Adjust node colors: replace any nodes where all three RGB values are equal and less than 0.1
@@ -255,7 +255,7 @@ class Network:
                 & np.all(network_colors[:, :3] == network_colors[:, 0:1], axis=1)
             )[:, None],
             np.tile(
-                np.array(nonenriched_color), (network_colors.shape[0], 1)
+                np.array(nonenriched_color_rgba), (network_colors.shape[0], 1)
             ),  # Replace with the full RGBA non-enriched color
             network_colors,  # Keep the original colors where no match is found
         )

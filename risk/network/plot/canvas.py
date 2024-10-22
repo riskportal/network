@@ -143,12 +143,6 @@ class Canvas:
             perimeter_fill_alpha=fill_alpha,
         )
 
-        # Convert color to RGBA using the to_rgba helper function - use outline_alpha for the perimeter
-        color = to_rgba(
-            color=color, alpha=outline_alpha, num_repeats=1
-        )  # num_repeats=1 for a single color
-        # Set the fill_alpha to 0 if not provided
-        fill_alpha = fill_alpha if fill_alpha is not None else 0.0
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
@@ -156,20 +150,26 @@ class Canvas:
         # Scale the radius by the scale factor
         scaled_radius = radius * scale
 
+        # Convert color to RGBA using the to_rgba helper function - use outline_alpha for the perimeter
+        outline_color_rgba = to_rgba(
+            color=color, alpha=outline_alpha, num_repeats=1
+        )  # num_repeats=1 for a single color
+        fill_color_rgba = to_rgba(
+            color=color, alpha=fill_alpha, num_repeats=1
+        )  # num_repeats=1 for a single color
+
         # Draw a circle to represent the network perimeter
         circle = plt.Circle(
             center,
             scaled_radius,
             linestyle=linestyle,
             linewidth=linewidth,
-            color=color,
-            fill=fill_alpha > 0,  # Fill the circle if fill_alpha is greater than 0
+            color=outline_color_rgba,
         )
         # Set the transparency of the fill if applicable
-        if fill_alpha > 0:
-            circle.set_facecolor(
-                to_rgba(color=color, alpha=fill_alpha, num_repeats=1)
-            )  # num_repeats=1 for a single color
+        circle.set_facecolor(
+            to_rgba(color=fill_color_rgba, num_repeats=1)
+        )  # num_repeats=1 for a single color
 
         self.ax.add_artist(circle)
 
@@ -216,7 +216,7 @@ class Canvas:
         )
 
         # Convert color to RGBA using outline_alpha for the line (outline)
-        outline_color = to_rgba(color=color, num_repeats=1)  # num_repeats=1 for a single color
+        outline_color_rgba = to_rgba(color=color, num_repeats=1)  # num_repeats=1 for a single color
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Scale the node coordinates if needed
@@ -229,9 +229,8 @@ class Canvas:
             levels=levels,
             bandwidth=bandwidth,
             grid_size=grid_size,
-            color=outline_color,
+            color=outline_color_rgba,
             linestyle=linestyle,
             linewidth=linewidth,
-            alpha=outline_alpha,
             fill_alpha=fill_alpha,
         )

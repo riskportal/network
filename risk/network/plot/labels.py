@@ -191,10 +191,10 @@ class Labels:
             filtered_domain_centroids, center, radius, offset
         )
         # Convert all domain colors to RGBA using the to_rgba helper function
-        fontcolor = to_rgba(
+        fontcolor_rgba = to_rgba(
             color=fontcolor, alpha=fontalpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
         )
-        arrow_color = to_rgba(
+        arrow_color_rgba = to_rgba(
             color=arrow_color,
             alpha=arrow_alpha,
             num_repeats=len(self.graph.domain_id_to_node_ids_map),
@@ -216,10 +216,10 @@ class Labels:
                 va="center",
                 fontsize=fontsize,
                 fontname=font,
-                color=fontcolor[idx],
+                color=fontcolor_rgba[idx],
                 arrowprops=dict(
                     arrowstyle=arrow_style,
-                    color=arrow_color[idx],
+                    color=arrow_color_rgba[idx],
                     linewidth=arrow_linewidth,
                     shrinkA=arrow_base_shrink,
                     shrinkB=arrow_tip_shrink,
@@ -238,8 +238,7 @@ class Labels:
                     va="center",
                     fontsize=fontsize,
                     fontname=font,
-                    color=fontcolor[idx],
-                    alpha=fontalpha,
+                    color=fontcolor_rgba[idx],
                 )
 
     def plot_sublabel(
