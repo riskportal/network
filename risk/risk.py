@@ -3,7 +3,7 @@ risk/risk
 ~~~~~~~~~
 """
 
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -58,9 +58,9 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "louvain",
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
+        edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
@@ -69,9 +69,13 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
             null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
@@ -111,9 +115,9 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "louvain",
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
+        edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
@@ -122,9 +126,13 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
             null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
@@ -164,9 +172,9 @@ class RISK(NetworkIO, AnnotationsIO):
         self,
         network: nx.Graph,
         annotations: Dict[str, Any],
-        distance_metric: str = "louvain",
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
+        edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         score_metric: str = "sum",
         null_distribution: str = "network",
         num_permutations: int = 1000,
@@ -178,9 +186,13 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
-            distance_metric (str, optional): Distance metric for neighborhood analysis. Defaults to "louvain".
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, optional): Edge length threshold for neighborhood analysis. Defaults to 0.5.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
             score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
             null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
             num_permutations (int, optional): Number of permutations for significance testing. Defaults to 1000.
@@ -353,7 +365,7 @@ class RISK(NetworkIO, AnnotationsIO):
     def load_plotter(
         self,
         graph: NetworkGraph,
-        figsize: Tuple = (10, 10),
+        figsize: Union[List, Tuple, np.ndarray] = (10, 10),
         background_color: str = "white",
         background_alpha: Union[float, None] = 1.0,
         pad: float = 0.3,
@@ -362,7 +374,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             graph (NetworkGraph): The graph to plot.
-            figsize (Tuple, optional): Size of the figure. Defaults to (10, 10).
+            figsize (List, Tuple, or np.ndarray, optional): Size of the plot. Defaults to (10, 10)., optional): Size of the figure. Defaults to (10, 10).
             background_color (str, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.
@@ -385,9 +397,9 @@ class RISK(NetworkIO, AnnotationsIO):
     def _load_neighborhoods(
         self,
         network: nx.Graph,
-        distance_metric: str = "louvain",
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
-        edge_length_threshold: float = 0.5,
+        edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         random_seed: int = 888,
     ) -> np.ndarray:
         """Load significant neighborhoods for the network.

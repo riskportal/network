@@ -141,7 +141,7 @@ class Network:
             ValueError: If no valid nodes are found in the network graph.
         """
         # Flatten nested lists of nodes, if necessary
-        if any(isinstance(item, (List, Tuple, np.ndarray)) for item in nodes):
+        if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
             nodes = [node for sublist in nodes for node in sublist]
 
         # Filter to get node IDs and their coordinates
