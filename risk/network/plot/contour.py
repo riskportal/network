@@ -68,13 +68,15 @@ class Contour:
         )
 
         # Ensure color is converted to RGBA with repetition matching the number of domains
-        color = to_rgba(
+        color_rgba = to_rgba(
             color=color, alpha=alpha, num_repeats=len(self.graph.domain_id_to_node_ids_map)
         )
         # Extract node coordinates from the network graph
         node_coordinates = self.graph.node_coordinates
         # Draw contours for each domain in the network
         for idx, (_, node_ids) in enumerate(self.graph.domain_id_to_node_ids_map.items()):
+            # Use the provided alpha value if it's not None, otherwise use the color's alpha
+            current_fill_alpha = fill_alpha if fill_alpha is not None else color_rgba[idx][3]
             if len(node_ids) > 1:
                 self._draw_kde_contour(
                     self.ax,
@@ -86,8 +88,7 @@ class Contour:
                     grid_size=grid_size,
                     linestyle=linestyle,
                     linewidth=linewidth,
-                    alpha=alpha,
-                    fill_alpha=fill_alpha,
+                    fill_alpha=current_fill_alpha,
                 )
 
     def plot_subcontour(
@@ -148,6 +149,8 @@ class Contour:
 
             # Draw the KDE contour for the specified nodes
             node_coordinates = self.graph.node_coordinates
+            # Use the provided alpha value if it's not None, otherwise use the color's alpha
+            current_fill_alpha = fill_alpha if fill_alpha is not None else color_rgba[idx][3]
             self._draw_kde_contour(
                 self.ax,
                 node_coordinates,
@@ -158,8 +161,7 @@ class Contour:
                 grid_size=grid_size,
                 linestyle=linestyle,
                 linewidth=linewidth,
-                alpha=alpha,
-                fill_alpha=fill_alpha,
+                fill_alpha=current_fill_alpha,
             )
 
     def _draw_kde_contour(
@@ -173,7 +175,6 @@ class Contour:
         color: Union[str, np.ndarray] = "white",
         linestyle: str = "solid",
         linewidth: float = 1.5,
-        alpha: Union[float, None] = 1.0,
         fill_alpha: Union[float, None] = 0.2,
     ) -> None:
         """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
@@ -188,8 +189,6 @@ class Contour:
             color (str or np.ndarray): Color for the contour. Can be a string or RGBA array. Defaults to "white".
             linestyle (str, optional): Line style for the contour. Defaults to "solid".
             linewidth (float, optional): Line width for the contour. Defaults to 1.5.
-            alpha (float, None, optional): Transparency level for the contour lines. If provided, it overrides any existing alpha
-                values found in color. Defaults to 1.0.
             fill_alpha (float, None, optional): Transparency level for the contour fill. If provided, it overrides any existing
                 alpha values found in color. Defaults to 0.2.
         """
@@ -245,6 +244,8 @@ class Contour:
         contour_colors = [color for _ in range(levels - 1)]
         # Plot the filled contours using fill_alpha for transparency
         if fill_alpha and fill_alpha > 0:
+            # Fill alpha works differently than alpha for contour lines
+            # Contour fill cannot be specified by RGBA, while contour lines can
             ax.contourf(
                 x,
                 y,
@@ -255,7 +256,7 @@ class Contour:
                 alpha=fill_alpha,
             )
 
-        # Plot the contour lines with the specified alpha for transparency
+        # Plot the contour lines with the specified RGBA alpha for transparency
         c = ax.contour(
             x,
             y,
@@ -264,7 +265,6 @@ class Contour:
             colors=contour_colors,
             linestyles=linestyle,
             linewidths=linewidth,
-            alpha=alpha,
         )
 
         # Set linewidth for the contour lines to 0 for levels other than the base level
