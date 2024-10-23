@@ -30,6 +30,44 @@ def calculate_bounding_box(
     return center, radius
 
 
+def refine_center_iteratively(
+    node_coordinates: np.ndarray,
+    radius_margin: float = 1.05,
+    max_iterations: int = 10,
+    tolerance: float = 1e-2,
+) -> Tuple[np.ndarray, float]:
+    """Refine the center of the graph iteratively to minimize skew in node distribution.
+
+    Args:
+        node_coordinates (np.ndarray): Array of node coordinates (x, y).
+        radius_margin (float, optional): Margin factor to apply to the bounding box radius. Defaults to 1.05.
+        max_iterations (int, optional): Maximum number of iterations for refining the center. Defaults to 10.
+        tolerance (float, optional): Stopping tolerance for center adjustment. Defaults to 1e-2.
+
+    Returns:
+        tuple: Refined center and the final radius.
+    """
+    # Initial center and radius based on the bounding box
+    center, radius = calculate_bounding_box(node_coordinates, radius_margin)
+    for _ in range(max_iterations):
+        # Shift the coordinates based on the current center
+        shifted_coordinates = node_coordinates - center
+        # Calculate skew (difference in distance from the center)
+        skew = np.mean(shifted_coordinates, axis=0)
+        # If skew is below tolerance, stop
+        if np.linalg.norm(skew) < tolerance:
+            break
+
+        # Adjust the center by moving it in the direction opposite to the skew
+        center += skew
+
+    # After refinement, recalculate the bounding radius
+    shifted_coordinates = node_coordinates - center
+    new_radius = np.max(np.linalg.norm(shifted_coordinates, axis=1)) * radius_margin
+
+    return center, new_radius
+
+
 def calculate_centroids(network, domain_id_to_node_ids_map):
     """Calculate the centroid for each domain based on node x and y coordinates in the network.
 
