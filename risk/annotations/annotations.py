@@ -3,6 +3,7 @@ risk/annotations/annotations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import re
 from collections import Counter
 from itertools import compress
 from typing import Any, Dict, List, Set
@@ -205,19 +206,26 @@ def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) 
             weight = max(1, int((0 if pd.isna(score) else score) * 10))
             weighted_words.extend([word] * weight)
 
-    # Tokenize the weighted words
+    # Tokenize the weighted words, but preserve number-word patterns like '4-alpha'
     tokens = word_tokenize(" ".join(weighted_words))
-    # Separate numeric tokens
-    numeric_tokens = [token for token in tokens if token.replace(".", "", 1).isdigit()]
-    unique_numeric_values = set(numeric_tokens)
-    if len(unique_numeric_values) == 1:
-        return f"{list(unique_numeric_values)[0]}"
+    # Ensure we treat "4-alpha" or other "number-word" patterns as single tokens
+    combined_tokens = []
+    for token in tokens:
+        # Match patterns like '4-alpha' or '5-hydroxy' and keep them together
+        if re.match(r"^\d+-\w+", token):
+            combined_tokens.append(token)
+        elif token.replace(".", "", 1).isdigit():  # Handle pure numeric tokens
+            # Ignore pure numbers as descriptions unless necessary
+            continue
+        else:
+            combined_tokens.append(token)
 
-    # Filter alphabetic and numeric tokens
-    words = [word for word in tokens if word.isalpha() or word.replace(".", "", 1).isdigit()]
-    # Apply word similarity filtering to remove redundant terms
-    simplified_words = _simplify_word_list(words)
-    # Generate a coherent description from the processed words
+    # Prevent descriptions like just '4' from being selected
+    if len(combined_tokens) == 1 and combined_tokens[0].isdigit():
+        return "N/A"  # Return "N/A" for cases where it's just a number
+
+    # Simplify the word list and generate the description
+    simplified_words = _simplify_word_list(combined_tokens)
     description = _generate_coherent_description(simplified_words)
 
     return description
