@@ -614,9 +614,11 @@ class Labels:
         Returns:
             str: Processed terms separated by TERM_DELIMITER, with words combined if necessary to fit within constraints.
         """
-        # Handle ids_to_replace logic
+        # Return custom labels if domain is in ids_to_replace
         if ids_to_replace and domain in ids_to_replace:
             terms = ids_to_replace[domain].split(" ")
+            return terms
+
         else:
             terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
 
