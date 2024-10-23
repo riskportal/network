@@ -13,7 +13,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.metrics import silhouette_score
 
-from risk.annotations import get_description
+from risk.annotations import get_weighted_description
 from risk.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
 from risk.log import logger
 
@@ -40,7 +40,7 @@ def define_domains(
     """
     try:
         # Transpose the matrix to cluster annotations
-        m = significant_neighborhoods_enrichment[:, top_annotations["top attributes"]].T
+        m = significant_neighborhoods_enrichment[:, top_annotations["significant_annotations"]].T
         best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
             m, linkage_criterion, linkage_method, linkage_metric
         )
@@ -55,7 +55,7 @@ def define_domains(
         # Assign domains to the annotations matrix
         domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
         top_annotations["domain"] = 0
-        top_annotations.loc[top_annotations["top attributes"], "domain"] = domains
+        top_annotations.loc[top_annotations["significant_annotations"], "domain"] = domains
     except ValueError:
         # If a ValueError is encountered, handle it by assigning unique domains
         n_rows = len(top_annotations)
@@ -77,11 +77,11 @@ def define_domains(
     t_idxmax[t_max == 0] = 0
 
     # Assign all domains where the score is greater than 0
-    node_to_domain["all domains"] = node_to_domain.loc[:, 1:].apply(
+    node_to_domain["all_domains"] = node_to_domain.loc[:, 1:].apply(
         lambda row: list(row[row > 0].index), axis=1
     )
     # Assign primary domain
-    node_to_domain["primary domain"] = t_idxmax
+    node_to_domain["primary_domain"] = t_idxmax
 
     return node_to_domain
 
@@ -107,7 +107,7 @@ def trim_domains_and_top_annotations(
             - A DataFrame with domain labels (pd.DataFrame)
     """
     # Identify domains to remove based on size criteria
-    domain_counts = domains["primary domain"].value_counts()
+    domain_counts = domains["primary_domain"].value_counts()
     to_remove = set(
         domain_counts[(domain_counts < min_cluster_size) | (domain_counts > max_cluster_size)].index
     )
@@ -117,32 +117,51 @@ def trim_domains_and_top_annotations(
     invalid_domain_ids = {0, invalid_domain_id}
     # Mark domains to be removed
     top_annotations["domain"].replace(to_remove, invalid_domain_id, inplace=True)
-    domains.loc[domains["primary domain"].isin(to_remove), ["primary domain"]] = invalid_domain_id
+    domains.loc[domains["primary_domain"].isin(to_remove), ["primary_domain"]] = invalid_domain_id
 
     # Normalize "num enriched neighborhoods" by percentile for each domain and scale to 0-10
     top_annotations["normalized_value"] = top_annotations.groupby("domain")[
-        "neighborhood enrichment sums"
+        "significant_neighborhood_enrichment_sums"
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
-    # Multiply 'words' column by normalized values
-    top_annotations["words"] = top_annotations.apply(
-        lambda row: " ".join([str(row["words"])] * row["normalized_value"]), axis=1
+    # Modify the lambda function to pass both full_terms and significant_enrichment_score
+    top_annotations["combined_terms"] = top_annotations.apply(
+        lambda row: " ".join([str(row["full_terms"])] * row["normalized_value"]), axis=1
     )
 
-    # Generate domain labels
-    domain_labels = top_annotations.groupby("domain")["words"].apply(get_description).reset_index()
+    # Perform the groupby operation while retaining the other columns and adding the weighting with enrichment scores
+    domain_labels = (
+        top_annotations.groupby("domain")
+        .agg(
+            full_terms=("full_terms", lambda x: list(x)),
+            enrichment_scores=("significant_enrichment_score", lambda x: list(x)),
+        )
+        .reset_index()
+    )
+    domain_labels["combined_terms"] = domain_labels.apply(
+        lambda row: get_weighted_description(
+            pd.Series(row["full_terms"]), pd.Series(row["enrichment_scores"])
+        ),
+        axis=1,
+    )
+
+    # Rename the columns as necessary
     trimmed_domains_matrix = domain_labels.rename(
-        columns={"domain": "id", "words": "label"}
+        columns={
+            "domain": "id",
+            "combined_terms": "normalized_description",
+            "full_terms": "full_descriptions",
+            "enrichment_scores": "enrichment_scores",
+        }
     ).set_index("id")
 
     # Remove invalid domains
     valid_annotations = top_annotations[~top_annotations["domain"].isin(invalid_domain_ids)].drop(
         columns=["normalized_value"]
     )
-    valid_domains = domains[~domains["primary domain"].isin(invalid_domain_ids)]
+    valid_domains = domains[~domains["primary_domain"].isin(invalid_domain_ids)]
     valid_trimmed_domains_matrix = trimmed_domains_matrix[
         ~trimmed_domains_matrix.index.isin(invalid_domain_ids)
     ]
-
     return valid_annotations, valid_domains, valid_trimmed_domains_matrix
 
 
