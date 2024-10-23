@@ -171,7 +171,7 @@ def process_neighborhoods(
 
     Args:
         network (nx.Graph): The network data structure used for imputing and pruning neighbors.
-        neighborhoods (Dict[str, Any]): Dictionary containing 'enrichment_matrix', 'binary_enrichment_matrix', and 'significant_enrichment_matrix'.
+        neighborhoods (Dict[str, Any]): Dictionary containing 'enrichment_matrix', 'significant_binary_enrichment_matrix', and 'significant_enrichment_matrix'.
         impute_depth (int, optional): Depth for imputing neighbors. Defaults to 0.
         prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
 
@@ -179,18 +179,18 @@ def process_neighborhoods(
         Dict[str, Any]: Processed neighborhoods data, including the updated matrices and enrichment counts.
     """
     enrichment_matrix = neighborhoods["enrichment_matrix"]
-    binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+    significant_binary_enrichment_matrix = neighborhoods["significant_binary_enrichment_matrix"]
     significant_enrichment_matrix = neighborhoods["significant_enrichment_matrix"]
     logger.debug(f"Imputation depth: {impute_depth}")
     if impute_depth:
         (
             enrichment_matrix,
-            binary_enrichment_matrix,
+            significant_binary_enrichment_matrix,
             significant_enrichment_matrix,
         ) = _impute_neighbors(
             network,
             enrichment_matrix,
-            binary_enrichment_matrix,
+            significant_binary_enrichment_matrix,
             max_depth=impute_depth,
         )
 
@@ -198,20 +198,20 @@ def process_neighborhoods(
     if prune_threshold:
         (
             enrichment_matrix,
-            binary_enrichment_matrix,
+            significant_binary_enrichment_matrix,
             significant_enrichment_matrix,
         ) = _prune_neighbors(
             network,
             enrichment_matrix,
-            binary_enrichment_matrix,
+            significant_binary_enrichment_matrix,
             distance_threshold=prune_threshold,
         )
 
-    neighborhood_enrichment_counts = np.sum(binary_enrichment_matrix, axis=0)
+    neighborhood_enrichment_counts = np.sum(significant_binary_enrichment_matrix, axis=0)
     node_enrichment_sums = np.sum(enrichment_matrix, axis=1)
     return {
         "enrichment_matrix": enrichment_matrix,
-        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "significant_binary_enrichment_matrix": significant_binary_enrichment_matrix,
         "significant_enrichment_matrix": significant_enrichment_matrix,
         "neighborhood_enrichment_counts": neighborhood_enrichment_counts,
         "node_enrichment_sums": node_enrichment_sums,
@@ -221,7 +221,7 @@ def process_neighborhoods(
 def _impute_neighbors(
     network: nx.Graph,
     enrichment_matrix: np.ndarray,
-    binary_enrichment_matrix: np.ndarray,
+    significant_binary_enrichment_matrix: np.ndarray,
     max_depth: int = 3,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Impute rows with sums of zero in the enrichment matrix based on the closest non-zero neighbors in the network graph.
@@ -229,7 +229,7 @@ def _impute_neighbors(
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
-        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        significant_binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
@@ -239,19 +239,21 @@ def _impute_neighbors(
             - np.ndarray: The significant enrichment matrix with non-significant entries set to zero.
     """
     # Calculate the distance threshold value based on the shortest distances
-    enrichment_matrix, binary_enrichment_matrix = _impute_neighbors_with_similarity(
-        network, enrichment_matrix, binary_enrichment_matrix, max_depth=max_depth
+    enrichment_matrix, significant_binary_enrichment_matrix = _impute_neighbors_with_similarity(
+        network, enrichment_matrix, significant_binary_enrichment_matrix, max_depth=max_depth
     )
     # Create a matrix where non-significant entries are set to zero
-    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+    significant_enrichment_matrix = np.where(
+        significant_binary_enrichment_matrix == 1, enrichment_matrix, 0
+    )
 
-    return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
+    return enrichment_matrix, significant_binary_enrichment_matrix, significant_enrichment_matrix
 
 
 def _impute_neighbors_with_similarity(
     network: nx.Graph,
     enrichment_matrix: np.ndarray,
-    binary_enrichment_matrix: np.ndarray,
+    significant_binary_enrichment_matrix: np.ndarray,
     max_depth: int = 3,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Impute non-enriched nodes based on the closest enriched neighbors' profiles and their similarity.
@@ -259,7 +261,7 @@ def _impute_neighbors_with_similarity(
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
-        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        significant_binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
@@ -268,27 +270,31 @@ def _impute_neighbors_with_similarity(
             - The imputed alpha threshold matrix.
     """
     depth = 1
-    rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
+    rows_to_impute = np.where(significant_binary_enrichment_matrix.sum(axis=1) == 0)[0]
     while len(rows_to_impute) and depth <= max_depth:
         # Iterate over all enriched nodes
-        for row_index in range(binary_enrichment_matrix.shape[0]):
-            if binary_enrichment_matrix[row_index].sum() != 0:
-                enrichment_matrix, binary_enrichment_matrix = _process_node_imputation(
-                    row_index, network, enrichment_matrix, binary_enrichment_matrix, depth
+        for row_index in range(significant_binary_enrichment_matrix.shape[0]):
+            if significant_binary_enrichment_matrix[row_index].sum() != 0:
+                enrichment_matrix, significant_binary_enrichment_matrix = _process_node_imputation(
+                    row_index,
+                    network,
+                    enrichment_matrix,
+                    significant_binary_enrichment_matrix,
+                    depth,
                 )
 
         # Update rows to impute for the next iteration
-        rows_to_impute = np.where(binary_enrichment_matrix.sum(axis=1) == 0)[0]
+        rows_to_impute = np.where(significant_binary_enrichment_matrix.sum(axis=1) == 0)[0]
         depth += 1
 
-    return enrichment_matrix, binary_enrichment_matrix
+    return enrichment_matrix, significant_binary_enrichment_matrix
 
 
 def _process_node_imputation(
     row_index: int,
     network: nx.Graph,
     enrichment_matrix: np.ndarray,
-    binary_enrichment_matrix: np.ndarray,
+    significant_binary_enrichment_matrix: np.ndarray,
     depth: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Process the imputation for a single node based on its enriched neighbors.
@@ -297,7 +303,7 @@ def _process_node_imputation(
         row_index (int): The index of the enriched node being processed.
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix with rows to be imputed.
-        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
+        significant_binary_enrichment_matrix (np.ndarray): The alpha threshold matrix to be imputed similarly.
         depth (int): Current depth for traversal.
 
     Returns:
@@ -310,7 +316,7 @@ def _process_node_imputation(
         n
         for n in neighbors
         if n != row_index
-        and binary_enrichment_matrix[n].sum() != 0
+        and significant_binary_enrichment_matrix[n].sum() != 0
         and enrichment_matrix[n].sum() != 0
     ]
     # Filter non-enriched neighbors
@@ -318,7 +324,7 @@ def _process_node_imputation(
         n
         for n in neighbors
         if n != row_index
-        and binary_enrichment_matrix[n].sum() == 0
+        and significant_binary_enrichment_matrix[n].sum() == 0
         and enrichment_matrix[n].sum() == 0
     ]
     # If there are valid non-enriched neighbors
@@ -363,15 +369,17 @@ def _process_node_imputation(
             enrichment_matrix[most_similar_neighbor] = enrichment_matrix[row_index] / np.sqrt(
                 depth + 1
             )
-            binary_enrichment_matrix[most_similar_neighbor] = binary_enrichment_matrix[row_index]
+            significant_binary_enrichment_matrix[most_similar_neighbor] = (
+                significant_binary_enrichment_matrix[row_index]
+            )
 
-    return enrichment_matrix, binary_enrichment_matrix
+    return enrichment_matrix, significant_binary_enrichment_matrix
 
 
 def _prune_neighbors(
     network: nx.Graph,
     enrichment_matrix: np.ndarray,
-    binary_enrichment_matrix: np.ndarray,
+    significant_binary_enrichment_matrix: np.ndarray,
     distance_threshold: float = 0.9,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Remove outliers based on their rank for edge lengths.
@@ -379,7 +387,7 @@ def _prune_neighbors(
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
         enrichment_matrix (np.ndarray): The enrichment matrix.
-        binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
+        significant_binary_enrichment_matrix (np.ndarray): The alpha threshold matrix.
         distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
 
     Returns:
@@ -389,10 +397,12 @@ def _prune_neighbors(
             - np.ndarray: The significant enrichment matrix, where non-significant entries are set to zero.
     """
     # Identify indices with non-zero rows in the binary enrichment matrix
-    non_zero_indices = np.where(binary_enrichment_matrix.sum(axis=1) != 0)[0]
+    non_zero_indices = np.where(significant_binary_enrichment_matrix.sum(axis=1) != 0)[0]
     median_distances = []
     for node in non_zero_indices:
-        neighbors = [n for n in network.neighbors(node) if binary_enrichment_matrix[n].sum() != 0]
+        neighbors = [
+            n for n in network.neighbors(node) if significant_binary_enrichment_matrix[n].sum() != 0
+        ]
         if neighbors:
             median_distance = np.median(
                 [_get_euclidean_distance(node, n, network) for n in neighbors]
@@ -404,7 +414,9 @@ def _prune_neighbors(
     # Prune nodes that are outliers based on the distance threshold
     for row_index in non_zero_indices:
         neighbors = [
-            n for n in network.neighbors(row_index) if binary_enrichment_matrix[n].sum() != 0
+            n
+            for n in network.neighbors(row_index)
+            if significant_binary_enrichment_matrix[n].sum() != 0
         ]
         if neighbors:
             median_distance = np.median(
@@ -412,12 +424,14 @@ def _prune_neighbors(
             )
             if median_distance >= distance_threshold_value:
                 enrichment_matrix[row_index] = 0
-                binary_enrichment_matrix[row_index] = 0
+                significant_binary_enrichment_matrix[row_index] = 0
 
     # Create a matrix where non-significant entries are set to zero
-    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+    significant_enrichment_matrix = np.where(
+        significant_binary_enrichment_matrix == 1, enrichment_matrix, 0
+    )
 
-    return enrichment_matrix, binary_enrichment_matrix, significant_enrichment_matrix
+    return enrichment_matrix, significant_binary_enrichment_matrix, significant_enrichment_matrix
 
 
 def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
