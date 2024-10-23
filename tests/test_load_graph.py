@@ -99,7 +99,7 @@ def test_top_annotations_cluster_sizes_with_json_annotation(
         # Validate the graph and its components
         _validate_graph(graph)
         # Validate the 'size connected components' in `top_annotations` DataFrame
-        size_connected_components = graph.top_annotations["size connected components"]
+        size_connected_components = graph.top_annotations["size_connected_components"]
         _check_component_sizes(size_connected_components, min_cluster_size, max_cluster_size)
 
 
@@ -199,7 +199,7 @@ def test_top_annotations_cluster_sizes_with_dict_annotation(
         # Validate the graph and its components
         _validate_graph(graph)
         # Validate the 'size connected components' in `top_annotations` DataFrame
-        size_connected_components = graph.top_annotations["size connected components"]
+        size_connected_components = graph.top_annotations["size_connected_components"]
         _check_component_sizes(size_connected_components, min_cluster_size, max_cluster_size)
 
 

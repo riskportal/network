@@ -30,6 +30,8 @@ def _setup_nltk():
 
 # Ensure you have the necessary NLTK data
 _setup_nltk()
+# Initialize English stopwords
+stop_words = set(stopwords.words("english"))
 
 
 def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Dict[str, Any]:
@@ -47,11 +49,11 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
         (node, annotation) for annotation, nodes in annotations_input.items() for node in nodes
     ]
     # Create a DataFrame from the flattened list
-    annotations = pd.DataFrame(flattened_annotations, columns=["Node", "Annotations"])
-    annotations["Is Member"] = 1
+    annotations = pd.DataFrame(flattened_annotations, columns=["node", "annotations"])
+    annotations["is_member"] = 1
     # Pivot to create a binary matrix with nodes as rows and annotations as columns
     annotations_pivot = annotations.pivot_table(
-        index="Node", columns="Annotations", values="Is Member", fill_value=0, dropna=False
+        index="node", columns="annotations", values="is_member", fill_value=0, dropna=False
     )
     # Reindex the annotations matrix based on the node labels from the network
     node_label_order = list(nx.get_node_attributes(network, "label").values())
@@ -81,7 +83,8 @@ def define_top_annotations(
     network: nx.Graph,
     ordered_annotation_labels: List[str],
     neighborhood_enrichment_sums: List[int],
-    binary_enrichment_matrix: np.ndarray,
+    significant_enrichment_matrix: np.ndarray,
+    significant_binary_enrichment_matrix: np.ndarray,
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
 ) -> pd.DataFrame:
@@ -91,42 +94,52 @@ def define_top_annotations(
         network (NetworkX graph): The network graph.
         ordered_annotation_labels (list of str): List of ordered annotation labels.
         neighborhood_enrichment_sums (list of int): List of neighborhood enrichment sums.
-        binary_enrichment_matrix (np.ndarray): Binary enrichment matrix below alpha threshold.
+        significant_enrichment_matrix (np.ndarray): Enrichment matrix below alpha threshold.
+        significant_binary_enrichment_matrix (np.ndarray): Binary enrichment matrix below alpha threshold.
         min_cluster_size (int, optional): Minimum cluster size. Defaults to 5.
         max_cluster_size (int, optional): Maximum cluster size. Defaults to 1000.
 
     Returns:
         pd.DataFrame: DataFrame with top annotations and their properties.
     """
-    # Create DataFrame to store annotations and their neighborhood enrichment sums
+    # Sum the columns of the significant enrichment matrix (positive floating point values)
+    significant_enrichment_scores = significant_enrichment_matrix.sum(axis=0)
+    # Create DataFrame to store annotations, their neighborhood enrichment sums, and enrichment scores
     annotations_enrichment_matrix = pd.DataFrame(
         {
             "id": range(len(ordered_annotation_labels)),
-            "words": ordered_annotation_labels,
-            "neighborhood enrichment sums": neighborhood_enrichment_sums,
+            "full_terms": ordered_annotation_labels,
+            "significant_neighborhood_enrichment_sums": neighborhood_enrichment_sums,
+            "significant_enrichment_score": significant_enrichment_scores,
         }
     )
-    annotations_enrichment_matrix["top attributes"] = False
-    # Apply size constraints to identify potential top attributes
+    annotations_enrichment_matrix["significant_annotations"] = False
+    # Apply size constraints to identify potential significant annotations
     annotations_enrichment_matrix.loc[
-        (annotations_enrichment_matrix["neighborhood enrichment sums"] >= min_cluster_size)
-        & (annotations_enrichment_matrix["neighborhood enrichment sums"] <= max_cluster_size),
-        "top attributes",
+        (
+            annotations_enrichment_matrix["significant_neighborhood_enrichment_sums"]
+            >= min_cluster_size
+        )
+        & (
+            annotations_enrichment_matrix["significant_neighborhood_enrichment_sums"]
+            <= max_cluster_size
+        ),
+        "significant_annotations",
     ] = True
     # Initialize columns for connected components analysis
-    annotations_enrichment_matrix["num connected components"] = 0
-    annotations_enrichment_matrix["size connected components"] = None
-    annotations_enrichment_matrix["size connected components"] = annotations_enrichment_matrix[
-        "size connected components"
+    annotations_enrichment_matrix["num_connected_components"] = 0
+    annotations_enrichment_matrix["size_connected_components"] = None
+    annotations_enrichment_matrix["size_connected_components"] = annotations_enrichment_matrix[
+        "size_connected_components"
     ].astype(object)
-    annotations_enrichment_matrix["num large connected components"] = 0
+    annotations_enrichment_matrix["num_large_connected_components"] = 0
 
     for attribute in annotations_enrichment_matrix.index.values[
-        annotations_enrichment_matrix["top attributes"]
+        annotations_enrichment_matrix["significant_annotations"]
     ]:
         # Identify enriched neighborhoods based on the binary enrichment matrix
         enriched_neighborhoods = list(
-            compress(list(network), binary_enrichment_matrix[:, attribute])
+            compress(list(network), significant_binary_enrichment_matrix[:, attribute])
         )
         enriched_network = nx.subgraph(network, enriched_neighborhoods)
         # Analyze connected components within the enriched subnetwork
@@ -145,55 +158,67 @@ def define_top_annotations(
         num_large_connected_components = len(filtered_size_connected_components)
 
         # Assign the number of connected components
-        annotations_enrichment_matrix.loc[attribute, "num connected components"] = (
+        annotations_enrichment_matrix.loc[attribute, "num_connected_components"] = (
             num_connected_components
         )
         # Filter out attributes with more than one connected component
         annotations_enrichment_matrix.loc[
-            annotations_enrichment_matrix["num connected components"] > 1, "top attributes"
+            annotations_enrichment_matrix["num_connected_components"] > 1, "significant_annotations"
         ] = False
         # Assign the number of large connected components
-        annotations_enrichment_matrix.loc[attribute, "num large connected components"] = (
+        annotations_enrichment_matrix.loc[attribute, "num_large_connected_components"] = (
             num_large_connected_components
         )
         # Assign the size of connected components, ensuring it is always a list
-        annotations_enrichment_matrix.at[attribute, "size connected components"] = (
+        annotations_enrichment_matrix.at[attribute, "size_connected_components"] = (
             filtered_size_connected_components.tolist()
         )
 
     return annotations_enrichment_matrix
 
 
-def get_description(words_column: pd.Series) -> str:
-    """Process input Series to identify and return the top frequent, significant words,
-    filtering based on stopwords and gracefully handling numerical strings.
+def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) -> str:
+    """Generate a weighted description from words and their corresponding scores,
+    with support for stopwords filtering and improved weighting logic.
 
     Args:
         words_column (pd.Series): A pandas Series containing strings to process.
+        scores_column (pd.Series): A pandas Series containing enrichment scores to weigh the terms.
 
     Returns:
-        str: A coherent description formed from the most frequent and significant words.
+        str: A coherent description formed from the most frequent and significant words, weighed by enrichment scores.
     """
-    # Concatenate all rows into a single string and tokenize into words
-    all_words = words_column.str.cat(sep=" ")
-    tokens = word_tokenize(all_words)
+    # Handle case where all scores are the same
+    if scores_column.max() == scores_column.min():
+        normalized_scores = pd.Series([1] * len(scores_column))
+    else:
+        # Normalize the enrichment scores to be between 0 and 1
+        normalized_scores = (scores_column - scores_column.min()) / (
+            scores_column.max() - scores_column.min()
+        )
 
+    # Combine words and normalized scores to create weighted words
+    weighted_words = []
+    for word, score in zip(words_column, normalized_scores):
+        word = str(word)
+        if word not in stop_words:  # Skip stopwords
+            weight = max(1, int((0 if pd.isna(score) else score) * 10))
+            weighted_words.extend([word] * weight)
+
+    # Tokenize the weighted words
+    tokens = word_tokenize(" ".join(weighted_words))
     # Separate numeric tokens
     numeric_tokens = [token for token in tokens if token.replace(".", "", 1).isdigit()]
-    # If there's only one unique numeric value, return it directly as a string
     unique_numeric_values = set(numeric_tokens)
     if len(unique_numeric_values) == 1:
         return f"{list(unique_numeric_values)[0]}"
 
-    # Ensure that all values in 'words' are strings and include both alphabetic and numeric tokens
-    words = [
-        str(word)  # Convert to string to ensure consistent processing
-        for word in tokens
-        if word.isalpha()
-        or word.replace(".", "", 1).isdigit()  # Keep alphabetic words and numeric strings
-    ]
+    # Filter alphabetic and numeric tokens
+    words = [word for word in tokens if word.isalpha() or word.replace(".", "", 1).isdigit()]
+    # Apply word similarity filtering to remove redundant terms
+    simplified_words = _simplify_word_list(words)
     # Generate a coherent description from the processed words
-    description = _generate_coherent_description(words)
+    description = _generate_coherent_description(simplified_words)
 
     return description
 

@@ -62,7 +62,7 @@ def calculate_significance_matrices(
     log_enrichment_matrix = -np.log10(enrichment_matrix)
 
     # Select the appropriate significance matrices based on the specified tail
-    enrichment_matrix, binary_enrichment_matrix = _select_significance_matrices(
+    enrichment_matrix, significant_binary_enrichment_matrix = _select_significance_matrices(
         tail,
         log_depletion_matrix,
         depletion_alpha_threshold_matrix,
@@ -71,11 +71,13 @@ def calculate_significance_matrices(
     )
 
     # Filter the enrichment matrix using the binary significance matrix
-    significant_enrichment_matrix = np.where(binary_enrichment_matrix == 1, enrichment_matrix, 0)
+    significant_enrichment_matrix = np.where(
+        significant_binary_enrichment_matrix == 1, enrichment_matrix, 0
+    )
 
     return {
         "enrichment_matrix": enrichment_matrix,
-        "binary_enrichment_matrix": binary_enrichment_matrix,
+        "significant_binary_enrichment_matrix": significant_binary_enrichment_matrix,
         "significant_enrichment_matrix": significant_enrichment_matrix,
     }
 
@@ -127,10 +129,10 @@ def _select_significance_matrices(
 
     # Create a binary significance matrix where valid indices meet the alpha threshold
     valid_idxs = ~np.isnan(alpha_threshold_matrix)
-    binary_enrichment_matrix = np.zeros(alpha_threshold_matrix.shape)
-    binary_enrichment_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
+    significant_binary_enrichment_matrix = np.zeros(alpha_threshold_matrix.shape)
+    significant_binary_enrichment_matrix[valid_idxs] = alpha_threshold_matrix[valid_idxs]
 
-    return enrichment_matrix, binary_enrichment_matrix
+    return enrichment_matrix, significant_binary_enrichment_matrix
 
 
 def _compute_threshold_matrix(
