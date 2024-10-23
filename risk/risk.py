@@ -93,6 +93,9 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed=random_seed,
         )
 
+        # Make a copy of the network to avoid modifying the original
+        network = network.copy()
+
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
             network,
@@ -149,6 +152,9 @@ class RISK(NetworkIO, AnnotationsIO):
             null_distribution=null_distribution,
             random_seed=random_seed,
         )
+
+        # Make a copy of the network to avoid modifying the original
+        network = network.copy()
 
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
@@ -215,6 +221,9 @@ class RISK(NetworkIO, AnnotationsIO):
             random_seed=random_seed,
             max_workers=max_workers,
         )
+
+        # Make a copy of the network to avoid modifying the original
+        network = network.copy()
 
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
@@ -294,6 +303,9 @@ class RISK(NetworkIO, AnnotationsIO):
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
+
+        # Make a copy of the network to avoid modifying the original
+        network = network.copy()
 
         logger.debug(f"p-value cutoff: {pval_cutoff}")
         logger.debug(f"FDR BH cutoff: {fdr_cutoff}")
