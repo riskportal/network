@@ -464,13 +464,15 @@ class RISK(NetworkIO, AnnotationsIO):
         # Extract necessary data from annotations and neighborhoods
         ordered_annotations = annotations["ordered_annotations"]
         neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_counts"]
-        neighborhoods_binary_enrichment_matrix = neighborhoods["binary_enrichment_matrix"]
+        significant_enrichment_matrix = neighborhoods["significant_enrichment_matrix"]
+        significant_binary_enrichment_matrix = neighborhoods["significant_binary_enrichment_matrix"]
         # Call external function to define top annotations
         return define_top_annotations(
             network=network,
             ordered_annotation_labels=ordered_annotations,
             neighborhood_enrichment_sums=neighborhood_enrichment_sums,
-            binary_enrichment_matrix=neighborhoods_binary_enrichment_matrix,
+            significant_enrichment_matrix=significant_enrichment_matrix,
+            significant_binary_enrichment_matrix=significant_binary_enrichment_matrix,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
