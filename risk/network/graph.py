@@ -45,6 +45,10 @@ class NetworkGraph:
         self.domain_id_to_domain_terms_map = self._create_domain_id_to_domain_terms_map(
             trimmed_domains
         )
+        self.domain_id_to_domain_info_map = self._create_domain_id_to_domain_info_map(
+            trimmed_domains
+        )
+        self.trimmed_domains = trimmed_domains
         self.node_enrichment_sums = node_enrichment_sums
         self.node_id_to_domain_ids_and_enrichments_map = (
             self._create_node_id_to_domain_ids_and_enrichments(domains)
@@ -60,7 +64,8 @@ class NetworkGraph:
         self.network = _unfold_sphere_to_plane(network)
         self.node_coordinates = _extract_node_coordinates(self.network)
 
-    def _create_domain_id_to_node_ids_map(self, domains: pd.DataFrame) -> Dict[int, Any]:
+    @staticmethod
+    def _create_domain_id_to_node_ids_map(domains: pd.DataFrame) -> Dict[int, Any]:
         """Create a mapping from domains to the list of node IDs belonging to each domain.
 
         Args:
@@ -69,17 +74,16 @@ class NetworkGraph:
         Returns:
             Dict[int, Any]: A dictionary where keys are domain IDs and values are lists of node IDs belonging to each domain.
         """
-        cleaned_domains_matrix = domains.reset_index()[["index", "primary domain"]]
-        node_to_domains_map = cleaned_domains_matrix.set_index("index")["primary domain"].to_dict()
+        cleaned_domains_matrix = domains.reset_index()[["index", "primary_domain"]]
+        node_to_domains_map = cleaned_domains_matrix.set_index("index")["primary_domain"].to_dict()
         domain_id_to_node_ids_map = defaultdict(list)
         for k, v in node_to_domains_map.items():
             domain_id_to_node_ids_map[v].append(k)
 
         return domain_id_to_node_ids_map
 
-    def _create_domain_id_to_domain_terms_map(
-        self, trimmed_domains: pd.DataFrame
-    ) -> Dict[int, Any]:
+    @staticmethod
+    def _create_domain_id_to_domain_terms_map(trimmed_domains: pd.DataFrame) -> Dict[int, Any]:
         """Create a mapping from domain IDs to their corresponding terms.
 
         Args:
@@ -91,13 +95,32 @@ class NetworkGraph:
         return dict(
             zip(
                 trimmed_domains.index,
-                trimmed_domains["label"],
+                trimmed_domains["normalized_description"],
             )
         )
 
-    def _create_node_id_to_domain_ids_and_enrichments(
-        self, domains: pd.DataFrame
-    ) -> Dict[int, Dict]:
+    @staticmethod
+    def _create_domain_id_to_domain_info_map(
+        trimmed_domains: pd.DataFrame,
+    ) -> Dict[int, Dict[str, Any]]:
+        """Create a mapping from domain IDs to their corresponding full description and enrichment score.
+
+        Args:
+            trimmed_domains (pd.DataFrame): DataFrame containing domain IDs, full descriptions, and enrichment scores.
+
+        Returns:
+            Dict[int, Dict[str, Any]]: A dictionary mapping domain IDs (int) to a dictionary with 'full_descriptions' and 'enrichment_scores'.
+        """
+        return {
+            int(id_): {
+                "full_descriptions": trimmed_domains.at[id_, "full_descriptions"],
+                "enrichment_scores": trimmed_domains.at[id_, "enrichment_scores"],
+            }
+            for id_ in trimmed_domains.index
+        }
+
+    @staticmethod
+    def _create_node_id_to_domain_ids_and_enrichments(domains: pd.DataFrame) -> Dict[int, Dict]:
         """Creates a dictionary mapping each node ID to its corresponding domain IDs and enrichment values.
 
         Args:
