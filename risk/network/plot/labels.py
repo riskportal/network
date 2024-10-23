@@ -616,7 +616,7 @@ class Labels:
         """
         # Return custom labels if domain is in ids_to_replace
         if ids_to_replace and domain in ids_to_replace:
-            terms = ids_to_replace[domain].split(" ")
+            terms = ids_to_replace[domain].replace(" ", TERM_DELIMITER)
             return terms
 
         else:
