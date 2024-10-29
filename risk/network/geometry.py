@@ -3,6 +3,8 @@ risk/network/geometry
 ~~~~~~~~~~~~~~~~~~~~~
 """
 
+import copy
+
 import networkx as nx
 import numpy as np
 
@@ -55,10 +57,10 @@ def assign_edge_lengths(
     if compute_sphere:
         # Map to sphere and adjust depth
         _map_to_sphere(G)
-        G_depth = _create_depth(G.copy(), surface_depth=surface_depth)
+        G_depth = _create_depth(copy.deepcopy(G), surface_depth=surface_depth)
     else:
         # Calculate edge lengths directly on the plane
-        G_depth = G.copy()
+        G_depth = copy.deepcopy(G)
 
     for u, v, _ in G_depth.edges(data=True):
         u_coords = np.array([G_depth.nodes[u]["x"], G_depth.nodes[u]["y"]])
