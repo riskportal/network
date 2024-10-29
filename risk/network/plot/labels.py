@@ -3,6 +3,7 @@ risk/network/plot/labels
 ~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import copy
 from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -723,12 +724,19 @@ def _combine_words(words: List[str], max_chars_per_line: int, max_label_lines: i
     # Main logic: start with max_label_lines number of words
     combined_lines = try_combinations(words[:max_label_lines])
     remaining_words = words[max_label_lines:]  # Remaining words after the initial batch
+    # Track words that have already been added
+    existing_words = set(" ".join(combined_lines).split())
 
     # Continue pulling more words until we fill the lines
     while remaining_words and len(combined_lines) < max_label_lines:
         available_slots = max_label_lines - len(combined_lines)
-        words_to_add = remaining_words[:available_slots]
+        words_to_add = [
+            word for word in remaining_words[:available_slots] if word not in existing_words
+        ]
         remaining_words = remaining_words[available_slots:]
+        # Update the existing words set
+        existing_words.update(words_to_add)
+        # Add to combined_lines only unique words
         combined_lines += try_combinations(words_to_add)
 
     # Join the final combined lines with TERM_DELIMITER, a special separator for line breaks
@@ -862,7 +870,7 @@ def _swap_and_evaluate(
     """
     # Get the list of labels from the dictionary keys
     labels = list(label_positions.keys())
-    swapped_positions = label_positions.copy()
+    swapped_positions = copy.deepcopy(label_positions)
     # Swap the positions of the two specified labels
     swapped_positions[labels[i]], swapped_positions[labels[j]] = (
         swapped_positions[labels[j]],
