@@ -3,6 +3,7 @@ risk/risk
 ~~~~~~~~~
 """
 
+import copy
 from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
@@ -94,7 +95,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Make a copy of the network to avoid modifying the original
-        network = network.copy()
+        network = copy.deepcopy(network)
 
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
@@ -154,7 +155,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Make a copy of the network to avoid modifying the original
-        network = network.copy()
+        network = copy.deepcopy(network)
 
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
@@ -223,7 +224,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Make a copy of the network to avoid modifying the original
-        network = network.copy()
+        network = copy.deepcopy(network)
 
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
@@ -305,7 +306,7 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         # Make a copy of the network to avoid modifying the original
-        network = network.copy()
+        network = copy.deepcopy(network)
 
         logger.debug(f"p-value cutoff: {pval_cutoff}")
         logger.debug(f"FDR BH cutoff: {fdr_cutoff}")

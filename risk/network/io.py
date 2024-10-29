@@ -5,6 +5,7 @@ risk/network/io
 This file contains the code for the RISK class and command-line access.
 """
 
+import copy
 import json
 import os
 import pickle
@@ -155,7 +156,7 @@ class NetworkIO:
         self._log_loading(filetype)
 
         # Important: Make a copy of the network to avoid modifying the original
-        network_copy = network.copy()
+        network_copy = copy.deepcopy(network)
         # Initialize the graph
         return self._initialize_graph(network_copy)
 
