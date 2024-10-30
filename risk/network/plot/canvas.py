@@ -112,6 +112,8 @@ class Canvas:
     def plot_circle_perimeter(
         self,
         scale: float = 1.0,
+        center_offset_x: float = 0.0,
+        center_offset_y: float = 0.0,
         linestyle: str = "dashed",
         linewidth: float = 1.5,
         color: Union[str, List, Tuple, np.ndarray] = "black",
@@ -122,6 +124,10 @@ class Canvas:
 
         Args:
             scale (float, optional): Scaling factor for the perimeter diameter. Defaults to 1.0.
+            center_offset_x (float, optional): Horizontal offset as a fraction of the diameter.
+                Negative values shift the center left, positive values shift it right. Defaults to 0.0.
+            center_offset_y (float, optional): Vertical offset as a fraction of the diameter.
+                Negative values shift the center down, positive values shift it up. Defaults to 0.0.
             linestyle (str, optional): Line style for the network perimeter circle (e.g., dashed, solid). Defaults to "dashed".
             linewidth (float, optional): Width of the circle's outline. Defaults to 1.5.
             color (str, List, Tuple, or np.ndarray, optional): Color of the network perimeter circle. Defaults to "black".
@@ -134,6 +140,8 @@ class Canvas:
         params.log_plotter(
             perimeter_type="circle",
             perimeter_scale=scale,
+            perimeter_center_offset_x=center_offset_x,
+            perimeter_center_offset_y=center_offset_y,
             perimeter_linestyle=linestyle,
             perimeter_linewidth=linewidth,
             perimeter_color=(
@@ -147,6 +155,10 @@ class Canvas:
         node_coordinates = self.graph.node_coordinates
         # Calculate the center and radius of the bounding box around the network
         center, radius = calculate_bounding_box(node_coordinates)
+        # Adjust the center based on user-defined offsets
+        adjusted_center = _calculate_adjusted_center(
+            center, radius, center_offset_x, center_offset_y
+        )
         # Scale the radius by the scale factor
         scaled_radius = radius * scale
 
@@ -160,7 +172,7 @@ class Canvas:
 
         # Draw a circle to represent the network perimeter
         circle = plt.Circle(
-            center,
+            adjusted_center,
             scaled_radius,
             linestyle=linestyle,
             linewidth=linewidth,
@@ -234,3 +246,43 @@ class Canvas:
             linewidth=linewidth,
             fill_alpha=fill_alpha,
         )
+
+
+def _calculate_adjusted_center(
+    center: Tuple[float, float],
+    radius: float,
+    center_offset_x: float = 0.0,
+    center_offset_y: float = 0.0,
+) -> Tuple[float, float]:
+    """Calculate the adjusted center for the network perimeter circle based on user-defined offsets.
+
+    Args:
+        center (Tuple[float, float]): Original center coordinates of the network graph.
+        radius (float): Radius of the bounding box around the network.
+        center_offset_x (float, optional): Horizontal offset as a fraction of the diameter.
+            Negative values shift the center left, positive values shift it right. Allowed
+            values are in the range [-1, 1]. Defaults to 0.0.
+        center_offset_y (float, optional): Vertical offset as a fraction of the diameter.
+            Negative values shift the center down, positive values shift it up. Allowed
+            values are in the range [-1, 1]. Defaults to 0.0.
+
+    Returns:
+        Tuple[float, float]: Adjusted center coordinates after applying the offsets.
+
+    Raises:
+        ValueError: If the center offsets are outside the valid range [-1, 1].
+    """
+    # Flip the y-axis to match the plot orientation
+    flipped_center_offset_y = -center_offset_y
+    # Validate the center offsets
+    if not -1 <= center_offset_x <= 1:
+        raise ValueError("Horizontal center offset must be in the range [-1, 1].")
+    if not -1 <= center_offset_y <= 1:
+        raise ValueError("Vertical center offset must be in the range [-1, 1].")
+
+    # Calculate adjusted center by applying offset fractions of the diameter
+    adjusted_center_x = center[0] + (center_offset_x * radius * 2)
+    adjusted_center_y = center[1] + (flipped_center_offset_y * radius * 2)
+
+    # Return the adjusted center coordinates
+    return adjusted_center_x, adjusted_center_y

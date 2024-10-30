@@ -67,6 +67,8 @@ def plot_circle_perimeter(plotter):
     try:
         plotter.plot_circle_perimeter(
             scale=1.05,
+            center_offset_x=0.0,
+            center_offset_y=0.0,
             linestyle="dashed",
             linewidth=1.5,
             color="black",
@@ -539,7 +541,7 @@ def test_plot_title_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "color, outline_alpha, fill_alpha, scale, linestyle, linewidth",
+    "color, outline_alpha, fill_alpha, scale, linestyle, linewidth, center_offset_x, center_offset_y",
     [
         (
             "white",
@@ -548,6 +550,8 @@ def test_plot_title_with_custom_params(
             1.05,
             "solid",
             1.5,
+            0.0,
+            0.0,
         ),  # Test case 1
         (
             (0.5, 0.8, 1.0),
@@ -556,11 +560,32 @@ def test_plot_title_with_custom_params(
             1.1,
             "dashed",
             2.0,
+            -0.2,
+            0.1,
         ),  # Test case 2
+        (
+            "black",
+            0.8,
+            0.3,
+            0.9,
+            "dotted",
+            1.0,
+            0.5,
+            -0.3,
+        ),  # Test case 3
     ],
 )
 def test_plot_circle_perimeter_with_custom_params(
-    risk_obj, graph, color, outline_alpha, fill_alpha, scale, linestyle, linewidth
+    risk_obj,
+    graph,
+    color,
+    outline_alpha,
+    fill_alpha,
+    scale,
+    linestyle,
+    linewidth,
+    center_offset_x,
+    center_offset_y,
 ):
     """Test plot_circle_perimeter with different color, alpha, and style parameters.
 
@@ -573,6 +598,8 @@ def test_plot_circle_perimeter_with_custom_params(
         scale: Scaling factor for the perimeter diameter.
         linestyle: The line style for the circle's outline.
         linewidth: The thickness of the circle's outline.
+        center_offset_x: The x-coordinate offset of the circle's center.
+        center_offset_y: The y-coordinate offset of the circle's center.
 
     Returns:
         None
@@ -581,6 +608,8 @@ def test_plot_circle_perimeter_with_custom_params(
     try:
         plotter.plot_circle_perimeter(
             scale=scale,
+            center_offset_x=center_offset_x,
+            center_offset_y=center_offset_y,
             linestyle=linestyle,
             linewidth=linewidth,
             color=color,
