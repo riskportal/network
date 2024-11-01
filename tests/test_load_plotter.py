@@ -47,6 +47,7 @@ def plot_title(plotter):
             font="Arial",
             title_color="black",
             subtitle_color="gray",
+            title_x=0.5,
             title_y=0.975,
             title_space_offset=0.075,
             subtitle_offset=0.025,
@@ -461,7 +462,7 @@ def test_plot_sublabel(risk_obj, graph):
 
 
 @pytest.mark.parametrize(
-    "title, subtitle, title_fontsize, subtitle_fontsize, title_color, subtitle_color, title_y, title_space_offset, subtitle_offset, font",
+    "title, subtitle, title_fontsize, subtitle_fontsize, title_color, subtitle_color, title_x, title_y, title_space_offset, subtitle_offset, font",
     [
         (
             "Metabolic Network",
@@ -470,6 +471,7 @@ def test_plot_sublabel(risk_obj, graph):
             12,
             "white",
             "red",
+            0.5,
             0.95,
             0.05,
             0.03,
@@ -482,6 +484,7 @@ def test_plot_sublabel(risk_obj, graph):
             14,
             "yellow",
             "blue",
+            0.3,
             0.975,
             0.075,
             0.025,
@@ -498,6 +501,7 @@ def test_plot_title_with_custom_params(
     subtitle_fontsize,
     title_color,
     subtitle_color,
+    title_x,
     title_y,
     title_space_offset,
     subtitle_offset,
@@ -514,6 +518,7 @@ def test_plot_title_with_custom_params(
         subtitle_fontsize (int): Font size of the subtitle.
         title_color (str): Color of the title text.
         subtitle_color (str): Color of the subtitle text.
+        title_x (float): Position of the title in figure coordinates (0-1).
         title_y (float): Position of the title in figure coordinates (0-1).
         title_space_offset (float): Fraction of figure height to leave for the space above the plot.
         subtitle_offset (float): Offset factor to position the subtitle below the title.
@@ -531,6 +536,7 @@ def test_plot_title_with_custom_params(
             subtitle_fontsize=subtitle_fontsize,
             title_color=title_color,
             subtitle_color=subtitle_color,
+            title_x=title_x,
             title_y=title_y,
             title_space_offset=title_space_offset,
             subtitle_offset=subtitle_offset,

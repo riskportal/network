@@ -36,6 +36,7 @@ class Canvas:
         font: str = "Arial",
         title_color: Union[str, List, Tuple, np.ndarray] = "black",
         subtitle_color: Union[str, List, Tuple, np.ndarray] = "gray",
+        title_x: float = 0.5,
         title_y: float = 0.975,
         title_space_offset: float = 0.075,
         subtitle_offset: float = 0.025,
@@ -52,6 +53,7 @@ class Canvas:
                 Defaults to "black".
             subtitle_color (str, List, Tuple, or np.ndarray, optional): Color of the subtitle text. Can be a string or an array of colors.
                 Defaults to "gray".
+            title_x (float, optional): X-axis position of the title. Defaults to 0.5.
             title_y (float, optional): Y-axis position of the title. Defaults to 0.975.
             title_space_offset (float, optional): Fraction of figure height to leave for the space above the plot. Defaults to 0.075.
             subtitle_offset (float, optional): Offset factor to position the subtitle below the title. Defaults to 0.025.
@@ -85,7 +87,7 @@ class Canvas:
                 fontsize=title_fontsize,
                 color=title_color,
                 fontname=font,
-                x=0.5,  # Center the title horizontally
+                x=title_x,
                 ha="center",
                 va="top",
                 y=title_y,
