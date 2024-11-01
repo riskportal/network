@@ -42,18 +42,9 @@ class RISK(NetworkIO, AnnotationsIO):
         """
         # Set global verbosity for logging
         set_global_verbosity(verbose)
-        # Initialize and log network parameters
-        params.initialize()
+        # Provide public access to the logged network parameters
+        self.params = params
         super().__init__()
-
-    @property
-    def params(self) -> params:
-        """Access the logged network parameters.
-
-        Returns:
-            Params: An instance of the Params class with logged parameters and methods to access or update them.
-        """
-        return params
 
     def load_neighborhoods_by_hypergeom(
         self,
