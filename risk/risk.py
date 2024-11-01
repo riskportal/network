@@ -259,9 +259,9 @@ class RISK(NetworkIO, AnnotationsIO):
         network: nx.Graph,
         annotations: Dict[str, Any],
         neighborhoods: Dict[str, Any],
-        tail: str = "right",  # OPTIONS: "right" (enrichment), "left" (depletion), "both"
-        pval_cutoff: float = 0.01,  # OPTIONS: Any value between 0 to 1
-        fdr_cutoff: float = 0.9999,  # OPTIONS: Any value between 0 to 1
+        tail: str = "right",
+        pval_cutoff: float = 0.01,
+        fdr_cutoff: float = 0.9999,
         impute_depth: int = 0,
         prune_threshold: float = 0.0,
         linkage_criterion: str = "distance",
@@ -275,7 +275,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): DataFrame containing annotation data for the network.
-            neighborhoods (Dict[str, Any]): Neighborhood enrichment data.
+            neighborhoods (Dict[str, Any]): Neighborhood significance data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
             fdr_cutoff (float, optional): FDR cutoff for significance. Defaults to 0.9999.
@@ -360,10 +360,10 @@ class RISK(NetworkIO, AnnotationsIO):
             max_cluster_size=max_cluster_size,
         )
 
-        # Prepare node mapping and enrichment sums for the final NetworkGraph object
+        # Prepare node mapping and significance sums for the final NetworkGraph object
         ordered_nodes = annotations["ordered_nodes"]
         node_label_to_id = dict(zip(ordered_nodes, range(len(ordered_nodes))))
-        node_enrichment_sums = processed_neighborhoods["node_enrichment_sums"]
+        node_significance_sums = processed_neighborhoods["node_significance_sums"]
 
         # Return the fully initialized NetworkGraph object
         return NetworkGraph(
@@ -372,7 +372,7 @@ class RISK(NetworkIO, AnnotationsIO):
             domains=domains,
             trimmed_domains=trimmed_domains,
             node_label_to_node_id_map=node_label_to_id,
-            node_enrichment_sums=node_enrichment_sums,
+            node_significance_sums=node_significance_sums,
         )
 
     def load_plotter(
@@ -467,7 +467,7 @@ class RISK(NetworkIO, AnnotationsIO):
         Args:
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): Annotations data for the network.
-            neighborhoods (Dict[str, Any]): Neighborhood enrichment data.
+            neighborhoods (Dict[str, Any]): Neighborhood significance data.
             min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
@@ -476,16 +476,18 @@ class RISK(NetworkIO, AnnotationsIO):
         """
         # Extract necessary data from annotations and neighborhoods
         ordered_annotations = annotations["ordered_annotations"]
-        neighborhood_enrichment_sums = neighborhoods["neighborhood_enrichment_counts"]
-        significant_enrichment_matrix = neighborhoods["significant_enrichment_matrix"]
-        significant_binary_enrichment_matrix = neighborhoods["significant_binary_enrichment_matrix"]
+        neighborhood_significance_sums = neighborhoods["neighborhood_significance_counts"]
+        significant_significance_matrix = neighborhoods["significant_significance_matrix"]
+        significant_binary_significance_matrix = neighborhoods[
+            "significant_binary_significance_matrix"
+        ]
         # Call external function to define top annotations
         return define_top_annotations(
             network=network,
             ordered_annotation_labels=ordered_annotations,
-            neighborhood_enrichment_sums=neighborhood_enrichment_sums,
-            significant_enrichment_matrix=significant_enrichment_matrix,
-            significant_binary_enrichment_matrix=significant_binary_enrichment_matrix,
+            neighborhood_significance_sums=neighborhood_significance_sums,
+            significant_significance_matrix=significant_significance_matrix,
+            significant_binary_significance_matrix=significant_binary_significance_matrix,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
@@ -498,7 +500,7 @@ class RISK(NetworkIO, AnnotationsIO):
         linkage_method: str,
         linkage_metric: str,
     ) -> pd.DataFrame:
-        """Define domains in the network based on enrichment data.
+        """Define domains in the network based on significance data.
 
         Args:
             neighborhoods (Dict[str, Any]): Enrichment data for neighborhoods.
@@ -510,12 +512,12 @@ class RISK(NetworkIO, AnnotationsIO):
         Returns:
             pd.DataFrame: Matrix of defined domains.
         """
-        # Extract the significant enrichment matrix from the neighborhoods data
-        significant_neighborhoods_enrichment = neighborhoods["significant_enrichment_matrix"]
+        # Extract the significant significance matrix from the neighborhoods data
+        significant_neighborhoods_significance = neighborhoods["significant_significance_matrix"]
         # Call external function to define domains based on the extracted data
         return define_domains(
             top_annotations=top_annotations,
-            significant_neighborhoods_enrichment=significant_neighborhoods_enrichment,
+            significant_neighborhoods_significance=significant_neighborhoods_significance,
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,

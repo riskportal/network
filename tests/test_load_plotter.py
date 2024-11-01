@@ -116,7 +116,9 @@ def plot_network(plotter):
     """
     try:
         plotter.plot_network(
-            node_size=plotter.get_annotated_node_sizes(enriched_size=100, nonenriched_size=25),
+            node_size=plotter.get_annotated_node_sizes(
+                significant_size=100, nonsignificant_size=25
+            ),
             node_shape="o",
             edge_width=0.0,
             node_color=plotter.get_annotated_node_colors(
@@ -127,8 +129,8 @@ def plot_network(plotter):
                 max_scale=1.0,
                 scale_factor=0.5,
                 alpha=1.0,
-                nonenriched_color="white",
-                nonenriched_alpha=0.1,
+                nonsignificant_color="white",
+                nonsignificant_alpha=0.1,
                 random_seed=887,
             ),
             node_edgecolor="black",
@@ -702,7 +704,7 @@ def test_plot_contour_perimeter_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "node_color, cmap, nonenriched_color, nonenriched_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
+    "node_color, cmap, nonsignificant_color, nonsignificant_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
     [
         (None, "gist_rainbow", "white", None, "black", "blue", None, None, 100, "o", 0.0, 1.5),
         (
@@ -768,8 +770,8 @@ def test_plot_network_with_custom_params(
     graph,
     node_color,
     cmap,
-    nonenriched_color,
-    nonenriched_alpha,
+    nonsignificant_color,
+    nonsignificant_alpha,
     edge_color,
     node_edgecolor,
     node_alpha,
@@ -786,8 +788,8 @@ def test_plot_network_with_custom_params(
         graph: The graph object to be plotted.
         node_color: The color of the network nodes.
         cmap: Colormap to use for node colors if node_color is None.
-        nonenriched_color: The color for non-enriched nodes.
-        nonenriched_alpha: The transparency of the non-enriched nodes.
+        nonsignificant_color: The color for non-significant nodes.
+        nonsignificant_alpha: The transparency of the non-significant nodes.
         edge_color: The color of the network edges.
         node_edgecolor: The color of the node edges.
         node_alpha: The transparency of the nodes.
@@ -811,13 +813,13 @@ def test_plot_network_with_custom_params(
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,
-            nonenriched_color=nonenriched_color,
-            nonenriched_alpha=nonenriched_alpha,
+            nonsignificant_color=nonsignificant_color,
+            nonsignificant_alpha=nonsignificant_alpha,
             random_seed=887,
         )
         plotter.plot_network(
             node_size=plotter.get_annotated_node_sizes(
-                enriched_size=100, nonenriched_size=node_size
+                significant_size=100, nonsignificant_size=node_size
             ),
             edge_width=edge_width,
             node_color=node_color,

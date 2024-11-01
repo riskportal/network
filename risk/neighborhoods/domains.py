@@ -20,17 +20,17 @@ from risk.log import logger
 
 def define_domains(
     top_annotations: pd.DataFrame,
-    significant_neighborhoods_enrichment: np.ndarray,
+    significant_neighborhoods_significance: np.ndarray,
     linkage_criterion: str,
     linkage_method: str,
     linkage_metric: str,
 ) -> pd.DataFrame:
-    """Define domains and assign nodes to these domains based on their enrichment scores and clustering,
+    """Define domains and assign nodes to these domains based on their significance scores and clustering,
     handling errors by assigning unique domains when clustering fails.
 
     Args:
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
-        significant_neighborhoods_enrichment (np.ndarray): The binary enrichment matrix below alpha.
+        significant_neighborhoods_significance (np.ndarray): The binary significance matrix below alpha.
         linkage_criterion (str): The clustering criterion for defining groups.
         linkage_method (str): The linkage method for clustering.
         linkage_metric (str): The linkage metric for clustering.
@@ -40,7 +40,7 @@ def define_domains(
     """
     try:
         # Transpose the matrix to cluster annotations
-        m = significant_neighborhoods_enrichment[:, top_annotations["significant_annotations"]].T
+        m = significant_neighborhoods_significance[:, top_annotations["significant_annotations"]].T
         best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
             m, linkage_criterion, linkage_method, linkage_metric
         )
@@ -65,13 +65,13 @@ def define_domains(
         top_annotations["domain"] = range(1, n_rows + 1)  # Assign unique domains
 
     # Create DataFrames to store domain information
-    node_to_enrichment = pd.DataFrame(
-        data=significant_neighborhoods_enrichment,
+    node_to_significance = pd.DataFrame(
+        data=significant_neighborhoods_significance,
         columns=[top_annotations.index.values, top_annotations["domain"]],
     )
-    node_to_domain = node_to_enrichment.groupby(level="domain", axis=1).sum()
+    node_to_domain = node_to_significance.groupby(level="domain", axis=1).sum()
 
-    # Find the maximum enrichment score for each node
+    # Find the maximum significance score for each node
     t_max = node_to_domain.loc[:, 1:].max(axis=1)
     t_idxmax = node_to_domain.loc[:, 1:].idxmax(axis=1)
     t_idxmax[t_max == 0] = 0
@@ -119,27 +119,27 @@ def trim_domains_and_top_annotations(
     top_annotations["domain"].replace(to_remove, invalid_domain_id, inplace=True)
     domains.loc[domains["primary_domain"].isin(to_remove), ["primary_domain"]] = invalid_domain_id
 
-    # Normalize "num enriched neighborhoods" by percentile for each domain and scale to 0-10
+    # Normalize "num significant neighborhoods" by percentile for each domain and scale to 0-10
     top_annotations["normalized_value"] = top_annotations.groupby("domain")[
-        "significant_neighborhood_enrichment_sums"
+        "significant_neighborhood_significance_sums"
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
-    # Modify the lambda function to pass both full_terms and significant_enrichment_score
+    # Modify the lambda function to pass both full_terms and significant_significance_score
     top_annotations["combined_terms"] = top_annotations.apply(
         lambda row: " ".join([str(row["full_terms"])] * row["normalized_value"]), axis=1
     )
 
-    # Perform the groupby operation while retaining the other columns and adding the weighting with enrichment scores
+    # Perform the groupby operation while retaining the other columns and adding the weighting with significance scores
     domain_labels = (
         top_annotations.groupby("domain")
         .agg(
             full_terms=("full_terms", lambda x: list(x)),
-            enrichment_scores=("significant_enrichment_score", lambda x: list(x)),
+            significance_scores=("significant_significance_score", lambda x: list(x)),
         )
         .reset_index()
     )
     domain_labels["combined_terms"] = domain_labels.apply(
         lambda row: get_weighted_description(
-            pd.Series(row["full_terms"]), pd.Series(row["enrichment_scores"])
+            pd.Series(row["full_terms"]), pd.Series(row["significance_scores"])
         ),
         axis=1,
     )
@@ -150,7 +150,7 @@ def trim_domains_and_top_annotations(
             "domain": "id",
             "combined_terms": "normalized_description",
             "full_terms": "full_descriptions",
-            "enrichment_scores": "enrichment_scores",
+            "significance_scores": "significance_scores",
         }
     ).set_index("id")
 
