@@ -128,7 +128,7 @@ class AnalysisSummary:
         results["Annotation Members in Network"] = results["Annotation"].apply(
             lambda desc: self._get_annotation_members(desc)
         )
-        results["Annotation Member in Network Count"] = results[
+        results["Annotation Members in Network Count"] = results[
             "Annotation Members in Network"
         ].apply(lambda x: len(x.split(";")) if x else 0)
 
@@ -139,7 +139,7 @@ class AnalysisSummary:
                     "Domain ID",
                     "Annotation",
                     "Annotation Members in Network",
-                    "Annotation Member in Network Count",
+                    "Annotation Members in Network Count",
                     "Summed Significance Score",
                     "Enrichment P-value",
                     "Enrichment Q-value",
