@@ -76,11 +76,13 @@ class AnnotationsIO:
         _log_loading(filetype, filepath=filepath)
 
         # Load the specified sheet from the Excel file
-        df = pd.read_excel(filepath, sheet_name=sheet_name)
+        annotation = pd.read_excel(filepath, sheet_name=sheet_name)
         # Split the nodes column by the specified nodes_delimiter
-        df[nodes_colname] = df[nodes_colname].apply(lambda x: x.split(nodes_delimiter))
+        annotation[nodes_colname] = annotation[nodes_colname].apply(
+            lambda x: x.split(nodes_delimiter)
+        )
         # Convert the DataFrame to a dictionary pairing labels with their corresponding nodes
-        label_node_dict = df.set_index(label_colname)[nodes_colname].to_dict()
+        label_node_dict = annotation.set_index(label_colname)[nodes_colname].to_dict()
 
         # Load the annotations into the provided network
         return load_annotations(network, label_node_dict)
@@ -203,11 +205,11 @@ def _load_matrix_file(
         Dict[str, Any]: A dictionary where each label is paired with its respective list of nodes.
     """
     # Load the CSV or TSV file into a DataFrame
-    df = pd.read_csv(filepath, delimiter=delimiter)
+    annotation = pd.read_csv(filepath, delimiter=delimiter)
     # Split the nodes column by the nodes_delimiter to handle multiple nodes per label
-    df[nodes_colname] = df[nodes_colname].apply(lambda x: x.split(nodes_delimiter))
+    annotation[nodes_colname] = annotation[nodes_colname].apply(lambda x: x.split(nodes_delimiter))
     # Create a dictionary pairing labels with their corresponding list of nodes
-    label_node_dict = df.set_index(label_colname)[nodes_colname].to_dict()
+    label_node_dict = annotation.set_index(label_colname)[nodes_colname].to_dict()
     return label_node_dict
 
 
