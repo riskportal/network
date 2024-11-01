@@ -1,6 +1,6 @@
 """
-risk/log/params
-~~~~~~~~~~~~~~~
+risk/log/parameters
+~~~~~~~~~~~~~~~~~~~
 """
 
 import csv
