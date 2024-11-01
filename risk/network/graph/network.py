@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from risk.network.graph.summary import Summary
+from risk.network.graph.summary import AnalysisSummary
 
 
 class NetworkGraph:
@@ -73,7 +73,7 @@ class NetworkGraph:
         self.node_coordinates = _extract_node_coordinates(self.network)
 
         # NOTE: Only after the above attributes are initialized, we can create the summary
-        self.summary = Summary(annotations, neighborhoods, self)
+        self.summary = AnalysisSummary(annotations, neighborhoods, self)
 
     @staticmethod
     def _create_domain_id_to_node_ids_map(domains: pd.DataFrame) -> Dict[int, Any]:

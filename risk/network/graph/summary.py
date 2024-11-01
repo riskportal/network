@@ -3,8 +3,6 @@ risk/network/graph/summary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-import warnings
-from functools import lru_cache
 from typing import Any, Dict, Tuple, Union
 
 import numpy as np
@@ -14,11 +12,7 @@ from statsmodels.stats.multitest import fdrcorrection
 from risk.log.console import logger, log_header
 
 
-# Suppress all warnings - this is to resolve warnings from multiprocessing
-warnings.filterwarnings("ignore")
-
-
-class Summary:
+class AnalysisSummary:
     """Handles the processing, storage, and export of network analysis results.
 
     The Results class provides methods to process significance and depletion data, compute
@@ -79,7 +73,6 @@ class Summary:
 
         logger.info(f"Results summary exported to text file: {filepath}")
 
-    @lru_cache(maxsize=None)
     def load(self) -> pd.DataFrame:
         """Load and process domain and annotation data into a DataFrame with significance metrics.
 
@@ -91,7 +84,7 @@ class Summary:
             pd.DataFrame: Processed DataFrame containing significance scores, p-values, q-values,
                 and annotation member information.
         """
-        log_header("Loading parameters")
+        log_header("Loading analysis summary")
         # Calculate significance and depletion q-values from p-value matrices in `annotations`
         enrichment_pvals = self.neighborhoods["enrichment_pvals"]
         depletion_pvals = self.neighborhoods["depletion_pvals"]
@@ -132,12 +125,12 @@ class Summary:
             result_type="expand",
         )
         # Add annotation members and their counts
-        results["Annotation Members"] = results["Annotation"].apply(
+        results["Annotation Members in Network"] = results["Annotation"].apply(
             lambda desc: self._get_annotation_members(desc)
         )
-        results["Annotation Member Count"] = results["Annotation Members"].apply(
-            lambda x: len(x.split(";")) if x else 0
-        )
+        results["Annotation Member in Network Count"] = results[
+            "Annotation Members in Network"
+        ].apply(lambda x: len(x.split(";")) if x else 0)
 
         # Reorder columns and drop rows with NaN values
         results = (
@@ -145,8 +138,8 @@ class Summary:
                 [
                     "Domain ID",
                     "Annotation",
-                    "Annotation Members",
-                    "Annotation Member Count",
+                    "Annotation Members in Network",
+                    "Annotation Member in Network Count",
                     "Summed Significance Score",
                     "Enrichment P-value",
                     "Enrichment Q-value",
@@ -230,6 +223,7 @@ class Summary:
         except ValueError:
             return ""  # Description not found
 
+        # Get nodes present for the annotation and sort by node label
         nodes_present = np.where(self.annotations["matrix"][:, annotation_idx] == 1)[0]
         node_labels = sorted(
             self.graph.node_id_to_node_label_map[node_id]
