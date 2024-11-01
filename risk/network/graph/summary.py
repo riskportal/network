@@ -25,7 +25,7 @@ class AnalysisSummary:
         self,
         annotations: Dict[str, Any],
         neighborhoods: Dict[str, Any],
-        graph,  # Avoid type hinting NetworkGraph to avoid circular import
+        graph,  # Avoid type hinting NetworkGraph to prevent circular imports
     ):
         """Initialize the Results object with analysis components.
 
@@ -75,10 +75,6 @@ class AnalysisSummary:
 
     def load(self) -> pd.DataFrame:
         """Load and process domain and annotation data into a DataFrame with significance metrics.
-
-        Args:
-            graph (Any): Graph object containing domain-to-node and node-to-label mappings.
-            annotations (Dict[str, Any]): Annotation details, including ordered annotations and matrix.
 
         Returns:
             pd.DataFrame: Processed DataFrame containing significance scores, p-values, q-values,
