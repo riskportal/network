@@ -265,7 +265,7 @@ class RISK(NetworkIO, AnnotationsIO):
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (pd.DataFrame): DataFrame containing annotation data for the network.
+            annotations (Dict[str, Any]): The annotations associated with the network.
             neighborhoods (Dict[str, Any]): Neighborhood significance data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
@@ -359,6 +359,8 @@ class RISK(NetworkIO, AnnotationsIO):
         # Return the fully initialized NetworkGraph object
         return NetworkGraph(
             network=network,
+            annotations=annotations,
+            neighborhoods=neighborhoods,
             top_annotations=top_annotations,
             domains=domains,
             trimmed_domains=trimmed_domains,
