@@ -12,7 +12,7 @@ from typing import Any, Dict
 
 import numpy as np
 
-from .config import logger, log_header
+from .console import logger, log_header
 
 # Suppress all warnings - this is to resolve warnings from multiprocessing
 warnings.filterwarnings("ignore")
