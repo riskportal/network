@@ -203,11 +203,11 @@ class Network:
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
         alpha: Union[float, None] = 1.0,
-        nonenriched_color: Union[str, List, Tuple, np.ndarray] = "white",
-        nonenriched_alpha: Union[float, None] = 1.0,
+        nonsignificant_color: Union[str, List, Tuple, np.ndarray] = "white",
+        nonsignificant_alpha: Union[float, None] = 1.0,
         random_seed: int = 888,
     ) -> np.ndarray:
-        """Adjust the colors of nodes in the network graph based on enrichment.
+        """Adjust the colors of nodes in the network graph based on significance.
 
         Args:
             cmap (str, optional): Colormap to use for coloring the nodes. Defaults to "gist_rainbow".
@@ -218,16 +218,16 @@ class Network:
             min_scale (float, optional): Minimum scale for color intensity. Defaults to 0.8.
             max_scale (float, optional): Maximum scale for color intensity. Defaults to 1.0.
             scale_factor (float, optional): Factor for adjusting the color scaling intensity. Defaults to 1.0.
-            alpha (float, None, optional): Alpha value for enriched nodes. If provided, it overrides any existing alpha values found in `color`.
+            alpha (float, None, optional): Alpha value for significant nodes. If provided, it overrides any existing alpha values found in `color`.
                 Defaults to 1.0.
-            nonenriched_color (str, List, Tuple, or np.ndarray, optional): Color for non-enriched nodes. Can be a single color or an array of colors.
+            nonsignificant_color (str, List, Tuple, or np.ndarray, optional): Color for non-significant nodes. Can be a single color or an array of colors.
                 Defaults to "white".
-            nonenriched_alpha (float, None, optional): Alpha value for non-enriched nodes. If provided, it overrides any existing alpha values found
-                in `nonenriched_color`. Defaults to 1.0.
+            nonsignificant_alpha (float, None, optional): Alpha value for non-significant nodes. If provided, it overrides any existing alpha values found
+                in `nonsignificant_color`. Defaults to 1.0.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
-            np.ndarray: Array of RGBA colors adjusted for enrichment status.
+            np.ndarray: Array of RGBA colors adjusted for significance status.
         """
         # Get the initial domain colors for each node, which are returned as RGBA
         network_colors = get_domain_colors(
@@ -241,11 +241,11 @@ class Network:
             scale_factor=scale_factor,
             random_seed=random_seed,
         )
-        # Apply the alpha value for enriched nodes
-        network_colors[:, 3] = alpha  # Apply the alpha value to the enriched nodes' A channel
-        # Convert the non-enriched color to RGBA using the to_rgba helper function
-        nonenriched_color_rgba = to_rgba(
-            color=nonenriched_color, alpha=nonenriched_alpha, num_repeats=1
+        # Apply the alpha value for significant nodes
+        network_colors[:, 3] = alpha  # Apply the alpha value to the significant nodes' A channel
+        # Convert the non-significant color to RGBA using the to_rgba helper function
+        nonsignificant_color_rgba = to_rgba(
+            color=nonsignificant_color, alpha=nonsignificant_alpha, num_repeats=1
         )  # num_repeats=1 for a single color
         # Adjust node colors: replace any nodes where all three RGB values are equal and less than 0.1
         # 0.1 is a predefined threshold for the minimum color intensity
@@ -255,34 +255,34 @@ class Network:
                 & np.all(network_colors[:, :3] == network_colors[:, 0:1], axis=1)
             )[:, None],
             np.tile(
-                np.array(nonenriched_color_rgba), (network_colors.shape[0], 1)
-            ),  # Replace with the full RGBA non-enriched color
+                np.array(nonsignificant_color_rgba), (network_colors.shape[0], 1)
+            ),  # Replace with the full RGBA non-significant color
             network_colors,  # Keep the original colors where no match is found
         )
         return adjusted_network_colors
 
     def get_annotated_node_sizes(
-        self, enriched_size: int = 50, nonenriched_size: int = 25
+        self, significant_size: int = 50, nonsignificant_size: int = 25
     ) -> np.ndarray:
-        """Adjust the sizes of nodes in the network graph based on whether they are enriched or not.
+        """Adjust the sizes of nodes in the network graph based on whether they are significant or not.
 
         Args:
-            enriched_size (int): Size for enriched nodes. Defaults to 50.
-            nonenriched_size (int): Size for non-enriched nodes. Defaults to 25.
+            significant_size (int): Size for significant nodes. Defaults to 50.
+            nonsignificant_size (int): Size for non-significant nodes. Defaults to 25.
 
         Returns:
-            np.ndarray: Array of node sizes, with enriched nodes larger than non-enriched ones.
+            np.ndarray: Array of node sizes, with significant nodes larger than non-significant ones.
         """
-        # Merge all enriched nodes from the domain_id_to_node_ids_map dictionary
-        enriched_nodes = set()
+        # Merge all significant nodes from the domain_id_to_node_ids_map dictionary
+        significant_nodes = set()
         for _, node_ids in self.graph.domain_id_to_node_ids_map.items():
-            enriched_nodes.update(node_ids)
+            significant_nodes.update(node_ids)
 
-        # Initialize all node sizes to the non-enriched size
-        node_sizes = np.full(len(self.graph.network.nodes), nonenriched_size)
-        # Set the size for enriched nodes
-        for node in enriched_nodes:
+        # Initialize all node sizes to the non-significant size
+        node_sizes = np.full(len(self.graph.network.nodes), nonsignificant_size)
+        # Set the size for significant nodes
+        for node in significant_nodes:
             if node in self.graph.network.nodes:
-                node_sizes[node] = enriched_size
+                node_sizes[node] = significant_size
 
         return node_sizes

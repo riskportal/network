@@ -83,69 +83,69 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
 def define_top_annotations(
     network: nx.Graph,
     ordered_annotation_labels: List[str],
-    neighborhood_enrichment_sums: List[int],
-    significant_enrichment_matrix: np.ndarray,
-    significant_binary_enrichment_matrix: np.ndarray,
+    neighborhood_significance_sums: List[int],
+    significant_significance_matrix: np.ndarray,
+    significant_binary_significance_matrix: np.ndarray,
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
 ) -> pd.DataFrame:
-    """Define top annotations based on neighborhood enrichment sums and binary enrichment matrix.
+    """Define top annotations based on neighborhood significance sums and binary significance matrix.
 
     Args:
         network (NetworkX graph): The network graph.
         ordered_annotation_labels (list of str): List of ordered annotation labels.
-        neighborhood_enrichment_sums (list of int): List of neighborhood enrichment sums.
-        significant_enrichment_matrix (np.ndarray): Enrichment matrix below alpha threshold.
-        significant_binary_enrichment_matrix (np.ndarray): Binary enrichment matrix below alpha threshold.
+        neighborhood_significance_sums (list of int): List of neighborhood significance sums.
+        significant_significance_matrix (np.ndarray): Enrichment matrix below alpha threshold.
+        significant_binary_significance_matrix (np.ndarray): Binary significance matrix below alpha threshold.
         min_cluster_size (int, optional): Minimum cluster size. Defaults to 5.
         max_cluster_size (int, optional): Maximum cluster size. Defaults to 1000.
 
     Returns:
         pd.DataFrame: DataFrame with top annotations and their properties.
     """
-    # Sum the columns of the significant enrichment matrix (positive floating point values)
-    significant_enrichment_scores = significant_enrichment_matrix.sum(axis=0)
-    # Create DataFrame to store annotations, their neighborhood enrichment sums, and enrichment scores
-    annotations_enrichment_matrix = pd.DataFrame(
+    # Sum the columns of the significant significance matrix (positive floating point values)
+    significant_significance_scores = significant_significance_matrix.sum(axis=0)
+    # Create DataFrame to store annotations, their neighborhood significance sums, and significance scores
+    annotations_significance_matrix = pd.DataFrame(
         {
             "id": range(len(ordered_annotation_labels)),
             "full_terms": ordered_annotation_labels,
-            "significant_neighborhood_enrichment_sums": neighborhood_enrichment_sums,
-            "significant_enrichment_score": significant_enrichment_scores,
+            "significant_neighborhood_significance_sums": neighborhood_significance_sums,
+            "significant_significance_score": significant_significance_scores,
         }
     )
-    annotations_enrichment_matrix["significant_annotations"] = False
+    annotations_significance_matrix["significant_annotations"] = False
     # Apply size constraints to identify potential significant annotations
-    annotations_enrichment_matrix.loc[
+    annotations_significance_matrix.loc[
         (
-            annotations_enrichment_matrix["significant_neighborhood_enrichment_sums"]
+            annotations_significance_matrix["significant_neighborhood_significance_sums"]
             >= min_cluster_size
         )
         & (
-            annotations_enrichment_matrix["significant_neighborhood_enrichment_sums"]
+            annotations_significance_matrix["significant_neighborhood_significance_sums"]
             <= max_cluster_size
         ),
         "significant_annotations",
     ] = True
     # Initialize columns for connected components analysis
-    annotations_enrichment_matrix["num_connected_components"] = 0
-    annotations_enrichment_matrix["size_connected_components"] = None
-    annotations_enrichment_matrix["size_connected_components"] = annotations_enrichment_matrix[
+    annotations_significance_matrix["num_connected_components"] = 0
+    annotations_significance_matrix["size_connected_components"] = None
+    annotations_significance_matrix["size_connected_components"] = annotations_significance_matrix[
         "size_connected_components"
     ].astype(object)
-    annotations_enrichment_matrix["num_large_connected_components"] = 0
+    annotations_significance_matrix["num_large_connected_components"] = 0
 
-    for attribute in annotations_enrichment_matrix.index.values[
-        annotations_enrichment_matrix["significant_annotations"]
+    for attribute in annotations_significance_matrix.index.values[
+        annotations_significance_matrix["significant_annotations"]
     ]:
-        # Identify enriched neighborhoods based on the binary enrichment matrix
-        enriched_neighborhoods = list(
-            compress(list(network), significant_binary_enrichment_matrix[:, attribute])
+        # Identify significant neighborhoods based on the binary significance matrix
+        significant_neighborhoods = list(
+            compress(list(network), significant_binary_significance_matrix[:, attribute])
         )
-        enriched_network = nx.subgraph(network, enriched_neighborhoods)
-        # Analyze connected components within the enriched subnetwork
+        significant_network = nx.subgraph(network, significant_neighborhoods)
+        # Analyze connected components within the significant subnetwork
         connected_components = sorted(
-            nx.connected_components(enriched_network), key=len, reverse=True
+            nx.connected_components(significant_network), key=len, reverse=True
         )
         size_connected_components = np.array([len(c) for c in connected_components])
 
@@ -159,23 +159,24 @@ def define_top_annotations(
         num_large_connected_components = len(filtered_size_connected_components)
 
         # Assign the number of connected components
-        annotations_enrichment_matrix.loc[attribute, "num_connected_components"] = (
+        annotations_significance_matrix.loc[attribute, "num_connected_components"] = (
             num_connected_components
         )
         # Filter out attributes with more than one connected component
-        annotations_enrichment_matrix.loc[
-            annotations_enrichment_matrix["num_connected_components"] > 1, "significant_annotations"
+        annotations_significance_matrix.loc[
+            annotations_significance_matrix["num_connected_components"] > 1,
+            "significant_annotations",
         ] = False
         # Assign the number of large connected components
-        annotations_enrichment_matrix.loc[attribute, "num_large_connected_components"] = (
+        annotations_significance_matrix.loc[attribute, "num_large_connected_components"] = (
             num_large_connected_components
         )
         # Assign the size of connected components, ensuring it is always a list
-        annotations_enrichment_matrix.at[attribute, "size_connected_components"] = (
+        annotations_significance_matrix.at[attribute, "size_connected_components"] = (
             filtered_size_connected_components.tolist()
         )
 
-    return annotations_enrichment_matrix
+    return annotations_significance_matrix
 
 
 def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) -> str:
@@ -184,16 +185,16 @@ def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) 
 
     Args:
         words_column (pd.Series): A pandas Series containing strings to process.
-        scores_column (pd.Series): A pandas Series containing enrichment scores to weigh the terms.
+        scores_column (pd.Series): A pandas Series containing significance scores to weigh the terms.
 
     Returns:
-        str: A coherent description formed from the most frequent and significant words, weighed by enrichment scores.
+        str: A coherent description formed from the most frequent and significant words, weighed by significance scores.
     """
     # Handle case where all scores are the same
     if scores_column.max() == scores_column.min():
         normalized_scores = pd.Series([1] * len(scores_column))
     else:
-        # Normalize the enrichment scores to be between 0 and 1
+        # Normalize the significance scores to be between 0 and 1
         normalized_scores = (scores_column - scores_column.min()) / (
             scores_column.max() - scores_column.min()
         )
