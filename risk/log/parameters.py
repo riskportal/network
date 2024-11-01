@@ -7,42 +7,14 @@ import csv
 import json
 import warnings
 from datetime import datetime
-from functools import wraps
 from typing import Any, Dict
 
 import numpy as np
 
-from .console import logger, log_header
+from risk.log.console import logger, log_header
 
 # Suppress all warnings - this is to resolve warnings from multiprocessing
 warnings.filterwarnings("ignore")
-
-
-def _safe_param_export(func):
-    """A decorator to wrap parameter export functions in a try-except block for safe execution.
-
-    Args:
-        func (function): The function to be wrapped.
-
-    Returns:
-        function: The wrapped function with error handling.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            filepath = (
-                kwargs.get("filepath") or args[1]
-            )  # Assuming filepath is always the second argument
-            logger.info(f"Parameters successfully exported to filepath: {filepath}")
-            return result
-        except Exception as e:
-            filepath = kwargs.get("filepath") or args[1]
-            logger.error(f"An error occurred while exporting parameters to {filepath}: {e}")
-            return None
-
-    return wrapper
 
 
 class Params:
@@ -106,7 +78,6 @@ class Params:
         """
         self.plotter = {**self.plotter, **kwargs}
 
-    @_safe_param_export
     def to_csv(self, filepath: str) -> None:
         """Export the parameters to a CSV file.
 
@@ -128,7 +99,8 @@ class Params:
                 else:
                     writer.writerow([parent_key, "", parent_value])
 
-    @_safe_param_export
+        logger.info(f"Parameters exported to CSV file: {filepath}")
+
     def to_json(self, filepath: str) -> None:
         """Export the parameters to a JSON file.
 
@@ -138,7 +110,8 @@ class Params:
         with open(filepath, "w") as json_file:
             json.dump(self.load(), json_file, indent=4)
 
-    @_safe_param_export
+        logger.info(f"Parameters exported to JSON file: {filepath}")
+
     def to_txt(self, filepath: str) -> None:
         """Export the parameters to a text file.
 
@@ -154,6 +127,8 @@ class Params:
                 txt_file.write(f"{key}: {value}\n")
             # Add a blank line after each entry
             txt_file.write("\n")
+
+        logger.info(f"Parameters exported to text file: {filepath}")
 
     def load(self) -> Dict[str, Any]:
         """Load and process various parameters, converting any np.ndarray values to lists.
