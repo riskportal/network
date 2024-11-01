@@ -1,6 +1,6 @@
 """
-risk/network/graph
-~~~~~~~~~~~~~~~~~~
+risk/network/graph/network
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from collections import defaultdict
@@ -9,6 +9,8 @@ from typing import Any, Dict, List
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+from risk.network.graph.summary import Summary
 
 
 class NetworkGraph:
@@ -23,6 +25,8 @@ class NetworkGraph:
     def __init__(
         self,
         network: nx.Graph,
+        annotations: Dict[str, Any],
+        neighborhoods: Dict[str, Any],
         top_annotations: pd.DataFrame,
         domains: pd.DataFrame,
         trimmed_domains: pd.DataFrame,
@@ -33,12 +37,15 @@ class NetworkGraph:
 
         Args:
             network (nx.Graph): The network graph.
+            annotations (Dict[str, Any]): The annotations associated with the network.
+            neighborhoods (Dict[str, Any]): Neighborhood significance data.
             top_annotations (pd.DataFrame): DataFrame containing annotations data for the network nodes.
             domains (pd.DataFrame): DataFrame containing domain data for the network nodes.
             trimmed_domains (pd.DataFrame): DataFrame containing trimmed domain data for the network nodes.
             node_label_to_node_id_map (Dict[str, Any]): A dictionary mapping node labels to their corresponding IDs.
             node_significance_sums (np.ndarray): Array containing the significant sums for the nodes.
         """
+        # Initialize self.network downstream of the other attributes
         self.top_annotations = top_annotations
         self.domain_id_to_node_ids_map = self._create_domain_id_to_node_ids_map(domains)
         self.domains = domains
@@ -58,11 +65,15 @@ class NetworkGraph:
             zip(node_label_to_node_id_map.keys(), node_significance_sums)
         )
         self.node_label_to_node_id_map = node_label_to_node_id_map
+
         # NOTE: Below this point, instance attributes (i.e., self) will be used!
         self.domain_id_to_node_labels_map = self._create_domain_id_to_node_labels_map()
         # Unfold the network's 3D coordinates to 2D and extract node coordinates
         self.network = _unfold_sphere_to_plane(network)
         self.node_coordinates = _extract_node_coordinates(self.network)
+
+        # NOTE: Only after the above attributes are initialized, we can create the summary
+        self.summary = Summary(annotations, neighborhoods, self)
 
     @staticmethod
     def _create_domain_id_to_node_ids_map(domains: pd.DataFrame) -> Dict[int, Any]:

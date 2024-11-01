@@ -1,6 +1,6 @@
 """
-risk/log/results
-~~~~~~~~~~~~~~~~
+risk/network/graph/summary
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import warnings
@@ -11,13 +11,14 @@ import numpy as np
 import pandas as pd
 from statsmodels.stats.multitest import fdrcorrection
 
-from risk.network.graph import NetworkGraph
+from risk.log.console import logger, log_header
+
 
 # Suppress all warnings - this is to resolve warnings from multiprocessing
 warnings.filterwarnings("ignore")
 
 
-class Results:
+class Summary:
     """Handles the processing, storage, and export of network analysis results.
 
     The Results class provides methods to process significance and depletion data, compute
@@ -27,7 +28,10 @@ class Results:
     """
 
     def __init__(
-        self, annotations: Dict[str, Any], neighborhoods: Dict[str, Any], graph: NetworkGraph
+        self,
+        annotations: Dict[str, Any],
+        neighborhoods: Dict[str, Any],
+        graph,  # Avoid type hinting NetworkGraph to avoid circular import
     ):
         """Initialize the Results object with analysis components.
 
@@ -49,6 +53,7 @@ class Results:
         # Load results and export directly to CSV
         results = self.load()
         results.to_csv(filepath, index=False)
+        logger.info(f"Results summary exported to CSV file: {filepath}")
 
     def to_json(self, filepath: str) -> None:
         """Export significance results to a JSON file.
@@ -59,6 +64,7 @@ class Results:
         # Load results and export directly to JSON
         results = self.load()
         results.to_json(filepath, orient="records", indent=4)
+        logger.info(f"Results summary exported to JSON file: {filepath}")
 
     def to_txt(self, filepath: str) -> None:
         """Export significance results to a text file.
@@ -70,6 +76,8 @@ class Results:
         results = self.load()
         with open(filepath, "w") as txt_file:
             txt_file.write(results.to_string(index=False))
+
+        logger.info(f"Results summary exported to text file: {filepath}")
 
     @lru_cache(maxsize=None)
     def load(self) -> pd.DataFrame:
@@ -83,18 +91,19 @@ class Results:
             pd.DataFrame: Processed DataFrame containing significance scores, p-values, q-values,
                 and annotation member information.
         """
+        log_header("Loading parameters")
         # Calculate significance and depletion q-values from p-value matrices in `annotations`
-        sig_pvals = self.neighborhoods["significance_pvals"]
-        dep_pvals = self.neighborhoods["depletion_pvals"]
-        sig_qvals = self._calculate_qvalues(sig_pvals)
-        dep_qvals = self._calculate_qvalues(dep_pvals)
+        enrichment_pvals = self.neighborhoods["enrichment_pvals"]
+        depletion_pvals = self.neighborhoods["depletion_pvals"]
+        enrichment_qvals = self._calculate_qvalues(enrichment_pvals)
+        depletion_qvals = self._calculate_qvalues(depletion_pvals)
 
         # Initialize DataFrame with domain and annotation details
         results = pd.DataFrame(
             [
                 {"Domain ID": domain_id, "Annotation": desc, "Summed Significance Score": score}
                 for domain_id, info in self.graph.domain_id_to_domain_info_map.items()
-                for desc, score in zip(info["full_descriptions"], info["enrichment_scores"])
+                for desc, score in zip(info["full_descriptions"], info["significance_scores"])
             ]
         )
         # Sort by Domain ID and Summed Significance Score
@@ -105,28 +114,26 @@ class Results:
         # Add minimum p-values and q-values to DataFrame
         results[
             [
-                "Significance P-value",
-                "Significance Q-value",
+                "Enrichment P-value",
+                "Enrichment Q-value",
                 "Depletion P-value",
                 "Depletion Q-value",
             ]
         ] = results.apply(
             lambda row: self._get_significance_values(
-                self.annotations,
-                self.graph,
                 row["Domain ID"],
                 row["Annotation"],
-                sig_pvals,
-                dep_pvals,
-                sig_qvals,
-                dep_qvals,
+                enrichment_pvals,
+                depletion_pvals,
+                enrichment_qvals,
+                depletion_qvals,
             ),
             axis=1,
             result_type="expand",
         )
         # Add annotation members and their counts
         results["Annotation Members"] = results["Annotation"].apply(
-            lambda desc: self._get_annotation_members(desc, self.annotations, self.graph)
+            lambda desc: self._get_annotation_members(desc)
         )
         results["Annotation Member Count"] = results["Annotation Members"].apply(
             lambda x: len(x.split(";")) if x else 0
@@ -141,8 +148,8 @@ class Results:
                     "Annotation Members",
                     "Annotation Member Count",
                     "Summed Significance Score",
-                    "Significance P-value",
-                    "Significance Q-value",
+                    "Enrichment P-value",
+                    "Enrichment Q-value",
                     "Depletion P-value",
                     "Depletion Q-value",
                 ]
@@ -169,20 +176,20 @@ class Results:
         self,
         domain_id: int,
         description: str,
-        sig_pvals: np.ndarray,
-        dep_pvals: np.ndarray,
-        sig_qvals: np.ndarray,
-        dep_qvals: np.ndarray,
+        enrichment_pvals: np.ndarray,
+        depletion_pvals: np.ndarray,
+        enrichment_qvals: np.ndarray,
+        depletion_qvals: np.ndarray,
     ) -> Tuple[Union[float, None], Union[float, None], Union[float, None], Union[float, None]]:
         """Retrieve the most significant p-values and q-values (FDR) for a given annotation.
 
         Args:
             domain_id (int): The domain ID associated with the annotation.
             description (str): The annotation description.
-            sig_pvals (np.ndarray): Matrix of significance p-values.
-            dep_pvals (np.ndarray): Matrix of depletion p-values.
-            sig_qvals (np.ndarray): Matrix of significance q-values.
-            dep_qvals (np.ndarray): Matrix of depletion q-values.
+            enrichment_pvals (np.ndarray): Matrix of significance p-values.
+            depletion_pvals (np.ndarray): Matrix of depletion p-values.
+            enrichment_qvals (np.ndarray): Matrix of significance q-values.
+            depletion_qvals (np.ndarray): Matrix of depletion q-values.
 
         Returns:
             Tuple[Union[float, None], Union[float, None], Union[float, None], Union[float, None]]:
@@ -197,10 +204,10 @@ class Results:
         if not node_indices:
             return None, None, None, None  # No associated nodes
 
-        sig_p = sig_pvals[node_indices, annotation_idx]
-        dep_p = dep_pvals[node_indices, annotation_idx]
-        sig_q = sig_qvals[node_indices, annotation_idx]
-        dep_q = dep_qvals[node_indices, annotation_idx]
+        sig_p = enrichment_pvals[node_indices, annotation_idx]
+        dep_p = depletion_pvals[node_indices, annotation_idx]
+        sig_q = enrichment_qvals[node_indices, annotation_idx]
+        dep_q = depletion_qvals[node_indices, annotation_idx]
 
         return (
             np.min(sig_p) if sig_p.size > 0 else None,
