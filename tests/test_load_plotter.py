@@ -34,9 +34,6 @@ def plot_title(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_title(
@@ -61,9 +58,6 @@ def plot_circle_perimeter(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_circle_perimeter(
@@ -85,9 +79,6 @@ def plot_contour_perimeter(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_contour_perimeter(
@@ -110,9 +101,6 @@ def plot_network(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_network(
@@ -147,9 +135,6 @@ def plot_subnetwork(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_subnetwork(
@@ -181,9 +166,6 @@ def plot_contours(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_contours(
@@ -202,9 +184,6 @@ def plot_subcontour(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_subcontour(
@@ -233,9 +212,6 @@ def plot_labels(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_labels(
@@ -271,9 +247,6 @@ def plot_sublabel(plotter):
 
     Args:
         plotter: The initialized plotter object.
-
-    Returns:
-        None
     """
     try:
         plotter.plot_sublabel(
@@ -309,9 +282,6 @@ def test_initialize_plotter(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for initializing the plotter.
         graph: The graph object to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
 
@@ -325,9 +295,6 @@ def test_plot_title(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_title(plotter)
@@ -341,9 +308,6 @@ def test_plot_circle_perimeter(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_circle_perimeter(plotter)
@@ -357,9 +321,6 @@ def test_plot_contour_perimeter(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_contour_perimeter(plotter)
@@ -373,9 +334,6 @@ def test_plot_network(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_network(plotter)
@@ -389,9 +347,6 @@ def test_plot_subnetwork(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object containing the subnetwork to be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_subnetwork(plotter)
@@ -405,9 +360,6 @@ def test_plot_contours(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which contours will be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_contours(plotter)
@@ -421,9 +373,6 @@ def test_plot_subcontour(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which subcontours will be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_subcontour(plotter)
@@ -437,9 +386,6 @@ def test_plot_labels(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which labels will be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_labels(plotter)
@@ -453,9 +399,6 @@ def test_plot_sublabel(risk_obj, graph):
     Args:
         risk_obj: The RISK object instance used for plotting.
         graph: The graph object on which the sublabel will be plotted.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     plot_sublabel(plotter)
@@ -525,9 +468,6 @@ def test_plot_title_with_custom_params(
         title_space_offset (float): Fraction of figure height to leave for the space above the plot.
         subtitle_offset (float): Offset factor to position the subtitle below the title.
         font (str): Font family used for both title and subtitle.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -608,9 +548,6 @@ def test_plot_circle_perimeter_with_custom_params(
         linewidth: The thickness of the circle's outline.
         center_offset_x: The x-coordinate offset of the circle's center.
         center_offset_y: The y-coordinate offset of the circle's center.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -682,9 +619,6 @@ def test_plot_contour_perimeter_with_custom_params(
         linewidth: Line width of the contour perimeter.
         outline_alpha: Transparency of the contour outline.
         fill_alpha: Transparency of the contour fill.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -798,9 +732,6 @@ def test_plot_network_with_custom_params(
         node_shape: The shape of the nodes.
         edge_width: The width of the edges.
         node_edgewidth: The width of the edges around the nodes.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -867,9 +798,6 @@ def test_plot_subnetwork_with_custom_params(
         node_alpha: The transparency of the nodes.
         edge_alpha: The transparency of the edges.
         node_shape: The shape of the nodes.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -967,9 +895,6 @@ def test_plot_contours_with_custom_params(
         grid_size: The grid size for contour resolution.
         linestyle: The line style for the contour lines.
         linewidth: The width of the contour lines.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -1048,9 +973,6 @@ def test_plot_subcontour_with_custom_params(
         grid_size: The grid size for contour resolution.
         linestyle: The line style for the contour lines.
         linewidth: The width of the contour lines.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -1276,9 +1198,6 @@ def test_plot_labels_with_custom_params(
         overlay_ids: Whether to overlay domain IDs in the center of the centroids.
         ids_to_keep: List of IDs to prioritize for labeling.
         ids_to_replace: Dictionary mapping domain IDs to custom labels.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -1416,9 +1335,6 @@ def test_plot_sublabel_with_custom_params(
         arrow_style: The style of the arrow pointing to the label.
         arrow_base_shrink: Distance between the text and the base of the arrow.
         arrow_tip_shrink: Distance between the tip of the arrow and the centroid.
-
-    Returns:
-        None
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
