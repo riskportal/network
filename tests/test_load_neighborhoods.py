@@ -18,9 +18,6 @@ def test_load_neighborhoods_single_process(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         null_distribution: Null distribution type for the permutation test (either 'network' or 'annotations').
-
-    Returns:
-        None
     """
     # Load neighborhoods with 1 process
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -47,9 +44,6 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
-
-    Returns:
-        None
     """
     # Load neighborhoods with 4 processes
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -80,9 +74,6 @@ def test_load_neighborhoods_hypergeom(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         null_distribution: Null distribution type for the hypergeometric test (either 'network' or 'annotations').
-
-    Returns:
-        None
     """
     neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
         network=cytoscape_network,
@@ -109,9 +100,6 @@ def test_load_neighborhoods_poisson(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         null_distribution: Null distribution type for the Poisson test (either 'network' or 'annotations').
-
-    Returns:
-        None
     """
     neighborhoods = risk_obj.load_neighborhoods_by_poisson(
         network=cytoscape_network,
@@ -168,9 +156,6 @@ def test_load_neighborhoods_with_various_distance_metrics(
         json_annotation: The annotations associated with the network.
         distance_metric: The specific distance metric(s) to be used for generating neighborhoods.
         edge_length_threshold: The edge length threshold(s) corresponding to each distance metric.
-
-    Returns:
-        None
     """
     # Load neighborhoods with the current distance metric(s) and matching edge length threshold(s)
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -201,9 +186,6 @@ def test_load_neighborhoods_with_various_score_metrics(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         score_metric: The specific score metric to be used for generating neighborhoods.
-
-    Returns:
-        None
     """
     # Load neighborhoods with the specified score metric
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -233,9 +215,6 @@ def test_load_neighborhoods_with_various_null_distributions(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         null_distribution: The specific null distribution to be used for generating neighborhoods.
-
-    Returns:
-        None
     """
     # Load neighborhoods with the specified null distribution
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(

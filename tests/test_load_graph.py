@@ -3,6 +3,8 @@ tests/test_load_graph
 ~~~~~~~~~~~~~~~~~~~~~
 """
 
+import pandas as pd
+
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
     """Test loading a graph after generating neighborhoods with specific parameters using JSON annotations.
@@ -11,9 +13,6 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
         json_annotation: The JSON annotations associated with the network.
-
-    Returns:
-        None
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -58,9 +57,6 @@ def test_top_annotations_cluster_sizes_with_json_annotation(
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
         json_annotation: The JSON annotations associated with the network.
-
-    Returns:
-        None
     """
     # Define different combinations of min and max cluster sizes
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
@@ -110,9 +106,6 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
         dict_annotation: The dictionary annotations associated with the network.
-
-    Returns:
-        None
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -148,6 +141,18 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
     _validate_graph(graph)
 
 
+def test_load_graph_summary(graph):
+    """Test loading the graph summary with predefined parameters.
+
+    Args:
+        graph: The graph object instance to be summarized.
+    """
+    # Load the graph summary and validate its type
+    summary = graph.summary.load()
+
+    assert isinstance(summary, pd.DataFrame), "Graph summary should be a dictionary"
+
+
 def test_top_annotations_cluster_sizes_with_dict_annotation(
     risk_obj, cytoscape_network, dict_annotation
 ):
@@ -157,9 +162,6 @@ def test_top_annotations_cluster_sizes_with_dict_annotation(
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
         dict_annotation: The dictionary annotations associated with the network.
-
-    Returns:
-        None
     """
     # Define different combinations of min and max cluster sizes
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
@@ -237,10 +239,12 @@ def _check_component_sizes(size_connected_components, min_cluster_size, max_clus
                     print(
                         f"Component size {size} is outside the range {min_cluster_size} to {max_cluster_size}"
                     )
+
             # Ensure all sizes in the list are within the range
             assert all(
                 min_cluster_size <= size <= max_cluster_size for size in components
             ), f"Some values in 'size connected components' are outside the range {min_cluster_size} to {max_cluster_size}"
+
         elif isinstance(components, int):
             # Debugging: Print single component being checked
             print(f"Checking component: {components}")
@@ -248,6 +252,7 @@ def _check_component_sizes(size_connected_components, min_cluster_size, max_clus
                 print(
                     f"Component size {components} is outside the range {min_cluster_size} to {max_cluster_size}"
                 )
+
             # Ensure the single component is within the range
             assert (
                 min_cluster_size <= components <= max_cluster_size

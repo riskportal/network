@@ -11,9 +11,6 @@ def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):
         risk_obj: The RISK object instance used for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         data_path: The base path to the directory containing the annotation files.
-
-    Returns:
-        None
     """
     annotation_file = data_path / "csv" / "annotations" / "go_biological_process.csv"
     annotations = risk_obj.load_csv_annotation(
@@ -31,9 +28,6 @@ def test_load_dict_annotation(risk_obj, cytoscape_network, annotation_dict):
         risk_obj: The RISK object instance used for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         annotation_dict: A dictionary containing annotations.
-
-    Returns:
-        None
     """
     annotations = risk_obj.load_dict_annotation(content=annotation_dict, network=cytoscape_network)
 
@@ -48,9 +42,6 @@ def test_load_json_annotation(risk_obj, cytoscape_network, data_path):
         risk_obj: The RISK object instance used for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         data_path: The base path to the directory containing the annotation files.
-
-    Returns:
-        None
     """
     annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
     annotations = risk_obj.load_json_annotation(
@@ -68,9 +59,6 @@ def test_load_tsv_annotation(risk_obj, cytoscape_network, data_path):
         risk_obj: The RISK object instance used for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         data_path: The base path to the directory containing the annotation files.
-
-    Returns:
-        None
     """
     annotation_file = data_path / "tsv" / "annotations" / "go_biological_process.tsv"
     annotations = risk_obj.load_tsv_annotation(
@@ -88,9 +76,6 @@ def test_load_excel_annotation(risk_obj, cytoscape_network, data_path):
         risk_obj: The RISK object instance used for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         data_path: The base path to the directory containing the annotation files.
-
-    Returns:
-        None
     """
     annotation_file = data_path / "excel" / "annotations" / "go_biological_process.xlsx"
     annotations = risk_obj.load_excel_annotation(

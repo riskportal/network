@@ -13,9 +13,6 @@ def test_initialize_risk(risk, verbose_setting):
 
     Args:
         verbose_setting: Boolean value to set verbosity of the RISK instance.
-
-    Returns:
-        None
     """
     try:
         risk_instance = risk(verbose=verbose_setting)
@@ -30,9 +27,6 @@ def test_load_cytoscape_network(risk_obj, data_path):
     Args:
         risk_obj: The RISK object instance used for loading the network.
         data_path: The base path to the directory containing the Cytoscape file.
-
-    Returns:
-        None
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
     network = risk_obj.load_cytoscape_network(
@@ -50,9 +44,6 @@ def test_load_cytoscape_json_network(risk_obj, data_path):
     Args:
         risk_obj: The RISK object instance used for loading the network.
         data_path: The base path to the directory containing the Cytoscape JSON file.
-
-    Returns:
-        None
     """
     cyjs_file = data_path / "cyjs" / "michaelis_2023.cyjs"
     network = risk_obj.load_cytoscape_json_network(
@@ -70,9 +61,6 @@ def test_load_gpickle_network(risk_obj, data_path):
     Args:
         risk_obj: The RISK object instance used for loading the network.
         data_path: The base path to the directory containing the gpickle file.
-
-    Returns:
-        None
     """
     gpickle_file = data_path / "gpickle" / "michaelis_2023.gpickle"
     network = risk_obj.load_gpickle_network(filepath=str(gpickle_file))
@@ -88,9 +76,6 @@ def test_load_networkx_network(risk_obj, cytoscape_network):
     Args:
         risk_obj: The RISK object instance used for loading the network.
         network: The NetworkX graph object to be loaded into the RISK network.
-
-    Returns:
-        None
     """
     network = risk_obj.load_networkx_network(network=cytoscape_network)
 
@@ -114,9 +99,6 @@ def test_node_positions_constant_after_networkx_load(risk_obj, cytoscape_network
     Args:
         risk_obj: The RISK object instance used for loading the network.
         network: The NetworkX graph object to be loaded into the RISK network.
-
-    Returns:
-        None
     """
     # Store the original positions of nodes from the cytoscape_network
     original_positions = {
@@ -149,9 +131,6 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
     Args:
         risk_obj: The RISK object instance used for loading the network.
         data_path: Path to the data directory containing the network files.
-
-    Returns:
-        None
     """
     # Load the original network from the Cytoscape file with sphere set to False
     network_file = data_path / "cytoscape" / "michaelis_2023.cys"
@@ -216,9 +195,6 @@ def test_load_network_min_edges(risk_obj, data_path, min_edges):
         risk_obj: The RISK object instance used for loading the network.
         data_path: The base path to the directory containing the Cytoscape file.
         min_edges: The minimum number of edges per node to test.
-
-    Returns:
-        None
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
     network = risk_obj.load_cytoscape_network(
