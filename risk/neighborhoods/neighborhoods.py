@@ -233,7 +233,7 @@ def _impute_neighbors(
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
-        tuple: A tuple containing:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
             - np.ndarray: The imputed significance matrix.
             - np.ndarray: The imputed alpha threshold matrix.
             - np.ndarray: The significant significance matrix with non-significant entries set to zero.
@@ -269,7 +269,7 @@ def _impute_neighbors_with_similarity(
         max_depth (int): Maximum depth of nodes to traverse for imputing values.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: A tuple containing:
+        Tuple[np.ndarray, np.ndarray]:
             - The imputed significance matrix.
             - The imputed alpha threshold matrix.
     """
@@ -397,7 +397,7 @@ def _prune_neighbors(
         distance_threshold (float): Rank threshold (0 to 1) to determine outliers.
 
     Returns:
-        tuple: A tuple containing:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
             - np.ndarray: The updated significance matrix with outliers set to zero.
             - np.ndarray: The updated alpha threshold matrix with outliers set to zero.
             - np.ndarray: The significant significance matrix, where non-significant entries are set to zero.
