@@ -114,21 +114,39 @@ class NetworkGraph:
     def _create_domain_id_to_domain_info_map(
         trimmed_domains: pd.DataFrame,
     ) -> Dict[int, Dict[str, Any]]:
-        """Create a mapping from domain IDs to their corresponding full description and significance score.
+        """Create a mapping from domain IDs to their corresponding full description and significance score,
+        with scores sorted in descending order.
 
         Args:
             trimmed_domains (pd.DataFrame): DataFrame containing domain IDs, full descriptions, and significance scores.
 
         Returns:
-            Dict[int, Dict[str, Any]]: A dictionary mapping domain IDs (int) to a dictionary with 'full_descriptions' and 'significance_scores'.
+            Dict[int, Dict[str, Any]]: A dictionary mapping domain IDs (int) to a dictionary with 'full_descriptions' and
+                'significance_scores', both sorted by significance score in descending order.
         """
-        return {
-            int(id_): {
-                "full_descriptions": trimmed_domains.at[id_, "full_descriptions"],
-                "significance_scores": trimmed_domains.at[id_, "significance_scores"],
+        # Initialize an empty dictionary to store full descriptions and significance scores of domains
+        domain_info_map = {}
+
+        # Domain IDs are the index of the DataFrame (it's common for some IDs to be missing)
+        for domain_id in trimmed_domains.index:
+            # Sort full_descriptions and significance_scores by significance_scores in descending order
+            descriptions_and_scores = sorted(
+                zip(
+                    trimmed_domains.at[domain_id, "full_descriptions"],
+                    trimmed_domains.at[domain_id, "significance_scores"],
+                ),
+                key=lambda x: x[1],  # Sort by significance score
+                reverse=True,  # Descending order
+            )
+            # Unzip the sorted tuples back into separate lists
+            sorted_descriptions, sorted_scores = zip(*descriptions_and_scores)
+            # Assign to the domain info map
+            domain_info_map[int(domain_id)] = {
+                "full_descriptions": list(sorted_descriptions),
+                "significance_scores": list(sorted_scores),
             }
-            for id_ in trimmed_domains.index
-        }
+
+        return domain_info_map
 
     @staticmethod
     def _create_node_id_to_domain_ids_and_significances(domains: pd.DataFrame) -> Dict[int, Dict]:
