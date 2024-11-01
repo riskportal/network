@@ -101,7 +101,7 @@ def trim_domains_and_top_annotations(
         max_cluster_size (int, optional): Maximum size of a cluster to be retained. Defaults to 1000.
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing:
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             - Trimmed annotations (pd.DataFrame)
             - Trimmed domains (pd.DataFrame)
             - A DataFrame with domain labels (pd.DataFrame)
@@ -177,7 +177,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
         linkage_metric (str): Linkage metric for clustering.
 
     Returns:
-        Tuple[str, str, float]: A tuple containing:
+        Tuple[str, str, float]:
             - Best linkage method (str)
             - Best linkage metric (str)
             - Best threshold (float)
@@ -231,7 +231,7 @@ def _find_best_silhouette_score(
         resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.001.
 
     Returns:
-        Tuple[float, float]: A tuple containing:
+        Tuple[float, float]:
             - Best threshold (float): The threshold that yields the best silhouette score.
             - Best silhouette score (float): The highest silhouette score achieved.
     """

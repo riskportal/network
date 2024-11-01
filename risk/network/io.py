@@ -165,12 +165,12 @@ class NetworkIO:
         filepath: str,
         source_label: str = "source",
         target_label: str = "target",
+        view_name: str = "",
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
         include_edge_weight: bool = True,
         weight_label: str = "weight",
-        view_name: str = "",
     ) -> nx.Graph:
         """Load a network from a Cytoscape file.
 
@@ -178,7 +178,7 @@ class NetworkIO:
             filepath (str): Path to the Cytoscape file.
             source_label (str, optional): Source node label. Defaults to "source".
             target_label (str, optional): Target node label. Defaults to "target".
-            view_name (str, optional): Specific view name to load. Defaults to None.
+            view_name (str, optional): Specific view name to load. Defaults to "".
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
@@ -215,7 +215,7 @@ class NetworkIO:
             filepath (str): Path to the Cytoscape file.
             source_label (str, optional): Source node label. Defaults to "source".
             target_label (str, optional): Target node label. Defaults to "target".
-            view_name (str, optional): Specific view name to load. Defaults to None.
+            view_name (str, optional): Specific view name to load. Defaults to "".
 
         Returns:
             nx.Graph: Loaded and processed network.
