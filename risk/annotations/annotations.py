@@ -65,8 +65,9 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
             "No annotations found in the annotations file for the nodes in the network."
         )
 
-    # Remove columns with all zeros to improve performance
-    annotations_pivot = annotations_pivot.loc[:, annotations_pivot.sum(axis=0) != 0]
+    # Remove columns with all zeros and those with only a single '1' to improve statistical performance
+    # (i.e., it's unreliable to compute the significance of an annotation in a node cluster based on a single occurrence).
+    annotations_pivot = annotations_pivot.loc[:, (annotations_pivot.sum(axis=0) > 1)]
     # Extract ordered nodes and annotations
     ordered_nodes = tuple(annotations_pivot.index)
     ordered_annotations = tuple(annotations_pivot.columns)
