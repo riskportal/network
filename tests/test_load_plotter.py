@@ -119,6 +119,7 @@ def plot_network(plotter):
                 alpha=1.0,
                 nonsignificant_color="white",
                 nonsignificant_alpha=0.1,
+                ids_to_colors=None,
                 random_seed=887,
             ),
             node_edgecolor="black",
@@ -173,7 +174,9 @@ def plot_contours(plotter):
             bandwidth=0.8,
             grid_size=250,
             alpha=0.2,
-            color=plotter.get_annotated_contour_colors(cmap="gist_rainbow", random_seed=887),
+            color=plotter.get_annotated_contour_colors(
+                cmap="gist_rainbow", ids_to_colors=None, random_seed=887
+            ),
         )
     finally:
         plt.close("all")
@@ -220,11 +223,15 @@ def plot_labels(plotter):
             font="Arial",
             fontcase={"lower": "title"},
             fontsize=10,
-            fontcolor=plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887),
+            fontcolor=plotter.get_annotated_label_colors(
+                cmap="gist_rainbow", ids_to_colors=None, random_seed=887
+            ),
             fontalpha=None,
             arrow_linewidth=1,
             arrow_style="->",
-            arrow_color=plotter.get_annotated_label_colors(cmap="gist_rainbow", random_seed=887),
+            arrow_color=plotter.get_annotated_label_colors(
+                cmap="gist_rainbow", ids_to_colors=None, random_seed=887
+            ),
             arrow_alpha=None,
             arrow_base_shrink=0.0,
             arrow_tip_shrink=0.0,
@@ -236,7 +243,7 @@ def plot_labels(plotter):
             words_to_omit=["process", "biosynthetic"],
             overlay_ids=False,
             ids_to_keep=None,
-            ids_to_replace=None,
+            ids_to_labels=None,
         )
     finally:
         plt.close("all")
@@ -638,14 +645,29 @@ def test_plot_contour_perimeter_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "node_color, cmap, nonsignificant_color, nonsignificant_alpha, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
+    "node_color, cmap, nonsignificant_color, nonsignificant_alpha, ids_to_colors, edge_color, node_edgecolor, node_alpha, edge_alpha, node_size, node_shape, edge_width, node_edgewidth",
     [
-        (None, "gist_rainbow", "white", None, "black", "blue", None, None, 100, "o", 0.0, 1.5),
+        (
+            None,
+            "gist_rainbow",
+            "white",
+            None,
+            None,
+            "black",
+            "blue",
+            None,
+            None,
+            100,
+            "o",
+            0.0,
+            1.5,
+        ),
         (
             [(0.2, 0.6, 0.8)],
             None,
             (1.0, 1.0, 0.5),
             0.5,
+            {1: "orange"},
             (1.0, 0.0, 0.0),
             (0.0, 1.0, 0.0),
             0.5,
@@ -660,6 +682,7 @@ def test_plot_contour_perimeter_with_custom_params(
             None,
             "yellow",
             0.2,
+            {1: (1.0, 0.0, 0.0)},
             "grey",
             "red",
             0.8,
@@ -674,6 +697,7 @@ def test_plot_contour_perimeter_with_custom_params(
             None,
             "yellow",
             0.4,
+            {1: (0.1, 0.2, 0.3, 0.8)},
             "grey",
             "black",
             0.7,
@@ -688,6 +712,7 @@ def test_plot_contour_perimeter_with_custom_params(
             "viridis",
             "white",
             None,
+            {1: "red"},
             "black",
             "blue",
             None,
@@ -706,6 +731,7 @@ def test_plot_network_with_custom_params(
     cmap,
     nonsignificant_color,
     nonsignificant_alpha,
+    ids_to_colors,
     edge_color,
     node_edgecolor,
     node_alpha,
@@ -724,6 +750,7 @@ def test_plot_network_with_custom_params(
         cmap: Colormap to use for node colors if node_color is None.
         nonsignificant_color: The color for non-significant nodes.
         nonsignificant_alpha: The transparency of the non-significant nodes.
+        ids_to_colors: A dictionary mapping domain IDs to specific colors.
         edge_color: The color of the network edges.
         node_edgecolor: The color of the node edges.
         node_alpha: The transparency of the nodes.
@@ -746,6 +773,7 @@ def test_plot_network_with_custom_params(
             scale_factor=0.5,
             nonsignificant_color=nonsignificant_color,
             nonsignificant_alpha=nonsignificant_alpha,
+            ids_to_colors=ids_to_colors,
             random_seed=887,
         )
         plotter.plot_network(
@@ -907,6 +935,7 @@ def test_plot_contours_with_custom_params(
             min_scale=0.8,
             max_scale=1.0,
             scale_factor=1.0,
+            ids_to_colors=None,
             random_seed=887,
         )
         plotter.plot_contours(
@@ -1027,7 +1056,7 @@ def test_plot_subcontour_with_custom_params(
 
 
 @pytest.mark.parametrize(
-    "scale, offset, font, fontcase, fontsize, fontcolor, font_alpha, arrow_linewidth, arrow_style, arrow_color, arrow_alpha, arrow_base_shrink, arrow_tip_shrink, max_labels, min_label_lines, max_label_lines, min_chars_per_line, max_chars_per_line, overlay_ids, ids_to_keep, ids_to_replace",
+    "scale, offset, font, fontcase, fontsize, fontcolor, font_alpha, arrow_linewidth, arrow_style, arrow_color, arrow_alpha, arrow_base_shrink, arrow_tip_shrink, max_labels, min_label_lines, max_label_lines, min_chars_per_line, max_chars_per_line, overlay_ids, ids_to_keep, ids_to_labels",
     [
         (
             1.25,
@@ -1096,7 +1125,7 @@ def test_plot_subcontour_with_custom_params(
             20,
             False,
             ["LSM1", "LSM3"],
-            {"LSM3": "custom label"},
+            {1: "custom label"},
         ),  # Test case 3 (RGB color)
         (
             1.4,
@@ -1169,7 +1198,7 @@ def test_plot_labels_with_custom_params(
     max_chars_per_line,
     overlay_ids,
     ids_to_keep,
-    ids_to_replace,
+    ids_to_labels,
 ):
     """Test plot_labels with varying label and arrow customization options, including font colors, alpha values, label placement
         constraints, and additional style parameters.
@@ -1197,7 +1226,7 @@ def test_plot_labels_with_custom_params(
         max_chars_per_line: Maximum character count per word in the label.
         overlay_ids: Whether to overlay domain IDs in the center of the centroids.
         ids_to_keep: List of IDs to prioritize for labeling.
-        ids_to_replace: Dictionary mapping domain IDs to custom labels.
+        ids_to_labels: Dictionary mapping domain IDs to custom labels.
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
@@ -1210,6 +1239,7 @@ def test_plot_labels_with_custom_params(
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,
+            ids_to_colors=None,
             random_seed=887,
         )
         arrow_color = plotter.get_annotated_label_colors(
@@ -1220,6 +1250,7 @@ def test_plot_labels_with_custom_params(
             min_scale=0.5,
             max_scale=1.0,
             scale_factor=0.5,
+            ids_to_colors=None,
             random_seed=887,
         )
         plotter.plot_labels(
@@ -1244,7 +1275,7 @@ def test_plot_labels_with_custom_params(
             words_to_omit=["process", "biosynthetic"],
             overlay_ids=overlay_ids,
             ids_to_keep=ids_to_keep,
-            ids_to_replace=ids_to_replace,
+            ids_to_labels=ids_to_labels,
         )
     finally:
         plt.close("all")
