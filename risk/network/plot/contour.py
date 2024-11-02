@@ -3,7 +3,7 @@ risk/network/plot/contour
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,6 +63,8 @@ class Contour:
             contour_color=(
                 "custom" if isinstance(color, np.ndarray) else color
             ),  # np.ndarray usually indicates custom colors
+            contour_linestyle=linestyle,
+            contour_linewidth=linewidth,
             contour_alpha=alpha,
             contour_fill_alpha=fill_alpha,
         )
@@ -280,6 +282,7 @@ class Contour:
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
+        ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> np.ndarray:
         """Get colors for the contours based on node annotations or a specified colormap.
@@ -296,6 +299,7 @@ class Contour:
                 Controls the brightest colors. Defaults to 1.0.
             scale_factor (float, optional): Exponent for adjusting color scaling based on significance scores.
                 A higher value increases contrast by dimming lower scores more. Defaults to 1.0.
+            ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
             random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
@@ -310,6 +314,7 @@ class Contour:
             min_scale=min_scale,
             max_scale=max_scale,
             scale_factor=scale_factor,
+            ids_to_colors=ids_to_colors,
             random_seed=random_seed,
         )
 

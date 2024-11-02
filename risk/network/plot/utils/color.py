@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib
 import matplotlib.colors as mcolors
+import networkx as nx
 import numpy as np
 
 from risk.network.graph import NetworkGraph
@@ -22,6 +23,7 @@ def get_annotated_domain_colors(
     min_scale: float = 0.8,
     max_scale: float = 1.0,
     scale_factor: float = 1.0,
+    ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> np.ndarray:
     """Get colors for the domains based on node annotations, or use a specified color.
@@ -37,6 +39,7 @@ def get_annotated_domain_colors(
         max_scale (float, optional): Maximum scale for color intensity when generating domain colors. Defaults to 1.0.
         scale_factor (float, optional): Factor for adjusting the contrast in the colors generated based on significance. Higher values
             increase the contrast. Defaults to 1.0.
+        ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
         random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
     Returns:
@@ -52,6 +55,7 @@ def get_annotated_domain_colors(
         min_scale=min_scale,
         max_scale=max_scale,
         scale_factor=scale_factor,
+        ids_to_colors=ids_to_colors,
         random_seed=random_seed,
     )
     annotated_colors = []
@@ -59,14 +63,12 @@ def get_annotated_domain_colors(
         if len(node_ids) > 1:
             # For multi-node domains, choose the brightest color based on RGB sum
             domain_colors = np.array([node_colors[node] for node in node_ids])
-            brightest_color = domain_colors[
-                np.argmax(domain_colors[:, :3].sum(axis=1))  # Sum the RGB values
-            ]
-            annotated_colors.append(brightest_color)
+            color = domain_colors[np.argmax(domain_colors[:, :3].sum(axis=1))]  # Sum the RGB values
         else:
             # Single-node domains default to white (RGBA)
-            default_color = np.array([1.0, 1.0, 1.0, 1.0])
-            annotated_colors.append(default_color)
+            color = np.array([1.0, 1.0, 1.0, 1.0])
+
+        annotated_colors.append(color)
 
     return np.array(annotated_colors)
 
@@ -80,6 +82,7 @@ def get_domain_colors(
     min_scale: float = 0.8,
     max_scale: float = 1.0,
     scale_factor: float = 1.0,
+    ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> np.ndarray:
     """Generate composite colors for domains based on significance or specified colors.
@@ -97,16 +100,22 @@ def get_domain_colors(
             Defaults to 1.0.
         scale_factor (float, optional): Exponent for adjusting the color scaling based on significance scores. Higher values increase
             contrast by dimming lower scores more. Defaults to 1.0.
+        ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
         random_seed (int, optional): Seed for random number generation to ensure reproducibility of color assignments. Defaults to 888.
 
     Returns:
         np.ndarray: Array of RGBA colors generated for each domain, based on significance or the specified color.
     """
     # Get colors for each domain
-    domain_colors = _get_domain_colors(graph=graph, cmap=cmap, color=color, random_seed=random_seed)
+    domain_ids_to_colors = _get_domain_ids_to_colors(
+        graph=graph, cmap=cmap, color=color, ids_to_colors=ids_to_colors, random_seed=random_seed
+    )
     # Generate composite colors for nodes
     node_colors = _get_composite_node_colors(
-        graph=graph, domain_colors=domain_colors, blend_colors=blend_colors, blend_gamma=blend_gamma
+        graph=graph,
+        domain_ids_to_colors=domain_ids_to_colors,
+        blend_colors=blend_colors,
+        blend_gamma=blend_gamma,
     )
     # Transform colors to ensure proper alpha values and intensity
     transformed_colors = _transform_colors(
@@ -119,10 +128,11 @@ def get_domain_colors(
     return transformed_colors
 
 
-def _get_domain_colors(
+def _get_domain_ids_to_colors(
     graph: NetworkGraph,
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
+    ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> Dict[int, Any]:
     """Get colors for each domain.
@@ -132,6 +142,7 @@ def _get_domain_colors(
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for the domains.
             If None, the colormap will be used. Defaults to None.
+        ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
     Returns:
@@ -145,17 +156,30 @@ def _get_domain_colors(
         color=color,
         random_seed=random_seed,
     )
-    return dict(zip(graph.domain_id_to_node_ids_map.keys(), domain_colors))
+    # Assign colors to domains either based on the generated colormap or the user-specified colors
+    domain_ids_to_colors = {}
+    for domain_id, domain_color in zip(graph.domain_id_to_node_ids_map.keys(), domain_colors):
+        if ids_to_colors and domain_id in ids_to_colors:
+            # Convert user-specified colors to RGBA format
+            user_rgba = to_rgba(ids_to_colors[domain_id])
+            domain_ids_to_colors[domain_id] = user_rgba
+        else:
+            domain_ids_to_colors[domain_id] = domain_color
+
+    return domain_ids_to_colors
 
 
 def _get_composite_node_colors(
-    graph, domain_colors: np.ndarray, blend_colors: bool = False, blend_gamma: float = 2.2
+    graph: NetworkGraph,
+    domain_ids_to_colors: Dict[int, Any],
+    blend_colors: bool = False,
+    blend_gamma: float = 2.2,
 ) -> np.ndarray:
     """Generate composite colors for nodes based on domain colors and significance values, with optional color blending.
 
     Args:
         graph (NetworkGraph): The network data and attributes to be visualized.
-        domain_colors (np.ndarray): Array or list of RGBA colors corresponding to each domain.
+        domain_ids_to_colors (Dict[int, Any]): Mapping of domain IDs to RGBA colors.
         blend_colors (bool): Whether to blend colors for nodes with multiple domains. Defaults to False.
         blend_gamma (float, optional): Gamma correction factor to be used for perceptual color blending.
             This parameter is only relevant if blend_colors is True. Defaults to 2.2.
@@ -167,11 +191,10 @@ def _get_composite_node_colors(
     num_nodes = len(graph.node_coordinates)
     # Initialize composite colors array with shape (number of nodes, 4) for RGBA
     composite_colors = np.zeros((num_nodes, 4))
-
     # If blending is not required, directly assign domain colors to nodes
     if not blend_colors:
         for domain_id, nodes in graph.domain_id_to_node_ids_map.items():
-            color = domain_colors[domain_id]
+            color = domain_ids_to_colors[domain_id]
             for node in nodes:
                 composite_colors[node] = color
 
@@ -180,11 +203,11 @@ def _get_composite_node_colors(
         for node, node_info in graph.node_id_to_domain_ids_and_significance_map.items():
             domains = node_info["domains"]  # List of domain IDs
             significances = node_info["significances"]  # List of significance values
-            # Filter domains and significances to keep only those with corresponding colors in domain_colors
+            # Filter domains and significances to keep only those with corresponding colors in domain_ids_to_colors
             filtered_domains_significances = [
                 (domain_id, significance)
                 for domain_id, significance in zip(domains, significances)
-                if domain_id in domain_colors
+                if domain_id in domain_ids_to_colors
             ]
             # If no valid domains exist, skip this node
             if not filtered_domains_significances:
@@ -193,7 +216,7 @@ def _get_composite_node_colors(
             # Unpack filtered domains and significances
             filtered_domains, filtered_significances = zip(*filtered_domains_significances)
             # Get the colors corresponding to the valid filtered domains
-            colors = [domain_colors[domain_id] for domain_id in filtered_domains]
+            colors = [domain_ids_to_colors[domain_id] for domain_id in filtered_domains]
             # Blend the colors using the given gamma (default is 2.2 if None)
             gamma = blend_gamma if blend_gamma is not None else 2.2
             composite_color = _blend_colors_perceptually(colors, filtered_significances, gamma)
@@ -204,8 +227,8 @@ def _get_composite_node_colors(
 
 
 def _get_colors(
-    network,
-    domain_id_to_node_ids_map,
+    network: nx.Graph,
+    domain_id_to_node_ids_map: Dict[int, Any],
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     random_seed: int = 888,
@@ -214,7 +237,7 @@ def _get_colors(
     close in space get maximally separated colors, while keeping some randomness.
 
     Args:
-        network (NetworkX graph): The graph representing the network.
+        network (nx.Graph): The graph representing the network.
         domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for the domains.
@@ -252,7 +275,7 @@ def _get_colors(
     return [colormap(pos) for pos in color_positions]
 
 
-def _assign_distant_colors(dist_matrix, num_colors_to_generate):
+def _assign_distant_colors(dist_matrix: np.ndarray, num_colors_to_generate: int) -> np.ndarray:
     """Assign colors to centroids that are close in space, ensuring stark color differences.
 
     Args:
@@ -404,7 +427,8 @@ def to_rgba(
             return np.tile(
                 rgba_color, (num_repeats, 1)
             )  # Repeat the color if num_repeats is provided
-        return np.array([rgba_color])  # Return a single color wrapped in a numpy array
+
+        return rgba_color
 
     # Handle a list/array of colors
     elif isinstance(color, (list, tuple, np.ndarray)):
@@ -421,4 +445,4 @@ def to_rgba(
         return rgba_colors
 
     else:
-        raise ValueError("Color must be a valid RGB/RGBA or array of RGB/RGBA colors.")
+        raise ValueError("Color must be a valid string, RGB/RGBA, or array of RGB/RGBA colors.")

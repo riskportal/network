@@ -3,8 +3,9 @@ risk/network/plot/utils/layout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
+import networkx as nx
 import numpy as np
 
 
@@ -68,11 +69,13 @@ def refine_center_iteratively(
     return center, new_radius
 
 
-def calculate_centroids(network, domain_id_to_node_ids_map):
+def calculate_centroids(
+    network: nx.Graph, domain_id_to_node_ids_map: Dict[int, Any]
+) -> List[Tuple[float, float]]:
     """Calculate the centroid for each domain based on node x and y coordinates in the network.
 
     Args:
-        network (NetworkX graph): The graph representing the network.
+        network (nx.Graph): The graph representing the network.
         domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
 
     Returns:

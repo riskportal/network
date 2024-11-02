@@ -3,7 +3,7 @@ risk/network/plot/network
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -205,6 +205,7 @@ class Network:
         alpha: Union[float, None] = 1.0,
         nonsignificant_color: Union[str, List, Tuple, np.ndarray] = "white",
         nonsignificant_alpha: Union[float, None] = 1.0,
+        ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> np.ndarray:
         """Adjust the colors of nodes in the network graph based on significance.
@@ -224,6 +225,7 @@ class Network:
                 Defaults to "white".
             nonsignificant_alpha (float, None, optional): Alpha value for non-significant nodes. If provided, it overrides any existing alpha values found
                 in `nonsignificant_color`. Defaults to 1.0.
+            ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -239,6 +241,7 @@ class Network:
             min_scale=min_scale,
             max_scale=max_scale,
             scale_factor=scale_factor,
+            ids_to_colors=ids_to_colors,
             random_seed=random_seed,
         )
         # Apply the alpha value for significant nodes

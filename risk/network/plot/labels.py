@@ -54,7 +54,7 @@ class Labels:
         words_to_omit: Union[List, None] = None,
         overlay_ids: bool = False,
         ids_to_keep: Union[List, Tuple, np.ndarray, None] = None,
-        ids_to_replace: Union[Dict, None] = None,
+        ids_to_labels: Union[Dict[int, str], None] = None,
     ) -> None:
         """Annotate the network graph with labels for different domains, positioned around the network for clarity.
 
@@ -62,7 +62,7 @@ class Labels:
             scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
             offset (float, optional): Offset distance for labels from the perimeter. Defaults to 0.10.
             font (str, optional): Font name for the labels. Defaults to "Arial".
-            fontcase (Union[str, Dict[str, str], None]): Defines how to transform the case of words.
+            fontcase (str, Dict[str, str], or None, optional): Defines how to transform the case of words.
                 - If a string (e.g., 'upper', 'lower', 'title'), applies the transformation to all words.
                 - If a dictionary, maps specific cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
                 - If None, no transformation is applied.
@@ -87,7 +87,7 @@ class Labels:
             overlay_ids (bool, optional): Whether to overlay domain IDs in the center of the centroids. Defaults to False.
             ids_to_keep (List, Tuple, np.ndarray, or None, optional): IDs of domains that must be labeled. To discover domain IDs,
                 you can set `overlay_ids=True`. Defaults to None.
-            ids_to_replace (Dict, optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be
+            ids_to_labels (Dict[int, str], optional): A dictionary mapping domain IDs to custom labels (strings). The labels should be
                 space-separated words. If provided, the custom labels will replace the default domain terms. To discover domain IDs, you
                 can set `overlay_ids=True`. Defaults to None.
 
@@ -119,7 +119,7 @@ class Labels:
             label_words_to_omit=words_to_omit,
             label_overlay_ids=overlay_ids,
             label_ids_to_keep=ids_to_keep,
-            label_ids_to_replace=ids_to_replace,
+            label_ids_to_labels=ids_to_labels,
         )
 
         # Convert ids_to_keep to a tuple if it is not None
@@ -152,7 +152,7 @@ class Labels:
             self._process_ids_to_keep(
                 domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_keep=ids_to_keep,
-                ids_to_replace=ids_to_replace,
+                ids_to_labels=ids_to_labels,
                 words_to_omit=words_to_omit,
                 max_labels=max_labels,
                 min_label_lines=min_label_lines,
@@ -173,7 +173,7 @@ class Labels:
             self._process_remaining_domains(
                 domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_keep=ids_to_keep,
-                ids_to_replace=ids_to_replace,
+                ids_to_labels=ids_to_labels,
                 words_to_omit=words_to_omit,
                 remaining_labels=remaining_labels,
                 min_chars_per_line=min_chars_per_line,
@@ -368,7 +368,7 @@ class Labels:
         self,
         domain_id_to_centroid_map: Dict[str, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
-        ids_to_replace: Union[Dict[str, str], None],
+        ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         max_labels: Union[int, None],
         min_label_lines: int,
@@ -384,7 +384,7 @@ class Labels:
         Args:
             domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
             ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
-            ids_to_replace (Dict[str, str], optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
+            ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
             max_labels (int, optional): Maximum number of labels allowed.
             min_label_lines (int): Minimum number of lines in a label.
@@ -419,7 +419,7 @@ class Labels:
                     domain=domain,
                     domain_centroid=domain_centroid,
                     domain_id_to_centroid_map=domain_id_to_centroid_map,
-                    ids_to_replace=ids_to_replace,
+                    ids_to_labels=ids_to_labels,
                     words_to_omit=words_to_omit,
                     min_label_lines=min_label_lines,
                     max_label_lines=max_label_lines,
@@ -434,7 +434,7 @@ class Labels:
         self,
         domain_id_to_centroid_map: Dict[str, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
-        ids_to_replace: Union[Dict[str, str], None],
+        ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         remaining_labels: int,
         min_label_lines: int,
@@ -450,7 +450,7 @@ class Labels:
         Args:
             domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
             ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
-            ids_to_replace (Dict[str, str], optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
+            ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
             remaining_labels (int): The remaining number of labels that can be generated.
             min_label_lines (int): Minimum number of lines in a label.
@@ -515,7 +515,7 @@ class Labels:
                 domain=domain,
                 domain_centroid=domain_centroid,
                 domain_id_to_centroid_map=domain_id_to_centroid_map,
-                ids_to_replace=ids_to_replace,
+                ids_to_labels=ids_to_labels,
                 words_to_omit=words_to_omit,
                 min_label_lines=min_label_lines,
                 max_label_lines=max_label_lines,
@@ -536,7 +536,7 @@ class Labels:
         domain: str,
         domain_centroid: np.ndarray,
         domain_id_to_centroid_map: Dict[str, np.ndarray],
-        ids_to_replace: Union[Dict[str, str], None],
+        ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         min_label_lines: int,
         max_label_lines: int,
@@ -552,7 +552,7 @@ class Labels:
             domain (str): Domain ID to process.
             domain_centroid (np.ndarray): Centroid position of the domain.
             domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
-            ids_to_replace (Dict[str, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
+            ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List[str], None, optional): List of words to omit from the labels. Defaults to None.
             min_label_lines (int): Minimum number of lines required in a label.
             max_label_lines (int): Maximum number of lines allowed in a label.
@@ -571,7 +571,7 @@ class Labels:
         # Process the domain terms
         domain_terms = self._process_terms(
             domain=domain,
-            ids_to_replace=ids_to_replace,
+            ids_to_labels=ids_to_labels,
             words_to_omit=words_to_omit,
             max_label_lines=max_label_lines,
             min_chars_per_line=min_chars_per_line,
@@ -596,7 +596,7 @@ class Labels:
     def _process_terms(
         self,
         domain: str,
-        ids_to_replace: Union[Dict[str, str], None],
+        ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         max_label_lines: int,
         min_chars_per_line: int,
@@ -606,8 +606,8 @@ class Labels:
 
         Args:
             domain (str): The domain being processed.
-            ids_to_replace (Dict[str, str], optional): Dictionary mapping domain IDs to custom labels.
-            words_to_omit (List, optional): List of words to omit from the labels.
+            ids_to_labels (Dict[int, str], None): Dictionary mapping domain IDs to custom labels.
+            words_to_omit (List[str], None): List of words to omit from the labels.
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
             max_chars_per_line (int): Maximum number of characters in a line to display.
@@ -615,9 +615,9 @@ class Labels:
         Returns:
             str: Processed terms separated by TERM_DELIMITER, with words combined if necessary to fit within constraints.
         """
-        # Return custom labels if domain is in ids_to_replace
-        if ids_to_replace and domain in ids_to_replace:
-            terms = ids_to_replace[domain].replace(" ", TERM_DELIMITER)
+        # Return custom labels if domain is in ids_to_labels
+        if ids_to_labels and domain in ids_to_labels:
+            terms = ids_to_labels[domain].replace(" ", TERM_DELIMITER)
             return terms
 
         else:
@@ -645,6 +645,7 @@ class Labels:
         min_scale: float = 0.8,
         max_scale: float = 1.0,
         scale_factor: float = 1.0,
+        ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> np.ndarray:
         """Get colors for the labels based on node annotations or a specified colormap.
@@ -661,6 +662,7 @@ class Labels:
                 Controls the brightest colors. Defaults to 1.0.
             scale_factor (float, optional): Exponent for adjusting color scaling based on significance scores.
                 A higher value increases contrast by dimming lower scores more. Defaults to 1.0.
+            ids_to_colors (Dict[int, Any], None, optional): Mapping of domain IDs to specific colors. Defaults to None.
             random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
@@ -675,6 +677,7 @@ class Labels:
             min_scale=min_scale,
             max_scale=max_scale,
             scale_factor=scale_factor,
+            ids_to_colors=ids_to_colors,
             random_seed=random_seed,
         )
 
