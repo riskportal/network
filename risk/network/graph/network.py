@@ -126,7 +126,6 @@ class NetworkGraph:
         """
         # Initialize an empty dictionary to store full descriptions and significance scores of domains
         domain_info_map = {}
-
         # Domain IDs are the index of the DataFrame (it's common for some IDs to be missing)
         for domain_id in trimmed_domains.index:
             # Sort full_descriptions and significance_scores by significance_scores in descending order

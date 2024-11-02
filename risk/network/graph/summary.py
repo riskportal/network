@@ -47,7 +47,7 @@ class AnalysisSummary:
         # Load results and export directly to CSV
         results = self.load()
         results.to_csv(filepath, index=False)
-        logger.info(f"Results summary exported to CSV file: {filepath}")
+        logger.info(f"Analysis summary exported to CSV file: {filepath}")
 
     def to_json(self, filepath: str) -> None:
         """Export significance results to a JSON file.
@@ -58,7 +58,7 @@ class AnalysisSummary:
         # Load results and export directly to JSON
         results = self.load()
         results.to_json(filepath, orient="records", indent=4)
-        logger.info(f"Results summary exported to JSON file: {filepath}")
+        logger.info(f"Analysis summary exported to JSON file: {filepath}")
 
     def to_txt(self, filepath: str) -> None:
         """Export significance results to a text file.
@@ -71,7 +71,7 @@ class AnalysisSummary:
         with open(filepath, "w") as txt_file:
             txt_file.write(results.to_string(index=False))
 
-        logger.info(f"Results summary exported to text file: {filepath}")
+        logger.info(f"Analysis summary exported to text file: {filepath}")
 
     def load(self) -> pd.DataFrame:
         """Load and process domain and annotation data into a DataFrame with significance metrics.
