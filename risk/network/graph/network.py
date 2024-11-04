@@ -27,7 +27,6 @@ class NetworkGraph:
         network: nx.Graph,
         annotations: Dict[str, Any],
         neighborhoods: Dict[str, Any],
-        top_annotations: pd.DataFrame,
         domains: pd.DataFrame,
         trimmed_domains: pd.DataFrame,
         node_label_to_node_id_map: Dict[str, Any],
@@ -39,24 +38,20 @@ class NetworkGraph:
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
             neighborhoods (Dict[str, Any]): Neighborhood significance data.
-            top_annotations (pd.DataFrame): DataFrame containing annotations data for the network nodes.
             domains (pd.DataFrame): DataFrame containing domain data for the network nodes.
             trimmed_domains (pd.DataFrame): DataFrame containing trimmed domain data for the network nodes.
             node_label_to_node_id_map (Dict[str, Any]): A dictionary mapping node labels to their corresponding IDs.
             node_significance_sums (np.ndarray): Array containing the significant sums for the nodes.
         """
         # Initialize self.network downstream of the other attributes
-        self.top_annotations = top_annotations
+        # All public attributes can be accessed after initialization
         self.domain_id_to_node_ids_map = self._create_domain_id_to_node_ids_map(domains)
-        self.domains = domains
         self.domain_id_to_domain_terms_map = self._create_domain_id_to_domain_terms_map(
             trimmed_domains
         )
         self.domain_id_to_domain_info_map = self._create_domain_id_to_domain_info_map(
             trimmed_domains
         )
-        self.trimmed_domains = trimmed_domains
-        self.node_significance_sums = node_significance_sums
         self.node_id_to_domain_ids_and_significance_map = (
             self._create_node_id_to_domain_ids_and_significances(domains)
         )
@@ -64,6 +59,7 @@ class NetworkGraph:
         self.node_label_to_significance_map = dict(
             zip(node_label_to_node_id_map.keys(), node_significance_sums)
         )
+        self.node_significance_sums = node_significance_sums
         self.node_label_to_node_id_map = node_label_to_node_id_map
 
         # NOTE: Below this point, instance attributes (i.e., self) will be used!
@@ -74,6 +70,32 @@ class NetworkGraph:
 
         # NOTE: Only after the above attributes are initialized, we can create the summary
         self.summary = AnalysisSummary(annotations, neighborhoods, self)
+
+    def pop(self, domain_id: str) -> None:
+        """Remove domain ID from instance domain ID mappings. This can be useful for cleaning up
+        domain-specific mappings based on a given criterion, as domain attributes are stored and
+        accessed only in dictionaries modified by this method.
+
+        Args:
+            key (str): The domain ID key to be removed from each mapping.
+        """
+        # Define the domain mappings to be updated
+        domain_mappings = [
+            self.domain_id_to_node_ids_map,
+            self.domain_id_to_domain_terms_map,
+            self.domain_id_to_domain_info_map,
+            self.domain_id_to_node_labels_map,
+        ]
+        # Remove the specified domain_id key from each mapping if it exists
+        for mapping in domain_mappings:
+            if domain_id in mapping:
+                mapping.pop(domain_id)
+
+        # Remove the domain_id from the node_id_to_domain_ids_and_significance_map
+        for node_id, domain_info in self.node_id_to_domain_ids_and_significance_map.items():
+            if domain_id in domain_info["domains"]:
+                domain_info["domains"].remove(domain_id)
+                domain_info["significances"].pop(domain_id)
 
     @staticmethod
     def _create_domain_id_to_node_ids_map(domains: pd.DataFrame) -> Dict[int, Any]:
