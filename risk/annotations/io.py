@@ -41,7 +41,9 @@ class AnnotationsIO:
         """
         filetype = "JSON"
         # Log the loading of the JSON file
-        params.log_annotations(filepath=filepath, filetype=filetype)
+        params.log_annotations(
+            filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
+        )
         _log_loading(filetype, filepath=filepath)
 
         # Load the JSON file into a dictionary
@@ -78,7 +80,9 @@ class AnnotationsIO:
         """
         filetype = "Excel"
         # Log the loading of the Excel file
-        params.log_annotations(filepath=filepath, filetype=filetype)
+        params.log_annotations(
+            filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
+        )
         _log_loading(filetype, filepath=filepath)
 
         # Load the specified sheet from the Excel file
@@ -118,7 +122,9 @@ class AnnotationsIO:
         """
         filetype = "CSV"
         # Log the loading of the CSV file
-        params.log_annotations(filepath=filepath, filetype=filetype)
+        params.log_annotations(
+            filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
+        )
         _log_loading(filetype, filepath=filepath)
 
         # Load the CSV file into a dictionary
@@ -154,7 +160,9 @@ class AnnotationsIO:
         """
         filetype = "TSV"
         # Log the loading of the TSV file
-        params.log_annotations(filepath=filepath, filetype=filetype)
+        params.log_annotations(
+            filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
+        )
         _log_loading(filetype, filepath=filepath)
 
         # Load the TSV file into a dictionary
