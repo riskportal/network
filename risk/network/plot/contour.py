@@ -13,7 +13,7 @@ from scipy.stats import gaussian_kde
 
 from risk.log import params, logger
 from risk.network.graph import NetworkGraph
-from risk.network.plot.utils.color import get_annotated_domain_colors, to_rgba
+from risk.network.plot.utils.colors import get_annotated_domain_colors, to_rgba
 
 
 class Contour:

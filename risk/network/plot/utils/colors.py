@@ -410,6 +410,7 @@ def to_rgba(
 
         if alpha is not None:  # Override alpha if provided
             rgba[3] = alpha
+
         return rgba
 
     # If color is a 2D array of RGBA values, convert it to a list of lists
