@@ -10,7 +10,7 @@ import numpy as np
 
 from risk.log import params
 from risk.network.graph import NetworkGraph
-from risk.network.plot.utils.color import get_domain_colors, to_rgba
+from risk.network.plot.utils.colors import get_domain_colors, to_rgba
 
 
 class Network:
