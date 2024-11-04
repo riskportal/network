@@ -15,6 +15,8 @@ import pandas as pd
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
+from risk.log import logger
+
 
 def _setup_nltk():
     """Ensure necessary NLTK data is downloaded."""
@@ -35,15 +37,23 @@ _setup_nltk()
 stop_words = set(stopwords.words("english"))
 
 
-def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Dict[str, Any]:
+def load_annotations(
+    network: nx.Graph, annotations_input: Dict[str, Any], min_nodes_per_term: int = 2
+) -> Dict[str, Any]:
     """Convert annotations input to a DataFrame and reindex based on the network's node labels.
 
     Args:
         network (nx.Graph): The network graph.
         annotations_input (Dict[str, Any]): A dictionary with annotations.
+        min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+            term to be included. Defaults to 2.
 
     Returns:
         Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the binary annotations matrix.
+
+    Raises:
+        ValueError: If no annotations are found for the nodes in the network.
+        ValueError: If no annotations have at least min_nodes_per_term nodes in the network.
     """
     # Flatten the dictionary to a list of tuples for easier DataFrame creation
     flattened_annotations = [
@@ -61,13 +71,24 @@ def load_annotations(network: nx.Graph, annotations_input: Dict[str, Any]) -> Di
     annotations_pivot = annotations_pivot.reindex(index=node_label_order)
     # Raise an error if no valid annotations are found for the nodes in the network
     if annotations_pivot.notnull().sum().sum() == 0:
+        raise ValueError("No terms found in the annotation file for the nodes in the network.")
+
+    # Filter out annotations with fewer than min_nodes_per_term occurrences
+    # This assists in reducing noise and focusing on more relevant annotations for statistical analysis
+    num_terms_before_filtering = annotations_pivot.shape[1]
+    annotations_pivot = annotations_pivot.loc[
+        :, (annotations_pivot.sum(axis=0) >= min_nodes_per_term)
+    ]
+    num_terms_after_filtering = annotations_pivot.shape[1]
+    # Log the number of annotations before and after filtering
+    logger.info(f"Minimum number of nodes per annotation term: {min_nodes_per_term}")
+    logger.info(f"Number of input annotation terms: {num_terms_before_filtering}")
+    logger.info(f"Number of remaining annotation terms: {num_terms_after_filtering}")
+    if num_terms_after_filtering == 0:
         raise ValueError(
-            "No annotations found in the annotations file for the nodes in the network."
+            f"No annotation terms found with at least {min_nodes_per_term} nodes in the network."
         )
 
-    # Remove columns with all zeros and those with only a single '1' to improve statistical performance
-    # (i.e., it's unreliable to compute the significance of an annotation in a node cluster based on a single occurrence).
-    annotations_pivot = annotations_pivot.loc[:, (annotations_pivot.sum(axis=0) > 1)]
     # Extract ordered nodes and annotations
     ordered_nodes = tuple(annotations_pivot.index)
     ordered_annotations = tuple(annotations_pivot.columns)
