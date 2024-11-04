@@ -25,12 +25,16 @@ class AnnotationsIO:
     def __init__(self):
         pass
 
-    def load_json_annotation(self, network: nx.Graph, filepath: str) -> Dict[str, Any]:
+    def load_json_annotation(
+        self, network: nx.Graph, filepath: str, min_nodes_per_term: int = 2
+    ) -> Dict[str, Any]:
         """Load annotations from a JSON file and convert them to a DataFrame.
 
         Args:
             network (NetworkX graph): The network to which the annotations are related.
             filepath (str): Path to the JSON annotations file.
+            min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+                term to be included. Defaults to 2.
 
         Returns:
             Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
@@ -40,12 +44,11 @@ class AnnotationsIO:
         params.log_annotations(filepath=filepath, filetype=filetype)
         _log_loading(filetype, filepath=filepath)
 
-        # Open and read the JSON file
+        # Load the JSON file into a dictionary
         with open(filepath, "r") as file:
             annotations_input = json.load(file)
 
-        # Load the annotations into the provided network
-        return load_annotations(network, annotations_input)
+        return load_annotations(network, annotations_input, min_nodes_per_term)
 
     def load_excel_annotation(
         self,
@@ -55,6 +58,7 @@ class AnnotationsIO:
         nodes_colname: str = "nodes",
         sheet_name: str = "Sheet1",
         nodes_delimiter: str = ";",
+        min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
         """Load annotations from an Excel file and associate them with the network.
 
@@ -65,6 +69,8 @@ class AnnotationsIO:
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             sheet_name (str, optional): The name of the Excel sheet to load (default is 'Sheet1').
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
+            min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+                term to be included. Defaults to 2.
 
         Returns:
             Dict[str, Any]: A dictionary where each label is paired with its respective list of nodes,
@@ -82,10 +88,9 @@ class AnnotationsIO:
             lambda x: x.split(nodes_delimiter)
         )
         # Convert the DataFrame to a dictionary pairing labels with their corresponding nodes
-        label_node_dict = annotation.set_index(label_colname)[nodes_colname].to_dict()
+        annotations_input = annotation.set_index(label_colname)[nodes_colname].to_dict()
 
-        # Load the annotations into the provided network
-        return load_annotations(network, label_node_dict)
+        return load_annotations(network, annotations_input, min_nodes_per_term)
 
     def load_csv_annotation(
         self,
@@ -94,6 +99,7 @@ class AnnotationsIO:
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
+        min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
         """Load annotations from a CSV file and associate them with the network.
 
@@ -103,6 +109,8 @@ class AnnotationsIO:
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
+            min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+                term to be included. Defaults to 2.
 
         Returns:
             Dict[str, Any]: A dictionary where each label is paired with its respective list of nodes,
@@ -118,8 +126,7 @@ class AnnotationsIO:
             filepath, label_colname, nodes_colname, delimiter=",", nodes_delimiter=nodes_delimiter
         )
 
-        # Load the annotations into the provided network
-        return load_annotations(network, annotations_input)
+        return load_annotations(network, annotations_input, min_nodes_per_term)
 
     def load_tsv_annotation(
         self,
@@ -128,6 +135,7 @@ class AnnotationsIO:
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
+        min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
         """Load annotations from a TSV file and associate them with the network.
 
@@ -137,6 +145,8 @@ class AnnotationsIO:
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
+            min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+                term to be included. Defaults to 2.
 
         Returns:
             Dict[str, Any]: A dictionary where each label is paired with its respective list of nodes,
@@ -152,15 +162,18 @@ class AnnotationsIO:
             filepath, label_colname, nodes_colname, delimiter="\t", nodes_delimiter=nodes_delimiter
         )
 
-        # Load the annotations into the provided network
-        return load_annotations(network, annotations_input)
+        return load_annotations(network, annotations_input, min_nodes_per_term)
 
-    def load_dict_annotation(self, network: nx.Graph, content: Dict[str, Any]) -> Dict[str, Any]:
+    def load_dict_annotation(
+        self, network: nx.Graph, content: Dict[str, Any], min_nodes_per_term: int = 2
+    ) -> Dict[str, Any]:
         """Load annotations from a provided dictionary and convert them to a dictionary annotation.
 
         Args:
             network (NetworkX graph): The network to which the annotations are related.
             content (Dict[str, Any]): The annotations dictionary to load.
+            min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
+                term to be included. Defaults to 2.
 
         Returns:
             Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
@@ -176,13 +189,8 @@ class AnnotationsIO:
         params.log_annotations(filepath="In-memory dictionary", filetype=filetype)
         _log_loading(filetype, "In-memory dictionary")
 
-        # Load the annotations into the provided network
-        annotations_dict = load_annotations(network, content)
-        # Ensure the output is a dictionary
-        if not isinstance(annotations_dict, dict):
-            raise ValueError("Expected output to be a dictionary")
-
-        return annotations_dict
+        # Load the annotations as a dictionary from the provided dictionary
+        return load_annotations(network, content, min_nodes_per_term)
 
 
 def _load_matrix_file(
