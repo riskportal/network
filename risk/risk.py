@@ -16,7 +16,7 @@ from risk.neighborhoods import (
     define_domains,
     get_network_neighborhoods,
     process_neighborhoods,
-    trim_domains_and_top_annotations,
+    trim_domains,
 )
 from risk.network import NetworkIO, NetworkGraph, NetworkPlotter
 from risk.stats import (
@@ -335,16 +335,20 @@ class RISK(NetworkIO, AnnotationsIO):
         )
 
         log_header("Optimizing distance threshold for domains")
+        # Extract the significant significance matrix from the neighborhoods data
+        significant_neighborhoods_significance = processed_neighborhoods[
+            "significant_significance_matrix"
+        ]
         # Define domains in the network using the specified clustering settings
-        domains = self._define_domains(
-            neighborhoods=processed_neighborhoods,
+        domains = define_domains(
             top_annotations=top_annotations,
+            significant_neighborhoods_significance=significant_neighborhoods_significance,
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,
         )
         # Trim domains and top annotations based on cluster size constraints
-        top_annotations, domains, trimmed_domains = trim_domains_and_top_annotations(
+        domains, trimmed_domains = trim_domains(
             domains=domains,
             top_annotations=top_annotations,
             min_cluster_size=min_cluster_size,
@@ -361,7 +365,6 @@ class RISK(NetworkIO, AnnotationsIO):
             network=network,
             annotations=annotations,
             neighborhoods=neighborhoods,
-            top_annotations=top_annotations,
             domains=domains,
             trimmed_domains=trimmed_domains,
             node_label_to_node_id_map=node_label_to_id,
@@ -483,35 +486,4 @@ class RISK(NetworkIO, AnnotationsIO):
             significant_binary_significance_matrix=significant_binary_significance_matrix,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
-        )
-
-    def _define_domains(
-        self,
-        neighborhoods: Dict[str, Any],
-        top_annotations: pd.DataFrame,
-        linkage_criterion: str,
-        linkage_method: str,
-        linkage_metric: str,
-    ) -> pd.DataFrame:
-        """Define domains in the network based on significance data.
-
-        Args:
-            neighborhoods (Dict[str, Any]): Enrichment data for neighborhoods.
-            top_annotations (pd.DataFrame): Enrichment matrix for top annotations.
-            linkage_criterion (str): Clustering criterion for defining domains.
-            linkage_method (str): Clustering method to use.
-            linkage_metric (str): Metric to use for calculating distances.
-
-        Returns:
-            pd.DataFrame: Matrix of defined domains.
-        """
-        # Extract the significant significance matrix from the neighborhoods data
-        significant_neighborhoods_significance = neighborhoods["significant_significance_matrix"]
-        # Call external function to define domains based on the extracted data
-        return define_domains(
-            top_annotations=top_annotations,
-            significant_neighborhoods_significance=significant_neighborhoods_significance,
-            linkage_criterion=linkage_criterion,
-            linkage_method=linkage_method,
-            linkage_metric=linkage_metric,
         )
