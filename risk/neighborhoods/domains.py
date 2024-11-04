@@ -86,13 +86,13 @@ def define_domains(
     return node_to_domain
 
 
-def trim_domains_and_top_annotations(
+def trim_domains(
     domains: pd.DataFrame,
     top_annotations: pd.DataFrame,
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Trim domains and top annotations that do not meet size criteria and find outliers.
+    """Trim domains that do not meet size criteria and find outliers.
 
     Args:
         domains (pd.DataFrame): DataFrame of domain data for the network nodes.
@@ -101,8 +101,7 @@ def trim_domains_and_top_annotations(
         max_cluster_size (int, optional): Maximum size of a cluster to be retained. Defaults to 1000.
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-            - Trimmed annotations (pd.DataFrame)
+        Tuple[pd.DataFrame, pd.DataFrame]:
             - Trimmed domains (pd.DataFrame)
             - A DataFrame with domain labels (pd.DataFrame)
     """
@@ -155,14 +154,11 @@ def trim_domains_and_top_annotations(
     ).set_index("id")
 
     # Remove invalid domains
-    valid_annotations = top_annotations[~top_annotations["domain"].isin(invalid_domain_ids)].drop(
-        columns=["normalized_value"]
-    )
     valid_domains = domains[~domains["primary_domain"].isin(invalid_domain_ids)]
     valid_trimmed_domains_matrix = trimmed_domains_matrix[
         ~trimmed_domains_matrix.index.isin(invalid_domain_ids)
     ]
-    return valid_annotations, valid_domains, valid_trimmed_domains_matrix
+    return valid_domains, valid_trimmed_domains_matrix
 
 
 def _optimize_silhouette_across_linkage_and_metrics(
