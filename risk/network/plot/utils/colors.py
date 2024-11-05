@@ -9,6 +9,7 @@ import matplotlib
 import matplotlib.colors as mcolors
 import networkx as nx
 import numpy as np
+from sklearn.cluster import AgglomerativeClustering
 
 from risk.network.graph import NetworkGraph
 from risk.network.plot.utils.layout import calculate_centroids
@@ -249,34 +250,53 @@ def _get_colors(
     """
     # Set random seed for reproducibility
     np.random.seed(random_seed)
+
     # Determine the number of colors to generate based on the number of domains
-    num_colors_to_generate = len(domain_id_to_node_ids_map)
+    num_domains = len(domain_id_to_node_ids_map)
     if color:
         # Generate all colors as the same specified color
-        rgba = to_rgba(color, num_repeats=num_colors_to_generate)
+        rgba = to_rgba(color, num_repeats=num_domains)
         return rgba
 
     # Load colormap
     colormap = matplotlib.colormaps.get_cmap(cmap)
     # Step 1: Calculate centroids for each domain
     centroids = calculate_centroids(network, domain_id_to_node_ids_map)
-    # Step 2: Calculate pairwise distances between centroids
     centroid_array = np.array(centroids)
-    dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
-    # Step 3: Assign distant colors to close centroids
-    color_positions = _assign_distant_colors(dist_matrix, num_colors_to_generate)
-    # Step 4: Randomly shift the entire color palette while maintaining relative distances
-    global_shift = np.random.uniform(-0.1, 0.1)  # Small global shift to change the overall palette
-    color_positions = (color_positions + global_shift) % 1  # Wrap around to keep within [0, 1]
-    # Step 5: Ensure that all positions remain between 0 and 1
-    color_positions = np.clip(color_positions, 0, 1)
 
-    # Step 6: Generate RGBA colors based on positions
-    return [colormap(pos) for pos in color_positions]
+    # Step 2: Cluster domains based on proximity using Agglomerative Clustering
+    dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
+    max_distance = np.max(dist_matrix) if np.max(dist_matrix) != 0 else 1
+    proximity_threshold = 0.3 * max_distance
+
+    clustering_model = AgglomerativeClustering(
+        n_clusters=None, distance_threshold=proximity_threshold
+    )
+    cluster_labels = clustering_model.fit_predict(centroid_array)
+    num_clusters = len(set(cluster_labels))
+
+    # Step 3: Assign base color positions for each cluster, spaced across colormap
+    cluster_positions = np.linspace(0, 1, num_clusters, endpoint=False)
+    np.random.shuffle(cluster_positions)  # Shuffle based on seed to vary color layout
+    cluster_id_to_position = {
+        cluster_id: pos for cluster_id, pos in zip(np.unique(cluster_labels), cluster_positions)
+    }
+
+    # Step 4: Assign colors to each domain based on cluster base color with a global shift
+    global_shift = np.random.uniform(-0.1, 0.1)  # Small global shift for variety
+    colors = []
+    for i in range(num_domains):
+        cluster_idx = cluster_labels[i]
+        base_position = cluster_id_to_position[cluster_idx]
+        # Add global shift and ensure it stays within [0, 1]
+        color_position = (base_position + global_shift) % 1
+        colors.append(colormap(color_position))  # Get color from colormap
+
+    return colors
 
 
 def _assign_distant_colors(dist_matrix: np.ndarray, num_colors_to_generate: int) -> np.ndarray:
-    """Assign colors to centroids that are close in space, ensuring stark color differences.
+    """Assign color positions ensuring centroids close in space are maximally separated in color.
 
     Args:
         dist_matrix (ndarray): Matrix of pairwise centroid distances.
@@ -285,22 +305,14 @@ def _assign_distant_colors(dist_matrix: np.ndarray, num_colors_to_generate: int)
     Returns:
         np.array: Array of color positions in the range [0, 1].
     """
-    color_positions = np.zeros(num_colors_to_generate)
-    # Step 1: Sort indices by centroid proximity (based on sum of distances to others)
+    # Step 1: Calculate proximity order based on the sum of distances
     proximity_order = sorted(
         range(num_colors_to_generate), key=lambda idx: np.sum(dist_matrix[idx])
     )
-    # Step 2: Assign colors starting with the most distant points in proximity order
-    for i, idx in enumerate(proximity_order):
-        color_positions[idx] = i / num_colors_to_generate
-
-    # Step 3: Adjust colors so that centroids close to one another are maximally distant on the color spectrum
-    half_spectrum = int(num_colors_to_generate / 2)
-    for i in range(half_spectrum):
-        # Split the spectrum so that close centroids are assigned distant colors
-        color_positions[proximity_order[i]] = (i * 2) / num_colors_to_generate
-        color_positions[proximity_order[-(i + 1)]] = ((i * 2) + 1) / num_colors_to_generate
-
+    # Step 2: Generate evenly spaced color positions
+    color_positions = np.linspace(0, 1, num_colors_to_generate, endpoint=False)
+    # Step 3: Shuffle color positions based on proximity
+    color_positions = color_positions[proximity_order]
     return color_positions
 
 
