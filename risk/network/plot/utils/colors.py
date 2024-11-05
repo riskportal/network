@@ -234,86 +234,35 @@ def _get_colors(
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     random_seed: int = 888,
 ) -> List[Tuple]:
-    """Generate a list of RGBA colors based on domain centroids, ensuring that domains
-    close in space get maximally separated colors, while keeping some randomness.
+    """Generate a list of RGBA colors for domains, ensuring maximally separated colors for nearby domains.
 
     Args:
         network (nx.Graph): The graph representing the network.
         domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
-        color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for the domains.
+        color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use.
             If None, the colormap will be used. Defaults to None.
         random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
     Returns:
-        List[Tuple]: List of RGBA colors.
+        List[Tuple]: List of RGBA colors for each domain.
     """
-    # Set random seed for reproducibility
     np.random.seed(random_seed)
-
-    # Determine the number of colors to generate based on the number of domains
     num_domains = len(domain_id_to_node_ids_map)
     if color:
-        # Generate all colors as the same specified color
+        # If a single color is specified, apply it to all domains
         rgba = to_rgba(color, num_repeats=num_domains)
         return rgba
 
-    # Load colormap
+    # Load colormap and generate a large, maximally separated set of colors
     colormap = matplotlib.colormaps.get_cmap(cmap)
-    # Step 1: Calculate centroids for each domain
-    centroids = calculate_centroids(network, domain_id_to_node_ids_map)
-    centroid_array = np.array(centroids)
-
-    # Step 2: Cluster domains based on proximity using Agglomerative Clustering
-    dist_matrix = np.linalg.norm(centroid_array[:, None] - centroid_array, axis=-1)
-    max_distance = np.max(dist_matrix) if np.max(dist_matrix) != 0 else 1
-    proximity_threshold = 0.3 * max_distance
-
-    clustering_model = AgglomerativeClustering(
-        n_clusters=None, distance_threshold=proximity_threshold
-    )
-    cluster_labels = clustering_model.fit_predict(centroid_array)
-    num_clusters = len(set(cluster_labels))
-
-    # Step 3: Assign base color positions for each cluster, spaced across colormap
-    cluster_positions = np.linspace(0, 1, num_clusters, endpoint=False)
-    np.random.shuffle(cluster_positions)  # Shuffle based on seed to vary color layout
-    cluster_id_to_position = {
-        cluster_id: pos for cluster_id, pos in zip(np.unique(cluster_labels), cluster_positions)
-    }
-
-    # Step 4: Assign colors to each domain based on cluster base color with a global shift
-    global_shift = np.random.uniform(-0.1, 0.1)  # Small global shift for variety
-    colors = []
-    for i in range(num_domains):
-        cluster_idx = cluster_labels[i]
-        base_position = cluster_id_to_position[cluster_idx]
-        # Add global shift and ensure it stays within [0, 1]
-        color_position = (base_position + global_shift) % 1
-        colors.append(colormap(color_position))  # Get color from colormap
+    color_positions = np.linspace(0, 1, num_domains, endpoint=False)
+    # Shuffle color positions to avoid spatial clustering of similar colors
+    np.random.shuffle(color_positions)
+    # Assign colors based on positions in the colormap
+    colors = [colormap(pos) for pos in color_positions]
 
     return colors
-
-
-def _assign_distant_colors(dist_matrix: np.ndarray, num_colors_to_generate: int) -> np.ndarray:
-    """Assign color positions ensuring centroids close in space are maximally separated in color.
-
-    Args:
-        dist_matrix (ndarray): Matrix of pairwise centroid distances.
-        num_colors_to_generate (int): Number of colors to generate.
-
-    Returns:
-        np.array: Array of color positions in the range [0, 1].
-    """
-    # Step 1: Calculate proximity order based on the sum of distances
-    proximity_order = sorted(
-        range(num_colors_to_generate), key=lambda idx: np.sum(dist_matrix[idx])
-    )
-    # Step 2: Generate evenly spaced color positions
-    color_positions = np.linspace(0, 1, num_colors_to_generate, endpoint=False)
-    # Step 3: Shuffle color positions based on proximity
-    color_positions = color_positions[proximity_order]
-    return color_positions
 
 
 def _blend_colors_perceptually(
