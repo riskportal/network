@@ -48,10 +48,8 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
     _validate_graph(graph)
 
 
-def test_top_annotations_cluster_sizes_with_json_annotation(
-    risk_obj, cytoscape_network, json_annotation
-):
-    """Test that `top_annotations` column 'size connected components' respects min and max cluster sizes using JSON annotations.
+def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
+    """Test that statistically significant domains respect min and max cluster sizes using JSON annotations.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -94,9 +92,8 @@ def test_top_annotations_cluster_sizes_with_json_annotation(
 
         # Validate the graph and its components
         _validate_graph(graph)
-        # Validate the 'size connected components' in `top_annotations` DataFrame
-        size_connected_components = graph.top_annotations["size_connected_components"]
-        _check_component_sizes(size_connected_components, min_cluster_size, max_cluster_size)
+        # Validate the size of the domains
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
 
 
 def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
@@ -141,22 +138,8 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
     _validate_graph(graph)
 
 
-def test_load_graph_summary(graph):
-    """Test loading the graph summary with predefined parameters.
-
-    Args:
-        graph: The graph object instance to be summarized.
-    """
-    # Load the graph summary and validate its type
-    summary = graph.summary.load()
-
-    assert isinstance(summary, pd.DataFrame), "Graph summary should be a dictionary"
-
-
-def test_top_annotations_cluster_sizes_with_dict_annotation(
-    risk_obj, cytoscape_network, dict_annotation
-):
-    """Test that `top_annotations` column 'size connected components' respects min and max cluster sizes using dictionary annotations.
+def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
+    """Test that statistically significant domains respect min and max cluster sizes using dictionary annotations.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -200,9 +183,55 @@ def test_top_annotations_cluster_sizes_with_dict_annotation(
 
         # Validate the graph and its components
         _validate_graph(graph)
-        # Validate the 'size connected components' in `top_annotations` DataFrame
-        size_connected_components = graph.top_annotations["size_connected_components"]
-        _check_component_sizes(size_connected_components, min_cluster_size, max_cluster_size)
+        # Validate the size of the domains
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
+
+
+def test_load_graph_summary(graph):
+    """Test loading the graph summary with predefined parameters.
+
+    Args:
+        graph: The graph object instance to be summarized.
+    """
+    # Load the graph summary and validate its type
+    summary = graph.summary.load()
+
+    assert isinstance(summary, pd.DataFrame), "Graph summary should be a dictionary"
+
+
+def test_pop_domain(graph):
+    """Test the pop method for removing a domain ID from all NetworkGraph attribute domain mappings.
+
+    Args:
+        graph: The graph object instance with existing domain mappings.
+    """
+    # Define the domain ID to be removed
+    domain_id_to_remove = 1
+    # Pop the domain ID
+    graph.pop(domain_id_to_remove)
+
+    # Check that the domain ID is removed from all relevant attributes
+    assert (
+        domain_id_to_remove not in graph.domain_id_to_node_ids_map
+    ), f"{domain_id_to_remove} should be removed from domain_id_to_node_ids_map"
+    assert (
+        domain_id_to_remove not in graph.domain_id_to_domain_terms_map
+    ), f"{domain_id_to_remove} should be removed from domain_id_to_domain_terms_map"
+    assert (
+        domain_id_to_remove not in graph.domain_id_to_domain_info_map
+    ), f"{domain_id_to_remove} should be removed from domain_id_to_domain_info_map"
+    assert (
+        domain_id_to_remove not in graph.domain_id_to_node_labels_map
+    ), f"{domain_id_to_remove} should be removed from domain_id_to_node_labels_map"
+
+    # Check if the domain was removed from node_id_to_domain_ids_and_significance_map
+    for node_id, domain_info in graph.node_id_to_domain_ids_and_significance_map.items():
+        assert domain_id_to_remove not in domain_info.get(
+            "domains", []
+        ), f"{domain_id_to_remove} should be removed from node_id_to_domain_ids_and_significance_map['domains']"
+        assert domain_id_to_remove not in domain_info.get(
+            "significances", {}
+        ), f"{domain_id_to_remove} should be removed from node_id_to_domain_ids_and_significance_map['significances']"
 
 
 def _validate_graph(graph):
@@ -219,41 +248,27 @@ def _validate_graph(graph):
     assert len(graph.network.edges) > 0, "Graph has no edges."
 
 
-def _check_component_sizes(size_connected_components, min_cluster_size, max_cluster_size):
-    """Check whether components in `size_connected_components` are within the size range.
+def _check_component_sizes(domain_id_to_node_id_map, min_cluster_size, max_cluster_size):
+    """Check whether domains are within the specified size range.
 
     Args:
-        size_connected_components (List): A list of component sizes (can be list or int).
+        domain_id_to_node_id_map (dict): A mapping of domain IDs to lists of node IDs.
         min_cluster_size (int): The minimum allowed size for components.
         max_cluster_size (int): The maximum allowed size for components.
-
-    Raises:
-        AssertionError: If any component size is outside the specified range.
     """
-    for components in size_connected_components:
-        if isinstance(components, list):
-            # Debugging: Print components being checked
-            print(f"Checking components: {components}")
-            for size in components:
-                if not (min_cluster_size <= size <= max_cluster_size):
-                    print(
-                        f"Component size {size} is outside the range {min_cluster_size} to {max_cluster_size}"
-                    )
+    for domain_id, node_ids in domain_id_to_node_id_map.items():
+        # Calculate the size of the current component
+        component_size = len(node_ids)
+        # Debugging: Print the domain ID and its size
+        print(f"Checking domain ID {domain_id} with size {component_size}")
+        # Ensure the component size is within the specified range
+        if not (min_cluster_size <= component_size <= max_cluster_size):
+            print(
+                f"Domain {domain_id} size {component_size} is outside the range "
+                f"{min_cluster_size} to {max_cluster_size}"
+            )
 
-            # Ensure all sizes in the list are within the range
-            assert all(
-                min_cluster_size <= size <= max_cluster_size for size in components
-            ), f"Some values in 'size connected components' are outside the range {min_cluster_size} to {max_cluster_size}"
-
-        elif isinstance(components, int):
-            # Debugging: Print single component being checked
-            print(f"Checking component: {components}")
-            if not (min_cluster_size <= components <= max_cluster_size):
-                print(
-                    f"Component size {components} is outside the range {min_cluster_size} to {max_cluster_size}"
-                )
-
-            # Ensure the single component is within the range
-            assert (
-                min_cluster_size <= components <= max_cluster_size
-            ), f"Value {components} in 'size connected components' is outside the range {min_cluster_size} to {max_cluster_size}"
+        assert min_cluster_size <= component_size <= max_cluster_size, (
+            f"Domain {domain_id} has size {component_size}, which is outside the range "
+            f"{min_cluster_size} to {max_cluster_size}"
+        )
