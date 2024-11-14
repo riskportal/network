@@ -617,8 +617,7 @@ class Labels:
         """
         # Return custom labels if domain is in ids_to_labels
         if ids_to_labels and domain in ids_to_labels:
-            terms = ids_to_labels[domain].replace(" ", TERM_DELIMITER)
-            return terms
+            return ids_to_labels[domain]
 
         else:
             terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
