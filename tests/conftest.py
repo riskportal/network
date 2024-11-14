@@ -274,6 +274,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
         annotations=annotations,
         distance_metric="louvain",  # Example metric
         louvain_resolution=8,  # Example resolution
+        leiden_resolution=1.0,  # Example resolution
         edge_length_threshold=0.75,
         score_metric="stdev",
         null_distribution="network",

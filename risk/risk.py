@@ -52,6 +52,7 @@ class RISK(NetworkIO, AnnotationsIO):
         annotations: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
         edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         null_distribution: str = "network",
         random_seed: int = 888,
@@ -65,7 +66,8 @@ class RISK(NetworkIO, AnnotationsIO):
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Shortest edge length percentile threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
             null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
@@ -79,6 +81,7 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_neighborhoods(
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             statistical_test_function="hypergeom",
             null_distribution=null_distribution,
@@ -93,6 +96,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network,
             distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             random_seed=random_seed,
         )
@@ -112,6 +116,7 @@ class RISK(NetworkIO, AnnotationsIO):
         annotations: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
         edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         null_distribution: str = "network",
         random_seed: int = 888,
@@ -125,7 +130,8 @@ class RISK(NetworkIO, AnnotationsIO):
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Shortest edge length percentile threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
             null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
@@ -139,6 +145,7 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_neighborhoods(
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             statistical_test_function="poisson",
             null_distribution=null_distribution,
@@ -153,6 +160,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network,
             distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             random_seed=random_seed,
         )
@@ -172,6 +180,7 @@ class RISK(NetworkIO, AnnotationsIO):
         annotations: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
         edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         score_metric: str = "sum",
         null_distribution: str = "network",
@@ -188,7 +197,8 @@ class RISK(NetworkIO, AnnotationsIO):
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Shortest edge length percentile threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
             score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
@@ -205,6 +215,7 @@ class RISK(NetworkIO, AnnotationsIO):
         params.log_neighborhoods(
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             statistical_test_function="permutation",
             score_metric=score_metric,
@@ -222,6 +233,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network,
             distance_metric,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             edge_length_threshold=edge_length_threshold,
             random_seed=random_seed,
         )
@@ -408,6 +420,7 @@ class RISK(NetworkIO, AnnotationsIO):
         network: nx.Graph,
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
         edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 0.5,
         random_seed: int = 888,
     ) -> np.ndarray:
@@ -420,7 +433,8 @@ class RISK(NetworkIO, AnnotationsIO):
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Shortest edge length percentile threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
@@ -431,6 +445,8 @@ class RISK(NetworkIO, AnnotationsIO):
         # Display the chosen distance metric
         if distance_metric == "louvain":
             for_print_distance_metric = f"louvain (resolution={louvain_resolution})"
+        elif distance_metric == "leiden":
+            for_print_distance_metric = f"leiden (resolution={leiden_resolution})"
         else:
             for_print_distance_metric = distance_metric
         # Log and display neighborhood settings
@@ -444,6 +460,7 @@ class RISK(NetworkIO, AnnotationsIO):
             distance_metric,
             edge_length_threshold,
             louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
             random_seed=random_seed,
         )
 

@@ -18,8 +18,9 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="louvain",
+        distance_metric="leiden",
         louvain_resolution=8,
+        leiden_resolution=1.0,
         edge_length_threshold=0.75,
         score_metric="stdev",
         null_distribution="network",

@@ -23,8 +23,9 @@ def test_load_neighborhoods_single_process(
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="louvain",
+        distance_metric="leiden",
         louvain_resolution=0.01,
+        leiden_resolution=1.0,
         edge_length_threshold=0.25,
         score_metric="stdev",
         null_distribution=null_distribution,
@@ -120,6 +121,7 @@ def test_load_neighborhoods_poisson(
     [
         ("greedy_modularity", 0.75),
         ("louvain", 0.80),
+        ("leiden", 0.85),
         ("label_propagation", 0.70),
         ("markov_clustering", 0.65),
         ("walktrap", 0.85),
@@ -135,6 +137,7 @@ def test_load_neighborhoods_poisson(
         (
             [
                 "louvain",
+                "leiden",
                 "label_propagation",
                 "markov_clustering",
                 "walktrap",
@@ -191,7 +194,8 @@ def test_load_neighborhoods_with_various_score_metrics(
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
         annotations=json_annotation,
-        distance_metric="louvain",  # Using markov_clustering as the distance metric
+        distance_metric="louvain",  # Using louvain as the distance metric
+        louvain_resolution=8,
         edge_length_threshold=0.75,
         score_metric=score_metric,
         null_distribution="network",

@@ -15,6 +15,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from risk.neighborhoods.community import (
     calculate_greedy_modularity_neighborhoods,
     calculate_label_propagation_neighborhoods,
+    calculate_leiden_neighborhoods,
     calculate_louvain_neighborhoods,
     calculate_markov_clustering_neighborhoods,
     calculate_spinglass_neighborhoods,
@@ -30,7 +31,8 @@ def get_network_neighborhoods(
     network: nx.Graph,
     distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
     edge_length_threshold: Union[float, List, Tuple, np.ndarray] = 1.0,
-    louvain_resolution: float = 1.0,
+    louvain_resolution: float = 0.1,
+    leiden_resolution: float = 1.0,
     random_seed: int = 888,
 ) -> np.ndarray:
     """Calculate the combined neighborhoods for each node based on the specified community detection algorithm(s).
@@ -40,10 +42,11 @@ def get_network_neighborhoods(
         distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
             metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
             'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
-        edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Edge length threshold(s) for creating subgraphs.
+        edge_length_threshold (float, List, Tuple, or np.ndarray, optional): Shortest edge length percentile threshold(s) for creating subgraphs.
             Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
             Defaults to 1.0.
-        louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 1.0.
+        louvain_resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 0.1.
+        leiden_resolution (float, optional): Resolution parameter for the Leiden method. Defaults to 1.0.
         random_seed (int, optional): Random seed for methods requiring random initialization. Defaults to 888.
 
     Returns:
@@ -74,24 +77,28 @@ def get_network_neighborhoods(
         # Create a subgraph based on the specific edge length threshold for this algorithm
         subgraph = _create_percentile_limited_subgraph(network, edge_length_percentile=threshold)
         # Call the appropriate neighborhood function based on the metric
-        if metric == "louvain":
-            neighborhoods = calculate_louvain_neighborhoods(
-                subgraph, louvain_resolution, random_seed=random_seed
-            )
-        elif metric == "greedy_modularity":
+        if metric == "greedy_modularity":
             neighborhoods = calculate_greedy_modularity_neighborhoods(subgraph)
         elif metric == "label_propagation":
             neighborhoods = calculate_label_propagation_neighborhoods(subgraph)
+        elif metric == "leiden":
+            neighborhoods = calculate_leiden_neighborhoods(
+                subgraph, leiden_resolution, random_seed=random_seed
+            )
+        elif metric == "louvain":
+            neighborhoods = calculate_louvain_neighborhoods(
+                subgraph, louvain_resolution, random_seed=random_seed
+            )
         elif metric == "markov_clustering":
             neighborhoods = calculate_markov_clustering_neighborhoods(subgraph)
-        elif metric == "walktrap":
-            neighborhoods = calculate_walktrap_neighborhoods(subgraph)
         elif metric == "spinglass":
             neighborhoods = calculate_spinglass_neighborhoods(subgraph)
+        elif metric == "walktrap":
+            neighborhoods = calculate_walktrap_neighborhoods(subgraph)
         else:
             raise ValueError(
-                "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'louvain',"
-                "'label_propagation', 'markov_clustering', 'walktrap', 'spinglass'."
+                "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'label_propagation',"
+                "'leiden', 'louvain', 'markov_clustering', 'spinglass', 'walktrap'."
             )
 
         # Sum the neighborhood matrices

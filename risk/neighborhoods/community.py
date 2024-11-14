@@ -4,9 +4,11 @@ risk/neighborhoods/community
 """
 
 import community as community_louvain
+import igraph as ig
+import markov_clustering as mc
 import networkx as nx
 import numpy as np
-import markov_clustering as mc
+from leidenalg import find_partition, RBConfigurationVertexPartition
 from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities
 
 
@@ -57,6 +59,44 @@ def calculate_label_propagation_neighborhoods(network: nx.Graph) -> np.ndarray:
     node_index = {node: i for i, node in enumerate(network.nodes())}
     # Assign neighborhoods based on community labels
     for community in communities:
+        for node_i in community:
+            idx_i = node_index[node_i]
+            for node_j in community:
+                idx_j = node_index[node_j]
+                neighborhoods[idx_i, idx_j] = 1
+
+    return neighborhoods
+
+
+def calculate_leiden_neighborhoods(
+    network: nx.Graph, resolution: float = 1.0, random_seed: int = 888
+) -> np.ndarray:
+    """Calculate neighborhoods using the Leiden method.
+
+    Args:
+        network (nx.Graph): The network graph.
+        resolution (float, optional): Resolution parameter for the Leiden method. Defaults to 1.0.
+        random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
+
+    Returns:
+        np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
+    """
+    # Convert NetworkX graph to iGraph
+    igraph_network = ig.Graph.from_networkx(network)
+    # Apply Leiden algorithm using RBConfigurationVertexPartition, which supports resolution
+    partition = find_partition(
+        igraph_network,
+        partition_type=RBConfigurationVertexPartition,
+        resolution_parameter=resolution,
+        seed=random_seed,
+    )
+    # Create a binary neighborhood matrix
+    num_nodes = network.number_of_nodes()
+    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Create a mapping from node to index in the matrix
+    node_index = {node: i for i, node in enumerate(network.nodes())}
+    # Assign neighborhoods based on community partitions
+    for community in partition:
         for node_i in community:
             idx_i = node_index[node_i]
             for node_j in community:
