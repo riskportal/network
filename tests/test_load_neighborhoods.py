@@ -131,8 +131,15 @@ def test_load_neighborhoods_poisson(
         (["louvain", "markov_clustering"], [0.75, 0.65]),
         (["label_propagation", "walktrap", "spinglass"], [0.70, 0.85, 0.90]),
         (
-            ["louvain", "label_propagation", "markov_clustering", "walktrap", "spinglass"],
-            [0.75, 0.70, 0.65, 0.85, 0.90],
+            [
+                "louvain",
+                "label_propagation",
+                "markov_clustering",
+                "walktrap",
+                "spinglass",
+                "leiden",
+            ],
+            [0.75, 0.70, 0.65, 0.85, 0.90, 0.50],
         ),
         (
             [
@@ -144,7 +151,7 @@ def test_load_neighborhoods_poisson(
                 "spinglass",
                 "greedy_modularity",
             ],
-            [0.75, 0.70, 0.65, 0.85, 0.90, 0.80],
+            [0.75, 0.70, 0.65, 0.85, 0.90, 0.80, 0.90],
         ),
     ],
 )
