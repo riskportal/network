@@ -52,12 +52,13 @@ def get_network_neighborhoods(
     random.seed(random_seed)
     np.random.seed(random_seed)
 
-    # Ensure distance_metric and edge_rank_percentile are lists
+    # Ensure distance_metric is a list/tuple for multi-algorithm handling
     if isinstance(distance_metric, (str, np.ndarray)):
         distance_metric = [distance_metric]
+    # Ensure edge_rank_percentile is a list/tuple for multi-threshold handling
     if isinstance(edge_rank_percentile, (float, int)):
         edge_rank_percentile = [edge_rank_percentile] * len(distance_metric)
-
+    # Check that the number of distance metrics matches the number of edge length thresholds
     if len(distance_metric) != len(edge_rank_percentile):
         raise ValueError(
             "The number of distance metrics must match the number of edge length thresholds."
@@ -67,12 +68,11 @@ def get_network_neighborhoods(
     num_nodes = network.number_of_nodes()
     combined_neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
 
-    # Loop through each distance metric and corresponding edge length threshold
-    for metric, threshold in zip(distance_metric, edge_rank_percentile):
-        # Create a subgraph based on the edge length threshold
-        subgraph = _create_percentile_limited_subgraph(network, edge_rank_percentile=threshold)
-        subgraph_nodes = list(subgraph.nodes)
-        # Calculate neighborhoods based on the specified metric
+    # Loop through each distance metric and corresponding edge rank percentile
+    for metric, percentile in zip(distance_metric, edge_rank_percentile):
+        # Create a subgraph based on the specific edge rank percentile for this algorithm
+        subgraph = _create_percentile_limited_subgraph(network, edge_rank_percentile=percentile)
+        # Call the appropriate neighborhood function based on the metric
         if metric == "greedy_modularity":
             neighborhoods = calculate_greedy_modularity_neighborhoods(subgraph)
         elif metric == "label_propagation":
@@ -93,81 +93,57 @@ def get_network_neighborhoods(
             neighborhoods = calculate_walktrap_neighborhoods(subgraph)
         else:
             raise ValueError(
-                "Invalid distance metric specified. Please choose from 'greedy_modularity', 'label_propagation',"
+                "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'label_propagation',"
                 "'leiden', 'louvain', 'markov_clustering', 'spinglass', 'walktrap'."
             )
 
-        # Expand the neighborhood matrix to match the original network's size
-        expanded_neighborhoods = expand_neighborhood_matrix(
-            neighborhoods, subgraph_nodes, num_nodes
-        )
-        # Sum the expanded neighborhood matrices
-        combined_neighborhoods += expanded_neighborhoods
+        # Sum the neighborhood matrices
+        combined_neighborhoods += neighborhoods
 
-    # Convert combined_neighborhoods to binary: values > 0 are set to 1
-    combined_neighborhoods = (combined_neighborhoods > 0).astype(int)
+    # Ensure that the maximum value in each row is set to 1
+    # This ensures that for each row, only the strongest relationship (the maximum value) is retained,
+    # while all other values are reset to 0. This transformation simplifies the neighborhood matrix by
+    # focusing on the most significant connection per row.
+    # combined_neighborhoods = _set_max_to_one(combined_neighborhoods)
 
     return combined_neighborhoods
 
 
-def expand_neighborhood_matrix(
-    subgraph_matrix: np.ndarray, subgraph_nodes: list, original_size: int
-) -> np.ndarray:
-    """Expand a subgraph neighborhood matrix back to the size of the original graph.
-
-    Args:
-        subgraph_matrix (np.ndarray): The neighborhood matrix for the subgraph.
-        subgraph_nodes (list): List of nodes in the subgraph, corresponding to rows/columns in subgraph_matrix.
-        original_size (int): The number of nodes in the original graph.
-
-    Returns:
-        np.ndarray: The expanded matrix with the original size, with subgraph values mapped correctly.
-    """
-    expanded_matrix = np.zeros((original_size, original_size), dtype=int)
-    for i, node_i in enumerate(subgraph_nodes):
-        for j, node_j in enumerate(subgraph_nodes):
-            expanded_matrix[node_i, node_j] = subgraph_matrix[i, j]
-    return expanded_matrix
-
-
 def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float) -> nx.Graph:
-    """Create a subgraph containing all nodes and edges where the edge length is within the
-    specified rank percentile of all edges in the input graph. Isolated nodes are removed.
+    """Create a subgraph containing the shortest edges based on the specified rank percentile
+    of all edge lengths in the input graph.
 
     Args:
         G (nx.Graph): The input graph with 'length' attributes on edges.
         edge_rank_percentile (float): The rank percentile (between 0 and 1) to filter edges.
 
     Returns:
-        nx.Graph: A subgraph with nodes and edges where the edge length is within the
-        specified percentile, with isolated nodes removed, retaining all original attributes.
+        nx.Graph: A subgraph with nodes and edges where the edges are within the shortest
+        specified rank percentile.
     """
-    # Extract edges with their lengths
+    # Step 1: Extract edges with their lengths
     edges_with_length = [(u, v, d) for u, v, d in G.edges(data=True) if "length" in d]
     if not edges_with_length:
-        raise ValueError("No edge lengths found. Ensure edges have 'length' attributes.")
+        raise ValueError(
+            "No edge lengths found in the graph. Ensure edges have 'length' attributes."
+        )
 
-    # Sort edges by length in ascending order
+    # Step 2: Sort edges by length in ascending order
     edges_with_length.sort(key=lambda x: x[2]["length"])
-    # Calculate the cutoff based on the specified rank percentile
+    # Step 3: Calculate the cutoff index for the given rank percentile
     cutoff_index = int(edge_rank_percentile * len(edges_with_length))
     if cutoff_index == 0:
         raise ValueError("The rank percentile is too low, resulting in no edges being included.")
 
-    # Keep only the edges within the specified percentile
-    selected_edges = edges_with_length[:cutoff_index]
-    # Create a new subgraph with the selected edges, retaining all attributes
+    # Step 4: Create the subgraph by selecting only the shortest edges within the rank percentile
     subgraph = nx.Graph()
-    subgraph.add_edges_from((u, v, d) for u, v, d in selected_edges)
-    # Copy over all node attributes from the original graph
-    subgraph.add_nodes_from((node, G.nodes[node]) for node in subgraph.nodes())
-
-    # Remove isolated nodes (if any)
-    isolated_nodes = [node for node, degree in subgraph.degree() if degree == 0]
-    subgraph.remove_nodes_from(isolated_nodes)
-    # Check if the resulting subgraph has no edges
+    subgraph.add_nodes_from(G.nodes(data=True))  # Retain all nodes from the original graph
+    subgraph.add_edges_from(edges_with_length[:cutoff_index])
+    # Step 5: Check if the resulting subgraph has no edges and issue a warning
     if subgraph.number_of_edges() == 0:
-        raise ValueError("The resulting subgraph has no edges. Adjust the rank percentile.")
+        raise Warning(
+            "The resulting subgraph has no edges. Consider adjusting the rank percentile."
+        )
 
     return subgraph
 
