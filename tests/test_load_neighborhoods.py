@@ -26,7 +26,7 @@ def test_load_neighborhoods_single_process(
         distance_metric="leiden",
         louvain_resolution=0.01,
         leiden_resolution=1.0,
-        edge_length_threshold=0.25,
+        edge_rank_percentile=0.25,
         score_metric="stdev",
         null_distribution=null_distribution,
         num_permutations=10,  # Set to 10 permutations as requested
@@ -52,7 +52,7 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
         annotations=json_annotation,
         distance_metric="louvain",
         louvain_resolution=0.01,
-        edge_length_threshold=0.25,
+        edge_rank_percentile=0.25,
         score_metric="stdev",
         null_distribution="network",
         num_permutations=10,  # Set to 10 permutations as requested
@@ -81,7 +81,7 @@ def test_load_neighborhoods_hypergeom(
         annotations=json_annotation,
         distance_metric="louvain",
         louvain_resolution=0.01,
-        edge_length_threshold=0.25,
+        edge_rank_percentile=0.25,
         null_distribution=null_distribution,
         random_seed=887,
     )
@@ -107,7 +107,7 @@ def test_load_neighborhoods_poisson(
         annotations=json_annotation,
         distance_metric="louvain",
         louvain_resolution=0.01,
-        edge_length_threshold=0.15,
+        edge_rank_percentile=0.15,
         null_distribution=null_distribution,
         random_seed=887,
     )
@@ -117,7 +117,7 @@ def test_load_neighborhoods_poisson(
 
 
 @pytest.mark.parametrize(
-    "distance_metric, edge_length_threshold",
+    "distance_metric, edge_rank_percentile",
     [
         ("greedy_modularity", 0.75),
         ("louvain", 0.80),
@@ -149,7 +149,7 @@ def test_load_neighborhoods_poisson(
     ],
 )
 def test_load_neighborhoods_with_various_distance_metrics(
-    risk_obj, cytoscape_network, json_annotation, distance_metric, edge_length_threshold
+    risk_obj, cytoscape_network, json_annotation, distance_metric, edge_rank_percentile
 ):
     """Test loading neighborhoods using various distance metrics with matching edge length thresholds.
 
@@ -158,7 +158,7 @@ def test_load_neighborhoods_with_various_distance_metrics(
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
         distance_metric: The specific distance metric(s) to be used for generating neighborhoods.
-        edge_length_threshold: The edge length threshold(s) corresponding to each distance metric.
+        edge_rank_percentile: The edge length threshold(s) corresponding to each distance metric.
     """
     # Load neighborhoods with the current distance metric(s) and matching edge length threshold(s)
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
@@ -166,7 +166,7 @@ def test_load_neighborhoods_with_various_distance_metrics(
         annotations=json_annotation,
         distance_metric=distance_metric,
         louvain_resolution=8,
-        edge_length_threshold=edge_length_threshold,
+        edge_rank_percentile=edge_rank_percentile,
         score_metric="stdev",
         null_distribution="network",
         num_permutations=100,
@@ -196,7 +196,7 @@ def test_load_neighborhoods_with_various_score_metrics(
         annotations=json_annotation,
         distance_metric="louvain",  # Using louvain as the distance metric
         louvain_resolution=8,
-        edge_length_threshold=0.75,
+        edge_rank_percentile=0.75,
         score_metric=score_metric,
         null_distribution="network",
         num_permutations=100,
@@ -225,7 +225,7 @@ def test_load_neighborhoods_with_various_null_distributions(
         network=cytoscape_network,
         annotations=json_annotation,
         distance_metric="louvain",  # Using markov_clustering as the distance metric
-        edge_length_threshold=0.75,
+        edge_rank_percentile=0.75,
         score_metric="stdev",  # Using stdev as the score metric
         null_distribution=null_distribution,  # Parametrized null distribution
         num_permutations=100,
