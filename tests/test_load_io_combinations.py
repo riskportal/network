@@ -43,7 +43,7 @@ def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
         distance_metric="louvain",
         louvain_resolution=8,
         leiden_resolution=1.0,
-        edge_length_threshold=0.75,
+        edge_rank_percentile=0.75,
         score_metric="stdev",
         null_distribution="network",
         num_permutations=100,
