@@ -148,27 +148,6 @@ def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float
     return subgraph
 
 
-def _set_max_row_value_to_one(matrix: np.ndarray) -> np.ndarray:
-    """For each row in the input matrix, set the maximum value(s) to 1 and all other values to 0. This is particularly
-    useful for neighborhood matrices that have undergone multiple neighborhood detection algorithms, where the
-    maximum value in each row represents the most significant relationship per node in the combined neighborhoods.
-
-    Args:
-        matrix (np.ndarray): A 2D numpy array representing the neighborhood matrix.
-
-    Returns:
-        np.ndarray: The modified matrix where only the maximum value(s) in each row is set to 1, and others are set to 0.
-    """
-    # Find the maximum value in each row (column-wise max operation)
-    max_values = np.max(matrix, axis=1, keepdims=True)
-    # Create a boolean mask where elements are True if they are the max value in their row
-    max_mask = matrix == max_values
-    # Set all elements to 0, and then set the maximum value positions to 1
-    matrix[:] = 0  # Set everything to 0
-    matrix[max_mask] = 1  # Set only the max values to 1
-    return matrix
-
-
 def process_neighborhoods(
     network: nx.Graph,
     neighborhoods: Dict[str, Any],
