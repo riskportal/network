@@ -70,27 +70,41 @@ def get_network_neighborhoods(
 
     # Loop through each distance metric and corresponding edge rank percentile
     for metric, percentile in zip(distance_metric, edge_rank_percentile):
-        # Create a subgraph based on the specific edge rank percentile for this algorithm
-        subgraph = _create_percentile_limited_subgraph(network, edge_rank_percentile=percentile)
         # Call the appropriate neighborhood function based on the metric
         if metric == "greedy_modularity":
-            neighborhoods = calculate_greedy_modularity_neighborhoods(subgraph)
+            neighborhoods = calculate_greedy_modularity_neighborhoods(
+                network, edge_rank_percentile=percentile
+            )
         elif metric == "label_propagation":
-            neighborhoods = calculate_label_propagation_neighborhoods(subgraph)
+            neighborhoods = calculate_label_propagation_neighborhoods(
+                network, edge_rank_percentile=percentile
+            )
         elif metric == "leiden":
             neighborhoods = calculate_leiden_neighborhoods(
-                subgraph, leiden_resolution, random_seed=random_seed
+                network,
+                resolution=leiden_resolution,
+                edge_rank_percentile=percentile,
+                random_seed=random_seed,
             )
         elif metric == "louvain":
             neighborhoods = calculate_louvain_neighborhoods(
-                subgraph, louvain_resolution, random_seed=random_seed
+                network,
+                resolution=louvain_resolution,
+                edge_rank_percentile=percentile,
+                random_seed=random_seed,
             )
         elif metric == "markov_clustering":
-            neighborhoods = calculate_markov_clustering_neighborhoods(subgraph)
+            neighborhoods = calculate_markov_clustering_neighborhoods(
+                network, edge_rank_percentile=percentile
+            )
         elif metric == "spinglass":
-            neighborhoods = calculate_spinglass_neighborhoods(subgraph)
+            neighborhoods = calculate_spinglass_neighborhoods(
+                network, edge_rank_percentile=percentile
+            )
         elif metric == "walktrap":
-            neighborhoods = calculate_walktrap_neighborhoods(subgraph)
+            neighborhoods = calculate_walktrap_neighborhoods(
+                network, edge_rank_percentile=percentile
+            )
         else:
             raise ValueError(
                 "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'label_propagation',"
@@ -103,49 +117,31 @@ def get_network_neighborhoods(
     # Ensure that the maximum value in each row is set to 1
     # This ensures that for each row, only the strongest relationship (the maximum value) is retained,
     # while all other values are reset to 0. This transformation simplifies the neighborhood matrix by
-    # focusing on the most significant connection per row.
-    # combined_neighborhoods = _set_max_to_one(combined_neighborhoods)
+    # focusing on the most significant connection per row (or nodes).
+    combined_neighborhoods = _set_max_row_value_to_one(combined_neighborhoods)
 
     return combined_neighborhoods
 
 
-def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float) -> nx.Graph:
-    """Create a subgraph containing the shortest edges based on the specified rank percentile
-    of all edge lengths in the input graph.
+def _set_max_row_value_to_one(matrix: np.ndarray) -> np.ndarray:
+    """For each row in the input matrix, set the maximum value(s) to 1 and all other values to 0. This is particularly
+    useful for neighborhood matrices that have undergone multiple neighborhood detection algorithms, where the
+    maximum value in each row represents the most significant relationship per node in the combined neighborhoods.
 
     Args:
-        G (nx.Graph): The input graph with 'length' attributes on edges.
-        edge_rank_percentile (float): The rank percentile (between 0 and 1) to filter edges.
+        matrix (np.ndarray): A 2D numpy array representing the neighborhood matrix.
 
     Returns:
-        nx.Graph: A subgraph with nodes and edges where the edges are within the shortest
-        specified rank percentile.
+        np.ndarray: The modified matrix where only the maximum value(s) in each row is set to 1, and others are set to 0.
     """
-    # Step 1: Extract edges with their lengths
-    edges_with_length = [(u, v, d) for u, v, d in G.edges(data=True) if "length" in d]
-    if not edges_with_length:
-        raise ValueError(
-            "No edge lengths found in the graph. Ensure edges have 'length' attributes."
-        )
-
-    # Step 2: Sort edges by length in ascending order
-    edges_with_length.sort(key=lambda x: x[2]["length"])
-    # Step 3: Calculate the cutoff index for the given rank percentile
-    cutoff_index = int(edge_rank_percentile * len(edges_with_length))
-    if cutoff_index == 0:
-        raise ValueError("The rank percentile is too low, resulting in no edges being included.")
-
-    # Step 4: Create the subgraph by selecting only the shortest edges within the rank percentile
-    subgraph = nx.Graph()
-    subgraph.add_nodes_from(G.nodes(data=True))  # Retain all nodes from the original graph
-    subgraph.add_edges_from(edges_with_length[:cutoff_index])
-    # Step 5: Check if the resulting subgraph has no edges and issue a warning
-    if subgraph.number_of_edges() == 0:
-        raise Warning(
-            "The resulting subgraph has no edges. Consider adjusting the rank percentile."
-        )
-
-    return subgraph
+    # Find the maximum value in each row (column-wise max operation)
+    max_values = np.max(matrix, axis=1, keepdims=True)
+    # Create a boolean mask where elements are True if they are the max value in their row
+    max_mask = matrix == max_values
+    # Set all elements to 0, and then set the maximum value positions to 1
+    matrix[:] = 0  # Set everything to 0
+    matrix[max_mask] = 1  # Set only the max values to 1
+    return matrix
 
 
 def process_neighborhoods(

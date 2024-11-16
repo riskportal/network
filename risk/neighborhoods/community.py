@@ -12,23 +12,32 @@ from leidenalg import find_partition, RBConfigurationVertexPartition
 from networkx.algorithms.community import greedy_modularity_communities
 
 
-def calculate_greedy_modularity_neighborhoods(network: nx.Graph) -> np.ndarray:
+def calculate_greedy_modularity_neighborhoods(
+    network: nx.Graph, edge_rank_percentile: float = 1.0
+) -> np.ndarray:
     """Calculate neighborhoods using the Greedy Modularity method.
 
     Args:
-        network (nx.Graph): The network graph to analyze for community structure.
+        network (nx.Graph): The network graph.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Detect communities using the Greedy Modularity method
-    communities = greedy_modularity_communities(network)
+    communities = greedy_modularity_communities(subnetwork)
     # Get the list of nodes in the original NetworkX graph
     nodes = list(network.nodes())
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     # Create a binary neighborhood matrix
-    n_nodes = len(nodes)
-    neighborhoods = np.zeros((n_nodes, n_nodes), dtype=int)
+    num_nodes = len(nodes)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Fill in the neighborhood matrix for nodes in the same community
     for community in communities:
         # Iterate through all pairs of nodes in the same community
@@ -42,23 +51,34 @@ def calculate_greedy_modularity_neighborhoods(network: nx.Graph) -> np.ndarray:
     return neighborhoods
 
 
-def calculate_label_propagation_neighborhoods(network: nx.Graph) -> np.ndarray:
+def calculate_label_propagation_neighborhoods(
+    network: nx.Graph, edge_rank_percentile: float = 1.0
+) -> np.ndarray:
     """Apply Label Propagation to the network to detect communities.
 
     Args:
         network (nx.Graph): The network graph.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Label Propagation.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Apply Label Propagation for community detection
-    communities = nx.algorithms.community.label_propagation.label_propagation_communities(network)
+    communities = nx.algorithms.community.label_propagation.label_propagation_communities(
+        subnetwork
+    )
     # Get the list of nodes in the network
     nodes = list(network.nodes())
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     # Create a binary neighborhood matrix
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Assign neighborhoods based on community labels using the mapped indices
     for community in communities:
         for node_i in community:
@@ -71,20 +91,29 @@ def calculate_label_propagation_neighborhoods(network: nx.Graph) -> np.ndarray:
 
 
 def calculate_leiden_neighborhoods(
-    network: nx.Graph, resolution: float = 1.0, random_seed: int = 888
+    network: nx.Graph,
+    resolution: float = 1.0,
+    edge_rank_percentile: float = 1.0,
+    random_seed: int = 888,
 ) -> np.ndarray:
     """Calculate neighborhoods using the Leiden method.
 
     Args:
         network (nx.Graph): The network graph.
         resolution (float, optional): Resolution parameter for the Leiden method. Defaults to 1.0.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
         random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
         np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Convert NetworkX graph to iGraph
-    igraph_network = ig.Graph.from_networkx(network)
+    igraph_network = ig.Graph.from_networkx(subnetwork)
     # Apply Leiden algorithm using RBConfigurationVertexPartition, which supports resolution
     partition = find_partition(
         igraph_network,
@@ -97,7 +126,8 @@ def calculate_leiden_neighborhoods(
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     # Create a binary neighborhood matrix
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Assign neighborhoods based on community partitions using the mapped indices
     for community in partition:
         for node_i in community:
@@ -110,28 +140,38 @@ def calculate_leiden_neighborhoods(
 
 
 def calculate_louvain_neighborhoods(
-    network: nx.Graph, resolution: float, random_seed: int = 888
+    network: nx.Graph,
+    resolution: float = 0.1,
+    edge_rank_percentile: float = 1.0,
+    random_seed: int = 888,
 ) -> np.ndarray:
     """Calculate neighborhoods using the Louvain method.
 
     Args:
         network (nx.Graph): The network graph.
-        resolution (float): Resolution parameter for the Louvain method.
+        resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 0.1.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
         random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on the Louvain method.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Apply Louvain method to partition the network
     partition = community_louvain.best_partition(
-        network, resolution=resolution, random_state=random_seed
+        subnetwork, resolution=resolution, random_state=random_seed
     )
     # Get the list of nodes in the network and create a mapping to indices
     nodes = list(network.nodes())
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     # Create a binary neighborhood matrix
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Group nodes by community
     community_groups = {}
     for node, community in partition.items():
@@ -148,58 +188,76 @@ def calculate_louvain_neighborhoods(
     return neighborhoods
 
 
-def calculate_markov_clustering_neighborhoods(network: nx.Graph) -> np.ndarray:
-    """Apply Markov Clustering (MCL) to the network.
+def calculate_markov_clustering_neighborhoods(
+    network: nx.Graph, edge_rank_percentile: float = 1.0
+) -> np.ndarray:
+    """Apply Markov Clustering (MCL) to the network and return a binary neighborhood matrix.
 
     Args:
         network (nx.Graph): The network graph.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Markov Clustering.
     """
-    # Step 1: Convert the graph to an adjacency matrix
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
+    # Step 1: Convert the subnetwork to an adjacency matrix
+    subnetwork_nodes = list(subnetwork.nodes())
+    adjacency_matrix = nx.to_numpy_array(subnetwork, nodelist=subnetwork_nodes)
+    # Step 2: Run Markov Clustering (MCL) on the subnetwork's adjacency matrix
+    result = mc.run_mcl(adjacency_matrix)
+    clusters = mc.get_clusters(result)
+    # Step 3: Prepare the original network nodes and indices
     nodes = list(network.nodes())
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
-    # Step 2: Create a reverse mapping from index to node
-    index_node_map = {idx: node for node, idx in node_index_map.items()}
-    adjacency_matrix = nx.to_numpy_array(network, nodelist=nodes)
-    # Step 3: Run Markov Clustering (MCL) on the adjacency matrix
-    result = mc.run_mcl(adjacency_matrix)
-    # Step 4: Get clusters (communities) from MCL result
-    clusters = mc.get_clusters(result)
-    # Step 5: Create a binary neighborhood matrix
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-    # Step 6: Assign neighborhoods based on MCL clusters using the original node labels
+    # Step 4: Initialize the neighborhood matrix for the original network
+    neighborhoods = np.eye(num_nodes, dtype=int)
+    # Step 5: Fill the neighborhoods matrix using the clusters from the subnetwork
     for cluster in clusters:
         for node_i in cluster:
             for node_j in cluster:
-                # Map the matrix indices back to the original node labels
-                original_node_i = index_node_map[node_i]
-                original_node_j = index_node_map[node_j]
-                idx_i = node_index_map[original_node_i]
-                idx_j = node_index_map[original_node_j]
-                neighborhoods[idx_i, idx_j] = 1
+                # Map the indices back to the original network's node indices
+                original_node_i = subnetwork_nodes[node_i]
+                original_node_j = subnetwork_nodes[node_j]
+
+                if original_node_i in node_index_map and original_node_j in node_index_map:
+                    idx_i = node_index_map[original_node_i]
+                    idx_j = node_index_map[original_node_j]
+                    neighborhoods[idx_i, idx_j] = 1
 
     return neighborhoods
 
 
-def calculate_spinglass_neighborhoods(network: nx.Graph) -> np.ndarray:
+def calculate_spinglass_neighborhoods(
+    network: nx.Graph, edge_rank_percentile: float = 1.0
+) -> np.ndarray:
     """Apply Spinglass Community Detection to the network, handling disconnected components.
 
     Args:
-        network (nx.Graph): The input network graph with 'x' and 'y' attributes for node positions.
+        network (nx.Graph): The network graph.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix based on Spinglass communities.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Step 1: Find connected components in the graph
-    components = list(nx.connected_components(network))
+    components = list(nx.connected_components(subnetwork))
     # Prepare to store community results
     nodes = list(network.nodes())
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Step 2: Run Spinglass on each connected component
     for component in components:
         # Extract the subgraph corresponding to the current component
@@ -229,17 +287,25 @@ def calculate_spinglass_neighborhoods(network: nx.Graph) -> np.ndarray:
     return neighborhoods
 
 
-def calculate_walktrap_neighborhoods(network: nx.Graph) -> np.ndarray:
+def calculate_walktrap_neighborhoods(
+    network: nx.Graph, edge_rank_percentile: float = 1.0
+) -> np.ndarray:
     """Apply Walktrap Community Detection to the network.
 
     Args:
         network (nx.Graph): The network graph.
+        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+            subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Walktrap communities.
     """
+    # Create a subgraph with the shortest edges based on the rank percentile
+    subnetwork = _create_percentile_limited_subgraph(
+        network, edge_rank_percentile=edge_rank_percentile
+    )
     # Convert NetworkX graph to iGraph
-    igraph_network = ig.Graph.from_networkx(network)
+    igraph_network = ig.Graph.from_networkx(subnetwork)
     # Apply Walktrap community detection
     communities = igraph_network.community_walktrap().as_clustering()
     # Get the list of nodes in the original NetworkX graph
@@ -247,7 +313,8 @@ def calculate_walktrap_neighborhoods(network: nx.Graph) -> np.ndarray:
     node_index_map = {node: idx for idx, node in enumerate(nodes)}
     # Create a binary neighborhood matrix
     num_nodes = len(nodes)
-    neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
+    # Initialize neighborhoods with zeros and set self-self entries to 1
+    neighborhoods = np.eye(num_nodes, dtype=int)
     # Assign neighborhoods based on community labels
     for community in communities:
         for node_i in community:
@@ -257,3 +324,44 @@ def calculate_walktrap_neighborhoods(network: nx.Graph) -> np.ndarray:
                 neighborhoods[idx_i, idx_j] = 1
 
     return neighborhoods
+
+
+def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float) -> nx.Graph:
+    """Create a subgraph containing the shortest edges based on the specified rank percentile
+    of all edge lengths in the input graph.
+
+    Args:
+        G (nx.Graph): The input graph with 'length' attributes on edges.
+        edge_rank_percentile (float): The rank percentile (between 0 and 1) to filter edges.
+
+    Returns:
+        nx.Graph: A subgraph with nodes and edges where the edges are within the shortest
+        specified rank percentile.
+    """
+    # Step 1: Extract edges with their lengths
+    edges_with_length = [(u, v, d) for u, v, d in G.edges(data=True) if "length" in d]
+    if not edges_with_length:
+        raise ValueError(
+            "No edge lengths found in the graph. Ensure edges have 'length' attributes."
+        )
+
+    # Step 2: Sort edges by length in ascending order
+    edges_with_length.sort(key=lambda x: x[2]["length"])
+    # Step 3: Calculate the cutoff index for the given rank percentile
+    cutoff_index = int(edge_rank_percentile * len(edges_with_length))
+    if cutoff_index == 0:
+        raise ValueError("The rank percentile is too low, resulting in no edges being included.")
+
+    # Step 4: Create the subgraph by selecting only the shortest edges within the rank percentile
+    subgraph = nx.Graph()
+    subgraph.add_nodes_from(G.nodes(data=True))  # Retain all nodes from the original graph
+    subgraph.add_edges_from(edges_with_length[:cutoff_index])
+    # Step 5: Remove nodes with no edges
+    subgraph.remove_nodes_from(list(nx.isolates(subgraph)))
+    # Step 6: Check if the resulting subgraph has no edges and issue a warning
+    if subgraph.number_of_edges() == 0:
+        raise Warning(
+            "The resulting subgraph has no edges. Consider adjusting the rank percentile."
+        )
+
+    return subgraph
