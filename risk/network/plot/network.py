@@ -250,11 +250,11 @@ class Network:
         nonsignificant_color_rgba = to_rgba(
             color=nonsignificant_color, alpha=nonsignificant_alpha, num_repeats=1
         )  # num_repeats=1 for a single color
-        # Adjust node colors: replace any nodes where all three RGB values are equal and less than 0.1
+        # Adjust node colors: replace any nodes where all three RGB values are equal and less than or equal to 0.1
         # 0.1 is a predefined threshold for the minimum color intensity
         adjusted_network_colors = np.where(
             (
-                np.all(network_colors[:, :3] < 0.1, axis=1)
+                np.all(network_colors[:, :3] <= 0.1, axis=1)
                 & np.all(network_colors[:, :3] == network_colors[:, 0:1], axis=1)
             )[:, None],
             np.tile(
