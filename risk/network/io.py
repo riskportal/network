@@ -379,15 +379,17 @@ class NetworkIO:
         node_y_positions = {}
         for node in cyjs_data["elements"]["nodes"]:
             node_data = node["data"]
-            node_id = node_data["id_original"]
+            # Use the original node ID if available, otherwise use the default ID
+            node_id = node_data.get("id_original", node_data.get("id"))
             node_x_positions[node_id] = node["position"]["x"]
             node_y_positions[node_id] = node["position"]["y"]
 
         # Process edges and add them to the graph
         for edge in cyjs_data["elements"]["edges"]:
             edge_data = edge["data"]
-            source = edge_data[f"{source_label}_original"]
-            target = edge_data[f"{target_label}_original"]
+            # Use the original source and target labels if available, otherwise use the default labels
+            source = edge.get(edge_data.get(f"{source_label}_original"), source_label)
+            target = edge.get(edge_data.get(f"{target_label}_original"), target_label)
             # Add the edge to the graph, optionally including weights
             if self.weight_label is not None and self.weight_label in edge_data:
                 weight = float(edge_data[self.weight_label])
