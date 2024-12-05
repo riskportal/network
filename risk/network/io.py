@@ -387,9 +387,9 @@ class NetworkIO:
         # Process edges and add them to the graph
         for edge in cyjs_data["elements"]["edges"]:
             edge_data = edge["data"]
-            # Use the original source and target labels if available, otherwise use the default labels
-            source = edge.get(edge_data.get(f"{source_label}_original"), source_label)
-            target = edge.get(edge_data.get(f"{target_label}_original"), target_label)
+            # Use the original source and target labels if available, otherwise fall back to default labels
+            source = edge_data.get(f"{source_label}_original", edge_data.get(source_label))
+            target = edge_data.get(f"{target_label}_original", edge_data.get(target_label))
             # Add the edge to the graph, optionally including weights
             if self.weight_label is not None and self.weight_label in edge_data:
                 weight = float(edge_data[self.weight_label])
