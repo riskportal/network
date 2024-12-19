@@ -30,7 +30,7 @@ warnings.filterwarnings(action="ignore", category=DataConversionWarning)
 def get_network_neighborhoods(
     network: nx.Graph,
     distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
-    edge_rank_percentile: Union[float, List, Tuple, np.ndarray] = 1.0,
+    fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 1.0,
     louvain_resolution: float = 0.1,
     leiden_resolution: float = 1.0,
     random_seed: int = 888,
@@ -40,7 +40,7 @@ def get_network_neighborhoods(
     Args:
         network (nx.Graph): The network graph.
         distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use.
-        edge_rank_percentile (float, List, Tuple, or np.ndarray, optional): Shortest edge rank percentile threshold(s) for creating subgraphs.
+        fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method.
         leiden_resolution (float, optional): Resolution parameter for the Leiden method.
         random_seed (int, optional): Random seed for methods requiring random initialization.
@@ -55,11 +55,11 @@ def get_network_neighborhoods(
     # Ensure distance_metric is a list/tuple for multi-algorithm handling
     if isinstance(distance_metric, (str, np.ndarray)):
         distance_metric = [distance_metric]
-    # Ensure edge_rank_percentile is a list/tuple for multi-threshold handling
-    if isinstance(edge_rank_percentile, (float, int)):
-        edge_rank_percentile = [edge_rank_percentile] * len(distance_metric)
+    # Ensure fraction_shortest_edges is a list/tuple for multi-threshold handling
+    if isinstance(fraction_shortest_edges, (float, int)):
+        fraction_shortest_edges = [fraction_shortest_edges] * len(distance_metric)
     # Check that the number of distance metrics matches the number of edge length thresholds
-    if len(distance_metric) != len(edge_rank_percentile):
+    if len(distance_metric) != len(fraction_shortest_edges):
         raise ValueError(
             "The number of distance metrics must match the number of edge length thresholds."
         )
@@ -68,42 +68,42 @@ def get_network_neighborhoods(
     num_nodes = network.number_of_nodes()
     combined_neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
 
-    # Loop through each distance metric and corresponding edge rank percentile
-    for metric, percentile in zip(distance_metric, edge_rank_percentile):
+    # Loop through each distance metric and corresponding edge rank fraction
+    for metric, percentile in zip(distance_metric, fraction_shortest_edges):
         # Call the appropriate neighborhood function based on the metric
         if metric == "greedy_modularity":
             neighborhoods = calculate_greedy_modularity_neighborhoods(
-                network, edge_rank_percentile=percentile
+                network, fraction_shortest_edges=percentile
             )
         elif metric == "label_propagation":
             neighborhoods = calculate_label_propagation_neighborhoods(
-                network, edge_rank_percentile=percentile
+                network, fraction_shortest_edges=percentile
             )
         elif metric == "leiden":
             neighborhoods = calculate_leiden_neighborhoods(
                 network,
                 resolution=leiden_resolution,
-                edge_rank_percentile=percentile,
+                fraction_shortest_edges=percentile,
                 random_seed=random_seed,
             )
         elif metric == "louvain":
             neighborhoods = calculate_louvain_neighborhoods(
                 network,
                 resolution=louvain_resolution,
-                edge_rank_percentile=percentile,
+                fraction_shortest_edges=percentile,
                 random_seed=random_seed,
             )
         elif metric == "markov_clustering":
             neighborhoods = calculate_markov_clustering_neighborhoods(
-                network, edge_rank_percentile=percentile
+                network, fraction_shortest_edges=percentile
             )
         elif metric == "spinglass":
             neighborhoods = calculate_spinglass_neighborhoods(
-                network, edge_rank_percentile=percentile
+                network, fraction_shortest_edges=percentile
             )
         elif metric == "walktrap":
             neighborhoods = calculate_walktrap_neighborhoods(
-                network, edge_rank_percentile=percentile
+                network, fraction_shortest_edges=percentile
             )
         else:
             raise ValueError(
@@ -476,7 +476,7 @@ def _calculate_threshold(median_distances: List, distance_threshold: float) -> f
     """
     # Sort the median distances
     sorted_distances = np.sort(median_distances)
-    # Compute the rank percentiles for the sorted distances
+    # Compute the rank fractions for the sorted distances
     rank_percentiles = np.linspace(0, 1, len(sorted_distances))
     # Interpolating the ranks to 1000 evenly spaced percentiles
     interpolated_percentiles = np.linspace(0, 1, 1000)

@@ -13,21 +13,21 @@ from networkx.algorithms.community import greedy_modularity_communities
 
 
 def calculate_greedy_modularity_neighborhoods(
-    network: nx.Graph, edge_rank_percentile: float = 1.0
+    network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> np.ndarray:
     """Calculate neighborhoods using the Greedy Modularity method.
 
     Args:
         network (nx.Graph): The network graph.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Detect communities using the Greedy Modularity method
     communities = greedy_modularity_communities(subnetwork)
@@ -52,21 +52,21 @@ def calculate_greedy_modularity_neighborhoods(
 
 
 def calculate_label_propagation_neighborhoods(
-    network: nx.Graph, edge_rank_percentile: float = 1.0
+    network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> np.ndarray:
     """Apply Label Propagation to the network to detect communities.
 
     Args:
         network (nx.Graph): The network graph.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Label Propagation.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Apply Label Propagation for community detection
     communities = nx.algorithms.community.label_propagation.label_propagation_communities(
@@ -93,7 +93,7 @@ def calculate_label_propagation_neighborhoods(
 def calculate_leiden_neighborhoods(
     network: nx.Graph,
     resolution: float = 1.0,
-    edge_rank_percentile: float = 1.0,
+    fraction_shortest_edges: float = 1.0,
     random_seed: int = 888,
 ) -> np.ndarray:
     """Calculate neighborhoods using the Leiden method.
@@ -101,16 +101,16 @@ def calculate_leiden_neighborhoods(
     Args:
         network (nx.Graph): The network graph.
         resolution (float, optional): Resolution parameter for the Leiden method. Defaults to 1.0.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
         random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
         np.ndarray: A binary neighborhood matrix where nodes in the same community have 1, and others have 0.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Convert NetworkX graph to iGraph
     igraph_network = ig.Graph.from_networkx(subnetwork)
@@ -142,7 +142,7 @@ def calculate_leiden_neighborhoods(
 def calculate_louvain_neighborhoods(
     network: nx.Graph,
     resolution: float = 0.1,
-    edge_rank_percentile: float = 1.0,
+    fraction_shortest_edges: float = 1.0,
     random_seed: int = 888,
 ) -> np.ndarray:
     """Calculate neighborhoods using the Louvain method.
@@ -150,16 +150,16 @@ def calculate_louvain_neighborhoods(
     Args:
         network (nx.Graph): The network graph.
         resolution (float, optional): Resolution parameter for the Louvain method. Defaults to 0.1.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
         random_seed (int, optional): Random seed for reproducibility. Defaults to 888.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on the Louvain method.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Apply Louvain method to partition the network
     partition = community_louvain.best_partition(
@@ -189,21 +189,21 @@ def calculate_louvain_neighborhoods(
 
 
 def calculate_markov_clustering_neighborhoods(
-    network: nx.Graph, edge_rank_percentile: float = 1.0
+    network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> np.ndarray:
     """Apply Markov Clustering (MCL) to the network and return a binary neighborhood matrix.
 
     Args:
         network (nx.Graph): The network graph.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Markov Clustering.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Step 1: Convert the subnetwork to an adjacency matrix
     subnetwork_nodes = list(subnetwork.nodes())
@@ -234,21 +234,21 @@ def calculate_markov_clustering_neighborhoods(
 
 
 def calculate_spinglass_neighborhoods(
-    network: nx.Graph, edge_rank_percentile: float = 1.0
+    network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> np.ndarray:
     """Apply Spinglass Community Detection to the network, handling disconnected components.
 
     Args:
         network (nx.Graph): The network graph.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix based on Spinglass communities.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Step 1: Find connected components in the graph
     components = list(nx.connected_components(subnetwork))
@@ -288,21 +288,21 @@ def calculate_spinglass_neighborhoods(
 
 
 def calculate_walktrap_neighborhoods(
-    network: nx.Graph, edge_rank_percentile: float = 1.0
+    network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> np.ndarray:
     """Apply Walktrap Community Detection to the network.
 
     Args:
         network (nx.Graph): The network graph.
-        edge_rank_percentile (float, optional): Shortest edge rank percentile threshold for creating
+        fraction_shortest_edges (float, optional): Shortest edge rank fraction threshold for creating
             subgraphs before clustering.
 
     Returns:
         np.ndarray: A binary neighborhood matrix on Walktrap communities.
     """
-    # Create a subgraph with the shortest edges based on the rank percentile
+    # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
-        network, edge_rank_percentile=edge_rank_percentile
+        network, fraction_shortest_edges=fraction_shortest_edges
     )
     # Convert NetworkX graph to iGraph
     igraph_network = ig.Graph.from_networkx(subnetwork)
@@ -326,17 +326,17 @@ def calculate_walktrap_neighborhoods(
     return neighborhoods
 
 
-def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float) -> nx.Graph:
-    """Create a subgraph containing the shortest edges based on the specified rank percentile
+def _create_percentile_limited_subgraph(G: nx.Graph, fraction_shortest_edges: float) -> nx.Graph:
+    """Create a subgraph containing the shortest edges based on the specified rank fraction
     of all edge lengths in the input graph.
 
     Args:
         G (nx.Graph): The input graph with 'length' attributes on edges.
-        edge_rank_percentile (float): The rank percentile (between 0 and 1) to filter edges.
+        fraction_shortest_edges (float): The rank fraction (between 0 and 1) to filter edges.
 
     Returns:
         nx.Graph: A subgraph with nodes and edges where the edges are within the shortest
-        specified rank percentile.
+        specified rank fraction.
     """
     # Step 1: Extract edges with their lengths
     edges_with_length = [(u, v, d) for u, v, d in G.edges(data=True) if "length" in d]
@@ -347,12 +347,12 @@ def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float
 
     # Step 2: Sort edges by length in ascending order
     edges_with_length.sort(key=lambda x: x[2]["length"])
-    # Step 3: Calculate the cutoff index for the given rank percentile
-    cutoff_index = int(edge_rank_percentile * len(edges_with_length))
+    # Step 3: Calculate the cutoff index for the given rank fraction
+    cutoff_index = int(fraction_shortest_edges * len(edges_with_length))
     if cutoff_index == 0:
-        raise ValueError("The rank percentile is too low, resulting in no edges being included.")
+        raise ValueError("The rank fraction is too low, resulting in no edges being included.")
 
-    # Step 4: Create the subgraph by selecting only the shortest edges within the rank percentile
+    # Step 4: Create the subgraph by selecting only the shortest edges within the rank fraction
     subgraph = nx.Graph()
     subgraph.add_nodes_from(G.nodes(data=True))  # Retain all nodes from the original graph
     subgraph.add_edges_from(edges_with_length[:cutoff_index])
@@ -360,8 +360,6 @@ def _create_percentile_limited_subgraph(G: nx.Graph, edge_rank_percentile: float
     subgraph.remove_nodes_from(list(nx.isolates(subgraph)))
     # Step 6: Check if the resulting subgraph has no edges and issue a warning
     if subgraph.number_of_edges() == 0:
-        raise Warning(
-            "The resulting subgraph has no edges. Consider adjusting the rank percentile."
-        )
+        raise Warning("The resulting subgraph has no edges. Consider adjusting the rank fraction.")
 
     return subgraph
