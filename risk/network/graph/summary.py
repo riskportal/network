@@ -147,6 +147,22 @@ class AnalysisSummary:
             .reset_index(drop=True)
         )
 
+        # Convert annotations list to a DataFrame for comparison
+        ordered_annotations = pd.DataFrame({"Annotation": self.annotations["ordered_annotations"]})
+        # Merge to ensure all annotations are present, filling missing rows with defaults
+        results = pd.merge(ordered_annotations, results, on="Annotation", how="left").fillna(
+            {
+                "Domain ID": -1,
+                "Annotation Members in Network": "",
+                "Annotation Members in Network Count": 0,
+                "Summed Significance Score": 0,
+                "Enrichment P-value": 1.0,
+                "Enrichment Q-value": 1.0,
+                "Depletion P-value": 1.0,
+                "Depletion Q-value": 1.0,
+            }
+        )
+
         return results
 
     @staticmethod
