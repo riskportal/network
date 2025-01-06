@@ -262,14 +262,15 @@ def _impute_neighbors_with_similarity(
         # Iterate over all significant nodes
         for row_index in range(significant_binary_significance_matrix.shape[0]):
             if significant_binary_significance_matrix[row_index].sum() != 0:
-                significance_matrix, significant_binary_significance_matrix = (
-                    _process_node_imputation(
-                        row_index,
-                        network,
-                        significance_matrix,
-                        significant_binary_significance_matrix,
-                        depth,
-                    )
+                (
+                    significance_matrix,
+                    significant_binary_significance_matrix,
+                ) = _process_node_imputation(
+                    row_index,
+                    network,
+                    significance_matrix,
+                    significant_binary_significance_matrix,
+                    depth,
                 )
 
         # Update rows to impute for the next iteration
