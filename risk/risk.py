@@ -63,7 +63,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
-                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
@@ -127,7 +127,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
-                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
@@ -194,7 +194,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network (nx.Graph): The network graph.
             annotations (Dict[str, Any]): The annotations associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
-                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
@@ -430,7 +430,7 @@ class RISK(NetworkIO, AnnotationsIO):
             network (nx.Graph): The network graph.
             annotations (pd.DataFrame): The matrix of annotations associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
-                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'label_propagation',
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
             louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
             leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
