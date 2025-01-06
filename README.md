@@ -13,7 +13,7 @@
 ![Downloads](https://img.shields.io/pypi/dm/risk-network)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey)
 
-**RISK (RISK Infers Spatial Kinships)** is a next-generation tool designed to streamline the analysis of biological and non-biological networks. RISK enhances network analysis with its modular architecture, extensive file format support, and advanced clustering algorithms. It simplifies the creation of publication-quality figures, making it an important tool for researchers across disciplines.
+**RISK** (Regional Inference of Significant Kinships) is a next-generation tool designed to streamline the analysis of biological and non-biological networks. RISK enhances network analysis with its modular architecture, extensive file format support, and advanced clustering algorithms. It simplifies the creation of publication-quality figures, making it an important tool for researchers across disciplines.
 
 ## Documentation and Tutorial
 
