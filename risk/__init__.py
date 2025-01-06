@@ -2,7 +2,7 @@
 risk
 ~~~~
 
-RISK: RISK Infers Spatial Kinships
+RISK: Regional Inference of Significant Kinships
 """
 
 from risk.risk import RISK
