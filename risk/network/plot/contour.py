@@ -242,7 +242,7 @@ class Contour:
             logger.error("Contour levels must be strictly increasing. Skipping contour plot.")
             return None
 
-        # Set the contour color and linestyle
+        # Set the contour color, fill, and linestyle
         contour_colors = [color for _ in range(levels - 1)]
         # Plot the filled contours using fill_alpha for transparency
         if fill_alpha and fill_alpha > 0:
@@ -258,32 +258,18 @@ class Contour:
                 alpha=fill_alpha,
             )
 
-        # Plot the contour lines with the specified RGBA alpha for transparency
-        c = ax.contour(
+        # Plot the base contour line with the specified RGBA alpha for transparency
+        base_contour_color = [color]
+        base_contour_level = [contour_levels[0]]
+        ax.contour(
             x,
             y,
             z,
-            levels=contour_levels,
-            colors=contour_colors,
+            levels=base_contour_level,
+            colors=base_contour_color,
             linestyles=linestyle,
             linewidths=linewidth,
         )
-
-        # Set linewidth for the contour lines to 0 for levels other than the base level
-        c.set_linewidth(0)
-        try:
-            # Try setting linewidth directly on the QuadContourSet
-            c.set_linewidth(0)
-        except AttributeError:
-            # Fallback: Iterate over collections if the direct method fails
-            if hasattr(c, "collections"):
-                for i, collection in enumerate(c.collections):
-                    collection.set_linewidth(0)
-            else:
-                # Raise an error if 'collections' is also not available
-                raise AttributeError(
-                    "'QuadContourSet' object has neither 'set_linewidth' nor 'collections'"
-                )
 
     def get_annotated_contour_colors(
         self,
