@@ -192,7 +192,9 @@ def _permutation_process_subset(
     local_counts_depletion = np.zeros(observed_neighborhood_scores.shape)
     local_counts_enrichment = np.zeros(observed_neighborhood_scores.shape)
 
-    # NOTE: Limit the number of threads used by NumPy's BLAS implementation to 1 when more than one worker is used.
+    # Limit the number of threads used by NumPy's BLAS implementation to 1 when more than one worker is used
+    # NOTE: This does not work for Mac M chips due to a bug in the threadpoolctl package
+    # This is currently a known issue and is being addressed by the maintainers [https://github.com/joblib/threadpoolctl/issues/135]
     limits = None if max_workers == 1 else 1
     with threadpool_limits(limits=limits, user_api="blas"):
         # Initialize a local counter for batched progress updates
