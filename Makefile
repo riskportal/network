@@ -1,24 +1,27 @@
-black: ## Black format only python files to line length 100
+# Define Makefile targets for various tasks
+
+black: ## Format Python files using Black
 	black --line-length=100 ./
-	make clean
 
-flake8: ## Flake8 every python file
-	find ./ -type f -name "*.py" -a | xargs flake8
+flake8: ## Run Flake8 on all Python files
+	find . -type f -name "*.py" | xargs flake8
 
-pylint: ## pylint every python file
-	find ./ -type f -name "*.py" -a | xargs pylint
+pylint: ## Run pylint on all Python files
+	find . -type f -name "*.py" | xargs pylint
 
-test:  ## Run tests
+test: ## Run tests using pytest
 	pytest -vv --tb=auto ./
 
 build: ## Build package distribution files
 	python -m build
 
-publish: ## Publish package distribution files to pypi
+publish: ## Publish package distribution files to PyPI
 	twine upload dist/*
 	make clean
 
 clean: ## Remove caches, checkpoints, and distribution artifacts
-	find . -type f -name ".DS_Store" | xargs rm -f
-	find . -type d \( -name ".ipynb_checkpoints" -o -name "__pycache__" -o -name ".pytest_cache" \) | xargs rm -rf
+	find . \( -name ".DS_Store" -o -name ".ipynb_checkpoints" -o -name "__pycache__" -o -name ".pytest_cache" \) | xargs rm -rf
 	rm -rf dist/ build/ *.egg-info
+
+help: ## Display this help message
+	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"}; {printf "%-15s %s\n", $$1, $$2}'
