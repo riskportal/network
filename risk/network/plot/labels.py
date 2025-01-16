@@ -564,39 +564,39 @@ class Labels:
 
         Returns:
             bool: True if the domain is valid and added to the filtered dictionaries, False otherwise.
-
-        Note:
-            The `filtered_domain_centroids`, `filtered_domain_terms`, and `valid_indices` are modified in-place.
         """
-        # Process the domain terms
-        domain_terms = self._process_terms(
-            domain=domain,
-            ids_to_labels=ids_to_labels,
-            words_to_omit=words_to_omit,
-            max_label_lines=max_label_lines,
-            min_chars_per_line=min_chars_per_line,
-            max_chars_per_line=max_chars_per_line,
-        )
-        # If domain_terms is empty, skip further processing
-        if not domain_terms:
-            return False
+        if ids_to_labels and domain in ids_to_labels:
+            # Directly use custom labels without filtering
+            domain_terms = ids_to_labels[domain]
+        else:
+            # Process the domain terms automatically
+            domain_terms = self._process_terms(
+                domain=domain,
+                words_to_omit=words_to_omit,
+                max_label_lines=max_label_lines,
+                min_chars_per_line=min_chars_per_line,
+                max_chars_per_line=max_chars_per_line,
+            )
+            # If no valid terms are generated, skip further processing
+            if not domain_terms:
+                return False
 
-        # Split the terms by TERM_DELIMITER and count the number of lines
-        num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
-        # Check if the number of lines is greater than or equal to the minimum
-        if num_domain_lines >= min_label_lines:
-            filtered_domain_centroids[domain] = domain_centroid
-            filtered_domain_terms[domain] = domain_terms
-            # Add the index of the domain to the valid indices list
-            valid_indices.append(list(domain_id_to_centroid_map.keys()).index(domain))
-            return True
+            # Split the terms by TERM_DELIMITER and count the number of lines
+            num_domain_lines = len(domain_terms.split(TERM_DELIMITER))
+            # Check if the number of lines meets the minimum requirement
+            if num_domain_lines < min_label_lines:
+                return False
 
-        return False
+        # Store the valid terms and centroids
+        filtered_domain_centroids[domain] = domain_centroid
+        filtered_domain_terms[domain] = domain_terms
+        valid_indices.append(list(domain_id_to_centroid_map.keys()).index(domain))
+
+        return True
 
     def _process_terms(
         self,
         domain: str,
-        ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         max_label_lines: int,
         min_chars_per_line: int,
@@ -606,7 +606,6 @@ class Labels:
 
         Args:
             domain (str): The domain being processed.
-            ids_to_labels (Dict[int, str], None): Dictionary mapping domain IDs to custom labels.
             words_to_omit (List[str], None): List of words to omit from the labels.
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
@@ -615,13 +614,8 @@ class Labels:
         Returns:
             str: Processed terms separated by TERM_DELIMITER, with words combined if necessary to fit within constraints.
         """
-        # Return custom labels if domain is in ids_to_labels
-        if ids_to_labels and domain in ids_to_labels:
-            return ids_to_labels[domain]
-
-        else:
-            terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
-
+        # Set custom labels from significant terms
+        terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
         # Apply words_to_omit and word length constraints
         if words_to_omit:
             terms = [
