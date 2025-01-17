@@ -67,7 +67,7 @@ def load_annotations(
         index="node", columns="annotations", values="is_member", fill_value=0, dropna=False
     )
     # Reindex the annotations matrix based on the node labels from the network
-    node_label_order = list(nx.get_node_attributes(network, "label").values())
+    node_label_order = (attr["label"] for _, attr in network.nodes(data=True) if "label" in attr)
     annotations_pivot = annotations_pivot.reindex(index=node_label_order)
     # Raise an error if no valid annotations are found for the nodes in the network
     if annotations_pivot.notnull().sum().sum() == 0:
