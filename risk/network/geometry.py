@@ -27,55 +27,50 @@ def assign_edge_lengths(
         nx.Graph: The graph with applied edge lengths.
     """
 
-    def compute_distance(
-        u_coords: np.ndarray, v_coords: np.ndarray, is_sphere: bool = False
-    ) -> float:
-        """Compute the distance between two coordinate vectors.
-
-        Args:
-            u_coords (np.ndarray): Coordinates of the first point.
-            v_coords (np.ndarray): Coordinates of the second point.
-            is_sphere (bool, optional): If True, compute spherical distance. Defaults to False.
-
-        Returns:
-            float: The computed distance between the two points.
-        """
+    def compute_distance_vectorized(coords, is_sphere):
+        """Compute distances between pairs of coordinates."""
+        u_coords, v_coords = coords[:, 0, :], coords[:, 1, :]
         if is_sphere:
-            # Normalize vectors and compute spherical distance using the dot product
-            u_coords /= np.linalg.norm(u_coords)
-            v_coords /= np.linalg.norm(v_coords)
-            return np.arccos(np.clip(np.dot(u_coords, v_coords), -1.0, 1.0))
+            u_norm = np.linalg.norm(u_coords, axis=1, keepdims=True)
+            v_norm = np.linalg.norm(v_coords, axis=1, keepdims=True)
+            u_coords /= u_norm
+            v_coords /= v_norm
+            dot_products = np.einsum("ij,ij->i", u_coords, v_coords)
+            return np.arccos(np.clip(dot_products, -1.0, 1.0))
         else:
-            # Compute Euclidean distance
-            return np.linalg.norm(u_coords - v_coords)
+            return np.linalg.norm(u_coords - v_coords, axis=1)
 
-    # Normalize graph coordinates
+    # Normalize graph coordinates and weights
     _normalize_graph_coordinates(G)
-    # Normalize weights
     _normalize_weights(G)
-    # Use G_depth for edge length calculation
+    # Map nodes to sphere and adjust depth if required
     if compute_sphere:
-        # Map to sphere and adjust depth
         _map_to_sphere(G)
         G_depth = _create_depth(copy.deepcopy(G), surface_depth=surface_depth)
     else:
-        # Calculate edge lengths directly on the plane
         G_depth = copy.deepcopy(G)
 
-    for u, v, _ in G_depth.edges(data=True):
+    # Precompute edge coordinate arrays for vectorized computation
+    edge_data = []
+    for u, v in G_depth.edges:
         u_coords = np.array([G_depth.nodes[u]["x"], G_depth.nodes[u]["y"]])
         v_coords = np.array([G_depth.nodes[v]["x"], G_depth.nodes[v]["y"]])
         if compute_sphere:
             u_coords = np.append(u_coords, G_depth.nodes[u].get("z", 0))
             v_coords = np.append(v_coords, G_depth.nodes[v].get("z", 0))
+        edge_data.append([u_coords, v_coords, (u, v)])
 
-        distance = compute_distance(u_coords, v_coords, is_sphere=compute_sphere)
-        # Assign edge lengths to the original graph
+    # Convert to numpy for faster processing
+    edge_coords = np.array([(e[0], e[1]) for e in edge_data])
+    edge_indices = [e[2] for e in edge_data]
+    # Compute distances in bulk
+    distances = compute_distance_vectorized(edge_coords, compute_sphere)
+    # Assign distances back to the graph
+    for (u, v), distance in zip(edge_indices, distances):
         if include_edge_weight:
-            # Square root of the normalized weight is used to minimize the effect of large weights
-            G.edges[u, v]["length"] = distance / np.sqrt(G.edges[u, v]["normalized_weight"] + 1e-6)
+            weight = G.edges[u, v].get("normalized_weight", 0) + 1e-6
+            G.edges[u, v]["length"] = distance / np.sqrt(weight)
         else:
-            # Use calculated distance directly
             G.edges[u, v]["length"] = distance
 
     return G
