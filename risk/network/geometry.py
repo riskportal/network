@@ -87,23 +87,23 @@ def _map_to_sphere(G: nx.Graph) -> None:
     Args:
         G (nx.Graph): The input graph with nodes having 'x' and 'y' coordinates.
     """
-    # Extract x, y coordinates from the graph nodes
-    xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in G.nodes()])
-    # Normalize the coordinates between [0, 1]
-    min_vals = np.min(xy_coords, axis=0)
-    max_vals = np.max(xy_coords, axis=0)
+    # Extract x, y coordinates as a NumPy array
+    nodes = list(G.nodes)
+    xy_coords = np.array([[G.nodes[node]["x"], G.nodes[node]["y"]] for node in nodes])
+    # Normalize coordinates between [0, 1]
+    min_vals = xy_coords.min(axis=0)
+    max_vals = xy_coords.max(axis=0)
     normalized_xy = (xy_coords - min_vals) / (max_vals - min_vals)
-    # Map normalized coordinates to theta and phi on a sphere
+    # Convert normalized coordinates to spherical coordinates
     theta = normalized_xy[:, 0] * np.pi * 2
     phi = normalized_xy[:, 1] * np.pi
-    # Convert spherical coordinates to Cartesian coordinates for 3D sphere
-    for i, node in enumerate(G.nodes()):
-        x = np.sin(phi[i]) * np.cos(theta[i])
-        y = np.sin(phi[i]) * np.sin(theta[i])
-        z = np.cos(phi[i])
-        G.nodes[node]["x"] = x
-        G.nodes[node]["y"] = y
-        G.nodes[node]["z"] = z
+    # Compute 3D Cartesian coordinates
+    x = np.sin(phi) * np.cos(theta)
+    y = np.sin(phi) * np.sin(theta)
+    z = np.cos(phi)
+    # Assign coordinates back to graph nodes in bulk
+    xyz_coords = {node: {"x": x[i], "y": y[i], "z": z[i]} for i, node in enumerate(nodes)}
+    nx.set_node_attributes(G, xyz_coords)
 
 
 def _normalize_graph_coordinates(G: nx.Graph) -> None:
@@ -151,18 +151,31 @@ def _create_depth(G: nx.Graph, surface_depth: float = 0.0) -> nx.Graph:
         nx.Graph: The graph with adjusted 'z' attribute for each node.
     """
     if surface_depth >= 1.0:
-        surface_depth = surface_depth - 1e-6  # Cap the surface depth to prevent value of 1.0
+        surface_depth -= 1e-6  # Cap the surface depth to prevent a value of 1.0
 
-    # Compute subclusters as connected components (subclusters can be any other method)
-    subclusters = {node: set(nx.node_connected_component(G, node)) for node in G.nodes}
-    # Create a strength metric for subclusters (here using size)
-    subcluster_strengths = {node: len(neighbors) for node, neighbors in subclusters.items()}
-    # Normalize the subcluster strengths and apply depths
-    max_strength = max(subcluster_strengths.values())
-    for node, strength in subcluster_strengths.items():
+    # Compute subclusters as connected components
+    connected_components = list(nx.connected_components(G))
+    subcluster_strengths = {}
+    max_strength = 0
+    # Precompute strengths and track the maximum strength
+    for component in connected_components:
+        size = len(component)
+        max_strength = max(max_strength, size)
+        for node in component:
+            subcluster_strengths[node] = size
+
+    # Avoid repeated lookups and computations by pre-fetching node data
+    nodes = list(G.nodes(data=True))
+    node_updates = {}
+    for node, attrs in nodes:
+        strength = subcluster_strengths[node]
         normalized_surface_depth = (strength / max_strength) * surface_depth
-        x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
+        x, y, z = attrs["x"], attrs["y"], attrs["z"]
         norm = np.sqrt(x**2 + y**2 + z**2)
-        G.nodes[node]["z"] -= (z / norm) * normalized_surface_depth  # Adjust Z for a depth
+        adjusted_z = z - (z / norm) * normalized_surface_depth
+        node_updates[node] = {"z": adjusted_z}
+
+    # Batch update node attributes
+    nx.set_node_attributes(G, node_updates)
 
     return G
