@@ -427,7 +427,7 @@ class NetworkIO:
         self._remove_invalid_graph_properties(G)
         # IMPORTANT: This is where the graph node labels are converted to integers
         # Make sure to perform this step after all other processing
-        G = nx.relabel_nodes(G, {node: idx for idx, node in enumerate(G.nodes)})
+        G = nx.convert_node_labels_to_integers(G)
         return G
 
     def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
@@ -441,18 +441,14 @@ class NetworkIO:
         num_initial_nodes = G.number_of_nodes()
         num_initial_edges = G.number_of_edges()
         # Remove self-loops to ensure correct edge count
-        G.remove_edges_from(list(nx.selfloop_edges(G)))
+        G.remove_edges_from(nx.selfloop_edges(G))
         # Iteratively remove nodes with fewer edges than the threshold
-        while True:
-            nodes_to_remove = [node for node in G.nodes if G.degree(node) < self.min_edges_per_node]
-            if not nodes_to_remove:
-                break  # Exit loop if no more nodes need removal
-            G.remove_nodes_from(nodes_to_remove)
-
+        nodes_to_remove = [
+            node for node, degree in dict(G.degree()).items() if degree < self.min_edges_per_node
+        ]
+        G.remove_nodes_from(nodes_to_remove)
         # Remove isolated nodes
-        isolated_nodes = list(nx.isolates(G))
-        if isolated_nodes:
-            G.remove_nodes_from(isolated_nodes)
+        G.remove_nodes_from(nx.isolates(G))
 
         # Log the number of nodes and edges before and after cleaning
         num_final_nodes = G.number_of_nodes()
@@ -470,12 +466,9 @@ class NetworkIO:
         """
         missing_weights = 0
         # Assign user-defined edge weights to the "weight" attribute
-        for _, _, data in G.edges(data=True):
-            if self.weight_label not in data:
-                missing_weights += 1
-            data["weight"] = data.get(
-                self.weight_label, 1.0
-            )  # Default to 1.0 if 'weight' not present
+        nx.set_edge_attributes(G, 1.0, "weight")  # Set default weight
+        if self.weight_label in nx.get_edge_attributes(G, self.weight_label):
+            nx.set_edge_attributes(G, nx.get_edge_attributes(G, self.weight_label), "weight")
 
         if self.include_edge_weight and missing_weights:
             logger.debug(f"Total edges missing weights: {missing_weights}")
@@ -485,41 +478,55 @@ class NetworkIO:
 
         Args:
             G (nx.Graph): A NetworkX graph object.
+
+        Raises:
+            ValueError: If a node is missing 'x', 'y', and a valid 'pos' attribute.
         """
-        # Keep track of nodes missing labels
+        # Retrieve all relevant attributes in bulk
+        pos_attrs = nx.get_node_attributes(G, "pos")
+        name_attrs = nx.get_node_attributes(G, "name")
+        id_attrs = nx.get_node_attributes(G, "id")
+        # Dictionaries to hold missing or fallback attributes
+        x_attrs = {}
+        y_attrs = {}
+        label_attrs = {}
         nodes_with_missing_labels = []
 
-        for node, attrs in G.nodes(data=True):
-            # Attribute fallback for 'x' and 'y' attributes
+        # Iterate through nodes to validate and assign missing attributes
+        for node in G.nodes:
+            attrs = G.nodes[node]
+            # Validate and assign 'x' and 'y' attributes
             if "x" not in attrs or "y" not in attrs:
                 if (
-                    "pos" in attrs
-                    and isinstance(attrs["pos"], (list, tuple, np.ndarray))
-                    and len(attrs["pos"]) >= 2
+                    node in pos_attrs
+                    and isinstance(pos_attrs[node], (list, tuple, np.ndarray))
+                    and len(pos_attrs[node]) >= 2
                 ):
-                    attrs["x"], attrs["y"] = attrs["pos"][
-                        :2
-                    ]  # Use only x and y, ignoring z if present
+                    x_attrs[node], y_attrs[node] = pos_attrs[node][:2]
                 else:
                     raise ValueError(
                         f"Node {node} is missing 'x', 'y', and a valid 'pos' attribute."
                     )
 
-            # Attribute fallback for 'label' attribute
+            # Validate and assign 'label' attribute
             if "label" not in attrs:
-                # Try alternative attribute names for label
-                if "name" in attrs:
-                    attrs["label"] = attrs["name"]
-                elif "id" in attrs:
-                    attrs["label"] = attrs["id"]
+                if node in name_attrs:
+                    label_attrs[node] = name_attrs[node]
+                elif node in id_attrs:
+                    label_attrs[node] = id_attrs[node]
                 else:
-                    # Collect nodes with missing labels
+                    # Assign node ID as label and log the missing label
+                    label_attrs[node] = str(node)
                     nodes_with_missing_labels.append(node)
-                    attrs["label"] = str(node)  # Use node ID as the label
 
-        # Issue a single warning if any labels were missing
+        # Batch update attributes in the graph
+        nx.set_node_attributes(G, x_attrs, "x")
+        nx.set_node_attributes(G, y_attrs, "y")
+        nx.set_node_attributes(G, label_attrs, "label")
+
+        # Log a warning if any labels were missing
         if nodes_with_missing_labels:
-            total_nodes = len(G.nodes)
+            total_nodes = G.number_of_nodes()
             fraction_missing_labels = len(nodes_with_missing_labels) / total_nodes
             logger.warning(
                 f"{len(nodes_with_missing_labels)} out of {total_nodes} nodes "
