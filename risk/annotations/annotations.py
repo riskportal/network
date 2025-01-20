@@ -54,6 +54,10 @@ def load_annotations(
     Raises:
         ValueError: If no annotations are found for the nodes in the network.
         ValueError: If no annotations have at least min_nodes_per_term nodes in the network.
+
+    Comment:
+        This function should be optimized to handle large networks and annotations efficiently. An attempt
+        to use sparse matrices did not yield significant performance improvements, so it was not implemented.
     """
     # Flatten the dictionary to a list of tuples for easier DataFrame creation
     flattened_annotations = [
