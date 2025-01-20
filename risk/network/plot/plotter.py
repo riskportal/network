@@ -124,7 +124,13 @@ class NetworkPlotter(Canvas, Network, Contour, Labels):
             dpi (int, optional): Dots per inch (DPI) for the exported image. Defaults to 300.
             **kwargs: Keyword arguments passed to `plt.savefig`, such as filename and format.
         """
-        plt.savefig(*args, bbox_inches="tight", pad_inches=pad_inches, dpi=dpi, **kwargs)
+        # Ensure user-provided kwargs take precedence
+        kwargs.setdefault("dpi", dpi)
+        kwargs.setdefault("pad_inches", pad_inches)
+        # Ensure the plot is saved with tight bounding box if not specified
+        kwargs.setdefault("bbox_inches", "tight")
+        # Call plt.savefig with combined arguments
+        plt.savefig(*args, **kwargs)
 
     @staticmethod
     def show(*args, **kwargs) -> None:
