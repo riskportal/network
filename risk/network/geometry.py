@@ -37,8 +37,8 @@ def assign_edge_lengths(
             v_coords /= v_norm
             dot_products = np.einsum("ij,ij->i", u_coords, v_coords)
             return np.arccos(np.clip(dot_products, -1.0, 1.0))
-        else:
-            return np.linalg.norm(u_coords - v_coords, axis=1)
+
+        return np.linalg.norm(u_coords - v_coords, axis=1)
 
     # Normalize graph coordinates and weights
     _normalize_graph_coordinates(G)

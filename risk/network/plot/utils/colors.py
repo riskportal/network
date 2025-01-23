@@ -7,12 +7,9 @@ from typing import Any, Dict, List, Tuple, Union
 
 import matplotlib
 import matplotlib.colors as mcolors
-import networkx as nx
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering
 
 from risk.network.graph import NetworkGraph
-from risk.network.plot.utils.layout import calculate_centroids
 
 
 def get_annotated_domain_colors(
@@ -151,7 +148,6 @@ def _get_domain_ids_to_colors(
     """
     # Get colors for each domain based on node positions
     domain_colors = _get_colors(
-        graph.network,
         graph.domain_id_to_node_ids_map,
         cmap=cmap,
         color=color,
@@ -228,7 +224,6 @@ def _get_composite_node_colors(
 
 
 def _get_colors(
-    network: nx.Graph,
     domain_id_to_node_ids_map: Dict[int, Any],
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
@@ -237,7 +232,6 @@ def _get_colors(
     """Generate a list of RGBA colors for domains, ensuring maximally separated colors for nearby domains.
 
     Args:
-        network (nx.Graph): The graph representing the network.
         domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use.
@@ -338,15 +332,15 @@ def _transform_colors(
 
 
 def to_rgba(
-    color: Union[str, List, Tuple, np.ndarray],
+    color: Union[str, List, Tuple, np.ndarray, None],
     alpha: Union[float, None] = None,
     num_repeats: Union[int, None] = None,
 ) -> np.ndarray:
     """Convert color(s) to RGBA format, applying alpha and repeating as needed.
 
     Args:
-        color (str, List, Tuple, np.ndarray): The color(s) to convert. Can be a string (e.g., 'red'), a list or tuple of RGB/RGBA values,
-            or an `np.ndarray` of colors.
+        color (str, List, Tuple, np.ndarray, None): The color(s) to convert. Can be a string (e.g., 'red'), a list or tuple of RGB/RGBA values,
+            or an `np.ndarray` of colors. If None, the function will return an array of white (RGBA) colors.
         alpha (float, None, optional): Alpha value (transparency) to apply. If provided, it overrides any existing alpha values found
             in color.
         num_repeats (int, None, optional): If provided, the color(s) will be repeated this many times. Defaults to None.
@@ -374,6 +368,10 @@ def to_rgba(
 
         return rgba
 
+    # Default to white if no color is provided
+    if color is None:
+        color = "white"
+
     # If color is a 2D array of RGBA values, convert it to a list of lists
     if isinstance(color, np.ndarray) and color.ndim == 2 and color.shape[1] == 4:
         color = [list(c) for c in color]
@@ -393,7 +391,7 @@ def to_rgba(
         return rgba_color
 
     # Handle a list/array of colors
-    elif isinstance(color, (list, tuple, np.ndarray)):
+    if isinstance(color, (list, tuple, np.ndarray)):
         rgba_colors = np.array(
             [convert_to_rgba(c) for c in color]
         )  # Convert each color in the list to RGBA
@@ -406,5 +404,4 @@ def to_rgba(
 
         return rgba_colors
 
-    else:
-        raise ValueError("Color must be a valid string, RGB/RGBA, or array of RGB/RGBA colors.")
+    raise ValueError("Color must be a valid string, RGB/RGBA, or array of RGB/RGBA colors.")

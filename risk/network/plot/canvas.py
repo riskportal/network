@@ -236,6 +236,7 @@ class Canvas:
         # Scale the node coordinates if needed
         scaled_coordinates = node_coordinates * scale
         # Use the existing _draw_kde_contour method
+        # NOTE: This is a technical debt that should be refactored in the future - only works when inherited by NetworkPlotter
         self._draw_kde_contour(
             ax=self.ax,
             pos=scaled_coordinates,

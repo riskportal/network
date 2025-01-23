@@ -218,13 +218,14 @@ class Labels:
                 fontsize=fontsize,
                 fontname=font,
                 color=fontcolor_rgba[idx],
-                arrowprops=dict(
-                    arrowstyle=arrow_style,
-                    color=arrow_color_rgba[idx],
-                    linewidth=arrow_linewidth,
-                    shrinkA=arrow_base_shrink,
-                    shrinkB=arrow_tip_shrink,
-                ),
+                arrowprops={
+                    "arrowstyle": arrow_style,
+                    "linewidth": arrow_linewidth,
+                    "color": arrow_color_rgba[idx],
+                    "alpha": arrow_alpha,
+                    "shrinkA": arrow_base_shrink,
+                    "shrinkB": arrow_tip_shrink,
+                },
             )
 
         # Overlay domain ID at the centroid regardless of max_labels if requested
@@ -334,13 +335,14 @@ class Labels:
                 fontsize=fontsize,
                 fontname=font,
                 color=fontcolor_rgba[idx],
-                arrowprops=dict(
-                    arrowstyle=arrow_style,
-                    color=arrow_color_rgba[idx],
-                    linewidth=arrow_linewidth,
-                    shrinkA=arrow_base_shrink,
-                    shrinkB=arrow_tip_shrink,
-                ),
+                arrowprops={
+                    "arrowstyle": arrow_style,
+                    "linewidth": arrow_linewidth,
+                    "color": arrow_color_rgba[idx],
+                    "alpha": arrow_alpha,
+                    "shrinkA": arrow_base_shrink,
+                    "shrinkB": arrow_tip_shrink,
+                },
             )
 
     def _calculate_domain_centroid(self, nodes: List) -> tuple:
@@ -759,10 +761,7 @@ def _calculate_best_label_positions(
         center, radius, offset, num_domains
     )
     # Create a mapping of domains to their initial label positions
-    label_positions = {
-        domain: position
-        for domain, position in zip(filtered_domain_centroids.keys(), equidistant_positions)
-    }
+    label_positions = dict(zip(filtered_domain_centroids.keys(), equidistant_positions))
     # Optimize the label positions to minimize distance to domain centroids
     return _optimize_label_positions(label_positions, filtered_domain_centroids)
 
