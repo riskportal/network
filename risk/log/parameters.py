@@ -87,7 +87,7 @@ class Params:
         # Load the parameter dictionary
         params = self.load()
         # Open the file in write mode
-        with open(filepath, "w", newline="") as csv_file:
+        with open(filepath, "w", encoding="utf-8", newline="") as csv_file:
             writer = csv.writer(csv_file)
             # Write the header
             writer.writerow(["parent_key", "child_key", "value"])
@@ -107,7 +107,7 @@ class Params:
         Args:
             filepath (str): The path where the JSON file will be saved.
         """
-        with open(filepath, "w") as json_file:
+        with open(filepath, "w", encoding="utf-8") as json_file:
             json.dump(self.load(), json_file, indent=4)
 
         logger.info(f"Parameters exported to JSON file: {filepath}")
@@ -121,7 +121,7 @@ class Params:
         # Load the parameter dictionary
         params = self.load()
         # Open the file in write mode
-        with open(filepath, "w") as txt_file:
+        with open(filepath, "w", encoding="utf-8") as txt_file:
             for key, value in params.items():
                 # Write the key and its corresponding value
                 txt_file.write(f"{key}: {value}\n")
@@ -161,12 +161,12 @@ def _convert_ndarray_to_list(d: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(d, dict):
         # Recursively process each value in the dictionary
         return {k: _convert_ndarray_to_list(v) for k, v in d.items()}
-    elif isinstance(d, list):
+    if isinstance(d, list):
         # Recursively process each item in the list
         return [_convert_ndarray_to_list(v) for v in d]
-    elif isinstance(d, np.ndarray):
+    if isinstance(d, np.ndarray):
         # Convert numpy arrays to lists
         return d.tolist()
-    else:
-        # Return the value unchanged if it's not a dict, List, or ndarray
-        return d
+
+    # Return the value unchanged if it's not a dict, List, or ndarray
+    return d

@@ -16,8 +16,10 @@ def in_jupyter():
         shell = get_ipython().__class__.__name__
         if shell == "ZMQInteractiveShell":  # Jupyter Notebook or QtConsole
             return True
-        elif shell == "TerminalInteractiveShell":  # Terminal running IPython
+        if shell == "TerminalInteractiveShell":  # Terminal running IPython
             return False
+
+        return False  # Other type (?)
     except NameError:
         return False  # Not in Jupyter
 
