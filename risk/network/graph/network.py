@@ -92,7 +92,7 @@ class NetworkGraph:
                 mapping.pop(domain_id)
 
         # Remove the domain_id from the node_id_to_domain_ids_and_significance_map
-        for node_id, domain_info in self.node_id_to_domain_ids_and_significance_map.items():
+        for _, domain_info in self.node_id_to_domain_ids_and_significance_map.items():
             if domain_id in domain_info["domains"]:
                 domain_info["domains"].remove(domain_id)
                 domain_info["significances"].pop(domain_id)

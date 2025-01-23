@@ -68,7 +68,7 @@ class AnalysisSummary:
         """
         # Load results and export directly to text file
         results = self.load()
-        with open(filepath, "w") as txt_file:
+        with open(filepath, "w", encoding="utf-8") as txt_file:
             txt_file.write(results.to_string(index=False))
 
         logger.info(f"Analysis summary exported to text file: {filepath}")

@@ -126,6 +126,8 @@ def _select_significance_matrices(
         alpha_threshold_matrix = np.logical_or(
             depletion_alpha_threshold_matrix, enrichment_alpha_threshold_matrix
         )
+    else:
+        raise ValueError("Invalid value for 'tail'. Must be 'left', 'right', or 'both'.")
 
     # Create a binary significance matrix where valid indices meet the alpha threshold
     valid_idxs = ~np.isnan(alpha_threshold_matrix)
