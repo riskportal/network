@@ -49,7 +49,7 @@ def refine_center_iteratively(
         tuple: Refined center and the final radius.
     """
     # Initial center and radius based on the bounding box
-    center, radius = calculate_bounding_box(node_coordinates, radius_margin)
+    center, _ = calculate_bounding_box(node_coordinates, radius_margin)
     for _ in range(max_iterations):
         # Shift the coordinates based on the current center
         shifted_coordinates = node_coordinates - center
@@ -82,7 +82,7 @@ def calculate_centroids(
         List[Tuple[float, float]]: List of centroids (x, y) for each domain.
     """
     centroids = []
-    for domain_id, node_ids in domain_id_to_node_ids_map.items():
+    for _, node_ids in domain_id_to_node_ids_map.items():
         # Extract x and y coordinates from the network nodes
         node_positions = np.array(
             [[network.nodes[node_id]["x"], network.nodes[node_id]["y"]] for node_id in node_ids]

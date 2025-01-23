@@ -762,33 +762,37 @@ def test_plot_network_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        # Directly use get_annotated_node_colors to test stuffing different color formats
-        node_color = plotter.get_annotated_node_colors(
-            cmap=cmap,  # Use cmap if provided
-            color=node_color,  # If node_color is a list of colors, test passing it directly
-            blend_colors=True,
-            blend_gamma=2.2,
-            min_scale=0.5,
-            max_scale=1.0,
-            scale_factor=0.5,
-            nonsignificant_color=nonsignificant_color,
-            nonsignificant_alpha=nonsignificant_alpha,
-            ids_to_colors=ids_to_colors,
-            random_seed=887,
-        )
-        plotter.plot_network(
-            node_size=plotter.get_annotated_node_sizes(
-                significant_size=100, nonsignificant_size=node_size
+        # Test different color formats
+        node_colors = [
+            plotter.get_annotated_node_colors(
+                cmap=cmap,
+                color=node_color,
+                blend_colors=True,
+                blend_gamma=2.2,
+                min_scale=0.5,
+                max_scale=1.0,
+                scale_factor=0.5,
+                nonsignificant_color=nonsignificant_color,
+                nonsignificant_alpha=nonsignificant_alpha,
+                ids_to_colors=ids_to_colors,
+                random_seed=887,
             ),
-            edge_width=edge_width,
-            node_color=node_color,
-            node_edgecolor=node_edgecolor,
-            node_edgewidth=node_edgewidth,
-            edge_color=edge_color,
-            node_shape=node_shape,
-            node_alpha=node_alpha,
-            edge_alpha=edge_alpha,
-        )
+            node_color,
+        ]
+        for node_color in node_colors:
+            plotter.plot_network(
+                node_size=plotter.get_annotated_node_sizes(
+                    significant_size=100, nonsignificant_size=node_size
+                ),
+                edge_width=edge_width,
+                node_color=node_color,
+                node_edgecolor=node_edgecolor,
+                node_edgewidth=node_edgewidth,
+                edge_color=edge_color,
+                node_shape=node_shape,
+                node_alpha=node_alpha,
+                edge_alpha=edge_alpha,
+            )
     finally:
         plt.close("all")
 
@@ -926,28 +930,32 @@ def test_plot_contours_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        # Directly use get_annotated_contour_colors to test stuffing different color formats
-        contour_colors = plotter.get_annotated_contour_colors(
-            cmap="gist_rainbow",  # Use cmap if color is None
-            color=color,  # If color is a list of colors, test passing it directly
-            blend_colors=False,
-            blend_gamma=2.2,
-            min_scale=0.8,
-            max_scale=1.0,
-            scale_factor=1.0,
-            ids_to_colors=None,
-            random_seed=887,
-        )
-        plotter.plot_contours(
-            levels=levels,
-            bandwidth=bandwidth,
-            grid_size=grid_size,
-            alpha=alpha,
-            fill_alpha=fill_alpha,
-            color=contour_colors,
-            linestyle=linestyle,
-            linewidth=linewidth,
-        )
+        # Test different color formats
+        contour_colors = [
+            plotter.get_annotated_contour_colors(
+                cmap="gist_rainbow",
+                color=color,
+                blend_colors=False,
+                blend_gamma=2.2,
+                min_scale=0.8,
+                max_scale=1.0,
+                scale_factor=1.0,
+                ids_to_colors=None,
+                random_seed=887,
+            ),
+            color,
+        ]
+        for color in contour_colors:
+            plotter.plot_contours(
+                levels=levels,
+                bandwidth=bandwidth,
+                grid_size=grid_size,
+                alpha=alpha,
+                fill_alpha=fill_alpha,
+                color=color,
+                linestyle=linestyle,
+                linewidth=linewidth,
+            )
     finally:
         plt.close("all")
 
@@ -1230,53 +1238,61 @@ def test_plot_labels_with_custom_params(
     """
     plotter = initialize_plotter(risk_obj, graph)
     try:
-        # Directly use get_annotated_label_colors to test stuffing different color formats
-        fontcolor = plotter.get_annotated_label_colors(
-            cmap="gist_rainbow",  # Use cmap if provided
-            color=fontcolor,  # If fontcolor is a list of colors, test passing it directly
-            blend_colors=True,
-            blend_gamma=2.2,
-            min_scale=0.5,
-            max_scale=1.0,
-            scale_factor=0.5,
-            ids_to_colors=None,
-            random_seed=887,
-        )
-        arrow_color = plotter.get_annotated_label_colors(
-            cmap="gist_rainbow",  # Use cmap if provided
-            color=arrow_color,  # If arrow_color is a list of colors, test passing it directly
-            blend_colors=False,
-            blend_gamma=2.2,
-            min_scale=0.5,
-            max_scale=1.0,
-            scale_factor=0.5,
-            ids_to_colors=None,
-            random_seed=887,
-        )
-        plotter.plot_labels(
-            scale=scale,
-            offset=offset,
-            font=font,
-            fontcase=fontcase,
-            fontsize=fontsize,
-            fontcolor=fontcolor,
-            fontalpha=font_alpha,
-            arrow_linewidth=arrow_linewidth,
-            arrow_style=arrow_style,
-            arrow_color=arrow_color,
-            arrow_alpha=arrow_alpha,
-            arrow_base_shrink=arrow_base_shrink,
-            arrow_tip_shrink=arrow_tip_shrink,
-            max_labels=max_labels,
-            max_label_lines=max_label_lines,
-            min_label_lines=min_label_lines,
-            max_chars_per_line=max_chars_per_line,
-            min_chars_per_line=min_chars_per_line,
-            words_to_omit=["process", "biosynthetic"],
-            overlay_ids=overlay_ids,
-            ids_to_keep=ids_to_keep,
-            ids_to_labels=ids_to_labels,
-        )
+        # Test different color formats
+        label_colors = [
+            plotter.get_annotated_label_colors(
+                cmap="gist_rainbow",
+                color=fontcolor,
+                blend_colors=True,
+                blend_gamma=2.2,
+                min_scale=0.5,
+                max_scale=1.0,
+                scale_factor=0.5,
+                ids_to_colors=None,
+                random_seed=887,
+            ),
+            fontcolor,
+        ]
+        arrow_colors = [
+            plotter.get_annotated_label_colors(
+                cmap="gist_rainbow",
+                color=arrow_color,
+                blend_colors=False,
+                blend_gamma=2.2,
+                min_scale=0.5,
+                max_scale=1.0,
+                scale_factor=0.5,
+                ids_to_colors=None,
+                random_seed=887,
+            ),
+            arrow_color,
+        ]
+        # Test different color formats
+        for fontcolor, arrow_color in zip(label_colors, arrow_colors):
+            plotter.plot_labels(
+                scale=scale,
+                offset=offset,
+                font=font,
+                fontcase=fontcase,
+                fontsize=fontsize,
+                fontcolor=fontcolor,
+                fontalpha=font_alpha,
+                arrow_linewidth=arrow_linewidth,
+                arrow_style=arrow_style,
+                arrow_color=arrow_color,
+                arrow_alpha=arrow_alpha,
+                arrow_base_shrink=arrow_base_shrink,
+                arrow_tip_shrink=arrow_tip_shrink,
+                max_labels=max_labels,
+                max_label_lines=max_label_lines,
+                min_label_lines=min_label_lines,
+                max_chars_per_line=max_chars_per_line,
+                min_chars_per_line=min_chars_per_line,
+                words_to_omit=["process", "biosynthetic"],
+                overlay_ids=overlay_ids,
+                ids_to_keep=ids_to_keep,
+                ids_to_labels=ids_to_labels,
+            )
     finally:
         plt.close("all")
 

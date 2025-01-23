@@ -197,7 +197,7 @@ class Contour:
         # Extract the positions of the specified nodes
         points = np.array([pos[n] for n in nodes])
         if len(points) <= 1:
-            return None  # Not enough points to form a contour
+            return  # Not enough points to form a contour
 
         # Check if the KDE forms a single connected component
         connected = False
@@ -221,12 +221,12 @@ class Contour:
             except Exception as e:
                 # Catch any other exceptions and log them
                 logger.error(f"Unexpected error when drawing KDE contour: {e}")
-                return None
+                return
 
         # If z is still None, the KDE computation failed
         if z is None:
             logger.error("Failed to compute KDE. Skipping contour plot for these nodes.")
-            return None
+            return
 
         # Define contour levels based on the density
         min_density, max_density = z.min(), z.max()
@@ -234,13 +234,13 @@ class Contour:
             logger.warning(
                 "Contour levels could not be created due to lack of variation in density."
             )
-            return None
+            return
 
         # Create contour levels based on the density values
         contour_levels = np.linspace(min_density, max_density, levels)[1:]
         if len(contour_levels) < 2 or not np.all(np.diff(contour_levels) > 0):
             logger.error("Contour levels must be strictly increasing. Skipping contour plot.")
-            return None
+            return
 
         # Set the contour color, fill, and linestyle
         contour_colors = [color for _ in range(levels - 1)]
