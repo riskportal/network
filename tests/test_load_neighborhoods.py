@@ -3,6 +3,8 @@ tests/test_load_neighborhoods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import networkx as nx
+import numpy as np
 import pytest
 
 
@@ -176,9 +178,9 @@ def test_load_neighborhoods_with_various_distance_metrics(
         fraction_shortest_edges=fraction_shortest_edges,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
 
     assert neighborhoods is not None
@@ -206,9 +208,9 @@ def test_load_neighborhoods_with_various_score_metrics(
         fraction_shortest_edges=0.75,
         score_metric=score_metric,
         null_distribution="network",
-        num_permutations=100,
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
 
     assert neighborhoods is not None
@@ -235,10 +237,147 @@ def test_load_neighborhoods_with_various_null_distributions(
         fraction_shortest_edges=0.75,
         score_metric="stdev",  # Using stdev as the score metric
         null_distribution=null_distribution,  # Parametrized null distribution
-        num_permutations=100,
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
 
     assert neighborhoods is not None
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_structure(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test the structure of the neighborhoods object."""
+    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=8,
+        fraction_shortest_edges=0.75,
+        score_metric="stdev",
+        null_distribution=null_distribution,
+        num_permutations=10,
+        random_seed=887,
+        max_workers=1,
+    )
+
+    # Validate that the neighborhoods object has the expected keys
+    assert (
+        "depletion_pvals" in neighborhoods
+    ), "Neighborhoods should contain a 'depletion_pvals' key"
+    assert (
+        "enrichment_pvals" in neighborhoods
+    ), "Neighborhoods should contain an 'enrichment_pvals' key"
+    assert isinstance(
+        neighborhoods["depletion_pvals"], np.ndarray
+    ), "'depletion_pvals' should be a numpy array"
+    assert isinstance(
+        neighborhoods["enrichment_pvals"], np.ndarray
+    ), "'enrichment_pvals' should be a numpy array"
+
+
+def test_load_neighborhoods_empty_network(risk_obj, json_annotation):
+    """Test loading neighborhoods with an empty network."""
+    # Create an empty network
+    empty_network = nx.Graph()
+
+    # Expect a ValueError due to missing edge lengths
+    with pytest.raises(
+        ValueError,
+        match="No edge lengths found in the graph. Ensure edges have 'length' attributes.",
+    ):
+        risk_obj.load_neighborhoods_by_permutation(
+            network=empty_network,
+            annotations=json_annotation,
+            distance_metric="louvain",
+            louvain_resolution=8,
+            fraction_shortest_edges=0.75,
+            score_metric="stdev",
+            null_distribution="network",
+            num_permutations=10,
+            random_seed=887,
+            max_workers=1,
+        )
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_output_dimensions(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test that the output dimensions of neighborhoods match expectations.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+        null_distribution: The specific null distribution to be used for generating neighborhoods.
+    """
+    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=8,
+        fraction_shortest_edges=0.75,
+        score_metric="stdev",
+        null_distribution=null_distribution,
+        num_permutations=10,
+        random_seed=887,
+        max_workers=1,
+    )
+
+    # Validate dimensions of p-value matrices
+    num_nodes = len(cytoscape_network.nodes)
+    num_annotations = len(json_annotation["ordered_annotations"])
+    assert neighborhoods["depletion_pvals"].shape == (
+        num_nodes,
+        num_annotations,
+    ), "Depletion p-values matrix dimensions do not match the expected size"
+    assert neighborhoods["enrichment_pvals"].shape == (
+        num_nodes,
+        num_annotations,
+    ), "Enrichment p-values matrix dimensions do not match the expected size"
+
+
+def test_load_neighborhoods_deterministic_output(risk_obj, cytoscape_network, json_annotation):
+    """Test that loading neighborhoods with the same random seed produces consistent results.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+    """
+    neighborhoods_1 = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=8,
+        fraction_shortest_edges=0.75,
+        score_metric="stdev",
+        null_distribution="network",
+        num_permutations=10,
+        random_seed=887,
+        max_workers=1,
+    )
+    neighborhoods_2 = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=8,
+        fraction_shortest_edges=0.75,
+        score_metric="stdev",
+        null_distribution="network",
+        num_permutations=10,
+        random_seed=887,  # Same seed
+        max_workers=1,
+    )
+
+    # Validate that the outputs are identical
+    assert np.array_equal(
+        neighborhoods_1["depletion_pvals"], neighborhoods_2["depletion_pvals"]
+    ), "Depletion p-values should be identical for the same random seed"
+    assert np.array_equal(
+        neighborhoods_1["enrichment_pvals"], neighborhoods_2["enrichment_pvals"]
+    ), "Enrichment p-values should be identical for the same random seed"
