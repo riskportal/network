@@ -298,12 +298,8 @@ class NetworkIO:
             # Add node attributes
             for node in G.nodes():
                 G.nodes[node]["label"] = node
-                G.nodes[node]["x"] = node_x_positions[
-                    node
-                ]  # Assuming you have a dict `node_x_positions` for x coordinates
-                G.nodes[node]["y"] = node_y_positions[
-                    node
-                ]  # Assuming you have a dict `node_y_positions` for y coordinates
+                G.nodes[node]["x"] = node_x_positions[node]
+                G.nodes[node]["y"] = node_y_positions[node]
 
             # Initialize the graph
             return self._initialize_graph(G)
@@ -437,16 +433,22 @@ class NetworkIO:
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
-        # Count number of nodes and edges before cleaning
+        # Count the number of nodes and edges before cleaning
         num_initial_nodes = G.number_of_nodes()
         num_initial_edges = G.number_of_edges()
         # Remove self-loops to ensure correct edge count
         G.remove_edges_from(nx.selfloop_edges(G))
         # Iteratively remove nodes with fewer edges than the threshold
-        nodes_to_remove = [
-            node for node, degree in dict(G.degree()).items() if degree < self.min_edges_per_node
-        ]
-        G.remove_nodes_from(nodes_to_remove)
+        while True:
+            nodes_to_remove = [
+                node
+                for node, degree in dict(G.degree()).items()
+                if degree < self.min_edges_per_node
+            ]
+            if not nodes_to_remove:
+                break  # Exit loop if no nodes meet the condition
+            G.remove_nodes_from(nodes_to_remove)
+
         # Remove isolated nodes
         G.remove_nodes_from(nx.isolates(G))
 
