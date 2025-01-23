@@ -5,13 +5,13 @@ risk/neighborhoods/domains
 
 from contextlib import suppress
 from itertools import product
-from tqdm import tqdm
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.metrics import silhouette_score
+from tqdm import tqdm
 
 from risk.annotations import get_weighted_description
 from risk.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
