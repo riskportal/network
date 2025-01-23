@@ -5,12 +5,14 @@ setup
 
 import re
 from setuptools import setup, find_packages
+
+# Leave numpy imported for package bundling
 import numpy
 
 
 # Function to extract version from __init__.py
 def find_version():
-    with open("risk/__init__.py", "r") as f:
+    with open("risk/__init__.py", "r", encoding="utf-8") as f:
         version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
         if version_match:
             return version_match.group(1)
@@ -24,7 +26,7 @@ setup(
     author="Ira Horecka",
     author_email="ira89@icloud.com",
     description="A Python package for biological network analysis",  # Updated description
-    long_description=open("README.md").read(),
+    long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     license="GPL-3.0-or-later",
     packages=find_packages(),
