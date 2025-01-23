@@ -3,10 +3,10 @@ risk/stats/permutation/permutation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from multiprocessing import get_context, Manager
+from multiprocessing import get_context, shared_memory, Manager
 from multiprocessing.managers import ValueProxy
 from tqdm import tqdm
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
 from threadpoolctl import threadpool_limits
@@ -38,6 +38,7 @@ def compute_permutation_test(
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
     # Ensure that the matrices are in the correct format and free of NaN values
+    # NOTE: Keep the data type as float32 to avoid locking issues with dot product operations
     neighborhoods = neighborhoods.astype(np.float32)
     annotations = annotations.astype(np.float32)
     # Retrieve the appropriate neighborhood score function based on the metric
@@ -121,35 +122,56 @@ def _run_permutation_test(
     manager = Manager()
     progress_counter = manager.Value("i", 0)
     total_progress = num_permutations
+
+    # Generate precomputed permutations
+    permutations = [rng.permutation(idxs) for _ in range(num_permutations)]
+    # Divide permutations into batches for workers
+    batch_size = subset_size + (1 if remainder > 0 else 0)
+    permutation_batches = [
+        permutations[i * batch_size : (i + 1) * batch_size] for i in range(max_workers)
+    ]
+
+    # Create shared memory for annotations
+    shm_annotations = shared_memory.SharedMemory(create=True, size=annotations.nbytes)
+    shared_annotations = np.ndarray(
+        annotations.shape, dtype=annotations.dtype, buffer=shm_annotations.buf
+    )
+    np.copyto(shared_annotations, annotations)
+
     # Execute the permutation test using multiprocessing
-    with ctx.Pool(max_workers) as pool:
-        with tqdm(total=total_progress, desc="Total progress", position=0) as progress:
-            # Prepare parameters for multiprocessing
-            params_list = [
-                (
-                    annotations,
-                    np.array(idxs),
-                    neighborhoods_matrix_obsv,
-                    observed_neighborhood_scores,
-                    neighborhood_score_func,
-                    subset_size + (1 if i < remainder else 0),
-                    num_permutations,
-                    progress_counter,
-                    max_workers,
-                    rng,  # Pass the random number generator to each worker
-                )
-                for i in range(max_workers)
-            ]
+    try:
+        with ctx.Pool(max_workers) as pool:
+            with tqdm(total=total_progress, desc="Total progress", position=0) as progress:
+                # Prepare parameters for multiprocessing
+                params_list = [
+                    (
+                        permutation_batches[i],  # Pass the batch of precomputed permutations
+                        annotations,
+                        np.array(idxs),
+                        neighborhoods_matrix_obsv,
+                        observed_neighborhood_scores,
+                        neighborhood_score_func,
+                        subset_size + (1 if i < remainder else 0),
+                        num_permutations,
+                        progress_counter,
+                        max_workers,
+                    )
+                    for i in range(max_workers)
+                ]
 
-            # Start the permutation process in parallel
-            results = pool.starmap_async(_permutation_process_subset, params_list, chunksize=1)
+                # Start the permutation process in parallel
+                results = pool.starmap_async(_permutation_process_batch, params_list, chunksize=1)
 
-            # Update progress bar based on progress_counter
-            while not results.ready():
-                progress.update(progress_counter.value - progress.n)
-                results.wait(0.1)  # Wait for 100ms
-            # Ensure progress bar reaches 100%
-            progress.update(total_progress - progress.n)
+                # Update progress bar based on progress_counter
+                while not results.ready():
+                    progress.update(progress_counter.value - progress.n)
+                    results.wait(0.1)  # Wait for 100ms
+                # Ensure progress bar reaches 100%
+                progress.update(total_progress - progress.n)
+    finally:
+        # Clean up shared memory
+        shm_annotations.close()
+        shm_annotations.unlink()
 
     # Accumulate results from each worker
     for local_counts_depletion, local_counts_enrichment in results.get():
@@ -159,7 +181,8 @@ def _run_permutation_test(
     return counts_depletion, counts_enrichment
 
 
-def _permutation_process_subset(
+def _permutation_process_batch(
+    permutations: Union[List, Tuple, np.ndarray],
     annotation_matrix: np.ndarray,
     idxs: np.ndarray,
     neighborhoods_matrix_obsv: np.ndarray,
@@ -169,11 +192,11 @@ def _permutation_process_subset(
     num_permutations: int,
     progress_counter: ValueProxy,
     max_workers: int,
-    rng: np.random.Generator,
 ) -> tuple:
-    """Process a subset of permutations for the permutation test.
+    """Process a batch of permutations in a worker process.
 
     Args:
+        permutations (Union[List, Tuple, np.ndarray]): Permutation batch to process.
         annotation_matrix (np.ndarray): The annotation matrix.
         idxs (np.ndarray): Indices of valid rows in the matrix.
         neighborhoods_matrix_obsv (np.ndarray): Observed neighborhoods matrix.
@@ -183,7 +206,6 @@ def _permutation_process_subset(
         num_permutations (int): Number of total permutations across all subsets.
         progress_counter (multiprocessing.managers.ValueProxy): Shared counter for tracking progress.
         max_workers (int): Number of workers for multiprocessing.
-        rng (np.random.Generator): Random number generator object.
 
     Returns:
         tuple: Local counts of depletion and enrichment.
@@ -202,16 +224,16 @@ def _permutation_process_subset(
         # Calculate the modulo value based on total permutations for 1/100th frequency updates
         modulo_value = max(1, num_permutations // 100)
 
-        for _ in range(subset_size):
-            # Permute the annotation matrix using the RNG
-            annotation_matrix_permut = annotation_matrix[rng.permutation(idxs)]
+        for permuted_idxs in permutations:
+            # Apply precomputed permutation
+            annotation_matrix_permut = annotation_matrix[permuted_idxs]
             # Calculate permuted neighborhood scores
             with np.errstate(invalid="ignore", divide="ignore"):
                 permuted_neighborhood_scores = neighborhood_score_func(
                     neighborhoods_matrix_obsv, annotation_matrix_permut
                 )
 
-            # Update local depletion and enrichment counts based on permuted scores
+            # Update local depletion and enrichment counts
             local_counts_depletion = np.add(
                 local_counts_depletion, permuted_neighborhood_scores <= observed_neighborhood_scores
             )
@@ -220,9 +242,8 @@ def _permutation_process_subset(
                 permuted_neighborhood_scores >= observed_neighborhood_scores,
             )
 
-            # Update local progress counter
+            # Update progress
             local_progress += 1
-            # Update shared progress counter every 1/100th of total permutations
             if local_progress % modulo_value == 0:
                 progress_counter.value += modulo_value
 
