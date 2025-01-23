@@ -84,7 +84,7 @@ class Contour:
                     self.ax,
                     node_coordinates,
                     node_ids,
-                    color=color[idx],
+                    color=color_rgba[idx],
                     levels=levels,
                     bandwidth=bandwidth,
                     grid_size=grid_size,
