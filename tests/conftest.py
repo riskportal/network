@@ -149,7 +149,7 @@ def annotation_dict(data_path):
     """
     annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
     # Load the JSON file and return as a dictionary
-    with open(annotation_file, "r") as file:
+    with open(annotation_file, "r", encoding="utf-8") as file:
         annotation_dict = json.load(file)
 
     return annotation_dict
@@ -272,22 +272,22 @@ def graph(risk_obj, cytoscape_network, json_annotation):
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=network,
         annotations=annotations,
-        distance_metric="louvain",  # Example metric
-        louvain_resolution=8,  # Example resolution
-        leiden_resolution=1.0,  # Example resolution
+        distance_metric="louvain",
+        louvain_resolution=8,
+        leiden_resolution=1.0,
         fraction_shortest_edges=0.75,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,  # Number of permutations
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
     # Build the graph using the neighborhoods
     graph = risk_obj.load_graph(
         network=network,
         annotations=annotations,
         neighborhoods=neighborhoods,
-        tail="right",  # Example parameter
+        tail="right",
         pval_cutoff=0.05,
         fdr_cutoff=1.0,
         impute_depth=1,
