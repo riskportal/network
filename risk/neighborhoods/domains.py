@@ -69,7 +69,7 @@ def define_domains(
         data=significant_neighborhoods_significance,
         columns=[top_annotations.index.values, top_annotations["domain"]],
     )
-    node_to_domain = node_to_significance.groupby(level="domain", axis=1).sum()
+    node_to_domain = node_to_significance.T.groupby(level="domain").sum().T
 
     # Find the maximum significance score for each node
     t_max = node_to_domain.loc[:, 1:].max(axis=1)
@@ -115,7 +115,7 @@ def trim_domains(
     invalid_domain_id = 888888
     invalid_domain_ids = {0, invalid_domain_id}
     # Mark domains to be removed
-    top_annotations["domain"].replace(to_remove, invalid_domain_id, inplace=True)
+    top_annotations["domain"] = top_annotations["domain"].replace(to_remove, invalid_domain_id)
     domains.loc[domains["primary_domain"].isin(to_remove), ["primary_domain"]] = invalid_domain_id
 
     # Normalize "num significant neighborhoods" by percentile for each domain and scale to 0-10
