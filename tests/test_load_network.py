@@ -211,3 +211,120 @@ def test_load_network_min_edges(risk_obj, data_path, min_edges):
     # Check that each node has at least min_edges
     for node in network.nodes:
         assert network.degree[node] >= min_edges, f"Node {node} has fewer than {min_edges} edges"
+
+
+def test_node_and_edge_attributes(risk_obj, data_path):
+    """Test that nodes and edges have the required attributes after loading.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the Cytoscape file.
+    """
+    cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
+    network = risk_obj.load_cytoscape_network(
+        filepath=str(cys_file),
+        source_label="source",
+        target_label="target",
+        include_edge_weight=True,
+        weight_label="weight",
+    )
+
+    # Validate node attributes
+    for node, attrs in network.nodes(data=True):
+        assert "x" in attrs, f"Node {node} is missing 'x' attribute"
+        assert "y" in attrs, f"Node {node} is missing 'y' attribute"
+        assert "label" in attrs, f"Node {node} is missing 'label' attribute"
+
+    # Validate edge attributes
+    for u, v, attrs in network.edges(data=True):
+        assert "length" in attrs, f"Edge ({u}, {v}) is missing 'length' attribute"
+        assert "weight" in attrs, f"Edge ({u}, {v}) is missing 'weight' attribute"
+
+
+def test_sphere_unfolding(risk_obj, data_path):
+    """Test that the sphere-to-plane unfolding correctly updates node coordinates.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the Cytoscape file.
+    """
+    cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
+    network = risk_obj.load_cytoscape_network(
+        filepath=str(cys_file),
+        source_label="source",
+        target_label="target",
+        compute_sphere=True,
+        surface_depth=0.5,
+    )
+
+    # Ensure all nodes have 'x' and 'y' coordinates in [0, 1]
+    for node, attrs in network.nodes(data=True):
+        assert -1 <= attrs["x"] <= 1, f"Node {node} 'x' coordinate is out of bounds"
+        assert -1 <= attrs["y"] <= 1, f"Node {node} 'y' coordinate is out of bounds"
+
+
+def test_edge_attribute_fallback(risk_obj, cytoscape_network):
+    """Test fallback when edges are missing 'length' or 'weight' attributes.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        cytoscape_network: The Cytoscape network to be loaded into the R
+    """
+    # Remove 'length' and 'weight' attributes
+    for u, v in cytoscape_network.edges():
+        del cytoscape_network.edges[u, v]["length"]
+        del cytoscape_network.edges[u, v]["weight"]
+
+    network = risk_obj.load_networkx_network(network=cytoscape_network)
+
+    # Ensure fallback attributes are assigned correctly
+    for u, v, attrs in network.edges(data=True):
+        assert "length" in attrs, f"Edge ({u}, {v}) is missing fallback 'length' attribute"
+        assert "weight" in attrs, f"Edge ({u}, {v}) is missing fallback 'weight' attribute"
+
+
+def test_deterministic_network_loading(risk_obj, data_path):
+    """Test that loading the same network produces identical results.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        data_path: The base path to the directory containing the Cytoscape file.
+    """
+    cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
+    network_1 = risk_obj.load_cytoscape_network(
+        filepath=str(cys_file),
+        source_label="source",
+        target_label="target",
+        compute_sphere=True,
+        surface_depth=0.5,
+    )
+    network_2 = risk_obj.load_cytoscape_network(
+        filepath=str(cys_file),
+        source_label="source",
+        target_label="target",
+        compute_sphere=True,
+        surface_depth=0.5,
+    )
+
+    assert nx.is_isomorphic(network_1, network_2), "Loaded networks should be identical"
+
+
+def test_missing_node_attributes(risk_obj, cytoscape_network):
+    """Test fallback mechanism for missing node attributes.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        cytoscape_network: The Cytoscape network to be loaded into the RISK network.
+    """
+    # Remove 'x', 'y', and 'label' attributes
+    for node in cytoscape_network.nodes:
+        attrs = cytoscape_network.nodes[node]
+        attrs.pop("x", None)
+        attrs.pop("y", None)
+        attrs.pop("label", None)
+
+    # Expect a ValueError to be raised due to missing 'x', 'y', and 'pos' attributes
+    with pytest.raises(
+        ValueError, match="Node .* is missing 'x', 'y', and a valid 'pos' attribute."
+    ):
+        risk_obj.load_networkx_network(network=cytoscape_network)

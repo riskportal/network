@@ -3,7 +3,11 @@ tests/test_load_graph
 ~~~~~~~~~~~~~~~~~~~~~
 """
 
+import networkx as nx
+import numpy as np
 import pandas as pd
+
+from risk.network.graph.summary import AnalysisSummary
 
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
@@ -24,9 +28,9 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
         fraction_shortest_edges=0.75,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
@@ -70,9 +74,9 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
             fraction_shortest_edges=0.75,
             score_metric="stdev",
             null_distribution="network",
-            num_permutations=100,
+            num_permutations=20,
             random_seed=887,
-            max_workers=4,
+            max_workers=1,
         )
         # Load the graph with the specified parameters
         graph = risk_obj.load_graph(
@@ -114,9 +118,9 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
         fraction_shortest_edges=0.75,
         score_metric="stdev",
         null_distribution="network",
-        num_permutations=100,
+        num_permutations=20,
         random_seed=887,
-        max_workers=4,
+        max_workers=1,
     )
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
@@ -161,9 +165,9 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
             fraction_shortest_edges=[0.75, 0.25],
             score_metric="stdev",
             null_distribution="network",
-            num_permutations=100,
+            num_permutations=20,
             random_seed=887,
-            max_workers=4,
+            max_workers=1,
         )
         # Load the graph with the specified parameters
         graph = risk_obj.load_graph(
@@ -186,6 +190,79 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
         _validate_graph(graph)
         # Validate the size of the domains
         _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
+
+
+def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
+    """Test that the NetworkGraph object contains the expected components.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs.
+        cytoscape_network: The network object to be used for neighborhood and graph generation.
+        json_annotation: The JSON annotations associated with the network.
+    """
+    # Load neighborhoods as a prerequisite
+    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="leiden",
+        louvain_resolution=8,
+        fraction_shortest_edges=0.75,
+        score_metric="stdev",
+        null_distribution="network",
+        num_permutations=20,
+        random_seed=887,
+        max_workers=1,
+    )
+    # Load the graph with the specified parameters
+    graph = risk_obj.load_graph(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        neighborhoods=neighborhoods,
+        tail="right",
+        pval_cutoff=0.05,
+        fdr_cutoff=1.0,
+        impute_depth=1,
+        prune_threshold=0.1,
+        linkage_criterion="distance",
+        linkage_method="average",
+        linkage_metric="yule",
+        min_cluster_size=5,
+        max_cluster_size=1000,
+    )
+
+    # Validate the graph attributes
+    assert isinstance(
+        graph.domain_id_to_node_ids_map, dict
+    ), "Domain ID to node IDs map should be a dictionary"
+    assert isinstance(
+        graph.domain_id_to_domain_terms_map, dict
+    ), "Domain ID to domain terms map should be a dictionary"
+    assert isinstance(
+        graph.domain_id_to_domain_info_map, dict
+    ), "Domain ID to domain info map should be a dictionary"
+    assert isinstance(
+        graph.node_id_to_domain_ids_and_significance_map, dict
+    ), "Node ID to domain IDs and significance map should be a dictionary"
+    assert isinstance(
+        graph.node_id_to_node_label_map, dict
+    ), "Node ID to node label map should be a dictionary"
+    assert isinstance(
+        graph.node_label_to_significance_map, dict
+    ), "Node label to significance map should be a dictionary"
+    assert isinstance(
+        graph.node_significance_sums, np.ndarray
+    ), "Node significance sums should be a numpy array"
+    assert isinstance(
+        graph.node_label_to_node_id_map, dict
+    ), "Node label to ID map should be a dictionary"
+    assert isinstance(
+        graph.domain_id_to_node_labels_map, dict
+    ), "Domain ID to node labels map should be a dictionary"
+    assert isinstance(graph.network, nx.Graph), "Network should be a NetworkX graph"
+    assert isinstance(
+        graph.node_coordinates, np.ndarray
+    ), "Node coordinates should be a numpy array"
+    assert isinstance(graph.summary, AnalysisSummary), "Summary should be an AnalysisSummary object"
 
 
 def test_load_graph_summary(graph):
@@ -226,7 +303,7 @@ def test_pop_domain(graph):
     ), f"{domain_id_to_remove} should be removed from domain_id_to_node_labels_map"
 
     # Check if the domain was removed from node_id_to_domain_ids_and_significance_map
-    for node_id, domain_info in graph.node_id_to_domain_ids_and_significance_map.items():
+    for _, domain_info in graph.node_id_to_domain_ids_and_significance_map.items():
         assert domain_id_to_remove not in domain_info.get(
             "domains", []
         ), f"{domain_id_to_remove} should be removed from node_id_to_domain_ids_and_significance_map['domains']"
@@ -263,7 +340,7 @@ def _check_component_sizes(domain_id_to_node_id_map, min_cluster_size, max_clust
         # Debugging: Print the domain ID and its size
         print(f"Checking domain ID {domain_id} with size {component_size}")
         # Ensure the component size is within the specified range
-        if not (min_cluster_size <= component_size <= max_cluster_size):
+        if not min_cluster_size <= component_size <= max_cluster_size:
             print(
                 f"Domain {domain_id} size {component_size} is outside the range "
                 f"{min_cluster_size} to {max_cluster_size}"

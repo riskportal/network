@@ -5,11 +5,11 @@ risk/stats/permutation/permutation
 
 from multiprocessing import get_context, shared_memory, Manager
 from multiprocessing.managers import ValueProxy
-from tqdm import tqdm
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
 from threadpoolctl import threadpool_limits
+from tqdm import tqdm
 
 from risk.stats.permutation.test_functions import DISPATCH_TEST_FUNCTIONS
 
@@ -147,11 +147,9 @@ def _run_permutation_test(
                     (
                         permutation_batches[i],  # Pass the batch of precomputed permutations
                         annotations,
-                        np.array(idxs),
                         neighborhoods_matrix_obsv,
                         observed_neighborhood_scores,
                         neighborhood_score_func,
-                        subset_size + (1 if i < remainder else 0),
                         num_permutations,
                         progress_counter,
                         max_workers,
@@ -184,11 +182,9 @@ def _run_permutation_test(
 def _permutation_process_batch(
     permutations: Union[List, Tuple, np.ndarray],
     annotation_matrix: np.ndarray,
-    idxs: np.ndarray,
     neighborhoods_matrix_obsv: np.ndarray,
     observed_neighborhood_scores: np.ndarray,
     neighborhood_score_func: Callable,
-    subset_size: int,
     num_permutations: int,
     progress_counter: ValueProxy,
     max_workers: int,
@@ -198,11 +194,9 @@ def _permutation_process_batch(
     Args:
         permutations (Union[List, Tuple, np.ndarray]): Permutation batch to process.
         annotation_matrix (np.ndarray): The annotation matrix.
-        idxs (np.ndarray): Indices of valid rows in the matrix.
         neighborhoods_matrix_obsv (np.ndarray): Observed neighborhoods matrix.
         observed_neighborhood_scores (np.ndarray): Observed neighborhood scores.
         neighborhood_score_func (Callable): Function to calculate neighborhood scores.
-        subset_size (int): Number of permutations to run in this subset.
         num_permutations (int): Number of total permutations across all subsets.
         progress_counter (multiprocessing.managers.ValueProxy): Shared counter for tracking progress.
         max_workers (int): Number of workers for multiprocessing.
