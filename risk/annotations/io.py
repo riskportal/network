@@ -47,7 +47,7 @@ class AnnotationsIO:
         _log_loading(filetype, filepath=filepath)
 
         # Load the JSON file into a dictionary
-        with open(filepath, "r") as file:
+        with open(filepath, "r", encoding="utf-8") as file:
             annotations_input = json.load(file)
 
         return load_annotations(network, annotations_input, min_nodes_per_term)
