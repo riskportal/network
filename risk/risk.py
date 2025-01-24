@@ -21,9 +21,12 @@ from risk.neighborhoods import (
 from risk.network import NetworkIO, NetworkGraph, NetworkPlotter
 from risk.stats import (
     calculate_significance_matrices,
+    compute_binom_test,
+    compute_chi2_test,
     compute_hypergeom_test,
     compute_permutation_test,
     compute_poisson_test,
+    compute_zscore_test,
 )
 
 
@@ -45,6 +48,96 @@ class RISK(NetworkIO, AnnotationsIO):
         # Provide public access to the logged network parameters
         self.params = params
         super().__init__()
+
+    def load_neighborhoods_by_binom(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+        louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
+        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
+        null_distribution: str = "network",
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the binomial test.
+
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (Dict[str, Any]): The annotations associated with the network.
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            Dict[str, Any]: Computed significance of neighborhoods.
+        """
+        log_header("Running binomial test")
+        # Compute neighborhood significance using the binomial test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
+            fraction_shortest_edges=fraction_shortest_edges,
+            null_distribution=null_distribution,
+            random_seed=random_seed,
+            statistical_test_key="binom",
+            statistical_test_function=compute_binom_test,
+        )
+
+    def load_neighborhoods_by_chi2(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+        louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
+        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
+        null_distribution: str = "network",
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the Chi-squared test.
+
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (Dict[str, Any]): The annotations associated with the network.
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            Dict[str, Any]: Computed significance of neighborhoods.
+        """
+        log_header("Running chi-squared test")
+        # Compute neighborhood significance using the chi-squared test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
+            fraction_shortest_edges=fraction_shortest_edges,
+            null_distribution=null_distribution,
+            random_seed=random_seed,
+            statistical_test_key="chi2",
+            statistical_test_function=compute_chi2_test,
+        )
 
     def load_neighborhoods_by_hypergeom(
         self,
@@ -77,102 +170,19 @@ class RISK(NetworkIO, AnnotationsIO):
             Dict[str, Any]: Computed significance of neighborhoods.
         """
         log_header("Running hypergeometric test")
-        # Log neighborhood analysis parameters
-        params.log_neighborhoods(
+        # Compute neighborhood significance using the hypergeometric test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
             fraction_shortest_edges=fraction_shortest_edges,
-            statistical_test_function="hypergeom",
             null_distribution=null_distribution,
             random_seed=random_seed,
+            statistical_test_key="hypergeom",
+            statistical_test_function=compute_hypergeom_test,
         )
-
-        # Make a copy of the network to avoid modifying the original
-        network = copy.deepcopy(network)
-
-        # Load neighborhoods based on the network and distance metric
-        neighborhoods = self._load_neighborhoods(
-            network,
-            distance_metric,
-            louvain_resolution=louvain_resolution,
-            leiden_resolution=leiden_resolution,
-            fraction_shortest_edges=fraction_shortest_edges,
-            random_seed=random_seed,
-        )
-        # Run hypergeometric test to compute neighborhood significance
-        neighborhood_significance = compute_hypergeom_test(
-            neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
-            null_distribution=null_distribution,
-        )
-
-        # Return the computed neighborhood significance
-        return neighborhood_significance
-
-    def load_neighborhoods_by_poisson(
-        self,
-        network: nx.Graph,
-        annotations: Dict[str, Any],
-        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
-        louvain_resolution: float = 0.1,
-        leiden_resolution: float = 1.0,
-        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
-        null_distribution: str = "network",
-        random_seed: int = 888,
-    ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the Poisson test.
-
-        Args:
-            network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
-            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
-                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
-                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
-            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
-            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
-            fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
-                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
-                Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
-            random_seed (int, optional): Seed for random number generation. Defaults to 888.
-
-        Returns:
-            Dict[str, Any]: Computed significance of neighborhoods.
-        """
-        log_header("Running Poisson test")
-        # Log neighborhood analysis parameters
-        params.log_neighborhoods(
-            distance_metric=distance_metric,
-            louvain_resolution=louvain_resolution,
-            leiden_resolution=leiden_resolution,
-            fraction_shortest_edges=fraction_shortest_edges,
-            statistical_test_function="poisson",
-            null_distribution=null_distribution,
-            random_seed=random_seed,
-        )
-
-        # Make a copy of the network to avoid modifying the original
-        network = copy.deepcopy(network)
-
-        # Load neighborhoods based on the network and distance metric
-        neighborhoods = self._load_neighborhoods(
-            network,
-            distance_metric,
-            louvain_resolution=louvain_resolution,
-            leiden_resolution=leiden_resolution,
-            fraction_shortest_edges=fraction_shortest_edges,
-            random_seed=random_seed,
-        )
-        # Run Poisson test to compute neighborhood significance
-        neighborhood_significance = compute_poisson_test(
-            neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
-            null_distribution=null_distribution,
-        )
-
-        # Return the computed neighborhood significance
-        return neighborhood_significance
 
     def load_neighborhoods_by_permutation(
         self,
@@ -211,51 +221,116 @@ class RISK(NetworkIO, AnnotationsIO):
             Dict[str, Any]: Computed significance of neighborhoods.
         """
         log_header("Running permutation test")
-        # Log neighborhood analysis parameters
-        params.log_neighborhoods(
+        # Log and display permutation test settings, which is unique to this test
+        logger.debug(f"Neighborhood scoring metric: '{score_metric}'")
+        logger.debug(f"Number of permutations: {num_permutations}")
+        logger.debug(f"Maximum workers: {max_workers}")
+        # Compute neighborhood significance using the permutation test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
             fraction_shortest_edges=fraction_shortest_edges,
-            statistical_test_function="permutation",
-            score_metric=score_metric,
             null_distribution=null_distribution,
-            num_permutations=num_permutations,
             random_seed=random_seed,
+            statistical_test_key="permutation",
+            statistical_test_function=compute_permutation_test,
+            score_metric=score_metric,
+            num_permutations=num_permutations,
             max_workers=max_workers,
         )
 
-        # Make a copy of the network to avoid modifying the original
-        network = copy.deepcopy(network)
+    def load_neighborhoods_by_poisson(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+        louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
+        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
+        null_distribution: str = "network",
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the Poisson test.
 
-        # Load neighborhoods based on the network and distance metric
-        neighborhoods = self._load_neighborhoods(
-            network,
-            distance_metric,
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (Dict[str, Any]): The annotations associated with the network.
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            Dict[str, Any]: Computed significance of neighborhoods.
+        """
+        log_header("Running Poisson test")
+        # Compute neighborhood significance using the Poisson test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
+            distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
             fraction_shortest_edges=fraction_shortest_edges,
-            random_seed=random_seed,
-        )
-
-        # Log and display permutation test settings
-        logger.debug(f"Neighborhood scoring metric: '{score_metric}'")
-        logger.debug(f"Null distribution: '{null_distribution}'")
-        logger.debug(f"Number of permutations: {num_permutations}")
-        logger.debug(f"Maximum workers: {max_workers}")
-        # Run permutation test to compute neighborhood significance
-        neighborhood_significance = compute_permutation_test(
-            neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
-            score_metric=score_metric,
             null_distribution=null_distribution,
-            num_permutations=num_permutations,
             random_seed=random_seed,
-            max_workers=max_workers,
+            statistical_test_key="poisson",
+            statistical_test_function=compute_poisson_test,
         )
 
-        # Return the computed neighborhood significance
-        return neighborhood_significance
+    def load_neighborhoods_by_zscore(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+        louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
+        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
+        null_distribution: str = "network",
+        random_seed: int = 888,
+    ) -> Dict[str, Any]:
+        """Load significant neighborhoods for the network using the Z-score test.
+
+        Args:
+            network (nx.Graph): The network graph.
+            annotations (Dict[str, Any]): The annotations associated with the network.
+            distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
+                metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
+                'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
+                Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
+                Defaults to 0.5.
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            random_seed (int, optional): Seed for random number generation. Defaults to 888.
+
+        Returns:
+            Dict[str, Any]: Computed significance of neighborhoods.
+        """
+        log_header("Running Z-score test")
+        # Compute neighborhood significance using the Z-score test
+        return self._load_neighborhoods_by_statistical_test(
+            network=network,
+            annotations=annotations,
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
+            fraction_shortest_edges=fraction_shortest_edges,
+            null_distribution=null_distribution,
+            random_seed=random_seed,
+            statistical_test_key="zscore",
+            statistical_test_function=compute_zscore_test,
+        )
 
     def load_graph(
         self,
@@ -414,6 +489,81 @@ class RISK(NetworkIO, AnnotationsIO):
             background_alpha=background_alpha,
             pad=pad,
         )
+
+    def _load_neighborhoods_by_statistical_test(
+        self,
+        network: nx.Graph,
+        annotations: Dict[str, Any],
+        distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
+        louvain_resolution: float = 0.1,
+        leiden_resolution: float = 1.0,
+        fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
+        null_distribution: str = "network",
+        random_seed: int = 888,
+        statistical_test_key: str = "hypergeom",
+        statistical_test_function: Any = compute_hypergeom_test,
+        **kwargs,
+    ):
+        """Load and compute significant neighborhoods for the network using a specified statistical test.
+
+        Args:
+            network (nx.Graph): The input network graph.
+            annotations (Dict[str, Any]): Annotation data associated with the network, including a "matrix" key with annotation values.
+            distance_metric (Union[str, List, Tuple, np.ndarray], optional): The distance metric or clustering method to define neighborhoods.
+                Can be a string specifying one method (e.g., 'louvain', 'leiden') or a collection of methods.
+                Defaults to "louvain".
+            louvain_resolution (float, optional): Resolution parameter for Louvain clustering. Defaults to 0.1.
+            leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
+            fraction_shortest_edges (Union[float, List, Tuple, np.ndarray], optional): Fraction of shortest edges to consider for creating subgraphs.
+                Can be a single value or a collection of thresholds for flexibility. Defaults to 0.5.
+            null_distribution (str, optional): The type of null distribution to use ('network' or 'annotations').
+                Defaults to "network".
+            random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
+            statistical_test_key (str, optional): Key or name of the statistical test to be applied (e.g., "hypergeom", "poisson").
+                Used for logging and debugging. Defaults to "hypergeom".
+            statistical_test_function (Any, optional): The function implementing the statistical test.
+                It should accept neighborhoods, annotations, null distribution, and additional kwargs.
+                Defaults to `compute_hypergeom_test`.
+            **kwargs: Additional parameters to be passed to the statistical test function.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the computed significance values for neighborhoods.
+        """
+        # Log null distribution type
+        logger.debug(f"Null distribution: '{null_distribution}'")
+        # Log neighborhood analysis parameters
+        params.log_neighborhoods(
+            distance_metric=distance_metric,
+            louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
+            fraction_shortest_edges=fraction_shortest_edges,
+            statistical_test_function=statistical_test_key,
+            null_distribution=null_distribution,
+            random_seed=random_seed,
+            **kwargs,
+        )
+
+        # Make a copy of the network to avoid modifying the original
+        network = copy.deepcopy(network)
+        # Load neighborhoods based on the network and distance metric
+        neighborhoods = self._load_neighborhoods(
+            network,
+            distance_metric,
+            louvain_resolution=louvain_resolution,
+            leiden_resolution=leiden_resolution,
+            fraction_shortest_edges=fraction_shortest_edges,
+            random_seed=random_seed,
+        )
+        # Apply statistical test function to compute neighborhood significance
+        neighborhood_significance = statistical_test_function(
+            neighborhoods=neighborhoods,
+            annotations=annotations["matrix"],
+            null_distribution=null_distribution,
+            **kwargs,
+        )
+
+        # Return the computed neighborhood significance
+        return neighborhood_significance
 
     def _load_neighborhoods(
         self,
