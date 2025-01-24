@@ -3,6 +3,6 @@ risk/network
 ~~~~~~~~~~~~
 """
 
-from .graph import NetworkGraph
-from .io import NetworkIO
-from .plot import NetworkPlotter
+from risk.network.graph import GraphIO
+from risk.network.io import NetworkIO
+from risk.network.plot import PlotterIO

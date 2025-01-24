@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from risk.log import params
-from risk.network.graph import NetworkGraph
+from risk.network.graph.network import NetworkGraph
 from risk.network.plot.utils.colors import get_annotated_domain_colors, to_rgba
 from risk.network.plot.utils.layout import calculate_bounding_box
 

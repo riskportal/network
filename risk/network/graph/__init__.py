@@ -3,4 +3,4 @@ risk/network/graph
 ~~~~~~~~~~~~~~~~~~
 """
 
-from .network import NetworkGraph
+from risk.network.graph.io import GraphIO

@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.colors as mcolors
 import numpy as np
 
-from risk.network.graph import NetworkGraph
+from risk.network.graph.network import NetworkGraph
 
 
 def get_annotated_domain_colors(
