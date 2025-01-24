@@ -11,11 +11,11 @@ import numpy as np
 
 from risk.log import params
 from risk.network.graph.network import NetworkGraph
-from risk.network.plot.canvas import Canvas
-from risk.network.plot.contour import Contour
-from risk.network.plot.labels import Labels
-from risk.network.plot.utils.colors import get_domain_colors, to_rgba
-from risk.network.plot.utils.layout import calculate_bounding_box
+from risk.network.plotter.canvas import Canvas
+from risk.network.plotter.contour import Contour
+from risk.network.plotter.labels import Labels
+from risk.network.plotter.utils.colors import get_domain_colors, to_rgba
+from risk.network.plotter.utils.layout import calculate_bounding_box
 
 
 class Network:

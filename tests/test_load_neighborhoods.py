@@ -34,13 +34,13 @@ def test_load_neighborhoods_binom(risk_obj, cytoscape_network, json_annotation, 
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotations"])
 def test_load_neighborhoods_chi2(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """Test loading neighborhoods using the Chi-squared test with multiple null distributions.
+    """Test loading neighborhoods using the chi-squared test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
-        null_distribution: Null distribution type for the Chi-squared test (either 'network' or 'annotations').
+        null_distribution: Null distribution type for the chi-squared test (either 'network' or 'annotations').
     """
     neighborhoods = risk_obj.load_neighborhoods_by_chi2(
         network=cytoscape_network,

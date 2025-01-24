@@ -1,6 +1,6 @@
 """
-risk/network/graph/io
-~~~~~~~~~~~~~~~~~~~~~
+risk/network/graph/api
+~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import copy
@@ -20,10 +20,10 @@ from risk.network.graph.network import NetworkGraph
 from risk.stats import calculate_significance_matrices
 
 
-class GraphIO:
+class GraphAPI:
     """Handles the loading of network graphs and associated data.
 
-    The GraphIO class provides methods to load and process network graphs, annotations, and neighborhoods.
+    The GraphAPI class provides methods to load and process network graphs, annotations, and neighborhoods.
     """
 
     def __init__() -> None:

@@ -1,6 +1,6 @@
 """
-risk/network/graph/io
-~~~~~~~~~~~~~~~~~~~~~
+risk/network/graph/api
+~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import List, Tuple, Union
@@ -9,13 +9,13 @@ import numpy as np
 
 from risk.log import log_header
 from risk.network.graph.network import NetworkGraph
-from risk.network.plot.network import NetworkPlotter
+from risk.network.plotter.network import NetworkPlotter
 
 
-class PlotterIO:
+class PlotterAPI:
     """Handles the loading of network plotter objects.
 
-    The PlotterIO class provides methods to load and configure NetworkPlotter objects for plotting network graphs.
+    The PlotterAPI class provides methods to load and configure NetworkPlotter objects for plotting network graphs.
     """
 
     def __init__() -> None:
