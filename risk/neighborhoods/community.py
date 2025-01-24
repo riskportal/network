@@ -11,6 +11,8 @@ import numpy as np
 from leidenalg import find_partition, RBConfigurationVertexPartition
 from networkx.algorithms.community import greedy_modularity_communities
 
+from risk.log import logger
+
 
 def calculate_greedy_modularity_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
@@ -266,14 +268,14 @@ def calculate_spinglass_neighborhoods(
         igraph_subgraph = ig.Graph.from_networkx(subgraph)
         # Ensure the subgraph is connected before running Spinglass
         if not igraph_subgraph.is_connected():
-            print("Warning: Subgraph is not connected. Skipping...")
+            logger.error("Warning: Subgraph is not connected. Skipping...")
             continue
 
         # Apply Spinglass community detection
         try:
             communities = igraph_subgraph.community_spinglass()
         except Exception as e:
-            print(f"Error running Spinglass on component: {e}")
+            logger.error(f"Error running Spinglass on component: {e}")
             continue
 
         # Step 3: Assign neighborhoods based on community labels
