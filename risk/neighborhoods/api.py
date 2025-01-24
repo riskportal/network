@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/io
-~~~~~~~~~~~~~~~~~~~~~
+risk/neighborhoods/api
+~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import copy
@@ -21,10 +21,10 @@ from risk.stats import (
 )
 
 
-class NeighborhoodsIO:
+class NeighborhoodsAPI:
     """Handles the loading of statistical results and annotation significance for neighborhoods.
 
-    The NeighborhoodsIO class provides methods to load neighborhood results from statistical tests.
+    The NeighborhoodsAPI class provides methods to load neighborhood results from statistical tests.
     """
 
     def __init__() -> None:
@@ -86,7 +86,7 @@ class NeighborhoodsIO:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the Chi-squared test.
+        """Load significant neighborhoods for the network using the chi-squared test.
 
         Args:
             network (nx.Graph): The network graph.
