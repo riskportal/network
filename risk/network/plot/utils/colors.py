@@ -68,7 +68,7 @@ def get_annotated_domain_colors(
 
         annotated_colors.append(color)
 
-    return np.array(annotated_colors)
+    return annotated_colors
 
 
 def get_domain_colors(
@@ -311,19 +311,28 @@ def _transform_colors(
     if min_scale == max_scale:
         min_scale = max_scale - 10e-6  # Avoid division by zero
 
+    # Replace invalid values in colors early
+    colors = np.nan_to_num(colors, nan=0.0)  # Replace NaN with black
     # Replace black colors (#000000) with very dark grey (#1A1A1A)
     black_color = np.array([0.0, 0.0, 0.0])  # Pure black RGB
     dark_grey = np.array([0.1, 0.1, 0.1])  # Very dark grey RGB (#1A1A1A)
-    # Check where colors are black (very close to [0, 0, 0]) and replace with dark grey
     is_black = np.all(colors[:, :3] == black_color, axis=1)
     colors[is_black, :3] = dark_grey
 
-    # Normalize the significance sums to the range [0, 1]
-    normalized_sums = significance_sums / np.max(significance_sums)
-    # Apply power scaling to dim lower values and emphasize higher values
+    # Handle invalid or zero significance sums
+    max_significance = np.max(significance_sums)
+    if max_significance == 0:
+        max_significance = 1  # Avoid division by zero
+    normalized_sums = significance_sums / max_significance
+    # Replace NaN values in normalized sums
+    normalized_sums = np.nan_to_num(normalized_sums, nan=0.0)
+
+    # Apply power scaling to emphasize higher significance values
     scaled_sums = normalized_sums**scale_factor
     # Linearly scale the normalized sums to the range [min_scale, max_scale]
     scaled_sums = min_scale + (max_scale - min_scale) * scaled_sums
+    # Replace NaN or invalid scaled sums
+    scaled_sums = np.nan_to_num(scaled_sums, nan=min_scale)
     # Adjust RGB values based on scaled sums
     for i in range(3):  # Only adjust RGB values
         colors[:, i] = scaled_sums * colors[:, i]
