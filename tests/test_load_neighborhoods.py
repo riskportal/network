@@ -9,7 +9,81 @@ import pytest
 
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotations"])
-def test_load_neighborhoods_single_process(
+def test_load_neighborhoods_binom(risk_obj, cytoscape_network, json_annotation, null_distribution):
+    """Test loading neighborhoods using the binomial test with multiple null distributions.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the binomial test (either 'network' or 'annotations').
+    """
+    neighborhoods = risk_obj.load_neighborhoods_by_binom(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=0.01,
+        fraction_shortest_edges=0.25,
+        null_distribution=null_distribution,
+        random_seed=887,
+    )
+
+    assert neighborhoods is not None
+    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_chi2(risk_obj, cytoscape_network, json_annotation, null_distribution):
+    """Test loading neighborhoods using the Chi-squared test with multiple null distributions.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the Chi-squared test (either 'network' or 'annotations').
+    """
+    neighborhoods = risk_obj.load_neighborhoods_by_chi2(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=0.01,
+        fraction_shortest_edges=0.25,
+        null_distribution=null_distribution,
+        random_seed=887,
+    )
+
+    assert neighborhoods is not None
+    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_hypergeom(
+    risk_obj, cytoscape_network, json_annotation, null_distribution
+):
+    """Test loading neighborhoods using the hypergeometric test with multiple null distributions.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the hypergeometric test (either 'network' or 'annotations').
+    """
+    neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=0.01,
+        fraction_shortest_edges=0.25,
+        null_distribution=null_distribution,
+        random_seed=887,
+    )
+
+    assert neighborhoods is not None
+    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_permutation_single_process(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
     """Test loading neighborhoods using a single process with the permutation test with multiple
@@ -67,32 +141,6 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
 
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotations"])
-def test_load_neighborhoods_hypergeom(
-    risk_obj, cytoscape_network, json_annotation, null_distribution
-):
-    """Test loading neighborhoods using the hypergeometric test with multiple null distributions.
-
-    Args:
-        risk_obj: The RISK object instance used for loading neighborhoods.
-        cytoscape_network: The network object to be used for neighborhood generation.
-        json_annotation: The annotations associated with the network.
-        null_distribution: Null distribution type for the hypergeometric test (either 'network' or 'annotations').
-    """
-    neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
-        network=cytoscape_network,
-        annotations=json_annotation,
-        distance_metric="louvain",
-        louvain_resolution=0.01,
-        fraction_shortest_edges=0.25,
-        null_distribution=null_distribution,
-        random_seed=887,
-    )
-
-    assert neighborhoods is not None
-    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
-
-
-@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
 def test_load_neighborhoods_poisson(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
@@ -110,6 +158,30 @@ def test_load_neighborhoods_poisson(
         distance_metric="louvain",
         louvain_resolution=0.01,
         fraction_shortest_edges=0.15,
+        null_distribution=null_distribution,
+        random_seed=887,
+    )
+
+    assert neighborhoods is not None
+    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
+
+
+@pytest.mark.parametrize("null_distribution", ["network", "annotations"])
+def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation, null_distribution):
+    """Test loading neighborhoods using the Z-score test with multiple null distributions.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods.
+        cytoscape_network: The network object to be used for neighborhood generation.
+        json_annotation: The annotations associated with the network.
+        null_distribution: Null distribution type for the Z-score test (either 'network' or 'annotations').
+    """
+    neighborhoods = risk_obj.load_neighborhoods_by_zscore(
+        network=cytoscape_network,
+        annotations=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=0.01,
+        fraction_shortest_edges=0.25,
         null_distribution=null_distribution,
         random_seed=887,
     )
