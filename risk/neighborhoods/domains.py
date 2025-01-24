@@ -41,6 +41,9 @@ def define_domains(
     try:
         # Transpose the matrix to cluster annotations
         m = significant_neighborhoods_significance[:, top_annotations["significant_annotations"]].T
+        # Safeguard the matrix by replacing NaN, Inf, and -Inf values
+        m = _safeguard_matrix(m)
+        # Optimize silhouette score across different linkage methods and distance metrics
         best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
             m, linkage_criterion, linkage_method, linkage_metric
         )
@@ -161,6 +164,29 @@ def trim_domains(
     return valid_domains, valid_trimmed_domains_matrix
 
 
+def _safeguard_matrix(matrix: np.ndarray) -> np.ndarray:
+    """Safeguard the matrix by replacing NaN, Inf, and -Inf values.
+
+    Args:
+        matrix (np.ndarray): Data matrix.
+
+    Returns:
+        np.ndarray: Safeguarded data matrix.
+    """
+    # Replace NaN with column mean
+    nan_replacement = np.nanmean(matrix, axis=0)
+    matrix = np.where(np.isnan(matrix), nan_replacement, matrix)
+    # Replace Inf/-Inf with maximum/minimum finite values
+    finite_max = np.nanmax(matrix[np.isfinite(matrix)])
+    finite_min = np.nanmin(matrix[np.isfinite(matrix)])
+    matrix = np.where(np.isposinf(matrix), finite_max, matrix)
+    matrix = np.where(np.isneginf(matrix), finite_min, matrix)
+    # Ensure rows have non-zero variance (optional step)
+    row_variance = np.var(matrix, axis=1)
+    matrix = matrix[row_variance > 0]
+    return matrix
+
+
 def _optimize_silhouette_across_linkage_and_metrics(
     m: np.ndarray, linkage_criterion: str, linkage_method: str, linkage_metric: str
 ) -> Tuple[str, str, float]:
@@ -194,7 +220,8 @@ def _optimize_silhouette_across_linkage_and_metrics(
         total=total_combinations,
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
     ):
-        with suppress(Exception):
+        # Some linkage methods and metrics may not work with certain data
+        with suppress(ValueError):
             Z = linkage(m, method=method, metric=metric)
             threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
             if score > best_overall_score:
