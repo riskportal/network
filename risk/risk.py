@@ -25,6 +25,6 @@ class RISK(NetworkIO, AnnotationsIO, NeighborhoodsIO, GraphIO, PlotterIO):
         """
         # Set global verbosity for logging
         set_global_verbosity(verbose)
-        # Provide public access to the logged network parameters
+        # Provide public access to network parameters
         self.params = params
         super().__init__()
