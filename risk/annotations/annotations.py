@@ -16,7 +16,7 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
 from risk.log import logger
-from scipy.sparse import csr_matrix
+from scipy.sparse import coo_matrix
 
 
 def _setup_nltk():
@@ -41,14 +41,13 @@ stop_words = set(stopwords.words("english"))
 def load_annotations(
     network: nx.Graph, annotations_input: Dict[str, Any], min_nodes_per_term: int = 2
 ) -> Dict[str, Any]:
-    """Convert annotations input to a DataFrame and reindex based on the network's node labels.
+    """Convert annotations input to a sparse matrix and reindex based on the network's node labels.
 
     Args:
         network (nx.Graph): The network graph.
         annotations_input (Dict[str, Any]): A dictionary with annotations.
         min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
             term to be included. Defaults to 2.
-        use_sparse (bool, optional): Whether to return the annotations matrix as a sparse matrix. Defaults to True.
 
     Returns:
         Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the sparse binary annotations
@@ -58,51 +57,53 @@ def load_annotations(
         ValueError: If no annotations are found for the nodes in the network.
         ValueError: If no annotations have at least min_nodes_per_term nodes in the network.
     """
-    # Flatten the dictionary to a list of tuples for easier DataFrame creation
-    flattened_annotations = [
-        (node, annotation) for annotation, nodes in annotations_input.items() for node in nodes
-    ]
-    # Create a DataFrame from the flattened list
-    annotations = pd.DataFrame(flattened_annotations, columns=["node", "annotations"])
-    annotations["is_member"] = 1
-    # Pivot to create a binary matrix with nodes as rows and annotations as columns
-    annotations_pivot = annotations.pivot_table(
-        index="node", columns="annotations", values="is_member", fill_value=0, dropna=False
-    )
-    # Reindex the annotations matrix based on the node labels from the network
-    node_label_order = (attr["label"] for _, attr in network.nodes(data=True) if "label" in attr)
-    annotations_pivot = annotations_pivot.reindex(index=node_label_order)
-    # Raise an error if no valid annotations are found for the nodes in the network
-    if annotations_pivot.notnull().sum().sum() == 0:
+    # Step 1: Map nodes and annotations to indices
+    node_label_order = [attr["label"] for _, attr in network.nodes(data=True) if "label" in attr]
+    node_to_idx = {node: i for i, node in enumerate(node_label_order)}
+    annotation_to_idx = {annotation: i for i, annotation in enumerate(annotations_input)}
+    # Step 2: Construct a sparse binary matrix directly
+    row = []
+    col = []
+    data = []
+    for annotation, nodes in annotations_input.items():
+        for node in nodes:
+            if node in node_to_idx and annotation in annotation_to_idx:
+                row.append(node_to_idx[node])
+                col.append(annotation_to_idx[annotation])
+                data.append(1)
+
+    # Create a sparse binary matrix
+    num_nodes = len(node_to_idx)
+    num_annotations = len(annotation_to_idx)
+    annotations_pivot = coo_matrix((data, (row, col)), shape=(num_nodes, num_annotations)).tocsr()
+    # Step 3: Filter out annotations with fewer than min_nodes_per_term occurrences
+    valid_annotations = annotations_pivot.sum(axis=0).A1 >= min_nodes_per_term
+    annotations_pivot = annotations_pivot[:, valid_annotations]
+    # Step 4: Raise errors for empty matrices
+    if annotations_pivot.nnz == 0:
         raise ValueError("No terms found in the annotation file for the nodes in the network.")
 
-    # Filter out annotations with fewer than min_nodes_per_term occurrences
-    num_terms_before_filtering = annotations_pivot.shape[1]
-    annotations_pivot = annotations_pivot.loc[
-        :, (annotations_pivot.sum(axis=0) >= min_nodes_per_term)
-    ]
-    num_terms_after_filtering = annotations_pivot.shape[1]
-    # Log the number of annotations before and after filtering
-    logger.info(f"Minimum number of nodes per annotation term: {min_nodes_per_term}")
-    logger.info(f"Number of input annotation terms: {num_terms_before_filtering}")
-    logger.info(f"Number of remaining annotation terms: {num_terms_after_filtering}")
-    if num_terms_after_filtering == 0:
+    num_remaining_annotations = annotations_pivot.shape[1]
+    if num_remaining_annotations == 0:
         raise ValueError(
             f"No annotation terms found with at least {min_nodes_per_term} nodes in the network."
         )
 
-    # Extract ordered nodes and annotations
-    ordered_nodes = tuple(annotations_pivot.index)
-    ordered_annotations = tuple(annotations_pivot.columns)
-    # Convert the annotations_pivot matrix to a numpy array or sparse matrix
-    annotations_pivot_binary = (annotations_pivot.fillna(0).to_numpy() > 0).astype(int)
-    # Convert the binary annotations matrix to a sparse matrix
-    annotations_pivot_binary = csr_matrix(annotations_pivot_binary)
+    # Step 5: Extract ordered nodes and annotations
+    ordered_nodes = tuple(node_label_order)
+    ordered_annotations = tuple(
+        annotation for annotation, is_valid in zip(annotation_to_idx, valid_annotations) if is_valid
+    )
+
+    # Log the filtering details
+    logger.info(f"Minimum number of nodes per annotation term: {min_nodes_per_term}")
+    logger.info(f"Number of input annotation terms: {num_annotations}")
+    logger.info(f"Number of remaining annotation terms: {num_remaining_annotations}")
 
     return {
         "ordered_nodes": ordered_nodes,
         "ordered_annotations": ordered_annotations,
-        "matrix": annotations_pivot_binary,
+        "matrix": annotations_pivot,
     }
 
 
