@@ -3,6 +3,7 @@ tests/test_load_annotations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+from scipy.sparse import csr_matrix, vstack
 import numpy as np
 
 
@@ -44,7 +45,7 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert "matrix" in annotations, "Key 'matrix' missing in annotations"
     assert "ordered_annotations" in annotations, "Key 'ordered_annotations' missing in annotations"
     assert "ordered_nodes" in annotations, "Key 'ordered_nodes' missing in annotations"
-    assert isinstance(annotations["matrix"], np.ndarray), "'matrix' should be a numpy array"
+    assert isinstance(annotations["matrix"], csr_matrix), "'matrix' should be a sparse matrix"
     assert isinstance(
         annotations["ordered_annotations"], tuple
     ), "'ordered_annotations' should be a tuple"
@@ -87,7 +88,7 @@ def test_dict_annotation_structure(risk_obj, cytoscape_network, annotation_dict)
     assert "matrix" in annotations, "Key 'matrix' missing in annotations"
     assert "ordered_annotations" in annotations, "Key 'ordered_annotations' missing in annotations"
     assert "ordered_nodes" in annotations, "Key 'ordered_nodes' missing in annotations"
-    assert isinstance(annotations["matrix"], np.ndarray), "'matrix' should be a numpy array"
+    assert isinstance(annotations["matrix"], csr_matrix), "'matrix' should be a sparse matrix"
     assert isinstance(
         annotations["ordered_annotations"], tuple
     ), "'ordered_annotations' should be a tuple"
@@ -132,7 +133,7 @@ def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert "matrix" in annotations, "Key 'matrix' missing in annotations"
     assert "ordered_annotations" in annotations, "Key 'ordered_annotations' missing in annotations"
     assert "ordered_nodes" in annotations, "Key 'ordered_nodes' missing in annotations"
-    assert isinstance(annotations["matrix"], np.ndarray), "'matrix' should be a numpy array"
+    assert isinstance(annotations["matrix"], csr_matrix), "'matrix' should be a sparse matrix"
     assert isinstance(
         annotations["ordered_annotations"], tuple
     ), "'ordered_annotations' should be a tuple"
@@ -177,7 +178,7 @@ def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert "matrix" in annotations, "Key 'matrix' missing in annotations"
     assert "ordered_annotations" in annotations, "Key 'ordered_annotations' missing in annotations"
     assert "ordered_nodes" in annotations, "Key 'ordered_nodes' missing in annotations"
-    assert isinstance(annotations["matrix"], np.ndarray), "'matrix' should be a numpy array"
+    assert isinstance(annotations["matrix"], csr_matrix), "'matrix' should be a sparse matrix"
     assert isinstance(
         annotations["ordered_annotations"], tuple
     ), "'ordered_annotations' should be a tuple"
@@ -222,7 +223,7 @@ def test_excel_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert "matrix" in annotations, "Key 'matrix' missing in annotations"
     assert "ordered_annotations" in annotations, "Key 'ordered_annotations' missing in annotations"
     assert "ordered_nodes" in annotations, "Key 'ordered_nodes' missing in annotations"
-    assert isinstance(annotations["matrix"], np.ndarray), "'matrix' should be a numpy array"
+    assert isinstance(annotations["matrix"], csr_matrix), "'matrix' should be a sparse matrix"
     assert isinstance(
         annotations["ordered_annotations"], tuple
     ), "'ordered_annotations' should be a tuple"
@@ -251,7 +252,7 @@ def test_combined_annotations(risk_obj, cytoscape_network, data_path):
     )
     # Combine the components of the annotations
     combined_annotations = {
-        "matrix": np.vstack((csv_annotations["matrix"], json_annotations["matrix"])),
+        "matrix": vstack((csv_annotations["matrix"], json_annotations["matrix"])),  # Use vstack for sparse matrices
         "ordered_annotations": csv_annotations["ordered_annotations"]
         + json_annotations["ordered_annotations"],
         "ordered_nodes": csv_annotations["ordered_nodes"] + json_annotations["ordered_nodes"],
