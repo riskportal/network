@@ -252,7 +252,9 @@ def test_combined_annotations(risk_obj, cytoscape_network, data_path):
     )
     # Combine the components of the annotations
     combined_annotations = {
-        "matrix": vstack((csv_annotations["matrix"], json_annotations["matrix"])),  # Use vstack for sparse matrices
+        "matrix": vstack(
+            (csv_annotations["matrix"], json_annotations["matrix"])
+        ),  # Use vstack for sparse matrices
         "ordered_annotations": csv_annotations["ordered_annotations"]
         + json_annotations["ordered_annotations"],
         "ordered_nodes": csv_annotations["ordered_nodes"] + json_annotations["ordered_nodes"],
