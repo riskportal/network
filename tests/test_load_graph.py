@@ -192,6 +192,54 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
         _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
 
 
+def test_linkage_criterion_and_auto_clustering_options(
+    risk_obj, cytoscape_network, json_annotation
+):
+    """Test the linkage criterion and auto-clustering options for generating graphs.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs.
+        cytoscape_network: The network object to be used for neighborhood and graph generation.
+        json_annotation: The JSON annotations associated with the network.
+    """
+    # Define parameters for testing
+    test_criteria = ["maxclust", "distance", "off"]
+    min_cluster_size, max_cluster_size = 10, 200  # Fixed for simplicity
+    for criterion in test_criteria:
+        # Load neighborhoods as a prerequisite
+        neighborhoods = risk_obj.load_neighborhoods_by_binom(
+            network=cytoscape_network,
+            annotations=json_annotation,
+            distance_metric="louvain",
+            louvain_resolution=1.0,
+            fraction_shortest_edges=0.75,
+            null_distribution="network",
+            random_seed=888,
+        )
+        # Load the graph with the specified linkage_criterion
+        graph = risk_obj.load_graph(
+            network=cytoscape_network,
+            annotations=json_annotation,
+            neighborhoods=neighborhoods,
+            tail="right",
+            pval_cutoff=0.05,
+            fdr_cutoff=1.0,
+            impute_depth=1,
+            prune_threshold=0.1,
+            linkage_criterion=criterion,
+            linkage_method="auto",
+            linkage_metric="auto",
+            min_cluster_size=min_cluster_size,
+            max_cluster_size=max_cluster_size,
+        )
+
+        # Validate graph for all criteria
+        _validate_graph(graph)
+
+        # Check cluster size bounds for 'distance', 'maxclust', and 'off' criteria
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
+
+
 def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
     """Test that the NetworkGraph object contains the expected components.
 
