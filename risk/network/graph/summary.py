@@ -240,8 +240,12 @@ class AnalysisSummary:
         except ValueError:
             return ""  # Description not found
 
-        # Get nodes present for the annotation and sort by node label
-        nodes_present = np.where(self.annotations["matrix"][:, annotation_idx] == 1)[0]
+        # Get the column (safely) from the sparse matrix
+        column = self.annotations["matrix"][:, annotation_idx]
+        # Convert the column to a dense array if needed
+        column = column.toarray().ravel()  # Convert to a 1D dense array
+        # Get nodes present for the annotation and sort by node label - use np.where on the dense array
+        nodes_present = np.where(column == 1)[0]
         node_labels = sorted(
             self.graph.node_id_to_node_label_map[node_id]
             for node_id in nodes_present

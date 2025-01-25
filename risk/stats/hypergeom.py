@@ -6,44 +6,54 @@ risk/stats/hypergeom
 from typing import Any, Dict
 
 import numpy as np
+from scipy.sparse import csr_matrix
 from scipy.stats import hypergeom
 
 
 def compute_hypergeom_test(
-    neighborhoods: np.ndarray, annotations: np.ndarray, null_distribution: str = "network"
+    neighborhoods: csr_matrix,
+    annotations: csr_matrix,
+    null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
-        neighborhoods (np.ndarray): Binary matrix representing neighborhoods.
-        annotations (np.ndarray): Binary matrix representing annotations.
+        neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
+        annotations (csr_matrix): Sparse binary matrix representing annotations.
         null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
     # Get the total number of nodes in the network
-    total_node_count = neighborhoods.shape[0]
+    total_nodes = neighborhoods.shape[1]
+
+    # Compute sums
+    neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()  # Convert to dense array
+    annotation_sums = annotations.sum(axis=0).A.flatten()  # Convert to dense array
 
     if null_distribution == "network":
-        # Case 1: Use all nodes as the background
-        background_population = total_node_count
-        neighborhood_sums = np.sum(neighborhoods, axis=0, keepdims=True).T
-        annotation_sums = np.sum(annotations, axis=0, keepdims=True)
+        background_population = total_nodes
     elif null_distribution == "annotations":
-        # Case 2: Only consider nodes with at least one annotation
-        annotated_nodes = np.sum(annotations, axis=1) > 0
-        background_population = np.sum(annotated_nodes)
-        neighborhood_sums = np.sum(neighborhoods[annotated_nodes], axis=0, keepdims=True).T
-        annotation_sums = np.sum(annotations[annotated_nodes], axis=0, keepdims=True)
+        annotated_nodes = annotations.sum(axis=1).A.flatten() > 0  # Boolean mask
+        background_population = annotated_nodes.sum()
+        neighborhood_sums = neighborhoods[annotated_nodes].sum(axis=0).A.flatten()
+        annotation_sums = annotations[annotated_nodes].sum(axis=0).A.flatten()
     else:
         raise ValueError(
             "Invalid null_distribution value. Choose either 'network' or 'annotations'."
         )
 
-    # Matrix multiplication for annotated nodes in each neighborhood
-    annotated_in_neighborhood = neighborhoods.T @ annotations
-    # Calculate depletion and enrichment p-values using the hypergeometric distribution
+    # Observed counts
+    annotated_in_neighborhood = neighborhoods.T @ annotations  # Sparse result
+    annotated_in_neighborhood = annotated_in_neighborhood.toarray()  # Convert to dense
+    # Align shapes for broadcasting
+    neighborhood_sums = neighborhood_sums.reshape(-1, 1)
+    annotation_sums = annotation_sums.reshape(1, -1)
+    background_population = np.array(background_population).reshape(1, 1)
+
+    # Compute hypergeometric p-values
     depletion_pvals = hypergeom.cdf(
         annotated_in_neighborhood, background_population, annotation_sums, neighborhood_sums
     )

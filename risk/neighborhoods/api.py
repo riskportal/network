@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
+from scipy.sparse import csr_matrix
 
 from risk.log import logger, log_header, params
 from risk.neighborhoods.neighborhoods import get_network_neighborhoods
@@ -396,12 +397,11 @@ class NeighborhoodsAPI:
         leiden_resolution: float = 1.0,
         fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
         random_seed: int = 888,
-    ) -> np.ndarray:
+    ) -> csr_matrix:
         """Load significant neighborhoods for the network.
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (pd.DataFrame): The matrix of annotations associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -413,7 +413,7 @@ class NeighborhoodsAPI:
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
-            np.ndarray: Neighborhood matrix calculated based on the selected distance metric.
+            csr_matrix: Sparse neighborhood matrix calculated based on the selected distance metric.
         """
         # Display the chosen distance metric
         if distance_metric == "louvain":
@@ -422,12 +422,13 @@ class NeighborhoodsAPI:
             for_print_distance_metric = f"leiden (resolution={leiden_resolution})"
         else:
             for_print_distance_metric = distance_metric
+
         # Log and display neighborhood settings
         logger.debug(f"Distance metric: '{for_print_distance_metric}'")
         logger.debug(f"Edge length threshold: {fraction_shortest_edges}")
         logger.debug(f"Random seed: {random_seed}")
 
-        # Compute neighborhoods based on the network and distance metric
+        # Compute neighborhoods
         neighborhoods = get_network_neighborhoods(
             network,
             distance_metric,
@@ -437,5 +438,9 @@ class NeighborhoodsAPI:
             random_seed=random_seed,
         )
 
-        # Return the computed neighborhoods
+        # Ensure the neighborhood matrix is in sparse format
+        if not isinstance(neighborhoods, csr_matrix):
+            neighborhoods = csr_matrix(neighborhoods)
+
+        # Return the sparse neighborhood matrix
         return neighborhoods

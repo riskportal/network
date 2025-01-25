@@ -6,55 +6,61 @@ risk/stats/zscore
 from typing import Any, Dict
 
 import numpy as np
+from scipy.sparse import csr_matrix
 from scipy.stats import norm
 
 
 def compute_zscore_test(
-    neighborhoods: np.ndarray, annotations: np.ndarray, null_distribution: str = "network"
+    neighborhoods: csr_matrix,
+    annotations: csr_matrix,
+    null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute Z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute Z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
-        neighborhoods (np.ndarray): Binary matrix representing neighborhoods.
-        annotations (np.ndarray): Binary matrix representing annotations.
+        neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
+        annotations (csr_matrix): Sparse binary matrix representing annotations.
         null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
-    # Get the total number of nodes in the network
-    total_node_count = neighborhoods.shape[0]
+    # Total number of nodes in the network
+    total_node_count = neighborhoods.shape[1]
 
+    # Compute sums
     if null_distribution == "network":
-        # Case 1: Use all nodes as the background
         background_population = total_node_count
-        neighborhood_sums = np.sum(neighborhoods, axis=0, keepdims=True).T
-        annotation_sums = np.sum(annotations, axis=0, keepdims=True)
+        neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()  # Dense column sums
+        annotation_sums = annotations.sum(axis=0).A.flatten()  # Dense row sums
     elif null_distribution == "annotations":
-        # Case 2: Only consider nodes with at least one annotation
-        annotated_nodes = np.sum(annotations, axis=1) > 0
-        background_population = np.sum(annotated_nodes)
-        neighborhood_sums = np.sum(neighborhoods[annotated_nodes], axis=0, keepdims=True).T
-        annotation_sums = np.sum(annotations[annotated_nodes], axis=0, keepdims=True)
+        annotated_nodes = annotations.sum(axis=1).A.flatten() > 0  # Dense boolean mask
+        background_population = annotated_nodes.sum()
+        neighborhood_sums = neighborhoods[annotated_nodes].sum(axis=0).A.flatten()
+        annotation_sums = annotations[annotated_nodes].sum(axis=0).A.flatten()
     else:
         raise ValueError(
             "Invalid null_distribution value. Choose either 'network' or 'annotations'."
         )
 
-    # Matrix multiplication for annotated nodes in each neighborhood
-    observed = neighborhoods.T @ annotations
-    # Compute expected values under the null distribution
+    # Observed values
+    observed = (neighborhoods.T @ annotations).toarray()  # Convert sparse result to dense
+    # Expected values under the null
+    neighborhood_sums = neighborhood_sums.reshape(-1, 1)  # Ensure correct shape
+    annotation_sums = annotation_sums.reshape(1, -1)  # Ensure correct shape
     expected = (neighborhood_sums @ annotation_sums) / background_population
-    # Compute standard deviation under the null distribution
+
+    # Standard deviation under the null
     std_dev = np.sqrt(
         expected
         * (1 - annotation_sums / background_population)
         * (1 - neighborhood_sums / background_population)
     )
-    # Avoid division by zero
-    std_dev[std_dev == 0] = np.nan  # Mark invalid computations
+    std_dev[std_dev == 0] = np.nan  # Avoid division by zero
     # Compute Z-scores
     z_scores = (observed - expected) / std_dev
+
     # Convert Z-scores to depletion and enrichment p-values
     enrichment_pvals = norm.sf(z_scores)  # Upper tail
     depletion_pvals = norm.cdf(z_scores)  # Lower tail

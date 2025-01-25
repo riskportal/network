@@ -16,6 +16,7 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
 from risk.log import logger
+from scipy.sparse import csr_matrix
 
 
 def _setup_nltk():
@@ -47,17 +48,15 @@ def load_annotations(
         annotations_input (Dict[str, Any]): A dictionary with annotations.
         min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
             term to be included. Defaults to 2.
+        use_sparse (bool, optional): Whether to return the annotations matrix as a sparse matrix. Defaults to True.
 
     Returns:
-        Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the binary annotations matrix.
+        Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the sparse binary annotations
+            matrix.
 
     Raises:
         ValueError: If no annotations are found for the nodes in the network.
         ValueError: If no annotations have at least min_nodes_per_term nodes in the network.
-
-    Comment:
-        This function should be optimized to handle large networks and annotations efficiently. An attempt
-        to use sparse matrices did not yield significant performance improvements, so it was not implemented.
     """
     # Flatten the dictionary to a list of tuples for easier DataFrame creation
     flattened_annotations = [
@@ -78,7 +77,6 @@ def load_annotations(
         raise ValueError("No terms found in the annotation file for the nodes in the network.")
 
     # Filter out annotations with fewer than min_nodes_per_term occurrences
-    # This assists in reducing noise and focusing on more relevant annotations for statistical analysis
     num_terms_before_filtering = annotations_pivot.shape[1]
     annotations_pivot = annotations_pivot.loc[
         :, (annotations_pivot.sum(axis=0) >= min_nodes_per_term)
@@ -96,13 +94,15 @@ def load_annotations(
     # Extract ordered nodes and annotations
     ordered_nodes = tuple(annotations_pivot.index)
     ordered_annotations = tuple(annotations_pivot.columns)
-    # Convert the annotations_pivot matrix to a numpy array and ensure it's binary
-    annotations_pivot_numpy = (annotations_pivot.fillna(0).to_numpy() > 0).astype(int)
+    # Convert the annotations_pivot matrix to a numpy array or sparse matrix
+    annotations_pivot_binary = (annotations_pivot.fillna(0).to_numpy() > 0).astype(int)
+    # Convert the binary annotations matrix to a sparse matrix
+    annotations_pivot_binary = csr_matrix(annotations_pivot_binary)
 
     return {
         "ordered_nodes": ordered_nodes,
         "ordered_annotations": ordered_annotations,
-        "matrix": annotations_pivot_numpy,
+        "matrix": annotations_pivot_binary,
     }
 
 
