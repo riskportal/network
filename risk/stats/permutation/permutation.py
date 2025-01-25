@@ -95,7 +95,7 @@ def _run_permutation_test(
     if null_distribution == "network":
         idxs = range(annotations.shape[0])
     elif null_distribution == "annotations":
-        idxs = np.nonzero(np.sum(~np.isnan(annotations), axis=1))[0]
+        idxs = np.nonzero(annotations.getnnz(axis=1) > 0)[0]
     else:
         raise ValueError(
             "Invalid null_distribution value. Choose either 'network' or 'annotations'."
