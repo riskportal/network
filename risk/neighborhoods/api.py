@@ -368,7 +368,7 @@ class NeighborhoodsAPI:
         )
 
         # Make a copy of the network to avoid modifying the original
-        network = copy.deepcopy(network)
+        network = copy.copy(network)
         # Load neighborhoods based on the network and distance metric
         neighborhoods = self._load_neighborhoods(
             network,
@@ -437,10 +437,6 @@ class NeighborhoodsAPI:
             leiden_resolution=leiden_resolution,
             random_seed=random_seed,
         )
-
-        # Ensure the neighborhood matrix is in sparse format
-        if not isinstance(neighborhoods, csr_matrix):
-            neighborhoods = csr_matrix(neighborhoods)
 
         # Return the sparse neighborhood matrix
         return neighborhoods

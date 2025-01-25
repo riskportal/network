@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
+from scipy.sparse import csr_matrix
 from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -34,43 +35,43 @@ def get_network_neighborhoods(
     louvain_resolution: float = 0.1,
     leiden_resolution: float = 1.0,
     random_seed: int = 888,
-) -> np.ndarray:
-    """Calculate the combined neighborhoods for each node based on the specified community detection algorithm(s).
+) -> csr_matrix:
+    """Calculate the combined neighborhoods for each node using sparse matrices.
 
     Args:
         network (nx.Graph): The network graph.
         distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use.
-        fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
+        fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction thresholds.
         louvain_resolution (float, optional): Resolution parameter for the Louvain method.
         leiden_resolution (float, optional): Resolution parameter for the Leiden method.
         random_seed (int, optional): Random seed for methods requiring random initialization.
 
     Returns:
-        np.ndarray: Summed neighborhood matrix from all selected algorithms.
+        csr_matrix: The combined neighborhood matrix.
     """
     # Set random seed for reproducibility
     random.seed(random_seed)
     np.random.seed(random_seed)
 
-    # Ensure distance_metric is a list/tuple for multi-algorithm handling
+    # Ensure distance_metric is a list for multi-algorithm handling
     if isinstance(distance_metric, (str, np.ndarray)):
         distance_metric = [distance_metric]
-    # Ensure fraction_shortest_edges is a list/tuple for multi-threshold handling
+    # Ensure fraction_shortest_edges is a list for multi-threshold handling
     if isinstance(fraction_shortest_edges, (float, int)):
         fraction_shortest_edges = [fraction_shortest_edges] * len(distance_metric)
-    # Check that the number of distance metrics matches the number of edge length thresholds
+    # Validate matching lengths of distance metrics and thresholds
     if len(distance_metric) != len(fraction_shortest_edges):
         raise ValueError(
             "The number of distance metrics must match the number of edge length thresholds."
         )
 
-    # Initialize combined neighborhood matrix
+    # Initialize a sparse LIL matrix for incremental updates
     num_nodes = network.number_of_nodes()
-    combined_neighborhoods = np.zeros((num_nodes, num_nodes), dtype=int)
-
+    # Initialize a sparse matrix with the same shape as the network
+    combined_neighborhoods = csr_matrix((num_nodes, num_nodes), dtype=np.uint8)
     # Loop through each distance metric and corresponding edge rank fraction
     for metric, percentile in zip(distance_metric, fraction_shortest_edges):
-        # Call the appropriate neighborhood function based on the metric
+        # Compute neighborhoods for the specified metric
         if metric == "greedy_modularity":
             neighborhoods = calculate_greedy_modularity_neighborhoods(
                 network, fraction_shortest_edges=percentile
@@ -107,20 +108,35 @@ def get_network_neighborhoods(
             )
         else:
             raise ValueError(
-                "Incorrect distance metric specified. Please choose from 'greedy_modularity', 'label_propagation',"
+                "Invalid distance metric. Choose from: 'greedy_modularity', 'label_propagation',"
                 "'leiden', 'louvain', 'markov_clustering', 'spinglass', 'walktrap'."
             )
 
-        # Sum the neighborhood matrices
+        # Add the sparse neighborhood matrix
         combined_neighborhoods += neighborhoods
 
-    # Ensure that the maximum value in each row is set to 1
-    # This ensures that for each row, only the strongest relationship (the maximum value) is retained,
-    # while all other values are reset to 0. This transformation simplifies the neighborhood matrix by
-    # focusing on the most significant connection per row (or nodes).
-    combined_neighborhoods = _set_max_row_value_to_one(combined_neighborhoods)
+    # Ensure maximum value in each row is set to 1
+    combined_neighborhoods = _set_max_row_value_to_one_sparse(combined_neighborhoods)
 
     return combined_neighborhoods
+
+
+def _set_max_row_value_to_one_sparse(matrix: csr_matrix) -> csr_matrix:
+    """Set the maximum value in each row of a sparse matrix to 1.
+
+    Args:
+        matrix (csr_matrix): The input sparse matrix.
+
+    Returns:
+        csr_matrix: The modified sparse matrix where only the maximum value in each row is set to 1.
+    """
+    # Iterate over each row and set the maximum value to 1
+    for i in range(matrix.shape[0]):
+        row_data = matrix[i].data
+        if len(row_data) > 0:
+            row_data[:] = (row_data == max(row_data)).astype(int)
+
+    return matrix
 
 
 def _set_max_row_value_to_one(matrix: np.ndarray) -> np.ndarray:
