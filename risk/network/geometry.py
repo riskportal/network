@@ -3,8 +3,6 @@ risk/network/geometry
 ~~~~~~~~~~~~~~~~~~~~~
 """
 
-import copy
-
 import networkx as nx
 import numpy as np
 
@@ -31,44 +29,43 @@ def assign_edge_lengths(
         """Compute distances between pairs of coordinates."""
         u_coords, v_coords = coords[:, 0, :], coords[:, 1, :]
         if is_sphere:
-            u_norm = np.linalg.norm(u_coords, axis=1, keepdims=True)
-            v_norm = np.linalg.norm(v_coords, axis=1, keepdims=True)
-            u_coords /= u_norm
-            v_coords /= v_norm
+            u_coords /= np.linalg.norm(u_coords, axis=1, keepdims=True)
+            v_coords /= np.linalg.norm(v_coords, axis=1, keepdims=True)
             dot_products = np.einsum("ij,ij->i", u_coords, v_coords)
             return np.arccos(np.clip(dot_products, -1.0, 1.0))
-
         return np.linalg.norm(u_coords - v_coords, axis=1)
 
     # Normalize graph coordinates and weights
     _normalize_graph_coordinates(G)
     _normalize_weights(G)
+
     # Map nodes to sphere and adjust depth if required
     if compute_sphere:
         _map_to_sphere(G)
-        G_depth = _create_depth(copy.deepcopy(G), surface_depth=surface_depth)
+        G_depth = _create_depth(G, surface_depth=surface_depth)
     else:
-        G_depth = copy.deepcopy(G)
+        G_depth = G
 
-    # Precompute edge coordinate arrays for vectorized computation
-    edge_data = []
-    for u, v in G_depth.edges:
-        u_coords = np.array([G_depth.nodes[u]["x"], G_depth.nodes[u]["y"]])
-        v_coords = np.array([G_depth.nodes[v]["x"], G_depth.nodes[v]["y"]])
-        if compute_sphere:
-            u_coords = np.append(u_coords, G_depth.nodes[u].get("z", 0))
-            v_coords = np.append(v_coords, G_depth.nodes[v].get("z", 0))
-        edge_data.append([u_coords, v_coords, (u, v)])
-
-    # Convert to numpy for faster processing
-    edge_coords = np.array([(e[0], e[1]) for e in edge_data])
-    edge_indices = [e[2] for e in edge_data]
-    # Compute distances in bulk
-    distances = compute_distance_vectorized(edge_coords, compute_sphere)
+    # Precompute edge coordinate arrays and compute distances in bulk
+    edge_data = np.array(
+        [
+            [
+                np.array(
+                    [G_depth.nodes[u]["x"], G_depth.nodes[u]["y"], G_depth.nodes[u].get("z", 0)]
+                ),
+                np.array(
+                    [G_depth.nodes[v]["x"], G_depth.nodes[v]["y"], G_depth.nodes[v].get("z", 0)]
+                ),
+            ]
+            for u, v in G_depth.edges
+        ]
+    )
+    # Compute distances
+    distances = compute_distance_vectorized(edge_data, compute_sphere)
     # Assign distances back to the graph
-    for (u, v), distance in zip(edge_indices, distances):
+    for (u, v), distance in zip(G_depth.edges, distances):
         if include_edge_weight:
-            weight = G.edges[u, v].get("normalized_weight", 0) + 1e-6
+            weight = G.edges[u, v].get("normalized_weight", 1e-6)  # Avoid divide-by-zero
             G.edges[u, v]["length"] = distance / np.sqrt(weight)
         else:
             G.edges[u, v]["length"] = distance

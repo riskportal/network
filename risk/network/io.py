@@ -217,6 +217,9 @@ class NetworkIO:
 
         Returns:
             nx.Graph: Loaded and processed network.
+
+        Raises:
+            ValueError: If no matching attribute metadata file is found.
         """
         filetype = "Cytoscape"
         # Log the loading of the Cytoscape file
@@ -258,13 +261,29 @@ class NetworkIO:
 
             # Read the node attributes (from /tables/)
             attribute_metadata_keywords = ["/tables/", "SHARED_ATTRS", "edge.cytable"]
-            attribute_metadata = [
-                os.path.join(tmp_dir, cf)
-                for cf in cys_files
-                if all(keyword in cf for keyword in attribute_metadata_keywords)
-            ][0]
-            # Load attributes file from Cytoscape as pandas data frame
-            attribute_table = pd.read_csv(attribute_metadata, sep=",", header=None, skiprows=1)
+            # Use a generator to find the first matching file
+            attribute_metadata = next(
+                (
+                    os.path.join(tmp_dir, cf)
+                    for cf in cys_files
+                    if all(keyword in cf for keyword in attribute_metadata_keywords)
+                ),
+                None,  # Default if no file matches
+            )
+            if attribute_metadata:
+                # Optimize `read_csv` by leveraging proper options
+                attribute_table = pd.read_csv(
+                    attribute_metadata,
+                    sep=",",
+                    header=None,
+                    skiprows=1,
+                    dtype=str,  # Use specific dtypes to reduce memory usage
+                    engine="c",  # Use the C engine for parsing if compatible
+                    low_memory=False,  # Optimize memory handling for large files
+                )
+            else:
+                raise ValueError("No matching attribute metadata file found.")
+
             # Set columns
             attribute_table.columns = attribute_table.iloc[0]
             # Skip first four rows
@@ -464,14 +483,19 @@ class NetworkIO:
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
-        missing_weights = 0
-        # Assign user-defined edge weights to the "weight" attribute
-        nx.set_edge_attributes(G, 1.0, "weight")  # Set default weight
-        if self.weight_label in nx.get_edge_attributes(G, self.weight_label):
-            nx.set_edge_attributes(G, nx.get_edge_attributes(G, self.weight_label), "weight")
+        # Set default weight for all edges in bulk
+        default_weight = 1.0
+        nx.set_edge_attributes(G, default_weight, "weight")
+        # Check and assign user-defined edge weights if available
+        weight_attributes = nx.get_edge_attributes(G, self.weight_label)
+        if weight_attributes:
+            nx.set_edge_attributes(G, weight_attributes, "weight")
 
-        if self.include_edge_weight and missing_weights:
-            logger.debug(f"Total edges missing weights: {missing_weights}")
+        # Log missing weights if include_edge_weight is enabled
+        if self.include_edge_weight:
+            missing_weights = len(G.edges) - len(weight_attributes)
+            if missing_weights > 0:
+                logger.debug(f"Total edges missing weights: {missing_weights}")
 
     def _validate_nodes(self, G: nx.Graph) -> None:
         """Validate the graph structure and attributes with attribute fallback for positions and labels.
