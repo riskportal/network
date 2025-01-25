@@ -39,6 +39,9 @@ def define_domains(
         pd.DataFrame: DataFrame with the primary domain for each node.
     """
     try:
+        if linkage_criterion == "off":
+            raise ValueError("Clustering is turned off.")
+
         # Transpose the matrix to cluster annotations
         m = significant_neighborhoods_significance[:, top_annotations["significant_annotations"]].T
         # Safeguard the matrix by replacing NaN, Inf, and -Inf values
@@ -62,9 +65,14 @@ def define_domains(
     except ValueError:
         # If a ValueError is encountered, handle it by assigning unique domains
         n_rows = len(top_annotations)
-        logger.error(
-            f"Error encountered. Skipping clustering and assigning {n_rows} unique domains."
-        )
+        if linkage_criterion == "off":
+            logger.warning(
+                f"Clustering is turned off. Skipping clustering and assigning {n_rows} unique domains."
+            )
+        else:
+            logger.error(
+                f"Error encountered. Skipping clustering and assigning {n_rows} unique domains."
+            )
         top_annotations["domain"] = range(1, n_rows + 1)  # Assign unique domains
 
     # Create DataFrames to store domain information
