@@ -4,7 +4,6 @@ tests/test_load_annotations
 """
 
 from scipy.sparse import csr_matrix, vstack
-import numpy as np
 
 
 def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):

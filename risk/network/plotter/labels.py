@@ -1,6 +1,6 @@
 """
-risk/network/plot/labels
-~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/plotter/labels
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import copy
@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from risk.log import params
-from risk.network.graph.network import NetworkGraph
+from risk.network.graph.graph import Graph
 from risk.network.plotter.utils.colors import get_annotated_domain_colors, to_rgba
 from risk.network.plotter.utils.layout import calculate_bounding_box
 
@@ -21,11 +21,11 @@ TERM_DELIMITER = "::::"  # String used to separate multiple domain terms when co
 class Labels:
     """Class to handle the annotation of network graphs with labels for different domains."""
 
-    def __init__(self, graph: NetworkGraph, ax: plt.Axes):
+    def __init__(self, graph: Graph, ax: plt.Axes):
         """Initialize the Labeler object with a network graph and matplotlib axes.
 
         Args:
-            graph (NetworkGraph): NetworkGraph object containing the network data.
+            graph (Graph): Graph object containing the network data.
             ax (plt.Axes): Matplotlib axes object to plot the labels on.
         """
         self.graph = graph

@@ -1,6 +1,6 @@
 """
-risk/network/plot/contour
-~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/plotter/contour
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict, List, Tuple, Union
@@ -12,18 +12,18 @@ from scipy.ndimage import label
 from scipy.stats import gaussian_kde
 
 from risk.log import params, logger
-from risk.network.graph.network import NetworkGraph
+from risk.network.graph.graph import Graph
 from risk.network.plotter.utils.colors import get_annotated_domain_colors, to_rgba
 
 
 class Contour:
     """Class to generate Kernel Density Estimate (KDE) contours for nodes in a network graph."""
 
-    def __init__(self, graph: NetworkGraph, ax: plt.Axes) -> None:
-        """Initialize the Contour with a NetworkGraph and axis for plotting.
+    def __init__(self, graph: Graph, ax: plt.Axes) -> None:
+        """Initialize the Contour with a Graph and axis for plotting.
 
         Args:
-            graph (NetworkGraph): The NetworkGraph object containing the network data.
+            graph (Graph): The Graph object containing the network data.
             ax (plt.Axes): The axis to plot the contours on.
         """
         self.graph = graph

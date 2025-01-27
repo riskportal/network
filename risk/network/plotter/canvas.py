@@ -1,6 +1,6 @@
 """
-risk/network/plot/canvas
-~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/plotter/canvas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import List, Tuple, Union
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from risk.log import params
-from risk.network.graph.network import NetworkGraph
+from risk.network.graph.graph import Graph
 from risk.network.plotter.utils.colors import to_rgba
 from risk.network.plotter.utils.layout import calculate_bounding_box
 
@@ -17,11 +17,11 @@ from risk.network.plotter.utils.layout import calculate_bounding_box
 class Canvas:
     """A class for laying out the canvas in a network graph."""
 
-    def __init__(self, graph: NetworkGraph, ax: plt.Axes) -> None:
-        """Initialize the Canvas with a NetworkGraph and axis for plotting.
+    def __init__(self, graph: Graph, ax: plt.Axes) -> None:
+        """Initialize the Canvas with a Graph and axis for plotting.
 
         Args:
-            graph (NetworkGraph): The NetworkGraph object containing the network data.
+            graph (Graph): The Graph object containing the network data.
             ax (plt.Axes): The axis to plot the canvas on.
         """
         self.graph = graph
@@ -236,7 +236,7 @@ class Canvas:
         # Scale the node coordinates if needed
         scaled_coordinates = node_coordinates * scale
         # Use the existing _draw_kde_contour method
-        # NOTE: This is a technical debt that should be refactored in the future - only works when inherited by NetworkPlotter
+        # NOTE: This is a technical debt that should be refactored in the future - only works when inherited by Plotter
         self._draw_kde_contour(
             ax=self.ax,
             pos=scaled_coordinates,
