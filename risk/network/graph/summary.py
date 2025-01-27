@@ -12,7 +12,7 @@ from statsmodels.stats.multitest import fdrcorrection
 from risk.log.console import logger, log_header
 
 
-class AnalysisSummary:
+class Summary:
     """Handles the processing, storage, and export of network analysis results.
 
     The Results class provides methods to process significance and depletion data, compute
@@ -25,14 +25,14 @@ class AnalysisSummary:
         self,
         annotations: Dict[str, Any],
         neighborhoods: Dict[str, Any],
-        graph,  # Avoid type hinting NetworkGraph to prevent circular imports
+        graph,  # Avoid type hinting Graph to prevent circular imports
     ):
         """Initialize the Results object with analysis components.
 
         Args:
             annotations (Dict[str, Any]): Annotation data, including ordered annotations and matrix of associations.
             neighborhoods (Dict[str, Any]): Neighborhood data containing p-values for significance and depletion analysis.
-            graph (NetworkGraph): Graph object representing domain-to-node and node-to-label mappings.
+            graph (Graph): Graph object representing domain-to-node and node-to-label mappings.
         """
         self.annotations = annotations
         self.neighborhoods = neighborhoods

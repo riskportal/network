@@ -1,6 +1,6 @@
 """
-risk/network/graph/network
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/graph/graph
+~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from collections import defaultdict
@@ -10,13 +10,13 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from risk.network.graph.summary import AnalysisSummary
+from risk.network.graph.summary import Summary
 
 
-class NetworkGraph:
+class Graph:
     """A class to represent a network graph and process its nodes and edges.
 
-    The NetworkGraph class provides functionality to handle and manipulate a network graph,
+    The Graph class provides functionality to handle and manipulate a network graph,
     including managing domains, annotations, and node significance data. It also includes methods
     for transforming and mapping graph coordinates, as well as generating colors based on node
     significance.
@@ -32,7 +32,7 @@ class NetworkGraph:
         node_label_to_node_id_map: Dict[str, Any],
         node_significance_sums: np.ndarray,
     ):
-        """Initialize the NetworkGraph object.
+        """Initialize the Graph object.
 
         Args:
             network (nx.Graph): The network graph.
@@ -69,7 +69,7 @@ class NetworkGraph:
         self.node_coordinates = _extract_node_coordinates(self.network)
 
         # NOTE: Only after the above attributes are initialized, we can create the summary
-        self.summary = AnalysisSummary(annotations, neighborhoods, self)
+        self.summary = Summary(annotations, neighborhoods, self)
 
     def pop(self, domain_id: str) -> None:
         """Remove domain ID from instance domain ID mappings. This can be useful for cleaning up

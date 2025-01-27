@@ -7,7 +7,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from risk.network.graph.summary import AnalysisSummary
+from risk.network.graph.summary import Summary
 
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
@@ -241,7 +241,7 @@ def test_linkage_criterion_and_auto_clustering_options(
 
 
 def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
-    """Test that the NetworkGraph object contains the expected components.
+    """Test that the Graph object contains the expected components.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -310,7 +310,7 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
     assert isinstance(
         graph.node_coordinates, np.ndarray
     ), "Node coordinates should be a numpy array"
-    assert isinstance(graph.summary, AnalysisSummary), "Summary should be an AnalysisSummary object"
+    assert isinstance(graph.summary, Summary), "Summary should be an Summary object"
 
 
 def test_load_graph_summary(graph):
@@ -326,7 +326,7 @@ def test_load_graph_summary(graph):
 
 
 def test_pop_domain(graph):
-    """Test the pop method for removing a domain ID from all NetworkGraph attribute domain mappings.
+    """Test the pop method for removing a domain ID from all Graph attribute domain mappings.
 
     Args:
         graph: The graph object instance with existing domain mappings.

@@ -16,7 +16,7 @@ from risk.neighborhoods import (
     process_neighborhoods,
     trim_domains,
 )
-from risk.network.graph.network import NetworkGraph
+from risk.network.graph.graph import Graph
 from risk.stats import calculate_significance_matrices
 
 
@@ -44,7 +44,7 @@ class GraphAPI:
         linkage_metric: str = "yule",
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
-    ) -> NetworkGraph:
+    ) -> Graph:
         """Load and process the network graph, defining top annotations and domains.
 
         Args:
@@ -63,7 +63,7 @@ class GraphAPI:
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
         Returns:
-            NetworkGraph: A fully initialized and processed NetworkGraph object.
+            Graph: A fully initialized and processed Graph object.
         """
         # Log the parameters and display headers
         log_header("Finding significant neighborhoods")
@@ -139,13 +139,13 @@ class GraphAPI:
             max_cluster_size=max_cluster_size,
         )
 
-        # Prepare node mapping and significance sums for the final NetworkGraph object
+        # Prepare node mapping and significance sums for the final Graph object
         ordered_nodes = annotations["ordered_nodes"]
         node_label_to_id = dict(zip(ordered_nodes, range(len(ordered_nodes))))
         node_significance_sums = processed_neighborhoods["node_significance_sums"]
 
-        # Return the fully initialized NetworkGraph object
-        return NetworkGraph(
+        # Return the fully initialized Graph object
+        return Graph(
             network=network,
             annotations=annotations,
             neighborhoods=neighborhoods,

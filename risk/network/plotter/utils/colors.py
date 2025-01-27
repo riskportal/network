@@ -1,6 +1,6 @@
 """
-risk/network/plot/utils/color
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/plotter/utils/colors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict, List, Tuple, Union
@@ -9,11 +9,11 @@ import matplotlib
 import matplotlib.colors as mcolors
 import numpy as np
 
-from risk.network.graph.network import NetworkGraph
+from risk.network.graph.graph import Graph
 
 
 def get_annotated_domain_colors(
-    graph: NetworkGraph,
+    graph: Graph,
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     blend_colors: bool = False,
@@ -27,7 +27,7 @@ def get_annotated_domain_colors(
     """Get colors for the domains based on node annotations, or use a specified color.
 
     Args:
-        graph (NetworkGraph): The network data and attributes to be visualized.
+        graph (Graph): The network data and attributes to be visualized.
         cmap (str, optional): Colormap to use for generating domain colors. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): Color to use for the domains. Can be a single color or an array of colors.
             If None, the colormap will be used. Defaults to None.
@@ -72,7 +72,7 @@ def get_annotated_domain_colors(
 
 
 def get_domain_colors(
-    graph: NetworkGraph,
+    graph: Graph,
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     blend_colors: bool = False,
@@ -86,7 +86,7 @@ def get_domain_colors(
     """Generate composite colors for domains based on significance or specified colors.
 
     Args:
-        graph (NetworkGraph): The network data and attributes to be visualized.
+        graph (Graph): The network data and attributes to be visualized.
         cmap (str, optional): Name of the colormap to use for generating domain colors. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for all domains.
             If None, the colormap will be used. Defaults to None.
@@ -127,7 +127,7 @@ def get_domain_colors(
 
 
 def _get_domain_ids_to_colors(
-    graph: NetworkGraph,
+    graph: Graph,
     cmap: str = "gist_rainbow",
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     ids_to_colors: Union[Dict[int, Any], None] = None,
@@ -136,7 +136,7 @@ def _get_domain_ids_to_colors(
     """Get colors for each domain.
 
     Args:
-        graph (NetworkGraph): The network data and attributes to be visualized.
+        graph (Graph): The network data and attributes to be visualized.
         cmap (str, optional): The name of the colormap to use. Defaults to "gist_rainbow".
         color (str, List, Tuple, np.ndarray, or None, optional): A specific color or array of colors to use for the domains.
             If None, the colormap will be used. Defaults to None.
@@ -167,7 +167,7 @@ def _get_domain_ids_to_colors(
 
 
 def _get_composite_node_colors(
-    graph: NetworkGraph,
+    graph: Graph,
     domain_ids_to_colors: Dict[int, Any],
     blend_colors: bool = False,
     blend_gamma: float = 2.2,
@@ -175,7 +175,7 @@ def _get_composite_node_colors(
     """Generate composite colors for nodes based on domain colors and significance values, with optional color blending.
 
     Args:
-        graph (NetworkGraph): The network data and attributes to be visualized.
+        graph (Graph): The network data and attributes to be visualized.
         domain_ids_to_colors (Dict[int, Any]): Mapping of domain IDs to RGBA colors.
         blend_colors (bool): Whether to blend colors for nodes with multiple domains. Defaults to False.
         blend_gamma (float, optional): Gamma correction factor to be used for perceptual color blending.
