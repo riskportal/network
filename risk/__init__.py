@@ -7,4 +7,4 @@ RISK: Regional Inference of Significant Kinships
 
 from risk.risk import RISK
 
-__version__ = "0.0.9-beta.30"
+__version__ = "0.0.9-beta.31"
