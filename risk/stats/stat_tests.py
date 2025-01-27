@@ -152,31 +152,49 @@ def compute_hypergeom_test(
 
     # Sparse matrix multiplication for observed counts
     annotated_in_neighborhood = neighborhoods.T @ annotations  # Result is sparse
+    # Determine the axis with fewer vectors
+    axis_to_process = 0 if annotations.shape[0] < annotations.shape[1] else 1
 
-    def compute_pvals_for_column(col_idx: int):
-        """Compute depletion and enrichment p-values for a single annotation column."""
-        observed_counts = annotated_in_neighborhood[:, col_idx].toarray().flatten()
-        ann_total = annotation_sums[col_idx]
-        # Compute depletion and enrichment p-values
-        depletion_pvals = hypergeom.cdf(
-            observed_counts, background_population, ann_total, neighborhood_sums
-        )
-        enrichment_pvals = hypergeom.sf(
-            observed_counts - 1, background_population, ann_total, neighborhood_sums
-        )
-        return col_idx, depletion_pvals, enrichment_pvals
+    # Initialize p-value arrays
+    depletion_pvals = np.empty(annotated_in_neighborhood.shape, dtype=np.float64)
+    enrichment_pvals = np.empty(annotated_in_neighborhood.shape, dtype=np.float64)
 
-    # Use ThreadPoolExecutor to process columns in parallel
-    num_columns = annotations.shape[1]
-    depletion_pvals = np.empty((annotated_in_neighborhood.shape[0], num_columns), dtype=np.float64)
-    enrichment_pvals = np.empty((annotated_in_neighborhood.shape[0], num_columns), dtype=np.float64)
+    def compute_pvals_for_index(idx: int):
+        """Compute p-values for a given index."""
+        if axis_to_process == 0:  # Process rows
+            observed_counts = annotated_in_neighborhood[idx, :].toarray().flatten()
+            neigh_total = neighborhood_sums[idx]
+            return (
+                idx,
+                hypergeom.cdf(observed_counts, background_population, annotation_sums, neigh_total),
+                hypergeom.sf(
+                    observed_counts - 1, background_population, annotation_sums, neigh_total
+                ),
+            )
+        else:  # Process columns
+            observed_counts = annotated_in_neighborhood[:, idx].toarray().flatten()
+            ann_total = annotation_sums[idx]
+            return (
+                idx,
+                hypergeom.cdf(observed_counts, background_population, ann_total, neighborhood_sums),
+                hypergeom.sf(
+                    observed_counts - 1, background_population, ann_total, neighborhood_sums
+                ),
+            )
+
+    # Use ThreadPoolExecutor to process indices in parallel
+    num_indices = annotations.shape[axis_to_process]
     with ThreadPoolExecutor() as executor:
-        results = executor.map(compute_pvals_for_column, range(num_columns))
+        results = executor.map(compute_pvals_for_index, range(num_indices))
 
     # Collect results
-    for col_idx, dep_pval, enr_pval in results:
-        depletion_pvals[:, col_idx] = dep_pval
-        enrichment_pvals[:, col_idx] = enr_pval
+    for idx, dep_pval, enr_pval in results:
+        if axis_to_process == 0:  # Rows
+            depletion_pvals[idx, :] = dep_pval
+            enrichment_pvals[idx, :] = enr_pval
+        else:  # Columns
+            depletion_pvals[:, idx] = dep_pval
+            enrichment_pvals[:, idx] = enr_pval
 
     return {"depletion_pvals": depletion_pvals, "enrichment_pvals": enrichment_pvals}
 
