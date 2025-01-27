@@ -131,34 +131,39 @@ def compute_hypergeom_test(
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
-    # Get the total number of nodes in the network
+    # Total number of nodes
     total_nodes = neighborhoods.shape[1]
 
-    # Compute sums
-    neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()  # Convert to dense array
-    annotation_sums = annotations.sum(axis=0).A.flatten()  # Convert to dense array
+    # Compute sums directly using sparse operations
+    neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()
+    annotation_sums = annotations.sum(axis=0).A.flatten()
 
     if null_distribution == "network":
         background_population = total_nodes
     elif null_distribution == "annotations":
-        annotated_nodes = annotations.sum(axis=1).A.flatten() > 0  # Boolean mask
+        # Boolean mask for nodes with annotations
+        annotated_nodes = annotations.getnnz(axis=1) > 0
         background_population = annotated_nodes.sum()
-        neighborhood_sums = neighborhoods[annotated_nodes].sum(axis=0).A.flatten()
-        annotation_sums = annotations[annotated_nodes].sum(axis=0).A.flatten()
+        # Filter neighborhoods and annotations to include only annotated nodes
+        neighborhoods = neighborhoods[annotated_nodes]
+        annotations = annotations[annotated_nodes]
+        neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()
+        annotation_sums = annotations.sum(axis=0).A.flatten()
     else:
         raise ValueError(
             "Invalid null_distribution value. Choose either 'network' or 'annotations'."
         )
 
-    # Observed counts
-    annotated_in_neighborhood = neighborhoods.T @ annotations  # Sparse result
-    annotated_in_neighborhood = annotated_in_neighborhood.toarray()  # Convert to dense
+    # Compute annotated nodes in each neighborhood
+    annotated_in_neighborhood = neighborhoods.T @ annotations  # Sparse multiplication
+    # Convert to dense arrays for vectorized operations
+    annotated_in_neighborhood = annotated_in_neighborhood.toarray()
     # Align shapes for broadcasting
-    neighborhood_sums = neighborhood_sums.reshape(-1, 1)
-    annotation_sums = annotation_sums.reshape(1, -1)
-    background_population = np.array(background_population).reshape(1, 1)
+    neighborhood_sums = neighborhood_sums[:, np.newaxis]
+    annotation_sums = annotation_sums[np.newaxis, :]
+    background_population = np.array([[background_population]])
 
-    # Compute hypergeometric p-values
+    # Fully vectorized hypergeometric calculations
     depletion_pvals = hypergeom.cdf(
         annotated_in_neighborhood, background_population, annotation_sums, neighborhood_sums
     )
