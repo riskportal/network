@@ -3,6 +3,7 @@ risk/stats/stat_tests
 ~~~~~~~~~~~~~~~~~~~~~
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict
 
 import numpy as np
@@ -120,56 +121,62 @@ def compute_hypergeom_test(
     annotations: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """
-    Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
         annotations (csr_matrix): Sparse binary matrix representing annotations.
-        null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+        null_distribution (str, optional): Type of null distribution ('network' or 'annotations').
+            Defaults to "network".
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
     """
-    # Total number of nodes
+    # Get the total number of nodes in the network
     total_nodes = neighborhoods.shape[1]
+    # Calculate neighborhood and annotation sums
+    neighborhood_sums = neighborhoods.sum(axis=0).A1  # A1 returns a 1D array
+    annotation_sums = annotations.sum(axis=0).A1
 
-    # Compute sums directly using sparse operations
-    neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()
-    annotation_sums = annotations.sum(axis=0).A.flatten()
-
-    if null_distribution == "network":
-        background_population = total_nodes
-    elif null_distribution == "annotations":
-        # Boolean mask for nodes with annotations
-        annotated_nodes = annotations.getnnz(axis=1) > 0
+    if null_distribution == "annotations":
+        annotated_nodes = annotations.getnnz(axis=1) > 0  # Nodes with any annotation
         background_population = annotated_nodes.sum()
-        # Filter neighborhoods and annotations to include only annotated nodes
         neighborhoods = neighborhoods[annotated_nodes]
         annotations = annotations[annotated_nodes]
-        neighborhood_sums = neighborhoods.sum(axis=0).A.flatten()
-        annotation_sums = annotations.sum(axis=0).A.flatten()
+        neighborhood_sums = neighborhoods.sum(axis=0).A1
+        annotation_sums = annotations.sum(axis=0).A1
+    elif null_distribution == "network":
+        background_population = total_nodes
     else:
-        raise ValueError(
-            "Invalid null_distribution value. Choose either 'network' or 'annotations'."
+        raise ValueError("Invalid null_distribution value. Choose 'network' or 'annotations'.")
+
+    # Sparse matrix multiplication for observed counts
+    annotated_in_neighborhood = neighborhoods.T @ annotations  # Result is sparse
+
+    def compute_pvals_for_column(col_idx: int):
+        """Compute depletion and enrichment p-values for a single annotation column."""
+        observed_counts = annotated_in_neighborhood[:, col_idx].toarray().flatten()
+        ann_total = annotation_sums[col_idx]
+        # Compute depletion and enrichment p-values
+        depletion_pvals = hypergeom.cdf(
+            observed_counts, background_population, ann_total, neighborhood_sums
         )
+        enrichment_pvals = hypergeom.sf(
+            observed_counts - 1, background_population, ann_total, neighborhood_sums
+        )
+        return col_idx, depletion_pvals, enrichment_pvals
 
-    # Compute annotated nodes in each neighborhood
-    annotated_in_neighborhood = neighborhoods.T @ annotations  # Sparse multiplication
-    # Convert to dense arrays for vectorized operations
-    annotated_in_neighborhood = annotated_in_neighborhood.toarray()
-    # Align shapes for broadcasting
-    neighborhood_sums = neighborhood_sums[:, np.newaxis]
-    annotation_sums = annotation_sums[np.newaxis, :]
-    background_population = np.array([[background_population]])
+    # Use ThreadPoolExecutor to process columns in parallel
+    num_columns = annotations.shape[1]
+    depletion_pvals = np.empty((annotated_in_neighborhood.shape[0], num_columns), dtype=np.float64)
+    enrichment_pvals = np.empty((annotated_in_neighborhood.shape[0], num_columns), dtype=np.float64)
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(compute_pvals_for_column, range(num_columns))
 
-    # Fully vectorized hypergeometric calculations
-    depletion_pvals = hypergeom.cdf(
-        annotated_in_neighborhood, background_population, annotation_sums, neighborhood_sums
-    )
-    enrichment_pvals = hypergeom.sf(
-        annotated_in_neighborhood - 1, background_population, annotation_sums, neighborhood_sums
-    )
+    # Collect results
+    for col_idx, dep_pval, enr_pval in results:
+        depletion_pvals[:, col_idx] = dep_pval
+        enrichment_pvals[:, col_idx] = enr_pval
 
     return {"depletion_pvals": depletion_pvals, "enrichment_pvals": enrichment_pvals}
 
