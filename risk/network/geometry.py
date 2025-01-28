@@ -11,7 +11,6 @@ def assign_edge_lengths(
     G: nx.Graph,
     compute_sphere: bool = True,
     surface_depth: float = 0.0,
-    include_edge_weight: bool = False,
 ) -> nx.Graph:
     """Assign edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
 
@@ -19,7 +18,6 @@ def assign_edge_lengths(
         G (nx.Graph): The input graph.
         compute_sphere (bool): Whether to map nodes to a sphere. Defaults to True.
         surface_depth (float): The surface depth for mapping to a sphere. Defaults to 0.0.
-        include_edge_weight (bool): Whether to include edge weights in the calculation. Defaults to False.
 
     Returns:
         nx.Graph: The graph with applied edge lengths.
@@ -64,11 +62,7 @@ def assign_edge_lengths(
     distances = compute_distance_vectorized(edge_data, compute_sphere)
     # Assign distances back to the graph
     for (u, v), distance in zip(G_depth.edges, distances):
-        if include_edge_weight:
-            weight = G.edges[u, v].get("normalized_weight", 1e-6)  # Avoid divide-by-zero
-            G.edges[u, v]["length"] = distance / np.sqrt(weight)
-        else:
-            G.edges[u, v]["length"] = distance
+        G.edges[u, v]["length"] = distance
 
     return G
 

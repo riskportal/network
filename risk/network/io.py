@@ -31,8 +31,6 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
     ):
         """Initialize the NetworkIO class.
 
@@ -40,21 +38,15 @@ class NetworkIO:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
         """
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
         self.min_edges_per_node = min_edges_per_node
-        self.include_edge_weight = include_edge_weight
-        self.weight_label = weight_label
         # Log the initialization of the NetworkIO class
         params.log_network(
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
         )
 
     @staticmethod
@@ -63,8 +55,6 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
     ) -> nx.Graph:
         """Load a network from a GPickle file.
 
@@ -73,8 +63,6 @@ class NetworkIO:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
 
         Returns:
             nx.Graph: Loaded and processed network.
@@ -83,8 +71,6 @@ class NetworkIO:
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
         )
         return networkio._load_gpickle_network(filepath=filepath)
 
@@ -114,8 +100,6 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
     ) -> nx.Graph:
         """Load a NetworkX graph.
 
@@ -124,8 +108,6 @@ class NetworkIO:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
 
         Returns:
             nx.Graph: Loaded and processed network.
@@ -134,8 +116,6 @@ class NetworkIO:
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
         )
         return networkio._load_networkx_network(network=network)
 
@@ -167,8 +147,6 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
     ) -> nx.Graph:
         """Load a network from a Cytoscape file.
 
@@ -180,8 +158,6 @@ class NetworkIO:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
 
         Returns:
             nx.Graph: Loaded and processed network.
@@ -190,8 +166,6 @@ class NetworkIO:
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
         )
         return networkio._load_cytoscape_network(
             filepath=filepath,
@@ -286,26 +260,17 @@ class NetworkIO:
 
             # Set columns
             attribute_table.columns = attribute_table.iloc[0]
-            # Skip first four rows
+            # Skip first four rows, select source and target columns, and reset index
             attribute_table = attribute_table.iloc[4:, :]
-            # Conditionally select columns based on include_edge_weight
-            if self.include_edge_weight:
-                attribute_table = attribute_table[[source_label, target_label, self.weight_label]]
-            else:
-                attribute_table = attribute_table[[source_label, target_label]]
-
+            attribute_table = attribute_table[[source_label, target_label]]
             attribute_table = attribute_table.dropna().reset_index(drop=True)
             # Create a graph
             G = nx.Graph()
-            # Add edges and nodes, conditionally including weights
+            # Add edges and nodes
             for _, row in attribute_table.iterrows():
                 source = row[source_label]
                 target = row[target_label]
-                if self.include_edge_weight:
-                    weight = float(row[self.weight_label])
-                    G.add_edge(source, target, weight=weight)
-                else:
-                    G.add_edge(source, target)
+                G.add_edge(source, target)
 
                 if source not in G:
                     G.add_node(source)  # Optionally add x, y coordinates here if available
@@ -334,8 +299,6 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
-        include_edge_weight: bool = True,
-        weight_label: str = "weight",
     ) -> nx.Graph:
         """Load a network from a Cytoscape JSON (.cyjs) file.
 
@@ -346,8 +309,6 @@ class NetworkIO:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
             min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-            include_edge_weight (bool, optional): Whether to include edge weights in calculations. Defaults to True.
-            weight_label (str, optional): Label for edge weights. Defaults to "weight".
 
         Returns:
             NetworkX graph: Loaded and processed network.
@@ -356,8 +317,6 @@ class NetworkIO:
             compute_sphere=compute_sphere,
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
-            include_edge_weight=include_edge_weight,
-            weight_label=weight_label,
         )
         return networkio._load_cytoscape_json_network(
             filepath=filepath,
@@ -403,12 +362,7 @@ class NetworkIO:
             # Use the original source and target labels if available, otherwise fall back to default labels
             source = edge_data.get(f"{source_label}_original", edge_data.get(source_label))
             target = edge_data.get(f"{target_label}_original", edge_data.get(target_label))
-            # Add the edge to the graph, optionally including weights
-            if self.weight_label is not None and self.weight_label in edge_data:
-                weight = float(edge_data[self.weight_label])
-                G.add_edge(source, target, weight=weight)
-            else:
-                G.add_edge(source, target)
+            G.add_edge(source, target)
 
             # Ensure nodes exist in the graph and add them if not present
             if source not in G:
@@ -478,24 +432,14 @@ class NetworkIO:
         logger.debug(f"Final edge count: {num_final_edges}")
 
     def _assign_edge_weights(self, G: nx.Graph) -> None:
-        """Assign weights to the edges in the graph.
+        """Assign default edge weights to the graph.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
         """
         # Set default weight for all edges in bulk
-        default_weight = 1.0
+        default_weight = 1
         nx.set_edge_attributes(G, default_weight, "weight")
-        # Check and assign user-defined edge weights if available
-        weight_attributes = nx.get_edge_attributes(G, self.weight_label)
-        if weight_attributes:
-            nx.set_edge_attributes(G, weight_attributes, "weight")
-
-        # Log missing weights if include_edge_weight is enabled
-        if self.include_edge_weight:
-            missing_weights = len(G.edges) - len(weight_attributes)
-            if missing_weights > 0:
-                logger.debug(f"Total edges missing weights: {missing_weights}")
 
     def _validate_nodes(self, G: nx.Graph) -> None:
         """Validate the graph structure and attributes with attribute fallback for positions and labels.
@@ -567,7 +511,6 @@ class NetworkIO:
             G,
             compute_sphere=self.compute_sphere,
             surface_depth=self.surface_depth,
-            include_edge_weight=self.include_edge_weight,
         )
 
     def _log_loading(
@@ -585,9 +528,6 @@ class NetworkIO:
         logger.debug(f"Filetype: {filetype}")
         if filepath:
             logger.debug(f"Filepath: {filepath}")
-        logger.debug(f"Edge weight: {'Included' if self.include_edge_weight else 'Excluded'}")
-        if self.include_edge_weight:
-            logger.debug(f"Weight label: {self.weight_label}")
         logger.debug(f"Minimum edges per node: {self.min_edges_per_node}")
         logger.debug(f"Projection: {'Sphere' if self.compute_sphere else 'Plane'}")
         if self.compute_sphere:

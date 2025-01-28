@@ -142,8 +142,6 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
         compute_sphere=False,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
     # Track the original node labels in the label order (before modifying the network)
@@ -167,8 +165,6 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
         compute_sphere=False,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
     # Test the fallback mechanism for 'pos' -> 'x' and 'y' and ensure the new node 'label' matches the old node IDs
@@ -201,8 +197,6 @@ def test_load_network_min_edges(risk_obj, data_path, min_edges):
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
-        include_edge_weight=False,
-        weight_label="weight",
         min_edges_per_node=min_edges,
         compute_sphere=True,
         surface_depth=0.5,
@@ -225,8 +219,6 @@ def test_node_and_edge_attributes(risk_obj, data_path):
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
-        include_edge_weight=True,
-        weight_label="weight",
     )
 
     # Validate node attributes

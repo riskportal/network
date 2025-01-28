@@ -360,7 +360,7 @@ def to_rgba(
 
     def convert_to_rgba(c: Union[str, List, Tuple, np.ndarray]) -> np.ndarray:
         """Convert a single color to RGBA format, handling strings, hex, and RGB/RGBA lists."""
-        # Note: if no alpha is provided, the default alpha value is 1.0 by mcolors.to_rgba
+        # NOTE: if no alpha is provided, the default alpha value is 1.0 by mcolors.to_rgba
         if isinstance(c, str):
             # Convert color names or hex values (e.g., 'red', '#FF5733') to RGBA
             rgba = np.array(mcolors.to_rgba(c))
