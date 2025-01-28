@@ -168,13 +168,13 @@ def test_load_neighborhoods_poisson(
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotations"])
 def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """Test loading neighborhoods using the Z-score test with multiple null distributions.
+    """Test loading neighborhoods using the z-score test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotations associated with the network.
-        null_distribution: Null distribution type for the Z-score test (either 'network' or 'annotations').
+        null_distribution: Null distribution type for the z-score test (either 'network' or 'annotations').
     """
     neighborhoods = risk_obj.load_neighborhoods_by_zscore(
         network=cytoscape_network,
