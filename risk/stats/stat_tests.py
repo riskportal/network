@@ -215,7 +215,7 @@ def compute_zscore_test(
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
     """
-    Compute Z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
+    Compute z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -257,10 +257,10 @@ def compute_zscore_test(
         * (1 - neighborhood_sums / background_population)
     )
     std_dev[std_dev == 0] = np.nan  # Avoid division by zero
-    # Compute Z-scores
+    # Compute z-scores
     z_scores = (observed - expected) / std_dev
 
-    # Convert Z-scores to depletion and enrichment p-values
+    # Convert z-scores to depletion and enrichment p-values
     enrichment_pvals = norm.sf(z_scores)  # Upper tail
     depletion_pvals = norm.cdf(z_scores)  # Lower tail
 

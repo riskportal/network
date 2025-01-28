@@ -280,7 +280,7 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the Z-score test.
+        """Load significant neighborhoods for the network using the z-score test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -299,8 +299,8 @@ class NeighborhoodsAPI:
         Returns:
             Dict[str, Any]: Computed significance of neighborhoods.
         """
-        log_header("Running Z-score test")
-        # Compute neighborhood significance using the Z-score test
+        log_header("Running z-score test")
+        # Compute neighborhood significance using the z-score test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
             annotations=annotations,
