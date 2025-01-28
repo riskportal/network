@@ -64,8 +64,6 @@ def cytoscape_network(risk_obj, data_path):
         compute_sphere=True,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
 
@@ -88,8 +86,6 @@ def cytoscape_json_network(risk_obj, data_path):
         compute_sphere=True,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
 
@@ -110,8 +106,6 @@ def gpickle_network(risk_obj, data_path):
         compute_sphere=True,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
 
@@ -131,8 +125,6 @@ def networkx_network(risk_obj, cytoscape_network):
         compute_sphere=True,
         surface_depth=0.1,
         min_edges_per_node=0,
-        include_edge_weight=False,
-        weight_label="weight",
     )
 
 

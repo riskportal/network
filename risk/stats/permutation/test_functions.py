@@ -6,7 +6,7 @@ risk/stats/permutation/test_functions
 import numpy as np
 from scipy.sparse import csr_matrix
 
-# Note: Cython optimizations provided minimal performance benefits.
+# NOTE: Cython optimizations provided minimal performance benefits.
 # The final version with Cython is archived in the `cython_permutation` branch.
 # DISPATCH_TEST_FUNCTIONS can be found at the end of the file.
 
