@@ -46,19 +46,23 @@ def compute_neighborhood_score_by_stdev(
     neighborhood_score = neighborhoods_matrix @ annotation_matrix  # Sparse matrix multiplication
     # Calculate the number of elements in each neighborhood (sum of rows)
     N = neighborhoods_matrix.sum(axis=1).A.flatten()  # Convert to 1D array
-    # Avoid division by zero by replacing zeros in N with np.nan temporarily
-    N[N == 0] = np.nan
+    if np.any(N == 0):
+        # Replace zeros in N with small positive values to avoid division errors
+        N = np.where(N == 0, np.nan, N)
+
     # Compute the mean of the neighborhood scores
     M = neighborhood_score.multiply(1 / N[:, None]).toarray()  # Sparse element-wise division
     # Compute the mean of squares (EXX) directly using squared annotation matrix
     annotation_squared = annotation_matrix.multiply(annotation_matrix)  # Element-wise squaring
     EXX = (neighborhoods_matrix @ annotation_squared).multiply(1 / N[:, None]).toarray()
-    # Calculate variance as EXX - M^2
-    variance = EXX - np.power(M, 2)
+
+    # Calculate variance as EXX - M^2, ensuring no negative variances
+    variance = np.maximum(EXX - np.power(M, 2), 0)
     # Compute the standard deviation as the square root of the variance
     neighborhood_stdev = np.sqrt(variance)
-    # Replace np.nan back with zeros in case N was 0 (no elements in the neighborhood)
+    # Replace np.nan back with zeros for rows where N was 0
     neighborhood_stdev[np.isnan(neighborhood_stdev)] = 0
+
     return neighborhood_stdev
 
 
