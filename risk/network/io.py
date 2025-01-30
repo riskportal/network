@@ -262,8 +262,25 @@ class NetworkIO:
             attribute_table.columns = attribute_table.iloc[0]
             # Skip first four rows, select source and target columns, and reset index
             attribute_table = attribute_table.iloc[4:, :]
-            attribute_table = attribute_table[[source_label, target_label]]
+            try:
+                # Attempt to filter the attribute_table with the given labels
+                attribute_table = attribute_table[[source_label, target_label]]
+            except KeyError as e:
+                # Find which key(s) caused the issue
+                missing_keys = [
+                    key
+                    for key in [source_label, target_label]
+                    if key not in attribute_table.columns
+                ]
+                # Raise the KeyError with details about the issue and available options
+                available_columns = ", ".join(attribute_table.columns)
+                raise KeyError(
+                    f"The column(s) '{', '.join(missing_keys)}' do not exist in the table. "
+                    f"Available columns are: {available_columns}."
+                ) from e
+
             attribute_table = attribute_table.dropna().reset_index(drop=True)
+
             # Create a graph
             G = nx.Graph()
             # Add edges and nodes
@@ -271,7 +288,6 @@ class NetworkIO:
                 source = row[source_label]
                 target = row[target_label]
                 G.add_edge(source, target)
-
                 if source not in G:
                     G.add_node(source)  # Optionally add x, y coordinates here if available
                 if target not in G:
