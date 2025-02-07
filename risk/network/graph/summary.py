@@ -103,9 +103,9 @@ class Summary:
         # Add minimum p-values and q-values to DataFrame
         results[
             [
-                "Enrichment P-value",
+                "Enrichment P-Value",
                 "Enrichment Q-value",
-                "Depletion P-value",
+                "Depletion P-Value",
                 "Depletion Q-value",
             ]
         ] = results.apply(
@@ -137,9 +137,9 @@ class Summary:
                     "Annotation Members in Network",
                     "Annotation Members in Network Count",
                     "Summed Significance Score",
-                    "Enrichment P-value",
+                    "Enrichment P-Value",
                     "Enrichment Q-value",
-                    "Depletion P-value",
+                    "Depletion P-Value",
                     "Depletion Q-value",
                 ]
             ]
@@ -156,9 +156,9 @@ class Summary:
                 "Annotation Members in Network": "",
                 "Annotation Members in Network Count": 0,
                 "Summed Significance Score": 0.0,
-                "Enrichment P-value": 1.0,
+                "Enrichment P-Value": 1.0,
                 "Enrichment Q-value": 1.0,
-                "Depletion P-value": 1.0,
+                "Depletion P-Value": 1.0,
                 "Depletion Q-value": 1.0,
             }
         )
