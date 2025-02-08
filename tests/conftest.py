@@ -287,6 +287,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        linkage_threshold=0.2,
         min_cluster_size=5,
         max_cluster_size=1000,
     )

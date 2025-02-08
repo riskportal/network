@@ -84,6 +84,7 @@ def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        linkage_threshold=0.2,
         min_cluster_size=5,
         max_cluster_size=1000,
     )

@@ -45,6 +45,7 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        linkage_threshold=0.2,
         min_cluster_size=5,
         max_cluster_size=1000,
     )
@@ -91,6 +92,7 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
             linkage_criterion="distance",
             linkage_method="average",
             linkage_metric="yule",
+            linkage_threshold=0.2,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
@@ -135,6 +137,7 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        linkage_threshold=0.2,
         min_cluster_size=5,
         max_cluster_size=1000,
     )
@@ -182,6 +185,7 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
             linkage_criterion="distance",
             linkage_method="average",
             linkage_metric="yule",
+            linkage_threshold=0.2,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
@@ -229,6 +233,7 @@ def test_linkage_criterion_and_auto_clustering_options(
             linkage_criterion=criterion,
             linkage_method="auto",
             linkage_metric="auto",
+            linkage_threshold="auto",
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
@@ -274,6 +279,7 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
         linkage_criterion="distance",
         linkage_method="average",
         linkage_metric="yule",
+        linkage_threshold=0.2,
         min_cluster_size=5,
         max_cluster_size=1000,
     )
