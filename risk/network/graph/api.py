@@ -42,6 +42,7 @@ class GraphAPI:
         linkage_criterion: str = "distance",
         linkage_method: str = "average",
         linkage_metric: str = "yule",
+        linkage_threshold: float = 0.2,
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
     ) -> Graph:
@@ -59,6 +60,7 @@ class GraphAPI:
             linkage_criterion (str, optional): Clustering criterion for defining domains. Defaults to "distance".
             linkage_method (str, optional): Clustering method to use. Defaults to "average".
             linkage_metric (str, optional): Metric to use for calculating distances. Defaults to "yule".
+            linkage_threshold (float, optional): Threshold for clustering. Defaults to 0.2.
             min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
@@ -76,6 +78,7 @@ class GraphAPI:
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,
+            linkage_threshold=linkage_threshold,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
@@ -130,6 +133,7 @@ class GraphAPI:
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
             linkage_metric=linkage_metric,
+            linkage_threshold=linkage_threshold,
         )
         # Trim domains and top annotations based on cluster size constraints
         domains, trimmed_domains = trim_domains(
