@@ -4,7 +4,7 @@ risk/network/graph/api
 """
 
 import copy
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import networkx as nx
 import pandas as pd
@@ -42,7 +42,7 @@ class GraphAPI:
         linkage_criterion: str = "distance",
         linkage_method: str = "average",
         linkage_metric: str = "yule",
-        linkage_threshold: float = 0.2,
+        linkage_threshold: Union[float, str] = 0.2,
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
     ) -> Graph:
@@ -58,9 +58,11 @@ class GraphAPI:
             impute_depth (int, optional): Depth for imputing neighbors. Defaults to 0.
             prune_threshold (float, optional): Distance threshold for pruning neighbors. Defaults to 0.0.
             linkage_criterion (str, optional): Clustering criterion for defining domains. Defaults to "distance".
-            linkage_method (str, optional): Clustering method to use. Defaults to "average".
-            linkage_metric (str, optional): Metric to use for calculating distances. Defaults to "yule".
-            linkage_threshold (float, optional): Threshold for clustering. Defaults to 0.2.
+            linkage_method (str, optional): Clustering method to use. Choose "auto" to optimize. Defaults to "average".
+            linkage_metric (str, optional): Metric to use for calculating distances. Choose "auto" to optimize.
+                Defaults to "yule".
+            linkage_threshold (float, str, optional): Threshold for clustering. Choose "auto" to optimize.
+                Defaults to 0.2.
             min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
 
