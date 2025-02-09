@@ -26,17 +26,17 @@ def _setup_nltk():
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         # Force download if not found
-        nltk.download("punkt", force=True)
+        nltk.download("punkt", force=True, quiet=True)
 
     try:
         nltk.data.find("corpora/stopwords")
     except LookupError:
-        nltk.download("stopwords", force=True)
+        nltk.download("stopwords", force=True, quiet=True)
 
     try:
         nltk.data.find("corpora/wordnet")
     except LookupError:
-        nltk.download("wordnet", force=True)
+        nltk.download("wordnet", force=True, quiet=True)
 
 
 # Ensure you have the necessary NLTK data
