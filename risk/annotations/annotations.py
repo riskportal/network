@@ -19,30 +19,12 @@ from nltk.tokenize import word_tokenize
 from risk.log import logger
 from scipy.sparse import coo_matrix
 
+# Add the local NLTK data path to the system path
+nltk.data.path.append("nltk_data")
 
-def _setup_nltk():
-    """Ensure necessary NLTK data is downloaded."""
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        # Force download if not found
-        nltk.download("punkt", force=True, quiet=True)
-
-    try:
-        nltk.data.find("corpora/stopwords")
-    except LookupError:
-        nltk.download("stopwords", force=True, quiet=True)
-
-    try:
-        nltk.data.find("corpora/wordnet")
-    except LookupError:
-        nltk.download("wordnet", force=True, quiet=True)
-
-
-# Ensure you have the necessary NLTK data
-_setup_nltk()
-# Use NLTK's stopwords
-STOP_WORDS = set(stopwords.words("english"))
+# Use NLTK's stopwords - load all languages
+STOP_WORDS = set(word for lang in stopwords.fileids() for word in stopwords.words(lang))
+# Initialize the WordNet lemmatizer, which is used for normalizing words
 LEMMATIZER = WordNetLemmatizer()
 
 
