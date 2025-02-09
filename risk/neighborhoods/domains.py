@@ -14,8 +14,18 @@ from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 
 from risk.annotations import get_weighted_description
-from risk.constants import GROUP_LINKAGE_METHODS, GROUP_DISTANCE_METRICS
 from risk.log import logger
+
+
+# Define constants for clustering
+# fmt: off
+LINKAGE_METHODS = {"single", "complete", "average", "weighted", "centroid", "median", "ward"}
+LINKAGE_METRICS = {
+    "braycurtis","canberra", "chebyshev", "cityblock", "correlation", "cosine", "dice", "euclidean",
+    "hamming", "jaccard", "jensenshannon", "kulczynski1", "mahalanobis", "matching", "minkowski",
+    "rogerstanimoto", "russellrao", "seuclidean", "sokalmichener", "sokalsneath", "sqeuclidean", "yule",
+}
+# fmt: on
 
 
 def define_domains(
@@ -24,7 +34,7 @@ def define_domains(
     linkage_criterion: str,
     linkage_method: str,
     linkage_metric: str,
-    linkage_threshold: float,
+    linkage_threshold: Union[float, str],
 ) -> pd.DataFrame:
     """Define domains and assign nodes to these domains based on their significance scores and clustering,
     handling errors by assigning unique domains when clustering fails.
@@ -33,9 +43,9 @@ def define_domains(
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         significant_neighborhoods_significance (np.ndarray): The binary significance matrix below alpha.
         linkage_criterion (str): The clustering criterion for defining groups.
-        linkage_method (str): The linkage method for clustering.
-        linkage_metric (str): The linkage metric for clustering.
-        linkage_threshold (float): The threshold for clustering.
+        linkage_method (str): The linkage method for clustering. Choose "auto" to optimize.
+        linkage_metric (str): The linkage metric for clustering. Choose "auto" to optimize.
+        linkage_threshold (float, str): The threshold for clustering. Choose "auto" to optimize.
 
     Returns:
         pd.DataFrame: DataFrame with the primary domain for each node.
@@ -55,9 +65,8 @@ def define_domains(
         # Perform hierarchical clustering
         Z = linkage(m, method=best_linkage, metric=best_metric)
         logger.warning(
-            f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'"
+            f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'\nLinkage threshold: {round(best_threshold, 3)}"
         )
-        logger.debug(f"Optimal linkage threshold: {round(best_threshold, 3)}")
         # Calculate the optimal threshold for clustering
         max_d_optimal = np.max(Z[:, 2]) * best_threshold
         # Assign domains to the annotations matrix
@@ -209,9 +218,9 @@ def _optimize_silhouette_across_linkage_and_metrics(
     Args:
         m (np.ndarray): Data matrix.
         linkage_criterion (str): Clustering criterion.
-        linkage_method (str): Linkage method for clustering.
-        linkage_metric (str): Linkage metric for clustering.
-        linkage_threshold (Union[str, float]): Threshold for clustering. Set to "auto" to optimize.
+        linkage_method (str): Linkage method for clustering. Choose "auto" to optimize.
+        linkage_metric (str): Linkage metric for clustering. Choose "auto" to optimize.
+        linkage_threshold (Union[str, float]): Threshold for clustering. Choose "auto" to optimize.
 
     Returns:
         Tuple[str, str, float]:
@@ -226,8 +235,8 @@ def _optimize_silhouette_across_linkage_and_metrics(
     best_overall_score = -np.inf
 
     # Set linkage methods and metrics to all combinations if "auto" is selected
-    linkage_methods = GROUP_LINKAGE_METHODS if linkage_method == "auto" else [linkage_method]
-    linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric == "auto" else [linkage_metric]
+    linkage_methods = LINKAGE_METHODS if linkage_method == "auto" else [linkage_method]
+    linkage_metrics = LINKAGE_METRICS if linkage_metric == "auto" else [linkage_metric]
     total_combinations = len(linkage_methods) * len(linkage_metrics)
 
     # Evaluating optimal linkage method and metric
