@@ -3,7 +3,9 @@ risk/annotations/annotations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import os
 import re
+import zipfile
 from collections import Counter
 from itertools import compress
 from typing import Any, Dict, List, Set
@@ -19,9 +21,49 @@ from nltk.tokenize import word_tokenize
 from risk.log import logger
 from scipy.sparse import coo_matrix
 
-# Add the local NLTK data path to the system path
-nltk.data.path.append("nltk_data")
 
+def ensure_nltk_resource(resource: str) -> None:
+    """Ensure the specified NLTK resource is available."""
+    # Define the path to the resource within the NLTK data directory
+    resource_path = f"corpora/{resource}"
+    # Check if the resource is already available.
+    try:
+        nltk.data.find(resource_path)
+        return
+    except LookupError:
+        print(f"Resource '{resource}' not found. Attempting to download...")
+
+    # Download the resource.
+    nltk.download(resource)
+    # Check again after downloading.
+    try:
+        nltk.data.find(resource_path)
+        return
+    except LookupError:
+        print(f"Resource '{resource}' still not found after download. Checking for a ZIP file...")
+
+    # Look for a ZIP file in all known NLTK data directories.
+    for data_path in nltk.data.path:
+        zip_path = os.path.join(data_path, "corpora", f"{resource}.zip")
+        if os.path.isfile(zip_path):
+            print(f"Found ZIP file for '{resource}' at: {zip_path}")
+            target_dir = os.path.join(data_path, "corpora")
+            with zipfile.ZipFile(zip_path, "r") as z:
+                z.extractall(path=target_dir)
+            print(f"Unzipped '{resource}' successfully.")
+            break  # Stop after unzipping the first found ZIP.
+
+    # Final check: Try to load the resource one last time.
+    try:
+        nltk.data.find(resource_path)
+        print(f"Resource '{resource}' is now available.")
+    except LookupError:
+        raise LookupError(f"Resource '{resource}' could not be found, downloaded, or unzipped.")
+
+
+# Ensure the NLTK stopwords and WordNet resources are available
+ensure_nltk_resource("stopwords")
+ensure_nltk_resource("wordnet")
 # Use NLTK's stopwords - load all languages
 STOP_WORDS = set(word for lang in stopwords.fileids() for word in stopwords.words(lang))
 # Initialize the WordNet lemmatizer, which is used for normalizing words
@@ -224,7 +266,7 @@ def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) 
         weight = max(1, int((0 if pd.isna(score) else score) * 10))
         for token in tokens:
             # Clean token: lowercase and remove extraneous punctuation (but preserve intra-word hyphens)
-            token_clean = re.sub(r"[^\w\-]", "", token.lower()).strip()
+            token_clean = re.sub(r"[^\w\-]", "", token).strip()
             if not token_clean:
                 continue
             # Skip tokens that are pure numbers
