@@ -5,7 +5,7 @@ risk/neighborhoods/domains
 
 from contextlib import suppress
 from itertools import product
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -202,7 +202,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
     linkage_criterion: str,
     linkage_method: str,
     linkage_metric: str,
-    linkage_threshold: float,
+    linkage_threshold: Union[str, float],
 ) -> Tuple[str, str, float]:
     """Optimize silhouette score across different linkage methods and distance metrics.
 
@@ -211,7 +211,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
         linkage_criterion (str): Clustering criterion.
         linkage_method (str): Linkage method for clustering.
         linkage_metric (str): Linkage metric for clustering.
-        linkage_threshold (float, optional): Threshold for clustering.
+        linkage_threshold (Union[str, float]): Threshold for clustering. Set to "auto" to optimize.
 
     Returns:
         Tuple[str, str, float]:
@@ -219,12 +219,13 @@ def _optimize_silhouette_across_linkage_and_metrics(
             - Best linkage metric (str)
             - Best threshold (float)
     """
+    # Initialize best overall values
     best_overall_method = linkage_method
     best_overall_metric = linkage_metric
     best_overall_threshold = linkage_threshold
     best_overall_score = -np.inf
 
-    # Set linkage methods and metrics to every possible combination if "auto" is selected
+    # Set linkage methods and metrics to all combinations if "auto" is selected
     linkage_methods = GROUP_LINKAGE_METHODS if linkage_method == "auto" else [linkage_method]
     linkage_metrics = GROUP_DISTANCE_METRICS if linkage_metric == "auto" else [linkage_metric]
     total_combinations = len(linkage_methods) * len(linkage_metrics)
@@ -239,17 +240,26 @@ def _optimize_silhouette_across_linkage_and_metrics(
         # Some linkage methods and metrics may not work with certain data
         with suppress(ValueError):
             Z = linkage(m, method=method, metric=metric)
-            threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
-            if score > best_overall_score:
-                best_overall_score = score
-                best_overall_threshold = threshold
-                best_overall_method = method
-                best_overall_metric = metric
-
-    # Set the best threshold to the input threshold if it was not optimized
-    best_overall_threshold = (
-        best_overall_threshold if linkage_threshold == "auto" else linkage_threshold
-    )
+            # Only optimize silhouette score if the threshold is "auto"
+            if linkage_threshold == "auto":
+                threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+                if score > best_overall_score:
+                    best_overall_score = score
+                    best_overall_threshold = threshold
+                    best_overall_method = method
+                    best_overall_metric = metric
+            else:
+                # Use the provided threshold without optimization
+                score = silhouette_score(
+                    m,
+                    fcluster(Z, linkage_threshold * np.max(Z[:, 2]), criterion=linkage_criterion),
+                    metric=metric,
+                )
+                if score > best_overall_score:
+                    best_overall_score = score
+                    best_overall_threshold = linkage_threshold
+                    best_overall_method = method
+                    best_overall_metric = metric
 
     return best_overall_method, best_overall_metric, best_overall_threshold
 
