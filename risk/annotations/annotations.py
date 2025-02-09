@@ -12,8 +12,9 @@ import networkx as nx
 import nltk
 import numpy as np
 import pandas as pd
-from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
 
 from risk.log import logger
 from scipy.sparse import coo_matrix
@@ -31,11 +32,17 @@ def _setup_nltk():
     except LookupError:
         nltk.download("stopwords")
 
+    try:
+        nltk.data.find("corpora/wordnet")
+    except LookupError:
+        nltk.download("wordnet")
+
 
 # Ensure you have the necessary NLTK data
 _setup_nltk()
-# Initialize English stopwords
-stop_words = set(stopwords.words("english"))
+# Use NLTK's stopwords
+STOP_WORDS = set(stopwords.words("english"))
+LEMMATIZER = WordNetLemmatizer()
 
 
 def load_annotations(
@@ -208,104 +215,121 @@ def define_top_annotations(
 
 def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) -> str:
     """Generate a weighted description from words and their corresponding scores,
-    with support for stopwords filtering and improved weighting logic.
+    using improved weighting logic with normalization, lemmatization, and aggregation.
 
     Args:
-        words_column (pd.Series): A pandas Series containing strings to process.
+        words_column (pd.Series): A pandas Series containing strings (phrases) to process.
         scores_column (pd.Series): A pandas Series containing significance scores to weigh the terms.
 
     Returns:
-        str: A coherent description formed from the most frequent and significant words, weighed by significance scores.
+        str: A coherent description formed from the most frequent and significant words.
     """
-    # Handle case where all scores are the same
+    # Normalize significance scores to [0,1]. If all scores are identical, use 1.
     if scores_column.max() == scores_column.min():
-        normalized_scores = pd.Series([1] * len(scores_column))
+        normalized_scores = pd.Series([1] * len(scores_column), index=scores_column.index)
     else:
-        # Normalize the significance scores to be between 0 and 1
         normalized_scores = (scores_column - scores_column.min()) / (
             scores_column.max() - scores_column.min()
         )
 
-    # Combine words and normalized scores to create weighted words
-    weighted_words = []
-    for word, score in zip(words_column, normalized_scores):
-        word = str(word)
-        if word not in stop_words:  # Skip stopwords
-            weight = max(1, int((0 if pd.isna(score) else score) * 10))
-            weighted_words.extend([word] * weight)
+    # Accumulate weighted counts for each token (after cleaning and lemmatization)
+    weighted_counts = {}
+    for phrase, score in zip(words_column, normalized_scores):
+        # Tokenize the phrase
+        tokens = word_tokenize(str(phrase))
+        # Determine the weight (scale factor; here multiplying normalized score by 10)
+        weight = max(1, int((0 if pd.isna(score) else score) * 10))
+        for token in tokens:
+            # Clean token: lowercase and remove extraneous punctuation (but preserve intra-word hyphens)
+            token_clean = re.sub(r"[^\w\-]", "", token.lower()).strip()
+            if not token_clean:
+                continue
+            # Skip tokens that are pure numbers
+            if token_clean.isdigit():
+                continue
+            # Skip stopwords
+            if token_clean in STOP_WORDS:
+                continue
+            # Lemmatize the token to merge similar forms
+            token_norm = LEMMATIZER.lemmatize(token_clean)
+            weighted_counts[token_norm] = weighted_counts.get(token_norm, 0) + weight
 
-    # Tokenize the weighted words, but preserve number-word patterns like '4-alpha'
-    tokens = word_tokenize(" ".join(weighted_words))
-    # Ensure we treat "4-alpha" or other "number-word" patterns as single tokens
+    # Reconstruct a weighted token list by repeating each token by its aggregated count.
+    weighted_words = []
+    for token, count in weighted_counts.items():
+        weighted_words.extend([token] * count)
+
+    # Combine tokens that match number-word patterns (e.g. "4-alpha") and remove pure numeric tokens.
     combined_tokens = []
-    for token in tokens:
-        # Match patterns like '4-alpha' or '5-hydroxy' and keep them together
+    for token in weighted_words:
         if re.match(r"^\d+-\w+", token):
             combined_tokens.append(token)
-        elif token.replace(".", "", 1).isdigit():  # Handle pure numeric tokens
-            # Ignore pure numbers as descriptions unless necessary
+        elif token.replace(".", "", 1).isdigit():
             continue
         else:
             combined_tokens.append(token)
 
-    # Prevent descriptions like just '4' from being selected
+    # If the only token is numeric, return a default value.
     if len(combined_tokens) == 1 and combined_tokens[0].isdigit():
-        return "N/A"  # Return "N/A" for cases where it's just a number
+        return "N/A"
 
-    # Simplify the word list and generate the description
+    # Simplify the token list to remove near-duplicates based on the Jaccard index.
     simplified_words = _simplify_word_list(combined_tokens)
+    # Generate a coherent description from the simplified words.
     description = _generate_coherent_description(simplified_words)
 
     return description
 
 
 def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
-    """Filter out words that are too similar based on the Jaccard index, keeping the word with the higher count.
+    """Filter out words that are too similar based on the Jaccard index,
+    keeping the word with the higher aggregated count.
 
     Args:
-        words (list of str): The list of words to be filtered.
+        words (List[str]): The list of tokens to be filtered.
         threshold (float, optional): The similarity threshold for the Jaccard index. Defaults to 0.80.
 
     Returns:
-        list of str: A list of filtered words, where similar words are reduced to the most frequent one.
+        List[str]: A list of filtered words, where similar words are reduced to the most frequent one.
     """
-    # Count the occurrences of each word
+    # Count the occurrences (which reflect the weighted importance)
     word_counts = Counter(words)
     filtered_words = []
     used_words = set()
-    # Iterate through the words to find similar words
-    for word in word_counts:
+
+    # Iterate through words sorted by descending weighted frequency
+    for word in sorted(word_counts, key=lambda w: word_counts[w], reverse=True):
         if word in used_words:
             continue
 
         word_set = set(word)
-        # Find similar words based on the Jaccard index
+        # Find similar words (including the current word) based on the Jaccard index
         similar_words = [
             other_word
             for other_word in word_counts
             if _calculate_jaccard_index(word_set, set(other_word)) >= threshold
         ]
-        # Sort by frequency and choose the most frequent word
+        # Choose the word with the highest weighted count among the similar group
         similar_words.sort(key=lambda w: word_counts[w], reverse=True)
         best_word = similar_words[0]
         filtered_words.append(best_word)
         used_words.update(similar_words)
 
+    # Preserve the original order (by frequency) from the filtered set
     final_words = [word for word in words if word in filtered_words]
 
     return final_words
 
 
 def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
-    """Calculate the Jaccard Index of two sets.
+    """Calculate the Jaccard index between two sets.
 
     Args:
-        set1 (set): The first set for comparison.
-        set2 (set): The second set for comparison.
+        set1 (Set[Any]): The first set.
+        set2 (Set[Any]): The second set.
 
     Returns:
-        float: The Jaccard Index, which is the ratio of the intersection to the union of the two sets.
-               Returns 0 if the union of the sets is empty.
+        float: The Jaccard index (intersection over union). Returns 0 if the union is empty.
     """
     intersection = len(set1.intersection(set2))
     union = len(set1.union(set2))
@@ -313,28 +337,28 @@ def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
 
 
 def _generate_coherent_description(words: List[str]) -> str:
-    """Generate a coherent description from a list of words or numerical string values.
+    """Generate a coherent description from a list of words.
+
     If there is only one unique entry, return it directly.
+    Otherwise, order the words by frequency and join them into a single string.
 
     Args:
-        words (List): A list of words or numerical string values.
+        words (List[str]): A list of tokens.
 
     Returns:
-        str: A coherent description formed by arranging the words in a logical sequence.
+        str: A coherent, space-separated description.
     """
-    # If there are no words, return a keyword indicating no data is available
     if not words:
         return "N/A"
 
-    # If there's only one unique word, return it directly
+    # If there is only one unique word, return it directly
     unique_words = set(words)
     if len(unique_words) == 1:
         return list(unique_words)[0]
 
-    # Count the frequency of each word and sort them by frequency
+    # Count weighted occurrences and sort in descending order.
     word_counts = Counter(words)
     most_common_words = [word for word, _ in word_counts.most_common()]
-    # Join the most common words to form a coherent description based on frequency
     description = " ".join(most_common_words)
 
     return description
