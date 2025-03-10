@@ -12,7 +12,7 @@ def assign_edge_lengths(
     compute_sphere: bool = True,
     surface_depth: float = 0.0,
 ) -> nx.Graph:
-    """Assign edge lengths in the graph, optionally mapping nodes to a sphere and including edge weights.
+    """Assign edge lengths in the graph, optionally mapping nodes to a sphere.
 
     Args:
         G (nx.Graph): The input graph.
@@ -33,9 +33,8 @@ def assign_edge_lengths(
             return np.arccos(np.clip(dot_products, -1.0, 1.0))
         return np.linalg.norm(u_coords - v_coords, axis=1)
 
-    # Normalize graph coordinates and weights
+    # Normalize graph coordinates
     _normalize_graph_coordinates(G)
-    _normalize_weights(G)
 
     # Map nodes to sphere and adjust depth if required
     if compute_sphere:
@@ -108,22 +107,6 @@ def _normalize_graph_coordinates(G: nx.Graph) -> None:
     # Update the node coordinates with the normalized values
     for i, node in enumerate(G.nodes()):
         G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
-
-
-def _normalize_weights(G: nx.Graph) -> None:
-    """Normalize the weights of the edges in the graph.
-
-    Args:
-        G (nx.Graph): The input graph with weighted edges.
-    """
-    # "weight" is present for all edges - weights are 1.0 if weight was not specified by the user
-    weights = [data["weight"] for _, _, data in G.edges(data=True)]
-    if weights:  # Ensure there are weighted edges
-        min_weight = min(weights)
-        max_weight = max(weights)
-        range_weight = max_weight - min_weight if max_weight > min_weight else 1
-        for _, _, data in G.edges(data=True):
-            data["normalized_weight"] = (data["weight"] - min_weight) / range_weight
 
 
 def _create_depth(G: nx.Graph, surface_depth: float = 0.0) -> nx.Graph:
