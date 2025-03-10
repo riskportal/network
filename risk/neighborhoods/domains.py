@@ -3,12 +3,12 @@ risk/neighborhoods/domains
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from contextlib import suppress
 from itertools import product
 from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
+from numpy.linalg import LinAlgError
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.metrics import silhouette_score
 from tqdm import tqdm
@@ -73,7 +73,7 @@ def define_domains(
         domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
         top_annotations["domain"] = 0
         top_annotations.loc[top_annotations["significant_annotations"], "domain"] = domains
-    except ValueError:
+    except (ValueError, LinAlgError):
         # If a ValueError is encountered, handle it by assigning unique domains
         n_rows = len(top_annotations)
         if linkage_criterion == "off":
@@ -247,16 +247,17 @@ def _optimize_silhouette_across_linkage_and_metrics(
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
     ):
         # Some linkage methods and metrics may not work with certain data
-        with suppress(ValueError):
+        try:
             Z = linkage(m, method=method, metric=metric)
+        except (ValueError, LinAlgError):
+            # If linkage fails, set a default threshold (a float) and a very poor score
+            current_threshold = 0.0
+            score = -float("inf")
+        else:
             # Only optimize silhouette score if the threshold is "auto"
             if linkage_threshold == "auto":
                 threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
-                if score > best_overall_score:
-                    best_overall_score = score
-                    best_overall_threshold = threshold
-                    best_overall_method = method
-                    best_overall_metric = metric
+                current_threshold = threshold
             else:
                 # Use the provided threshold without optimization
                 score = silhouette_score(
@@ -264,11 +265,20 @@ def _optimize_silhouette_across_linkage_and_metrics(
                     fcluster(Z, linkage_threshold * np.max(Z[:, 2]), criterion=linkage_criterion),
                     metric=metric,
                 )
-                if score > best_overall_score:
-                    best_overall_score = score
-                    best_overall_threshold = linkage_threshold
-                    best_overall_method = method
-                    best_overall_metric = metric
+                current_threshold = linkage_threshold
+
+        if score > best_overall_score:
+            best_overall_score = score
+            best_overall_threshold = float(current_threshold)  # Ensure it's a float
+            best_overall_method = method
+            best_overall_metric = metric
+
+    # Ensure that we always return a valid tuple:
+    if best_overall_score == -np.inf:
+        # No valid linkage was found; return default values.
+        best_overall_threshold = float(linkage_threshold) if linkage_threshold != "auto" else 0.0
+        best_overall_method = linkage_method
+        best_overall_metric = linkage_metric
 
     return best_overall_method, best_overall_metric, best_overall_threshold
 
