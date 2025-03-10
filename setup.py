@@ -10,8 +10,8 @@ from setuptools import setup, find_packages
 import numpy
 
 
-# Function to extract version from __init__.py
 def find_version():
+    """Function to find the version string in the __init__.py file."""
     with open("risk/__init__.py", "r", encoding="utf-8") as f:
         version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
         if version_match:
