@@ -3,7 +3,24 @@ tests/test_load_annotations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import pytest
 from scipy.sparse import csr_matrix, vstack
+
+
+def test_missing_annotation_file(risk_obj, cytoscape_network):
+    """Test loading an annotation file that does not exist.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotations.
+        cytoscape_network: The network object to which annotations will be applied.
+    """
+    annotation_file = "nonexistent_file.csv"
+    with pytest.raises(FileNotFoundError):
+        risk_obj.load_csv_annotation(
+            filepath=annotation_file,
+            network=cytoscape_network,
+            min_nodes_per_term=1,
+        )
 
 
 def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):
