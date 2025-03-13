@@ -3,6 +3,9 @@ tests/test_load_network
 ~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import os
+import pickle
+
 import networkx as nx
 import pytest
 
@@ -19,6 +22,18 @@ def test_initialize_risk(risk, verbose_setting):
         assert risk_instance is not None
     except Exception:
         pytest.fail(f"RISK failed to initialize with verbose={verbose_setting}")
+
+
+def test_missing_network_file(risk_obj):
+    """Test loading a missing network file.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+    """
+    with pytest.raises(FileNotFoundError):
+        risk_obj.load_cytoscape_network(
+            filepath="missing_file.cys", source_label="source", target_label="target"
+        )
 
 
 def test_load_cytoscape_network(risk_obj, data_path):
@@ -90,6 +105,46 @@ def test_load_networkx_network(risk_obj, cytoscape_network):
     for edge in network.edges:
         # Check that each edge in the original network is in the RISK network
         assert edge in network.edges
+
+
+def test_round_trip_io(risk_obj):
+    """Test saving and loading a small graph using the io module.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+    """
+    # Create a small test graph
+    G = nx.Graph()
+    G.add_edges_from([(0, 1), (1, 2)])
+    # Add node positions as required for network loading
+    G.nodes[0]["x"] = 0.0
+    G.nodes[0]["y"] = 0.0
+    G.nodes[1]["x"] = 1.0
+    G.nodes[1]["y"] = 1.0
+    G.nodes[2]["x"] = 2.0
+    G.nodes[2]["y"] = 2.0
+
+    # Ensure the tmp directory exists under data/tmp
+    tmp_dir = os.path.join("data", "tmp")
+    os.makedirs(tmp_dir, exist_ok=True)
+    tmp_path = os.path.join(tmp_dir, "test_round_trip_io.gpickle")
+
+    try:
+        # Save the graph using pickle
+        with open(tmp_path, "wb") as f:
+            pickle.dump(G, f)
+
+        # Load it back using risk_obj's load_gpickle_network
+        G_loaded = risk_obj.load_gpickle_network(filepath=tmp_path)
+
+        # Compare properties of the graphs - RISK sets node IDs to 'label' attribute when no label is present
+        assert set(G.nodes()) == set(G_loaded.nodes())
+        assert set(G.edges()) == set(G_loaded.edges())
+
+    finally:
+        # Always remove the temporary file at the end
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 def test_node_positions_constant_after_networkx_load(risk_obj, cytoscape_network):
