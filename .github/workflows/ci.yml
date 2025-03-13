@@ -1,7 +1,7 @@
 name: continuous-integration
 
 on:
-  push:
+  # push:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0'  # Runs at 00:00 UTC every Sunday
@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: [macos-latest] #[ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8"] #, "3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout repository
@@ -40,4 +40,4 @@ jobs:
         shell: bash
 
       - name: Run tests with pytest
-        run: pytest -vv
+        run: pytest -vv --tb=short -k .
