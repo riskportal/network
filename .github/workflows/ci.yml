@@ -40,4 +40,4 @@ jobs:
         shell: bash
 
       - name: Run tests with pytest
-        run: pytest -x -k -vv --tb=short .
+        run: pytest -x -vv --tb=short .
