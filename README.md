@@ -40,7 +40,7 @@ pip install risk-network --upgrade
 
 We applied RISK to a *Saccharomyces cerevisiae* protein–protein interaction network from Michaelis et al., 2023 to reveal functional modules related to biological processes such as ribosomal assembly and mitochondrial organization.
 
-[![RISK Figure 1](https://i.postimg.cc/kG4VHC1N/fig-1-trim.png)](https://postimg.cc/BLrQ8rGt)
+[![Figure 1](https://i.imgur.com/lJHJrJr.jpeg)](https://i.imgur.com/lJHJrJr.jpeg)
 
 This figure highlights RISK’s capability to detect both established and novel functional modules within the yeast interactome.
 
