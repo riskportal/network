@@ -42,7 +42,7 @@ def define_domains(
     Args:
         top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         significant_neighborhoods_significance (np.ndarray): The binary significance matrix below alpha.
-        linkage_criterion (str): The clustering criterion for defining groups.
+        linkage_criterion (str): The clustering criterion for defining groups. Choose "off" to disable clustering.
         linkage_method (str): The linkage method for clustering. Choose "auto" to optimize.
         linkage_metric (str): The linkage metric for clustering. Choose "auto" to optimize.
         linkage_threshold (float, str): The threshold for clustering. Choose "auto" to optimize.
@@ -249,23 +249,21 @@ def _optimize_silhouette_across_linkage_and_metrics(
         # Some linkage methods and metrics may not work with certain data
         try:
             Z = linkage(m, method=method, metric=metric)
-        except (ValueError, LinAlgError):
-            # If linkage fails, set a default threshold (a float) and a very poor score
-            current_threshold = 0.0
-            score = -float("inf")
-        else:
-            # Only optimize silhouette score if the threshold is "auto"
             if linkage_threshold == "auto":
-                threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+                try:
+                    threshold, score = _find_best_silhouette_score(Z, m, metric, linkage_criterion)
+                except (ValueError, LinAlgError):
+                    continue  # Skip to the next combination
                 current_threshold = threshold
             else:
-                # Use the provided threshold without optimization
                 score = silhouette_score(
                     m,
                     fcluster(Z, linkage_threshold * np.max(Z[:, 2]), criterion=linkage_criterion),
                     metric=metric,
                 )
                 current_threshold = linkage_threshold
+        except (ValueError, LinAlgError):
+            continue  # Skip to the next combination
 
         if score > best_overall_score:
             best_overall_score = score
@@ -290,7 +288,6 @@ def _find_best_silhouette_score(
     linkage_criterion: str,
     lower_bound: float = 0.001,
     upper_bound: float = 1.0,
-    resolution: float = 0.001,
 ) -> Tuple[float, float]:
     """Find the best silhouette score using binary search.
 
@@ -301,7 +298,6 @@ def _find_best_silhouette_score(
         linkage_criterion (str): Clustering criterion.
         lower_bound (float, optional): Lower bound for search. Defaults to 0.001.
         upper_bound (float, optional): Upper bound for search. Defaults to 1.0.
-        resolution (float, optional): Desired resolution for the best threshold. Defaults to 0.001.
 
     Returns:
         Tuple[float, float]:
@@ -310,6 +306,7 @@ def _find_best_silhouette_score(
     """
     best_score = -np.inf
     best_threshold = None
+    minimum_linkage_threshold = 1e-6
 
     # Test lower bound
     max_d_lower = np.max(Z[:, 2]) * lower_bound
@@ -338,7 +335,7 @@ def _find_best_silhouette_score(
         lower_bound = (lower_bound + upper_bound) / 2
 
     # Binary search loop
-    while upper_bound - lower_bound > resolution:
+    while upper_bound - lower_bound > minimum_linkage_threshold:
         mid_threshold = (upper_bound + lower_bound) / 2
         max_d_mid = np.max(Z[:, 2]) * mid_threshold
         clusters_mid = fcluster(Z, max_d_mid, criterion=linkage_criterion)
