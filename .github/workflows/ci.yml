@@ -39,5 +39,9 @@ jobs:
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
         shell: bash
 
-      - name: Run tests with pytest
+      - name: Download NLTK resources
+        run: |
+          python -c "import nltk; nltk.download('punkt')"
+
+      - name: Run tests with pytest (abort on first failure)
         run: pytest -x -vv --tb=short .
