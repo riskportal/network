@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/license-GPLv3-purple)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.xxxxxxx.svg)](https://doi.org/10.5281/zenodo.xxxxxxx)
 ![Downloads](https://img.shields.io/pypi/dm/risk-network)
-![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey)
+![Tests](https://github.com/riskportal/network/actions/workflows/ci.yml/badge.svg)
 
 **RISK** (Regional Inference of Significant Kinships) is a next-generation tool for biological network annotation and visualization. RISK integrates community detection-based clustering, rigorous statistical enrichment analysis, and a modular framework to uncover biologically meaningful relationships and generate high-resolution visualizations. RISK supports diverse data formats and is optimized for large-scale network analysis, making it a valuable resource for researchers in systems biology and beyond.
 
@@ -67,12 +67,12 @@ Benchmarking results demonstrate that RISK efficiently scales to networks exceed
 
 We welcome contributions from the community:
 
-- [Issues Tracker](https://github.com/irahorecka/risk/issues)
-- [Source Code](https://github.com/irahorecka/risk/tree/main/risk)
+- [Issues Tracker](https://github.com/riskportal/network/issues)
+- [Source Code](https://github.com/riskportal/network/tree/main/risk)
 
 ## Support
 
-If you encounter issues or have suggestions for new features, please use the [Issues Tracker](https://github.com/irahorecka/risk/issues) on GitHub.
+If you encounter issues or have suggestions for new features, please use the [Issues Tracker](https://github.com/riskportal/network/issues) on GitHub.
 
 ## License
 
