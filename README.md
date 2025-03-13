@@ -13,7 +13,7 @@
 ![Downloads](https://img.shields.io/pypi/dm/risk-network)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey)
 
-**RISK** (Regional Inference of Significant Kinships) is a next-generation tool for biological network annotation and visualization. It leverages advanced clustering algorithms, robust statistical frameworks, and a modular design to identify biologically meaningful relationships and generate publication-quality visualizations. RISK supports diverse data formats and is optimized for large-scale network analysis, making it a valuable resource for researchers in systems biology and beyond.
+**RISK** (Regional Inference of Significant Kinships) is a next-generation tool for biological network annotation and visualization. RISK integrates community detection-based clustering, rigorous statistical enrichment analysis, and a modular framework to uncover biologically meaningful relationships and generate high-resolution visualizations. RISK supports diverse data formats and is optimized for large-scale network analysis, making it a valuable resource for researchers in systems biology and beyond.
 
 ## Documentation and Tutorial
 
@@ -30,15 +30,15 @@ pip install risk-network --upgrade
 ## Features
 
 - **Comprehensive Network Analysis**: Analyze biological networks (e.g., protein–protein interaction and genetic interaction networks) as well as non-biological networks.
-- **Advanced Clustering Algorithms**: Utilize algorithms such as Louvain, Leiden, and Markov Clustering to detect functional modules.
-- **Flexible Visualization**: Generate high-resolution, publication-quality figures with customizable node and edge attributes.
+- **Advanced Clustering Algorithms**: Supports Louvain, Leiden, Markov Clustering, Greedy Modularity, Label Propagation, Spinglass, and Walktrap for identifying structured network regions.
+- **Flexible Visualization**: Produce customizable, high-resolution network visualizations with kernel density estimate overlays, adjustable node and edge attributes, and export options in SVG, PNG, and PDF formats.
 - **Efficient Data Handling**: Supports multiple input/output formats, including JSON, CSV, TSV, Excel, Cytoscape, and GPickle.
-- **Statistical Analysis**: Perform overrepresentation analysis of annotations (e.g., Gene Ontology Biological Process (GO BP) terms) using statistical tests including hypergeometric, permutation, chi-squared, binomial, Poisson, and z-score.
+- **Statistical Analysis**: Assess functional enrichment using hypergeometric, permutation, binomial, chi-squared, Poisson, and z-score tests, ensuring statistical adaptability across datasets.
 - **Cross-Domain Applicability**: Suitable for network analysis across biological and non-biological domains, including social and communication networks.
 
 ## Example Usage
 
-We applied RISK to a *Saccharomyces cerevisiae* protein–protein interaction network from Michaelis et al., 2023 to reveal functional modules related to biological processes such as ribosomal assembly and mitochondrial organization.
+We applied RISK to a *Saccharomyces cerevisiae* protein–protein interaction network from Michaelis et al. (2023), filtering for proteins with six or more interactions to emphasize core functional relationships. RISK identified compact, statistically enriched clusters corresponding to biological processes such as ribosomal assembly and mitochondrial organization.
 
 [![Figure 1](https://i.imgur.com/lJHJrJr.jpeg)](https://i.imgur.com/lJHJrJr.jpeg)
 
@@ -48,20 +48,20 @@ This figure highlights RISK’s capability to detect both established and novel 
 
 If you use RISK in your research, please cite:
 
-**Horecka & Röst**, "RISK: a next-generation tool for biological network annotation and visualization", **Bioinformatics**, 2025. DOI: [10.1234/zenodo.xxxxxxx](https://doi.org/10.1234/zenodo.xxxxxxx)
+**Horecka et al.**, "RISK: a next-generation tool for biological network annotation and visualization", **Bioinformatics**, 2025. DOI: [10.1234/zenodo.xxxxxxx](https://doi.org/10.1234/zenodo.xxxxxxx)
 
 ## Software Architecture and Implementation
 
 RISK features a streamlined, modular architecture designed to meet diverse research needs. It includes dedicated modules for:
 
 - **Data I/O**: Supports JSON, CSV, TSV, Excel, Cytoscape, and GPickle formats.
-- **Clustering**: Implements multiple algorithms (e.g., Louvain, Markov Clustering) and supports both spherical and Euclidean distance metrics.
+- **Clustering**: Supports multiple clustering methods, including Louvain, Leiden, Markov Clustering, Greedy Modularity, Label Propagation, Spinglass, and Walktrap. Provides flexible distance metrics tailored to network structure.
 - **Statistical Analysis**: Provides a suite of tests for overrepresentation analysis of annotations.
 - **Visualization**: Offers customizable, high-resolution output in multiple formats, including SVG, PNG, and PDF.
 
 ## Performance and Efficiency
 
-Benchmarking tests have shown that RISK is both computationally efficient and scalable, maintaining low execution times and memory usage even on large networks.
+Benchmarking results demonstrate that RISK efficiently scales to networks exceeding hundreds of thousands of edges, maintaining low execution times and optimal memory usage across statistical tests.
 
 ## Contributing
 
