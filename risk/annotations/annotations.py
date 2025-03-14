@@ -53,7 +53,7 @@ def ensure_nltk_resource(resource: str) -> None:
             print(f"Unzipped '{resource}' successfully.")
             break  # Stop after unzipping the first found ZIP.
 
-    # Final check: Try to load the resource one last time.
+    # Final check: Try to check resource one last time. If it fails, rai
     try:
         nltk.data.find(resource_path)
         print(f"Resource '{resource}' is now available.")
@@ -62,6 +62,11 @@ def ensure_nltk_resource(resource: str) -> None:
 
 
 # Ensure the NLTK stopwords and WordNet resources are available
+# punkt is known to have issues with the default download method, so we use a custom function if it fails
+try:
+    ensure_nltk_resource("punkt")
+except LookupError:
+    nltk.download("punkt")
 ensure_nltk_resource("stopwords")
 ensure_nltk_resource("wordnet")
 # Use NLTK's stopwords - load all languages
