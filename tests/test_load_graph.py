@@ -381,7 +381,7 @@ def _validate_graph(graph):
         pytest.skip("Skipping test: Graph is None.")
     if len(graph.network.nodes) == 0 or len(graph.network.edges) == 0:
         pytest.skip("Skipping test: Graph has no nodes or edges.")
-    
+
     assert graph is not None, "Graph is None."
     assert len(graph.network.nodes) > 0, "Graph has no nodes."
     assert len(graph.network.edges) > 0, "Graph has no edges."
