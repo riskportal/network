@@ -8,6 +8,7 @@ from scipy.sparse import csr_matrix
 
 # NOTE: Cython optimizations provided minimal performance benefits.
 # The final version with Cython is archived in the `cython_permutation` branch.
+
 # DISPATCH_TEST_FUNCTIONS can be found at the end of the file.
 
 
