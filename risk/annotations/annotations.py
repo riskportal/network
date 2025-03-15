@@ -5,6 +5,7 @@ risk/annotations/annotations
 
 import os
 import re
+import urllib.request  # Use urllib.request instead of requests to avoid additional dependencies
 import zipfile
 from collections import Counter
 from itertools import compress
@@ -17,56 +18,51 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from scipy.sparse import coo_matrix
 
 from risk.log import logger
-from scipy.sparse import coo_matrix
 
 
 def ensure_nltk_resource(resource: str) -> None:
-    """Ensure the specified NLTK resource is available."""
-    # Define the path to the resource within the NLTK data directory
-    resource_path = f"corpora/{resource}"
-    # Check if the resource is already available.
+    """Ensure an NLTK corpus resource is available; if missing, download and unpack silently.
+
+    Args:
+        resource (str): The name of the NLTK resource to ensure availability.
+    """
+    resource_path = f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}"
     try:
         nltk.data.find(resource_path)
         return
     except LookupError:
-        print(f"Resource '{resource}' not found. Attempting to download...")
+        print(f"'{resource}' resource not found. Downloading and unpacking manually...")
 
-    # Download the resource.
-    nltk.download(resource)
-    # Check again after downloading.
+    # Download the resource from the NLTK GitHub repository
+    base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
+    resource_dir = "tokenizers" if resource == "punkt" else "corpora"
+    zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
+
+    # Determine the target directory for the resource
+    nltk_data_dir = nltk.data.path[0]
+    target_dir = os.path.join(nltk_data_dir, resource_dir)
+    os.makedirs(target_dir, exist_ok=True)
+
+    # Download and extract the resource
+    zip_file_path = os.path.join(target_dir, f"{resource}.zip")
+    urllib.request.urlretrieve(zip_url, zip_file_path)
+    with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+        zip_ref.extractall(target_dir)
+
+    os.remove(zip_file_path)
+
     try:
         nltk.data.find(resource_path)
-        return
+        print(f"Resource '{resource}' successfully downloaded and available.")
     except LookupError:
-        print(f"Resource '{resource}' still not found after download. Checking for a ZIP file...")
-
-    # Look for a ZIP file in all known NLTK data directories.
-    for data_path in nltk.data.path:
-        zip_path = os.path.join(data_path, "corpora", f"{resource}.zip")
-        if os.path.isfile(zip_path):
-            print(f"Found ZIP file for '{resource}' at: {zip_path}")
-            target_dir = os.path.join(data_path, "corpora")
-            with zipfile.ZipFile(zip_path, "r") as z:
-                z.extractall(path=target_dir)
-            print(f"Unzipped '{resource}' successfully.")
-            break  # Stop after unzipping the first found ZIP.
-
-    # Final check: Try to check resource one last time. If it fails, rai
-    try:
-        nltk.data.find(resource_path)
-        print(f"Resource '{resource}' is now available.")
-    except LookupError:
-        raise LookupError(f"Resource '{resource}' could not be found, downloaded, or unzipped.")
+        raise LookupError(f"Resource '{resource}' could not be found even after manual download.")
 
 
-# Ensure the NLTK stopwords and WordNet resources are available
-# punkt is known to have issues with the default download method, so we use a custom function if it fails
-try:
-    ensure_nltk_resource("punkt")
-except LookupError:
-    nltk.download("punkt")
+# Ensure the NLTK punkt, stopwords, and wordnet resources are available
+ensure_nltk_resource("punkt")
 ensure_nltk_resource("stopwords")
 ensure_nltk_resource("wordnet")
 # Use NLTK's stopwords - load all languages
