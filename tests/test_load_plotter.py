@@ -37,7 +37,7 @@ def plot_title(plotter):
     """
     try:
         plotter.plot_title(
-            title="Yeast Interactome Network",
+            title="Yeast Protein-Protein Interaction Network",
             subtitle="Michaelis et al., 2023",
             title_fontsize=20,
             subtitle_fontsize=14,
