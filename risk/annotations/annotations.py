@@ -3,100 +3,36 @@ risk/annotations/annotations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-import os
 import re
-import urllib.request  # Use urllib.request instead of requests to avoid additional dependencies
-import zipfile
 from collections import Counter
 from itertools import compress
 from typing import Any, Dict, List, Set
 
 import networkx as nx
-import nltk
 import numpy as np
 import pandas as pd
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from scipy.sparse import coo_matrix
 
+from risk.annotations.nltk_setup import setup_nltk_resources
 from risk.log import logger
 
 
-def ensure_nltk_resource(resource: str) -> None:
-    """Ensure an NLTK resource is available; use nltk.download() first, then fall back to manual
-    download if necessary. If an OS error occurs at the end, force a fresh nltk download.
+def initialize_nltk():
+    """Initialize all required NLTK components."""
+    setup_nltk_resources()
 
-    Args:
-        resource (str): The NLTK resource to ensure.
+    # After resources are available, initialize the components
+    from nltk.corpus import stopwords
+    from nltk.stem import WordNetLemmatizer
 
-    Raises:
-        ValueError: If the specified resource is unknown.
-        LookupError: If the resource is still unavailable after a forced download.
-    """
-    resource_dirs = {
-        "punkt": "tokenizers/punkt",
-        "stopwords": "corpora/stopwords",
-        "wordnet": "corpora/wordnet",
-    }
-    resource_path = resource_dirs.get(resource)
-    if resource_path is None:
-        raise ValueError(f"Unknown resource '{resource}' specified.")
-
-    try:
-        nltk.data.find(resource_path)
-        return
-    except LookupError:
-        logger.info(f"'{resource}' not found. Attempting nltk.download.")
-
-    nltk.download(resource, quiet=True)
-
-    try:
-        nltk.data.find(resource_path)
-        logger.info(f"'{resource}' downloaded successfully via nltk.")
-        return
-    except LookupError:
-        logger.warning(f"'{resource}' still unavailable. Manual download initiated.")
-
-    # Manually download from official GitHub repository
-    base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
-    resource_dir = "tokenizers" if resource == "punkt" else "corpora"
-    zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
-
-    # Controlled writable fallback (e.g., useful in GH Actions)
-    nltk_data_dir = nltk.data.path[0]
-    target_dir = os.path.join(nltk_data_dir, resource_dir)
-    os.makedirs(target_dir, exist_ok=True)
-    zip_file_path = os.path.join(target_dir, f"{resource}.zip")
-    urllib.request.urlretrieve(zip_url, zip_file_path)
-
-    with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
-        zip_ref.extractall(target_dir)
-
-    os.remove(zip_file_path)
-
-    try:
-        nltk.data.find(resource_path)
-        logger.info(f"'{resource}' manually downloaded successfully.")
-    except OSError:
-        logger.warning(f"OS error encountered for '{resource}'. Forcing a full NLTK download.")
-        nltk.download(resource, quiet=False, force=True)
-        try:
-            nltk.data.find(resource_path)
-            logger.info(f"'{resource}' successfully downloaded after forced refresh.")
-        except LookupError:
-            raise LookupError(f"Resource '{resource}' still unavailable after forced download.")
+    global STOP_WORDS, LEMMATIZER
+    STOP_WORDS = set(stopwords.words("english"))
+    LEMMATIZER = WordNetLemmatizer()
 
 
-# Ensure required NLTK resources
-for nltk_resource in ["punkt_tab", "stopwords", "wordnet"]:
-    ensure_nltk_resource(nltk_resource)
-
-
-# Use NLTK's stopwords - load all languages
-STOP_WORDS = set(word for lang in stopwords.fileids() for word in stopwords.words(lang))
-# Initialize the WordNet lemmatizer, which is used for normalizing words
-LEMMATIZER = WordNetLemmatizer()
+# Initialize NLTK components
+initialize_nltk()
 
 
 def load_annotations(
