@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Cache Python dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-py-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
@@ -41,5 +41,4 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run tests with pytest (abort on first failure)
-        shell: bash
         run: pytest -x -vv --tb=short .
