@@ -1,24 +1,20 @@
-name: tests
+name: e2e-tests
 
 on:
-  push:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'  # Runs at 00:00 UTC every Sunday
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
-  test:
+  test-all-os:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]  # Using Ubuntu to save resources
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # Check out the repository for the job
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
