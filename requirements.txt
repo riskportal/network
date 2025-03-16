@@ -3,7 +3,7 @@ leidenalg
 markov_clustering
 matplotlib
 networkx
-nltk==3.8.1
+nltk==3.9.1
 numpy
 openpyxl
 pandas
