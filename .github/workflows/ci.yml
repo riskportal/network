@@ -40,10 +40,13 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Download NLTK data  # Required for GitHub Actions - NLTK has a known issue with properly downloading 'punkt' resources
+      - name: Download NLTK resources  # Required for GitHub Actions - NLTK has a known issue with properly downloading 'punkt' resources
         shell: bash
         run: |
-          python -c "import nltk; [nltk.download(resource, quiet=True) for resource in ['punkt', 'punkt_tab', 'stopwords', 'wordnet']]"
+          mkdir -p $NLTK_DATA
+          python -c "import nltk; [nltk.download(r, quiet=True, download_dir='$NLTK_DATA') for r in ['punkt', 'punkt_tab', 'stopwords', 'wordnet']]"
+        env:
+          NLTK_DATA: ${{ github.workspace }}/nltk_data
 
       - name: Run tests with pytest (abort on first failure)
         shell: bash
