@@ -39,6 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
+      
       - name: Run tests with pytest (abort on first failure)
+        shell: bash
         run: pytest -x -vv --tb=short .
