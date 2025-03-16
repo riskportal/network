@@ -24,19 +24,18 @@ from risk.log import logger
 
 
 def ensure_nltk_resource(resource: str) -> None:
-    """Ensure an NLTK resource is available; use nltk.download() first, then fall back to
-    manual download if necessary.
+    """Ensure an NLTK resource is available; use nltk.download() first, then fall back to manual
+    download if necessary. If an OS error occurs at the end, force a fresh nltk download.
 
     Args:
-        resource (str): The NLTK resource to ensure availability for.
+        resource (str): The NLTK resource to ensure.
 
     Raises:
         ValueError: If the specified resource is unknown.
-        LookupError: If the resource is still unavailable after manual download
+        LookupError: If the resource is still unavailable after a forced download.
     """
     resource_dirs = {
         "punkt": "tokenizers/punkt",
-        "punkt_tab": "tokenizers/punkt_tab",
         "stopwords": "corpora/stopwords",
         "wordnet": "corpora/wordnet",
     }
@@ -61,14 +60,13 @@ def ensure_nltk_resource(resource: str) -> None:
 
     # Manually download from official GitHub repository
     base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
-    resource_dir = "tokenizers" if resource in ("punkt", "punkt_tab") else "corpora"
+    resource_dir = "tokenizers" if resource == "punkt" else "corpora"
     zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
 
     # Controlled writable fallback (e.g., useful in GH Actions)
     nltk_data_dir = nltk.data.path[0]
     target_dir = os.path.join(nltk_data_dir, resource_dir)
     os.makedirs(target_dir, exist_ok=True)
-
     zip_file_path = os.path.join(target_dir, f"{resource}.zip")
     urllib.request.urlretrieve(zip_url, zip_file_path)
 
@@ -80,8 +78,14 @@ def ensure_nltk_resource(resource: str) -> None:
     try:
         nltk.data.find(resource_path)
         logger.info(f"'{resource}' manually downloaded successfully.")
-    except LookupError:
-        raise LookupError(f"Resource '{resource}' unavailable even after manual download.")
+    except OSError:
+        logger.warning(f"OS error encountered for '{resource}'. Forcing a full NLTK download.")
+        nltk.download(resource, quiet=False, force=True)
+        try:
+            nltk.data.find(resource_path)
+            logger.info(f"'{resource}' successfully downloaded after forced refresh.")
+        except LookupError:
+            raise LookupError(f"Resource '{resource}' still unavailable after forced download.")
 
 
 # Ensure required NLTK resources
