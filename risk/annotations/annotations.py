@@ -5,7 +5,6 @@ risk/annotations/annotations
 
 import os
 import re
-import shutil
 import urllib.request  # Use urllib.request instead of requests to avoid additional dependencies
 import zipfile
 from collections import Counter
@@ -46,6 +45,15 @@ def ensure_nltk_resource(resource: str) -> None:
 
     try:
         nltk.data.find(resource_path)
+        # Additional check for punkt_tab: verify that essential files exist.
+        if resource == "punkt_tab":
+            try:
+                nltk.data.find("tokenizers/punkt_tab/english/collocations.tab")
+            except LookupError:
+                logger.warning(
+                    "File 'collocations.tab' missing in punkt_tab. Attempting manual download."
+                )
+                manually_download_nltk_resource(resource, resource_path)
         return
     except LookupError:
         logger.info(f"'{resource}' not found. Attempting nltk.download.")
@@ -54,6 +62,15 @@ def ensure_nltk_resource(resource: str) -> None:
     try:
         nltk.data.find(resource_path)
         logger.info(f"'{resource}' successfully downloaded via nltk.")
+        # For punkt_tab, verify that collocations.tab is present.
+        if resource == "punkt_tab":
+            try:
+                nltk.data.find("tokenizers/punkt_tab/english/collocations.tab")
+            except LookupError:
+                logger.warning(
+                    "File 'collocations.tab' missing in punkt_tab after nltk.download. Attempting manual download."
+                )
+                manually_download_nltk_resource(resource, resource_path)
         return
     except LookupError:
         logger.warning(f"nltk.download failed for '{resource}'. Manual download initiated.")
@@ -63,11 +80,11 @@ def ensure_nltk_resource(resource: str) -> None:
 
 def manually_download_nltk_resource(resource: str, resource_path: str) -> None:
     base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
-    resource_dir = "tokenizers" if resource == "punkt" else "corpora"
-    zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
+    package_dir = "tokenizers" if resource in ("punkt", "punkt_tab") else "corpora"
+    zip_url = f"{base_url}/{package_dir}/{resource}.zip"
 
     nltk_data_dir = nltk.data.path[0]
-    target_dir = os.path.join(nltk_data_dir, resource_dir)
+    target_dir = os.path.join(nltk_data_dir, package_dir)
     os.makedirs(target_dir, exist_ok=True)
 
     zip_file_path = os.path.join(target_dir, f"{resource}.zip")
@@ -85,18 +102,9 @@ def manually_download_nltk_resource(resource: str, resource_path: str) -> None:
 
 
 # Ensure required NLTK resources
-for nltk_resource in ["punkt", "punkt_tab", "stopwords", "wordnet"]:
+for nltk_resource in ["punkt_tab", "stopwords", "wordnet"]:
     ensure_nltk_resource(nltk_resource)
 
-# Fallback for 'punkt_tab'
-try:
-    nltk.data.find("tokenizers/punkt_tab/english/")
-except LookupError:
-    punkt_english_path = nltk.data.find("tokenizers/punkt/english.pickle")
-    target_dir = os.path.join(nltk.data.path[0], "tokenizers", "punkt_tab", "english")
-    os.makedirs(target_dir, exist_ok=True)
-    shutil.copy(punkt_english_path, os.path.join(target_dir, "english.pickle"))
-    logger.info("Fallback created for 'punkt_tab' using 'punkt'.")
 
 # Use NLTK's stopwords - load all languages
 STOP_WORDS = set(word for lang in stopwords.fileids() for word in stopwords.words(lang))
