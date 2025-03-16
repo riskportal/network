@@ -24,14 +24,15 @@ from risk.log import logger
 
 
 def ensure_nltk_resource(resource: str) -> None:
-    """Ensure an NLTK corpus resource is available; download via nltk.download,
-    or manually download and unpack if necessary.
+    """Ensure an NLTK resource is available; use nltk.download() first, then fall back to
+    manual download if necessary.
 
     Args:
-        resource (str): The NLTK resource to ensure availability.
+        resource (str): The NLTK resource to ensure availability for.
 
     Raises:
-        LookupError: If the resource remains unavailable after download attempts.
+        ValueError: If the specified resource is unknown.
+        LookupError: If the resource is still unavailable after manual download
     """
     resource_dirs = {
         "punkt": "tokenizers/punkt",
@@ -45,46 +46,27 @@ def ensure_nltk_resource(resource: str) -> None:
 
     try:
         nltk.data.find(resource_path)
-        # Additional check for punkt_tab: verify that essential files exist.
-        if resource == "punkt_tab":
-            try:
-                nltk.data.find("tokenizers/punkt_tab/english/collocations.tab")
-            except LookupError:
-                logger.warning(
-                    "File 'collocations.tab' missing in punkt_tab. Attempting manual download."
-                )
-                manually_download_nltk_resource(resource, resource_path)
         return
     except LookupError:
         logger.info(f"'{resource}' not found. Attempting nltk.download.")
 
     nltk.download(resource, quiet=True)
+
     try:
         nltk.data.find(resource_path)
-        logger.info(f"'{resource}' successfully downloaded via nltk.")
-        # For punkt_tab, verify that collocations.tab is present.
-        if resource == "punkt_tab":
-            try:
-                nltk.data.find("tokenizers/punkt_tab/english/collocations.tab")
-            except LookupError:
-                logger.warning(
-                    "File 'collocations.tab' missing in punkt_tab after nltk.download. Attempting manual download."
-                )
-                manually_download_nltk_resource(resource, resource_path)
+        logger.info(f"'{resource}' downloaded successfully via nltk.")
         return
     except LookupError:
-        logger.warning(f"nltk.download failed for '{resource}'. Manual download initiated.")
+        logger.warning(f"'{resource}' still unavailable. Manual download initiated.")
 
-    manually_download_nltk_resource(resource, resource_path)
-
-
-def manually_download_nltk_resource(resource: str, resource_path: str) -> None:
+    # Manually download from official GitHub repository
     base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
-    package_dir = "tokenizers" if resource in ("punkt", "punkt_tab") else "corpora"
-    zip_url = f"{base_url}/{package_dir}/{resource}.zip"
+    resource_dir = "tokenizers" if resource in ("punkt", "punkt_tab") else "corpora"
+    zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
 
+    # Controlled writable fallback (e.g., useful in GH Actions)
     nltk_data_dir = nltk.data.path[0]
-    target_dir = os.path.join(nltk_data_dir, package_dir)
+    target_dir = os.path.join(nltk_data_dir, resource_dir)
     os.makedirs(target_dir, exist_ok=True)
 
     zip_file_path = os.path.join(target_dir, f"{resource}.zip")
@@ -94,11 +76,12 @@ def manually_download_nltk_resource(resource: str, resource_path: str) -> None:
         zip_ref.extractall(target_dir)
 
     os.remove(zip_file_path)
+
     try:
         nltk.data.find(resource_path)
         logger.info(f"'{resource}' manually downloaded successfully.")
     except LookupError:
-        raise LookupError(f"Resource '{resource}' unavailable after manual download.")
+        raise LookupError(f"Resource '{resource}' unavailable even after manual download.")
 
 
 # Ensure required NLTK resources
