@@ -5,6 +5,7 @@ risk/annotations/annotations
 
 import os
 import re
+import shutil
 import urllib.request  # Use urllib.request instead of requests to avoid additional dependencies
 import zipfile
 from collections import Counter
@@ -24,47 +25,79 @@ from risk.log import logger
 
 
 def ensure_nltk_resource(resource: str) -> None:
-    """Ensure an NLTK corpus resource is available; if missing, download and unpack silently.
+    """Ensure an NLTK corpus resource is available; download via nltk.download,
+    or manually download and unpack if necessary.
 
     Args:
-        resource (str): The name of the NLTK resource to ensure availability.
+        resource (str): The NLTK resource to ensure availability.
+
+    Raises:
+        LookupError: If the resource remains unavailable after download attempts.
     """
-    resource_path = f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}"
+    resource_dirs = {
+        "punkt": "tokenizers/punkt",
+        "punkt_tab": "tokenizers/punkt_tab",
+        "stopwords": "corpora/stopwords",
+        "wordnet": "corpora/wordnet",
+    }
+    resource_path = resource_dirs.get(resource)
+    if resource_path is None:
+        raise ValueError(f"Unknown resource '{resource}' specified.")
+
     try:
         nltk.data.find(resource_path)
         return
     except LookupError:
-        print(f"'{resource}' resource not found. Downloading and unpacking manually...")
+        logger.info(f"'{resource}' not found. Attempting nltk.download.")
 
-    # Download the resource from the NLTK GitHub repository
+    nltk.download(resource, quiet=True)
+    try:
+        nltk.data.find(resource_path)
+        logger.info(f"'{resource}' successfully downloaded via nltk.")
+        return
+    except LookupError:
+        logger.warning(f"nltk.download failed for '{resource}'. Manual download initiated.")
+
+    manually_download_nltk_resource(resource, resource_path)
+
+
+def manually_download_nltk_resource(resource: str, resource_path: str) -> None:
     base_url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
     resource_dir = "tokenizers" if resource == "punkt" else "corpora"
     zip_url = f"{base_url}/{resource_dir}/{resource}.zip"
 
-    # Determine the target directory for the resource
     nltk_data_dir = nltk.data.path[0]
     target_dir = os.path.join(nltk_data_dir, resource_dir)
     os.makedirs(target_dir, exist_ok=True)
 
-    # Download and extract the resource
     zip_file_path = os.path.join(target_dir, f"{resource}.zip")
     urllib.request.urlretrieve(zip_url, zip_file_path)
+
     with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
         zip_ref.extractall(target_dir)
 
     os.remove(zip_file_path)
-
     try:
         nltk.data.find(resource_path)
-        print(f"Resource '{resource}' successfully downloaded and available.")
+        logger.info(f"'{resource}' manually downloaded successfully.")
     except LookupError:
-        raise LookupError(f"Resource '{resource}' could not be found even after manual download.")
+        raise LookupError(f"Resource '{resource}' unavailable after manual download.")
 
 
-# Ensure the NLTK punkt, stopwords, and wordnet resources are available
-ensure_nltk_resource("punkt")
-ensure_nltk_resource("stopwords")
-ensure_nltk_resource("wordnet")
+# Ensure required NLTK resources
+for nltk_resource in ["punkt", "punkt_tab", "stopwords", "wordnet"]:
+    ensure_nltk_resource(nltk_resource)
+
+# Fallback for 'punkt_tab'
+try:
+    nltk.data.find("tokenizers/punkt_tab/english/")
+except LookupError:
+    punkt_english_path = nltk.data.find("tokenizers/punkt/english.pickle")
+    target_dir = os.path.join(nltk.data.path[0], "tokenizers", "punkt_tab", "english")
+    os.makedirs(target_dir, exist_ok=True)
+    shutil.copy(punkt_english_path, os.path.join(target_dir, "english.pickle"))
+    logger.info("Fallback created for 'punkt_tab' using 'punkt'.")
+
 # Use NLTK's stopwords - load all languages
 STOP_WORDS = set(word for lang in stopwords.fileids() for word in stopwords.words(lang))
 # Initialize the WordNet lemmatizer, which is used for normalizing words
