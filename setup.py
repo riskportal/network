@@ -37,7 +37,7 @@ setup(
         "markov_clustering",
         "matplotlib",
         "networkx",
-        "nltk==3.8.1",
+        "nltk",
         "numpy",
         "openpyxl",
         "pandas",
