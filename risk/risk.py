@@ -6,8 +6,8 @@ risk/risk
 from risk.annotations import AnnotationsIO
 from risk.log import params, set_global_verbosity
 from risk.neighborhoods import NeighborhoodsAPI
-from risk.network import NetworkIO
 from risk.network.graph import GraphAPI
+from risk.network.io import NetworkIO
 from risk.network.plotter import PlotterAPI
 
 
