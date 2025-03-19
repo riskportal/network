@@ -21,7 +21,7 @@ from risk.log import logger
 # fmt: off
 LINKAGE_METHODS = {"single", "complete", "average", "weighted", "centroid", "median", "ward"}
 LINKAGE_METRICS = {
-    "braycurtis","canberra", "chebyshev", "cityblock", "correlation", "cosine", "dice", "euclidean",
+    "braycurtis", "canberra", "chebyshev", "cityblock", "correlation", "cosine", "dice", "euclidean",
     "hamming", "jaccard", "jensenshannon", "kulczynski1", "mahalanobis", "matching", "minkowski",
     "rogerstanimoto", "russellrao", "seuclidean", "sokalmichener", "sokalsneath", "sqeuclidean", "yule",
 }
