@@ -48,6 +48,8 @@ class NetworkIO:
             min_edges_per_node=min_edges_per_node,
         )
 
+    # NOTE: Static methods are used to prevent inheritance-related issues when calling the method
+    # across different subclasses.
     @staticmethod
     def load_gpickle_network(
         filepath: str,
