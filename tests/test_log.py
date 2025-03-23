@@ -1,5 +1,4 @@
-"""
-tests/test_log.py
+"""tests/test_log.py
 ~~~~~~~~~~~~~~~~~
 """
 
@@ -34,9 +33,10 @@ def test_log_header_output(log_capture):
         log_capture: Captures logger output.
     """
     log_header("Unit Test Header")
+    logger.handlers[0].flush()  # Ensure buffer is flushed
     contents = log_capture.getvalue()
     assert "Unit Test Header" in contents
-    assert "=" in contents or "-" in contents
+    assert any(sym in contents for sym in ("=", "-"))
 
 
 def test_logger_debug_output(log_capture):
