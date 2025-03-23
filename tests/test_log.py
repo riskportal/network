@@ -20,6 +20,7 @@ def log_capture():
     # Capture log output
     log_stream = io.StringIO()
     handler = logging.StreamHandler(log_stream)
+    handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
     # Return the stream and handler
     yield log_stream
