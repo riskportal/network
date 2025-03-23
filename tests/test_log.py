@@ -1,4 +1,5 @@
-"""tests/test_log.py
+"""
+tests/test_log.py
 ~~~~~~~~~~~~~~~~~
 """
 
@@ -33,6 +34,8 @@ def test_log_header_output(log_capture):
     Args:
         log_capture: Captures logger output.
     """
+    # Deliberately set log level to DEBUG to ensure header is logged in GitHub Actions
+    logger.setLevel(logging.DEBUG)
     log_header("Unit Test Header")
     logger.handlers[0].flush()  # Ensure buffer is flushed
     contents = log_capture.getvalue()
@@ -46,6 +49,7 @@ def test_logger_debug_output(log_capture):
     Args:
         log_capture: Captures logger output.
     """
+    logger.setLevel(logging.DEBUG)
     logger.debug("Test debug message")
     contents = log_capture.getvalue()
     assert "Test debug message" in contents
@@ -57,6 +61,7 @@ def test_params_log_annotations(log_capture):
     Args:
         log_capture: Captures logger output.
     """
+    logger.setLevel(logging.DEBUG)
     params.log_annotations(
         filetype="CSV",
         filepath="mock/path/to/file.csv",
