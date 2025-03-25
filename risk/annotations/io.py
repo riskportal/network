@@ -20,9 +20,6 @@ class AnnotationsIO:
     and to export parameter data to various formats like JSON, CSV, and text files.
     """
 
-    def __init__(self):
-        pass
-
     def load_json_annotation(
         self, network: nx.Graph, filepath: str, min_nodes_per_term: int = 2
     ) -> Dict[str, Any]:
