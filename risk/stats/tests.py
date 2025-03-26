@@ -1,17 +1,13 @@
 """
-risk/stats/stat_tests
-~~~~~~~~~~~~~~~~~~~~~
+risk/stats/tests
+~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict
 
 import numpy as np
 from scipy.sparse import csr_matrix
-from scipy.stats import binom
-from scipy.stats import chi2
-from scipy.stats import hypergeom
-from scipy.stats import norm
-from scipy.stats import poisson
+from scipy.stats import binom, chi2, hypergeom, norm, poisson
 
 
 def compute_binom_test(
