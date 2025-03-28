@@ -33,7 +33,7 @@ pip install risk-network --upgrade
 - **Advanced Clustering Algorithms**: Supports Louvain, Leiden, Markov Clustering, Greedy Modularity, Label Propagation, Spinglass, and Walktrap for identifying structured network regions.
 - **Flexible Visualization**: Produce customizable, high-resolution network visualizations with kernel density estimate overlays, adjustable node and edge attributes, and export options in SVG, PNG, and PDF formats.
 - **Efficient Data Handling**: Supports multiple input/output formats, including JSON, CSV, TSV, Excel, Cytoscape, and GPickle.
-- **Statistical Analysis**: Assess functional enrichment using hypergeometric, permutation, binomial, chi-squared, Poisson, and z-score tests, ensuring statistical adaptability across datasets.
+- **Statistical Analysis**: Assess functional enrichment using hypergeometric, permutation (network-aware), binomial, chi-squared, Poisson, and z-score tests, ensuring statistical adaptability across datasets.
 - **Cross-Domain Applicability**: Suitable for network analysis across biological and non-biological domains, including social and communication networks.
 
 ## Example Usage
@@ -52,12 +52,13 @@ If you use RISK in your research, please cite:
 
 ## Software Architecture and Implementation
 
-RISK features a streamlined, modular architecture designed to meet diverse research needs. It includes dedicated modules for:
+RISK features a streamlined, modular architecture designed to meet diverse research needs. RISK’s modular design enables users to run individual components—such as clustering, statistical testing, or visualization—independently or in combination, depending on the analysis workflow. It includes dedicated modules for:
 
 - **Data I/O**: Supports JSON, CSV, TSV, Excel, Cytoscape, and GPickle formats.
 - **Clustering**: Supports multiple clustering methods, including Louvain, Leiden, Markov Clustering, Greedy Modularity, Label Propagation, Spinglass, and Walktrap. Provides flexible distance metrics tailored to network structure.
 - **Statistical Analysis**: Provides a suite of tests for overrepresentation analysis of annotations.
 - **Visualization**: Offers customizable, high-resolution output in multiple formats, including SVG, PNG, and PDF.
+- **Configuration Management**: Centralized parameters in risk.params ensure reproducibility and easy tuning for large-scale analyses.
 
 ## Performance and Efficiency
 
