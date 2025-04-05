@@ -1,6 +1,6 @@
 """
-tests/test_log.py
-~~~~~~~~~~~~~~~~~
+tests/test_log
+~~~~~~~~~~~~~~
 """
 
 import io
