@@ -1,6 +1,6 @@
 """
-risk/stats/tests
-~~~~~~~~~~~~~~~~
+risk/neighborhoods/stats/tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict

@@ -17,7 +17,7 @@ from risk.neighborhoods import (
     trim_domains,
 )
 from risk.network.graph.graph import Graph
-from risk.stats import calculate_significance_matrices
+from risk.network.graph.stats import calculate_significance_matrices
 
 
 class GraphAPI:

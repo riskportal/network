@@ -1,6 +1,6 @@
 """
-risk/stats/permutation/permutation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/neighborhoods/stats/permutation/permutation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from multiprocessing import Manager, get_context
@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix
 from threadpoolctl import threadpool_limits
 from tqdm import tqdm
 
-from risk.stats.permutation.test_functions import DISPATCH_TEST_FUNCTIONS
+from risk.neighborhoods.stats.permutation.test_functions import DISPATCH_TEST_FUNCTIONS
 
 
 def compute_permutation_test(

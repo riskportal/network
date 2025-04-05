@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix
 
 from risk.log import log_header, logger, params
 from risk.neighborhoods.neighborhoods import get_network_neighborhoods
-from risk.stats import (
+from risk.neighborhoods.stats import (
     compute_binom_test,
     compute_chi2_test,
     compute_hypergeom_test,
