@@ -6,7 +6,6 @@ tests/test_load_plotter
 import matplotlib.pyplot as plt
 import pytest
 
-
 # NOTE: Displaying plots during testing can cause the program to hang. Avoid including plot displays in tests.
 # Now, let's test the plotter with different custom settings.
 

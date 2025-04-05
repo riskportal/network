@@ -4,10 +4,10 @@ setup
 """
 
 import re
-from setuptools import setup, find_packages
 
 # Leave numpy imported for package bundling
 import numpy
+from setuptools import find_packages, setup
 
 
 def find_version():
@@ -25,7 +25,7 @@ setup(
     version=find_version(),  # Dynamically fetches the version
     author="Ira Horecka",
     author_email="ira89@icloud.com",
-    description="A Python package for biological network analysis",  # Updated description
+    description="A Python package for biological network analysis",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     license="GPL-3.0-or-later",

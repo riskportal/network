@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from risk.log import logger, log_header, params
+from risk.log import log_header, logger, params
 from risk.neighborhoods.neighborhoods import get_network_neighborhoods
 from risk.stats import (
     compute_binom_test,

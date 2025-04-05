@@ -10,7 +10,7 @@ import networkx as nx
 import pandas as pd
 
 from risk.annotations import define_top_annotations
-from risk.log import logger, log_header, params
+from risk.log import log_header, logger, params
 from risk.neighborhoods import (
     define_domains,
     process_neighborhoods,

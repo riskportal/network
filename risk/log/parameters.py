@@ -11,7 +11,7 @@ from typing import Any, Dict
 
 import numpy as np
 
-from risk.log.console import logger, log_header
+from risk.log.console import log_header, logger
 
 # Suppress all warnings - this is to resolve warnings from multiprocessing
 warnings.filterwarnings("ignore")

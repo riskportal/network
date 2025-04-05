@@ -9,13 +9,12 @@ from typing import Tuple, Union
 import numpy as np
 import pandas as pd
 from numpy.linalg import LinAlgError
-from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.cluster.hierarchy import fcluster, linkage
 from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 
 from risk.annotations import get_weighted_description
 from risk.log import logger
-
 
 # Define constants for clustering
 # fmt: off

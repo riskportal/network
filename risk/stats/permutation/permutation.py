@@ -3,7 +3,7 @@ risk/stats/permutation/permutation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from multiprocessing import get_context, Manager
+from multiprocessing import Manager, get_context
 from multiprocessing.managers import ValueProxy
 from typing import Any, Callable, Dict, List, Tuple, Union
 

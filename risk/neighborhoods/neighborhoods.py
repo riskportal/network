@@ -13,6 +13,7 @@ from scipy.sparse import csr_matrix
 from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics.pairwise import cosine_similarity
 
+from risk.log import logger
 from risk.neighborhoods.community import (
     calculate_greedy_modularity_neighborhoods,
     calculate_label_propagation_neighborhoods,
@@ -22,7 +23,6 @@ from risk.neighborhoods.community import (
     calculate_spinglass_neighborhoods,
     calculate_walktrap_neighborhoods,
 )
-from risk.log import logger
 
 # Suppress DataConversionWarning
 warnings.filterwarnings(action="ignore", category=DataConversionWarning)
