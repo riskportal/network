@@ -10,7 +10,7 @@ import networkx as nx
 import pandas as pd
 
 from risk.annotations.annotations import load_annotations
-from risk.log import params, logger, log_header
+from risk.log import log_header, logger, params
 
 
 class AnnotationsIO:

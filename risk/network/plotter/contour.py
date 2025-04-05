@@ -11,7 +11,7 @@ from scipy import linalg
 from scipy.ndimage import label
 from scipy.stats import gaussian_kde
 
-from risk.log import params, logger
+from risk.log import logger, params
 from risk.network.graph.graph import Graph
 from risk.network.plotter.utils.colors import get_annotated_domain_colors, to_rgba
 

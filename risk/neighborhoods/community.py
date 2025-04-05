@@ -8,7 +8,7 @@ import igraph as ig
 import markov_clustering as mc
 import networkx as nx
 import numpy as np
-from leidenalg import find_partition, RBConfigurationVertexPartition
+from leidenalg import RBConfigurationVertexPartition, find_partition
 from networkx.algorithms.community import greedy_modularity_communities
 from scipy.sparse import csr_matrix
 

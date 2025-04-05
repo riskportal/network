@@ -8,7 +8,8 @@ import zipfile
 from typing import List, Tuple
 
 import nltk
-from nltk.data import find, path as nltk_data_path
+from nltk.data import find
+from nltk.data import path as nltk_data_path
 
 from risk.log import logger
 

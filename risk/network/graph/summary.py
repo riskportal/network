@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.stats.multitest import fdrcorrection
 
-from risk.log.console import logger, log_header
+from risk.log.console import log_header, logger
 
 
 class Summary:
