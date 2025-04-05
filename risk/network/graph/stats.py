@@ -1,6 +1,6 @@
 """
-risk/stats/significance
-~~~~~~~~~~~~~~~~~~~~~~~
+risk/network/graph/stats
+~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict, Union
