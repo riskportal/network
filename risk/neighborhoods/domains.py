@@ -241,7 +241,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
     # Evaluating optimal linkage method and metric
     for method, metric in tqdm(
         product(linkage_methods, linkage_metrics),
-        desc="Evaluating optimal linkage method and metric",
+        desc="Evaluating linkage methods and metrics",
         total=total_combinations,
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
     ):
