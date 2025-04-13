@@ -195,6 +195,7 @@ class NetworkIO:
 
         Raises:
             ValueError: If no matching attribute metadata file is found.
+            KeyError: If the source or target label is not found in the attribute table.
         """
         filetype = "Cytoscape"
         # Log the loading of the Cytoscape file
