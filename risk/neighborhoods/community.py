@@ -27,6 +27,10 @@ def calculate_greedy_modularity_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) where nodes in the same community have 1, and others have 0.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -67,6 +71,10 @@ def calculate_label_propagation_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) on Label Propagation.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -115,6 +123,10 @@ def calculate_leiden_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) where nodes in the same community have 1, and others have 0.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -167,6 +179,10 @@ def calculate_louvain_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix in CSR format.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -215,9 +231,10 @@ def calculate_markov_clustering_neighborhoods(
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) on Markov Clustering.
 
-    Warning:
-        This function temporarily converts the adjacency matrix to a dense format, which may lead to
-        high memory consumption for large graphs.
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        RuntimeError: If MCL fails to run.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -283,6 +300,10 @@ def calculate_spinglass_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) based on Spinglass communities.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -343,6 +364,10 @@ def calculate_walktrap_neighborhoods(
 
     Returns:
         csr_matrix: A binary neighborhood matrix (CSR) on Walktrap communities.
+
+    Raises:
+        ValueError: If the subgraph has no edges after filtering.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Create a subgraph with the shortest edges based on the rank fraction
     subnetwork = _create_percentile_limited_subgraph(
@@ -384,6 +409,10 @@ def _create_percentile_limited_subgraph(G: nx.Graph, fraction_shortest_edges: fl
     Returns:
         nx.Graph: A subgraph with nodes and edges where the edges are within the shortest
         specified rank fraction.
+
+    Raises:
+        ValueError: If no edges with 'length' attributes are found in the graph.
+        Warning: If the resulting subgraph has no edges after filtering.
     """
     # Step 1: Extract edges with their lengths
     edges_with_length = [(u, v, d) for u, v, d in G.edges(data=True) if "length" in d]

@@ -48,6 +48,9 @@ def define_domains(
 
     Returns:
         pd.DataFrame: DataFrame with the primary domain for each node.
+
+    Raises:
+        ValueError: If the clustering criterion is set to "off" or if an error occurs during clustering.
     """
     try:
         if linkage_criterion == "off":
