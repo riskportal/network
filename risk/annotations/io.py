@@ -180,6 +180,9 @@ class AnnotationsIO:
 
         Returns:
             Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+
+        Raises:
+            TypeError: If the content is not a dictionary.
         """
         # Ensure the input content is a dictionary
         if not isinstance(content, dict):
