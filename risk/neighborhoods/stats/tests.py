@@ -24,6 +24,9 @@ def compute_binom_test(
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Get the total number of nodes in the network
     total_nodes = neighborhoods.shape[1]
@@ -66,6 +69,9 @@ def compute_chi2_test(
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Total number of nodes in the network
     total_node_count = neighborhoods.shape[0]
@@ -116,8 +122,7 @@ def compute_hypergeom_test(
     annotations: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """
-    Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -126,6 +131,9 @@ def compute_hypergeom_test(
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Get the total number of nodes in the network
     total_nodes = neighborhoods.shape[1]
@@ -170,8 +178,7 @@ def compute_poisson_test(
     annotations: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """
-    Compute Poisson test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """Compute Poisson test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -180,6 +187,9 @@ def compute_poisson_test(
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Matrix multiplication to get the number of annotated nodes in each neighborhood
     annotated_in_neighborhood = neighborhoods @ annotations  # Sparse result
@@ -210,8 +220,7 @@ def compute_zscore_test(
     annotations: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """
-    Compute z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """Compute z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -220,6 +229,9 @@ def compute_zscore_test(
 
     Returns:
         Dict[str, Any]: Dictionary containing depletion and enrichment p-values.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Total number of nodes in the network
     total_node_count = neighborhoods.shape[1]

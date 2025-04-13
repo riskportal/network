@@ -48,6 +48,9 @@ def get_network_neighborhoods(
 
     Returns:
         csr_matrix: The combined neighborhood matrix.
+
+    Raises:
+        ValueError: If the number of distance metrics does not match the number of edge length thresholds.
     """
     # Set random seed for reproducibility
     random.seed(random_seed)
@@ -490,6 +493,9 @@ def _calculate_threshold(median_distances: List, distance_threshold: float) -> f
 
     Returns:
         float: The calculated distance threshold value.
+
+    Raises:
+        ValueError: If no significant annotations are found in the median distances.
     """
     # Sort the median distances
     sorted_distances = np.sort(median_distances)

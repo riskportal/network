@@ -88,6 +88,9 @@ def _run_permutation_test(
 
     Returns:
         tuple: Depletion and enrichment counts.
+
+    Raises:
+        ValueError: If an invalid null_distribution value is provided.
     """
     # Initialize the RNG for reproducibility
     rng = np.random.default_rng(seed=random_seed)
