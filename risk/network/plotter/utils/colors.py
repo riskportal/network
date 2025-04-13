@@ -356,6 +356,9 @@ def to_rgba(
 
     Returns:
         np.ndarray: Array of RGBA colors repeated `num_repeats` times, if applicable.
+
+    Raises:
+        ValueError: If the provided color format is invalid or cannot be converted to RGBA.
     """
 
     def convert_to_rgba(c: Union[str, List, Tuple, np.ndarray]) -> np.ndarray:
