@@ -17,7 +17,7 @@
 
 ## Documentation and Tutorial
 
-An interactive Jupyter notebook tutorial can be found [here](https://github.com/riskportal/network-tutorial). We highly recommend new users to consult the documentation and tutorial early on to fully utilize RISK's capabilities.
+Full documentation (with examples and usage guidance) is available at [riskportal.github.io/network-tutorial](https://riskportal.github.io/network-tutorial). An interactive Jupyter notebook tutorial is also available [on GitHub](https://github.com/riskportal/network-tutorial).
 
 ## Installation
 
