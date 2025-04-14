@@ -17,7 +17,10 @@
 
 ## Documentation and Tutorial
 
-Full documentation (with examples and usage guidance) is available at [riskportal.github.io/network-tutorial](https://riskportal.github.io/network-tutorial). An interactive Jupyter notebook tutorial is also available [on GitHub](https://github.com/riskportal/network-tutorial).
+Full documentation is available at:
+
+- **Docs:** [https://riskportal.github.io/network-tutorial](https://riskportal.github.io/network-tutorial)  
+- **Tutorial Jupyter Notebook Repository:** [https://github.com/riskportal/network-tutorial](https://github.com/riskportal/network-tutorial)
 
 ## Installation
 
@@ -78,7 +81,3 @@ If you encounter issues or have suggestions for new features, please use the [Is
 ## License
 
 RISK is open source under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
-
----
-
-**Note**: For detailed documentation and to access the interactive tutorial, please visit the links above.
