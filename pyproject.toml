@@ -10,8 +10,7 @@ authors = [
     { name = "Ira Horecka", email = "ira89@icloud.com" },
 ]
 readme = "README.md"
-license = "GPL-3.0-or-later"
-license-files = ["LICENSE"]
+requires-python = ">=3.8"
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -43,7 +42,12 @@ dependencies = [
     "threadpoolctl",
     "tqdm",
 ]
-requires-python = ">=3.8"
+
+[project.license]
+text = "GPL-3.0-or-later"
+
+[project.urls]
+"Homepage" = "https://github.com/riskportal/network"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
