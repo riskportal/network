@@ -10,6 +10,7 @@ pylint: ## Run pylint on all Python files
 	find . -type f -name "*.py" | xargs pylint
 
 test: ## Run tests using pytest
+	pip install -e . > /dev/null
 	pytest -vv --tb=auto ./
 
 build: ## Build package distribution files
