@@ -49,5 +49,8 @@ requires-python = ">=3.8"
 package-dir = {"" = "src"}
 packages = ["risk"]
 
+[tool.setuptools.dynamic]
+version = { attr = "risk.__version__" }
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
