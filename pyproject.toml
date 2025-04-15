@@ -10,7 +10,8 @@ authors = [
     { name = "Ira Horecka", email = "ira89@icloud.com" },
 ]
 readme = "README.md"
-license = { file = "LICENSE" }
+license = { text = "GPL-3.0-or-later" }
+license-files = ["LICENSE"]
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
