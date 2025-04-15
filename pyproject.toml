@@ -44,3 +44,10 @@ dependencies = [
     "tqdm",
 ]
 requires-python = ">=3.8"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["risk"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
