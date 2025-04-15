@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "risk-network"
-dynamic = ["version"]  # Indicates that version is determined dynamically
+dynamic = ["version"]
 description = "A Python package for biological network analysis"
 authors = [
     { name = "Ira Horecka", email = "ira89@icloud.com" },

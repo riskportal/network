@@ -21,7 +21,7 @@ publish: ## Publish package distribution files to PyPI
 
 clean: ## Remove caches, checkpoints, and distribution artifacts
 	find . \( -name ".DS_Store" -o -name ".ipynb_checkpoints" -o -name "__pycache__" -o -name ".pytest_cache" \) | xargs rm -rf
-	rm -rf dist/ build/ *.egg-info
+	rm -rf dist/ build/ **/*.egg-info
 
 help: ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"}; {printf "%-15s %s\n", $$1, $$2}'
