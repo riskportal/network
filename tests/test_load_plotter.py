@@ -1444,3 +1444,40 @@ def test_plot_sublabel_with_custom_params(
         )
     finally:
         plt.close("all")
+
+
+def test_plotter_savefig(risk_obj, graph, tmp_path):
+    """Test that savefig creates a valid output image file.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+        tmp_path: Temporary directory for saving the output image.
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    output_path = tmp_path / "test_plot_output.png"
+    try:
+        plot_network(plotter)  # must create a figure first
+        plotter.savefig(str(output_path), dpi=150)
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0  # file isn't empty
+    finally:
+        plt.close("all")
+
+
+def test_plotter_show(risk_obj, graph, monkeypatch):
+    """Test that show() executes without raising exceptions.
+
+    Args:
+        risk_obj: The RISK object instance used for plotting.
+        graph: The graph object to be plotted.
+        monkeypatch: Pytest fixture to patch the plt.show method.
+    """
+    plotter = initialize_plotter(risk_obj, graph)
+    # Patch plt.show to prevent GUI rendering
+    monkeypatch.setattr(plt, "show", lambda: None)
+    try:
+        plot_network(plotter)
+        plotter.show()  # Just call it — no assertion needed
+    finally:
+        plt.close("all")
