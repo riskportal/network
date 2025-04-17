@@ -213,7 +213,7 @@ class Contour:
                 ]
                 z = kde(np.vstack([x.ravel(), y.ravel()])).reshape(x.shape)
                 # Check if the KDE forms a single connected component
-                connected = _is_connected(z)
+                connected = self._is_connected(z)
                 if not connected:
                     bandwidth += 0.05  # Increase bandwidth slightly and retry
             except linalg.LinAlgError:
@@ -316,15 +316,14 @@ class Contour:
             random_seed=random_seed,
         )
 
+    def _is_connected(self, z: np.ndarray) -> bool:
+        """Determine if a thresholded grid represents a single, connected component.
 
-def _is_connected(z: np.ndarray) -> bool:
-    """Determine if a thresholded grid represents a single, connected component.
+        Args:
+            z (np.ndarray): A binary grid where the component connectivity is evaluated.
 
-    Args:
-        z (np.ndarray): A binary grid where the component connectivity is evaluated.
-
-    Returns:
-        bool: True if the grid represents a single connected component, False otherwise.
-    """
-    _, num_features = label(z)
-    return num_features == 1  # Return True if only one connected component is found
+        Returns:
+            bool: True if the grid represents a single connected component, False otherwise.
+        """
+        _, num_features = label(z)
+        return num_features == 1  # Return True if only one connected component is found

@@ -18,7 +18,7 @@ class PlotterAPI:
     The PlotterAPI class provides methods to load and configure Plotter objects for plotting network graphs.
     """
 
-    def __init__() -> None:
+    def __init__(self) -> None:
         pass
 
     def load_plotter(
