@@ -137,7 +137,7 @@ class Params:
             Dict[str, Any]: A dictionary containing the processed parameters.
         """
         log_header("Loading parameters")
-        return _convert_ndarray_to_list(
+        return self._convert_ndarray_to_list(
             {
                 "annotations": self.annotations,
                 "datetime": self.datetime,
@@ -148,25 +148,24 @@ class Params:
             }
         )
 
+    def _convert_ndarray_to_list(self, d: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively convert all np.ndarray values in the dictionary to lists.
 
-def _convert_ndarray_to_list(d: Dict[str, Any]) -> Dict[str, Any]:
-    """Recursively convert all np.ndarray values in the dictionary to lists.
+        Args:
+            d (Dict[str, Any]): The dictionary to process.
 
-    Args:
-        d (Dict[str, Any]): The dictionary to process.
+        Returns:
+            Dict[str, Any]: The processed dictionary with np.ndarray values converted to lists.
+        """
+        if isinstance(d, dict):
+            # Recursively process each value in the dictionary
+            return {k: self._convert_ndarray_to_list(v) for k, v in d.items()}
+        if isinstance(d, list):
+            # Recursively process each item in the list
+            return [self._convert_ndarray_to_list(v) for v in d]
+        if isinstance(d, np.ndarray):
+            # Convert numpy arrays to lists
+            return d.tolist()
 
-    Returns:
-        Dict[str, Any]: The processed dictionary with np.ndarray values converted to lists.
-    """
-    if isinstance(d, dict):
-        # Recursively process each value in the dictionary
-        return {k: _convert_ndarray_to_list(v) for k, v in d.items()}
-    if isinstance(d, list):
-        # Recursively process each item in the list
-        return [_convert_ndarray_to_list(v) for v in d]
-    if isinstance(d, np.ndarray):
-        # Convert numpy arrays to lists
-        return d.tolist()
-
-    # Return the value unchanged if it's not a dict, List, or ndarray
-    return d
+        # Return the value unchanged if it's not a dict, List, or ndarray
+        return d

@@ -170,8 +170,7 @@ class Summary:
 
         return results
 
-    @staticmethod
-    def _calculate_qvalues(pvals: np.ndarray) -> np.ndarray:
+    def _calculate_qvalues(self, pvals: np.ndarray) -> np.ndarray:
         """Calculate q-values (FDR) for each row of a p-value matrix.
 
         Args:

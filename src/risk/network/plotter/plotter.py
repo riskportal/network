@@ -114,7 +114,6 @@ class Plotter(Canvas, Network, Contour, Labels):
 
         return ax
 
-    @staticmethod
     def savefig(*args, pad_inches: float = 0.5, dpi: int = 100, **kwargs) -> None:
         """Save the current plot to a file with additional export options.
 
@@ -132,7 +131,6 @@ class Plotter(Canvas, Network, Contour, Labels):
         # Call plt.savefig with combined arguments
         plt.savefig(*args, **kwargs)
 
-    @staticmethod
     def show(*args, **kwargs) -> None:
         """Display the current plot.
 

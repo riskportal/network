@@ -65,8 +65,8 @@ class Graph:
         # NOTE: Below this point, instance attributes (i.e., self) will be used!
         self.domain_id_to_node_labels_map = self._create_domain_id_to_node_labels_map()
         # Unfold the network's 3D coordinates to 2D and extract node coordinates
-        self.network = _unfold_sphere_to_plane(network)
-        self.node_coordinates = _extract_node_coordinates(self.network)
+        self.network = self._unfold_sphere_to_plane(network)
+        self.node_coordinates = self._extract_node_coordinates(self.network)
 
         # NOTE: Only after the above attributes are initialized, we can create the summary
         self.summary = Summary(annotations, neighborhoods, self)
@@ -97,8 +97,7 @@ class Graph:
                 domain_info["domains"].remove(domain_id)
                 domain_info["significances"].pop(domain_id)
 
-    @staticmethod
-    def _create_domain_id_to_node_ids_map(domains: pd.DataFrame) -> Dict[int, Any]:
+    def _create_domain_id_to_node_ids_map(self, domains: pd.DataFrame) -> Dict[int, Any]:
         """Create a mapping from domains to the list of node IDs belonging to each domain.
 
         Args:
@@ -115,8 +114,9 @@ class Graph:
 
         return domain_id_to_node_ids_map
 
-    @staticmethod
-    def _create_domain_id_to_domain_terms_map(trimmed_domains: pd.DataFrame) -> Dict[int, Any]:
+    def _create_domain_id_to_domain_terms_map(
+        self, trimmed_domains: pd.DataFrame
+    ) -> Dict[int, Any]:
         """Create a mapping from domain IDs to their corresponding terms.
 
         Args:
@@ -132,8 +132,8 @@ class Graph:
             )
         )
 
-    @staticmethod
     def _create_domain_id_to_domain_info_map(
+        self,
         trimmed_domains: pd.DataFrame,
     ) -> Dict[int, Dict[str, Any]]:
         """Create a mapping from domain IDs to their corresponding full description and significance score,
@@ -169,8 +169,9 @@ class Graph:
 
         return domain_info_map
 
-    @staticmethod
-    def _create_node_id_to_domain_ids_and_significances(domains: pd.DataFrame) -> Dict[int, Dict]:
+    def _create_node_id_to_domain_ids_and_significances(
+        self, domains: pd.DataFrame
+    ) -> Dict[int, Dict]:
         """Creates a dictionary mapping each node ID to its corresponding domain IDs and significance values.
 
         Args:
@@ -216,54 +217,52 @@ class Graph:
 
         return domain_id_to_label_map
 
+    def _unfold_sphere_to_plane(self, G: nx.Graph) -> nx.Graph:
+        """Convert 3D coordinates to 2D by unfolding a sphere to a plane.
 
-def _unfold_sphere_to_plane(G: nx.Graph) -> nx.Graph:
-    """Convert 3D coordinates to 2D by unfolding a sphere to a plane.
+        Args:
+            G (nx.Graph): A network graph with 3D coordinates. Each node should have 'x', 'y', and 'z' attributes.
 
-    Args:
-        G (nx.Graph): A network graph with 3D coordinates. Each node should have 'x', 'y', and 'z' attributes.
+        Returns:
+            nx.Graph: The network graph with updated 2D coordinates (only 'x' and 'y').
+        """
+        for node in G.nodes():
+            if "z" in G.nodes[node]:
+                # Extract 3D coordinates
+                x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
+                # Calculate spherical coordinates theta and phi from Cartesian coordinates
+                r = np.sqrt(x**2 + y**2 + z**2)
+                theta = np.arctan2(y, x)
+                phi = np.arccos(z / r)
 
-    Returns:
-        nx.Graph: The network graph with updated 2D coordinates (only 'x' and 'y').
-    """
-    for node in G.nodes():
-        if "z" in G.nodes[node]:
-            # Extract 3D coordinates
-            x, y, z = G.nodes[node]["x"], G.nodes[node]["y"], G.nodes[node]["z"]
-            # Calculate spherical coordinates theta and phi from Cartesian coordinates
-            r = np.sqrt(x**2 + y**2 + z**2)
-            theta = np.arctan2(y, x)
-            phi = np.arccos(z / r)
+                # Convert spherical coordinates to 2D plane coordinates
+                unfolded_x = (theta + np.pi) / (2 * np.pi)  # Shift and normalize theta to [0, 1]
+                unfolded_x = unfolded_x + 0.5 if unfolded_x < 0.5 else unfolded_x - 0.5
+                unfolded_y = (np.pi - phi) / np.pi  # Reflect phi and normalize to [0, 1]
+                # Update network node attributes
+                G.nodes[node]["x"] = unfolded_x
+                G.nodes[node]["y"] = -unfolded_y
+                # Remove the 'z' coordinate as it's no longer needed
+                del G.nodes[node]["z"]
 
-            # Convert spherical coordinates to 2D plane coordinates
-            unfolded_x = (theta + np.pi) / (2 * np.pi)  # Shift and normalize theta to [0, 1]
-            unfolded_x = unfolded_x + 0.5 if unfolded_x < 0.5 else unfolded_x - 0.5
-            unfolded_y = (np.pi - phi) / np.pi  # Reflect phi and normalize to [0, 1]
-            # Update network node attributes
-            G.nodes[node]["x"] = unfolded_x
-            G.nodes[node]["y"] = -unfolded_y
-            # Remove the 'z' coordinate as it's no longer needed
-            del G.nodes[node]["z"]
+        return G
 
-    return G
+    def _extract_node_coordinates(self, G: nx.Graph) -> np.ndarray:
+        """Extract 2D coordinates of nodes from the graph.
 
+        Args:
+            G (nx.Graph): The network graph with node coordinates.
 
-def _extract_node_coordinates(G: nx.Graph) -> np.ndarray:
-    """Extract 2D coordinates of nodes from the graph.
-
-    Args:
-        G (nx.Graph): The network graph with node coordinates.
-
-    Returns:
-        np.ndarray: Array of node coordinates with shape (num_nodes, 2).
-    """
-    # Extract x and y coordinates from graph nodes
-    x_coords = dict(G.nodes.data("x"))
-    y_coords = dict(G.nodes.data("y"))
-    coordinates_dicts = [x_coords, y_coords]
-    # Combine x and y coordinates into a single array
-    node_positions = {
-        node: np.array([coords[node] for coords in coordinates_dicts]) for node in x_coords
-    }
-    node_coordinates = np.vstack(list(node_positions.values()))
-    return node_coordinates
+        Returns:
+            np.ndarray: Array of node coordinates with shape (num_nodes, 2).
+        """
+        # Extract x and y coordinates from graph nodes
+        x_coords = dict(G.nodes.data("x"))
+        y_coords = dict(G.nodes.data("y"))
+        coordinates_dicts = [x_coords, y_coords]
+        # Combine x and y coordinates into a single array
+        node_positions = {
+            node: np.array([coords[node] for coords in coordinates_dicts]) for node in x_coords
+        }
+        node_coordinates = np.vstack(list(node_positions.values()))
+        return node_coordinates

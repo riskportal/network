@@ -158,7 +158,7 @@ class Canvas:
         # Calculate the center and radius of the bounding box around the network
         center, radius = calculate_bounding_box(node_coordinates)
         # Adjust the center based on user-defined offsets
-        adjusted_center = _calculate_adjusted_center(
+        adjusted_center = self._calculate_adjusted_center(
             center, radius, center_offset_x, center_offset_y
         )
         # Scale the radius by the scale factor
@@ -250,42 +250,42 @@ class Canvas:
             fill_alpha=fill_alpha,
         )
 
+    def _calculate_adjusted_center(
+        self,
+        center: Tuple[float, float],
+        radius: float,
+        center_offset_x: float = 0.0,
+        center_offset_y: float = 0.0,
+    ) -> Tuple[float, float]:
+        """Calculate the adjusted center for the network perimeter circle based on user-defined offsets.
 
-def _calculate_adjusted_center(
-    center: Tuple[float, float],
-    radius: float,
-    center_offset_x: float = 0.0,
-    center_offset_y: float = 0.0,
-) -> Tuple[float, float]:
-    """Calculate the adjusted center for the network perimeter circle based on user-defined offsets.
+        Args:
+            center (Tuple[float, float]): Original center coordinates of the network graph.
+            radius (float): Radius of the bounding box around the network.
+            center_offset_x (float, optional): Horizontal offset as a fraction of the diameter.
+                Negative values shift the center left, positive values shift it right. Allowed
+                values are in the range [-1, 1]. Defaults to 0.0.
+            center_offset_y (float, optional): Vertical offset as a fraction of the diameter.
+                Negative values shift the center down, positive values shift it up. Allowed
+                values are in the range [-1, 1]. Defaults to 0.0.
 
-    Args:
-        center (Tuple[float, float]): Original center coordinates of the network graph.
-        radius (float): Radius of the bounding box around the network.
-        center_offset_x (float, optional): Horizontal offset as a fraction of the diameter.
-            Negative values shift the center left, positive values shift it right. Allowed
-            values are in the range [-1, 1]. Defaults to 0.0.
-        center_offset_y (float, optional): Vertical offset as a fraction of the diameter.
-            Negative values shift the center down, positive values shift it up. Allowed
-            values are in the range [-1, 1]. Defaults to 0.0.
+        Returns:
+            Tuple[float, float]: Adjusted center coordinates after applying the offsets.
 
-    Returns:
-        Tuple[float, float]: Adjusted center coordinates after applying the offsets.
+        Raises:
+            ValueError: If the center offsets are outside the valid range [-1, 1].
+        """
+        # Flip the y-axis to match the plot orientation
+        flipped_center_offset_y = -center_offset_y
+        # Validate the center offsets
+        if not -1 <= center_offset_x <= 1:
+            raise ValueError("Horizontal center offset must be in the range [-1, 1].")
+        if not -1 <= center_offset_y <= 1:
+            raise ValueError("Vertical center offset must be in the range [-1, 1].")
 
-    Raises:
-        ValueError: If the center offsets are outside the valid range [-1, 1].
-    """
-    # Flip the y-axis to match the plot orientation
-    flipped_center_offset_y = -center_offset_y
-    # Validate the center offsets
-    if not -1 <= center_offset_x <= 1:
-        raise ValueError("Horizontal center offset must be in the range [-1, 1].")
-    if not -1 <= center_offset_y <= 1:
-        raise ValueError("Vertical center offset must be in the range [-1, 1].")
+        # Calculate adjusted center by applying offset fractions of the diameter
+        adjusted_center_x = center[0] + (center_offset_x * radius * 2)
+        adjusted_center_y = center[1] + (flipped_center_offset_y * radius * 2)
 
-    # Calculate adjusted center by applying offset fractions of the diameter
-    adjusted_center_x = center[0] + (center_offset_x * radius * 2)
-    adjusted_center_y = center[1] + (flipped_center_offset_y * radius * 2)
-
-    # Return the adjusted center coordinates
-    return adjusted_center_x, adjusted_center_y
+        # Return the adjusted center coordinates
+        return adjusted_center_x, adjusted_center_y

@@ -188,7 +188,7 @@ class Labels:
         # Calculate the bounding box around the network
         center, radius = calculate_bounding_box(self.graph.node_coordinates, radius_margin=scale)
         # Calculate the best positions for labels
-        best_label_positions = _calculate_best_label_positions(
+        best_label_positions = self._calculate_best_label_positions(
             filtered_domain_centroids, center, radius, offset
         )
         # Convert all domain colors to RGBA using the to_rgba helper function
@@ -207,7 +207,9 @@ class Labels:
             # Split by special key TERM_DELIMITER to split annotation into multiple lines
             annotations = filtered_domain_terms[domain].split(TERM_DELIMITER)
             if fontcase is not None:
-                annotations = _apply_str_transformation(words=annotations, transformation=fontcase)
+                annotations = self._apply_str_transformation(
+                    words=annotations, transformation=fontcase
+                )
             self.ax.annotate(
                 "\n".join(annotations),
                 xy=centroid,
@@ -627,7 +629,7 @@ class Labels:
             ]
 
         # Use the combine_words function directly to handle word combinations and length constraints
-        compressed_terms = _combine_words(tuple(terms), max_chars_per_line, max_label_lines)
+        compressed_terms = self._combine_words(tuple(terms), max_chars_per_line, max_label_lines)
 
         return compressed_terms
 
@@ -676,249 +678,255 @@ class Labels:
             random_seed=random_seed,
         )
 
+    def _combine_words(
+        self, words: List[str], max_chars_per_line: int, max_label_lines: int
+    ) -> str:
+        """Combine words to fit within the max_chars_per_line and max_label_lines constraints,
+        and separate the final output by TERM_DELIMITER for plotting.
 
-def _combine_words(words: List[str], max_chars_per_line: int, max_label_lines: int) -> str:
-    """Combine words to fit within the max_chars_per_line and max_label_lines constraints,
-    and separate the final output by TERM_DELIMITER for plotting.
+        Args:
+            words (List[str]): List of words to combine.
+            max_chars_per_line (int): Maximum number of characters in a line to display.
+            max_label_lines (int): Maximum number of lines in a label.
 
-    Args:
-        words (List[str]): List of words to combine.
-        max_chars_per_line (int): Maximum number of characters in a line to display.
-        max_label_lines (int): Maximum number of lines in a label.
+        Returns:
+            str: String of combined words separated by ':' for line breaks.
+        """
 
-    Returns:
-        str: String of combined words separated by ':' for line breaks.
-    """
+        def try_combinations(words_batch: List[str]) -> List[str]:
+            """Try to combine words within a batch and return them with combined words separated by ':'."""
+            combined_lines = []
+            i = 0
+            while i < len(words_batch):
+                current_word = words_batch[i]
+                combined_word = current_word  # Start with the current word
+                # Try to combine more words if possible, and ensure the combination fits within max_length
+                for j in range(i + 1, len(words_batch)):
+                    next_word = words_batch[j]
+                    # Ensure that the combined word fits within the max_chars_per_line limit
+                    if (
+                        len(combined_word) + len(next_word) + 1 <= max_chars_per_line
+                    ):  # +1 for space
+                        combined_word = f"{combined_word} {next_word}"
+                        i += 1  # Move past the combined word
+                    else:
+                        break  # Stop combining if the length is exceeded
 
-    def try_combinations(words_batch: List[str]) -> List[str]:
-        """Try to combine words within a batch and return them with combined words separated by ':'."""
-        combined_lines = []
-        i = 0
-        while i < len(words_batch):
-            current_word = words_batch[i]
-            combined_word = current_word  # Start with the current word
-            # Try to combine more words if possible, and ensure the combination fits within max_length
-            for j in range(i + 1, len(words_batch)):
-                next_word = words_batch[j]
-                # Ensure that the combined word fits within the max_chars_per_line limit
-                if len(combined_word) + len(next_word) + 1 <= max_chars_per_line:  # +1 for space
-                    combined_word = f"{combined_word} {next_word}"
-                    i += 1  # Move past the combined word
-                else:
-                    break  # Stop combining if the length is exceeded
+                # Add the combined word only if it fits within the max_chars_per_line limit
+                if len(combined_word) <= max_chars_per_line:
+                    combined_lines.append(combined_word)  # Add the combined word
+                # Move to the next word
+                i += 1
 
-            # Add the combined word only if it fits within the max_chars_per_line limit
-            if len(combined_word) <= max_chars_per_line:
-                combined_lines.append(combined_word)  # Add the combined word
-            # Move to the next word
-            i += 1
+                # Stop if we've reached the max_label_lines limit
+                if len(combined_lines) >= max_label_lines:
+                    break
 
-            # Stop if we've reached the max_label_lines limit
-            if len(combined_lines) >= max_label_lines:
-                break
+            return combined_lines
 
-        return combined_lines
+        # Main logic: start with max_label_lines number of words
+        combined_lines = try_combinations(words[:max_label_lines])
+        remaining_words = words[max_label_lines:]  # Remaining words after the initial batch
+        # Track words that have already been added
+        existing_words = set(" ".join(combined_lines).split())
 
-    # Main logic: start with max_label_lines number of words
-    combined_lines = try_combinations(words[:max_label_lines])
-    remaining_words = words[max_label_lines:]  # Remaining words after the initial batch
-    # Track words that have already been added
-    existing_words = set(" ".join(combined_lines).split())
+        # Continue pulling more words until we fill the lines
+        while remaining_words and len(combined_lines) < max_label_lines:
+            available_slots = max_label_lines - len(combined_lines)
+            words_to_add = [
+                word for word in remaining_words[:available_slots] if word not in existing_words
+            ]
+            remaining_words = remaining_words[available_slots:]
+            # Update the existing words set
+            existing_words.update(words_to_add)
+            # Add to combined_lines only unique words
+            combined_lines += try_combinations(words_to_add)
 
-    # Continue pulling more words until we fill the lines
-    while remaining_words and len(combined_lines) < max_label_lines:
-        available_slots = max_label_lines - len(combined_lines)
-        words_to_add = [
-            word for word in remaining_words[:available_slots] if word not in existing_words
+        # Join the final combined lines with TERM_DELIMITER, a special separator for line breaks
+        return TERM_DELIMITER.join(combined_lines[:max_label_lines])
+
+    def _calculate_best_label_positions(
+        self,
+        filtered_domain_centroids: Dict[str, Any],
+        center: np.ndarray,
+        radius: float,
+        offset: float,
+    ) -> Dict[str, Any]:
+        """Calculate and optimize label positions for clarity.
+
+        Args:
+            filtered_domain_centroids (Dict[str, Any]): Centroids of the filtered domains.
+            center (np.ndarray): The center coordinates for label positioning.
+            radius (float): The radius for positioning labels around the center.
+            offset (float): The offset distance from the radius for positioning labels.
+
+        Returns:
+            Dict[str, Any]: Optimized positions for labels.
+        """
+        num_domains = len(filtered_domain_centroids)
+        # Calculate equidistant positions around the center for initial label placement
+        equidistant_positions = self._calculate_equidistant_positions_around_center(
+            center, radius, offset, num_domains
+        )
+        # Create a mapping of domains to their initial label positions
+        label_positions = dict(zip(filtered_domain_centroids.keys(), equidistant_positions))
+        # Optimize the label positions to minimize distance to domain centroids
+        return self._optimize_label_positions(label_positions, filtered_domain_centroids)
+
+    def _calculate_equidistant_positions_around_center(
+        self, center: np.ndarray, radius: float, label_offset: float, num_domains: int
+    ) -> List[np.ndarray]:
+        """Calculate positions around a center at equidistant angles.
+
+        Args:
+            center (np.ndarray): The central point around which positions are calculated.
+            radius (float): The radius at which positions are calculated.
+            label_offset (float): The offset added to the radius for label positioning.
+            num_domains (int): The number of positions (or domains) to calculate.
+
+        Returns:
+            List[np.ndarray]: List of positions (as 2D numpy arrays) around the center.
+        """
+        # Calculate equidistant angles in radians around the center
+        angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
+        # Compute the positions around the center using the angles
+        return [
+            center + (radius + label_offset) * np.array([np.cos(angle), np.sin(angle)])
+            for angle in angles
         ]
-        remaining_words = remaining_words[available_slots:]
-        # Update the existing words set
-        existing_words.update(words_to_add)
-        # Add to combined_lines only unique words
-        combined_lines += try_combinations(words_to_add)
 
-    # Join the final combined lines with TERM_DELIMITER, a special separator for line breaks
-    return TERM_DELIMITER.join(combined_lines[:max_label_lines])
+    def _optimize_label_positions(
+        self, best_label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Optimize label positions around the perimeter to minimize total distance to centroids.
 
+        Args:
+            best_label_positions (Dict[str, Any]): Initial positions of labels around the perimeter.
+            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
 
-def _calculate_best_label_positions(
-    filtered_domain_centroids: Dict[str, Any], center: np.ndarray, radius: float, offset: float
-) -> Dict[str, Any]:
-    """Calculate and optimize label positions for clarity.
-
-    Args:
-        filtered_domain_centroids (Dict[str, Any]): Centroids of the filtered domains.
-        center (np.ndarray): The center coordinates for label positioning.
-        radius (float): The radius for positioning labels around the center.
-        offset (float): The offset distance from the radius for positioning labels.
-
-    Returns:
-        Dict[str, Any]: Optimized positions for labels.
-    """
-    num_domains = len(filtered_domain_centroids)
-    # Calculate equidistant positions around the center for initial label placement
-    equidistant_positions = _calculate_equidistant_positions_around_center(
-        center, radius, offset, num_domains
-    )
-    # Create a mapping of domains to their initial label positions
-    label_positions = dict(zip(filtered_domain_centroids.keys(), equidistant_positions))
-    # Optimize the label positions to minimize distance to domain centroids
-    return _optimize_label_positions(label_positions, filtered_domain_centroids)
-
-
-def _calculate_equidistant_positions_around_center(
-    center: np.ndarray, radius: float, label_offset: float, num_domains: int
-) -> List[np.ndarray]:
-    """Calculate positions around a center at equidistant angles.
-
-    Args:
-        center (np.ndarray): The central point around which positions are calculated.
-        radius (float): The radius at which positions are calculated.
-        label_offset (float): The offset added to the radius for label positioning.
-        num_domains (int): The number of positions (or domains) to calculate.
-
-    Returns:
-        List[np.ndarray]: List of positions (as 2D numpy arrays) around the center.
-    """
-    # Calculate equidistant angles in radians around the center
-    angles = np.linspace(0, 2 * np.pi, num_domains, endpoint=False)
-    # Compute the positions around the center using the angles
-    return [
-        center + (radius + label_offset) * np.array([np.cos(angle), np.sin(angle)])
-        for angle in angles
-    ]
-
-
-def _optimize_label_positions(
-    best_label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Optimize label positions around the perimeter to minimize total distance to centroids.
-
-    Args:
-        best_label_positions (Dict[str, Any]): Initial positions of labels around the perimeter.
-        domain_centroids (Dict[str, Any]): Centroid positions of the domains.
-
-    Returns:
-        Dict[str, Any]: Optimized label positions.
-    """
-    while True:
-        improvement = False  # Start each iteration assuming no improvement
-        # Iterate through each pair of labels to check for potential improvements
-        for i in range(len(domain_centroids)):
-            for j in range(i + 1, len(domain_centroids)):
-                # Calculate the current total distance
-                current_distance = _calculate_total_distance(best_label_positions, domain_centroids)
-                # Evaluate the total distance after swapping two labels
-                swapped_distance = _swap_and_evaluate(best_label_positions, i, j, domain_centroids)
-                # If the swap improves the total distance, perform the swap
-                if swapped_distance < current_distance:
-                    labels = list(best_label_positions.keys())
-                    best_label_positions[labels[i]], best_label_positions[labels[j]] = (
-                        best_label_positions[labels[j]],
-                        best_label_positions[labels[i]],
+        Returns:
+            Dict[str, Any]: Optimized label positions.
+        """
+        while True:
+            improvement = False  # Start each iteration assuming no improvement
+            # Iterate through each pair of labels to check for potential improvements
+            for i in range(len(domain_centroids)):
+                for j in range(i + 1, len(domain_centroids)):
+                    # Calculate the current total distance
+                    current_distance = self._calculate_total_distance(
+                        best_label_positions, domain_centroids
                     )
-                    improvement = True  # Found an improvement, so continue optimizing
+                    # Evaluate the total distance after swapping two labels
+                    swapped_distance = self._swap_and_evaluate(
+                        best_label_positions, i, j, domain_centroids
+                    )
+                    # If the swap improves the total distance, perform the swap
+                    if swapped_distance < current_distance:
+                        labels = list(best_label_positions.keys())
+                        best_label_positions[labels[i]], best_label_positions[labels[j]] = (
+                            best_label_positions[labels[j]],
+                            best_label_positions[labels[i]],
+                        )
+                        improvement = True  # Found an improvement, so continue optimizing
 
-        if not improvement:
-            break  # Exit the loop if no improvement was found in this iteration
+            if not improvement:
+                break  # Exit the loop if no improvement was found in this iteration
 
-    return best_label_positions
+        return best_label_positions
 
+    def _calculate_total_distance(
+        self, label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
+    ) -> float:
+        """Calculate the total distance from label positions to their domain centroids.
 
-def _calculate_total_distance(
-    label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
-) -> float:
-    """Calculate the total distance from label positions to their domain centroids.
+        Args:
+            label_positions (Dict[str, Any]): Positions of labels around the perimeter.
+            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
 
-    Args:
-        label_positions (Dict[str, Any]): Positions of labels around the perimeter.
-        domain_centroids (Dict[str, Any]): Centroid positions of the domains.
+        Returns:
+            float: The total distance from labels to centroids.
+        """
+        total_distance = 0
+        # Iterate through each domain and calculate the distance to its centroid
+        for domain, pos in label_positions.items():
+            centroid = domain_centroids[domain]
+            total_distance += np.linalg.norm(centroid - pos)
 
-    Returns:
-        float: The total distance from labels to centroids.
-    """
-    total_distance = 0
-    # Iterate through each domain and calculate the distance to its centroid
-    for domain, pos in label_positions.items():
-        centroid = domain_centroids[domain]
-        total_distance += np.linalg.norm(centroid - pos)
+        return total_distance
 
-    return total_distance
+    def _swap_and_evaluate(
+        self,
+        label_positions: Dict[str, Any],
+        i: int,
+        j: int,
+        domain_centroids: Dict[str, Any],
+    ) -> float:
+        """Swap two labels and evaluate the total distance after the swap.
 
+        Args:
+            label_positions (Dict[str, Any]): Positions of labels around the perimeter.
+            i (int): Index of the first label to swap.
+            j (int): Index of the second label to swap.
+            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
 
-def _swap_and_evaluate(
-    label_positions: Dict[str, Any],
-    i: int,
-    j: int,
-    domain_centroids: Dict[str, Any],
-) -> float:
-    """Swap two labels and evaluate the total distance after the swap.
+        Returns:
+            float: The total distance after swapping the two labels.
+        """
+        # Get the list of labels from the dictionary keys
+        labels = list(label_positions.keys())
+        swapped_positions = copy.deepcopy(label_positions)
+        # Swap the positions of the two specified labels
+        swapped_positions[labels[i]], swapped_positions[labels[j]] = (
+            swapped_positions[labels[j]],
+            swapped_positions[labels[i]],
+        )
+        # Calculate and return the total distance after the swap
+        return self._calculate_total_distance(swapped_positions, domain_centroids)
 
-    Args:
-        label_positions (Dict[str, Any]): Positions of labels around the perimeter.
-        i (int): Index of the first label to swap.
-        j (int): Index of the second label to swap.
-        domain_centroids (Dict[str, Any]): Centroid positions of the domains.
+    def _apply_str_transformation(
+        self, words: List[str], transformation: Union[str, Dict[str, str]]
+    ) -> List[str]:
+        """Apply a user-specified case transformation to each word in the list without appending duplicates.
 
-    Returns:
-        float: The total distance after swapping the two labels.
-    """
-    # Get the list of labels from the dictionary keys
-    labels = list(label_positions.keys())
-    swapped_positions = copy.deepcopy(label_positions)
-    # Swap the positions of the two specified labels
-    swapped_positions[labels[i]], swapped_positions[labels[j]] = (
-        swapped_positions[labels[j]],
-        swapped_positions[labels[i]],
-    )
-    # Calculate and return the total distance after the swap
-    return _calculate_total_distance(swapped_positions, domain_centroids)
+        Args:
+            words (List[str]): A list of words to transform.
+            transformation (Union[str, Dict[str, str]]): A single transformation (e.g., 'lower', 'upper', 'title', 'capitalize')
+                or a dictionary mapping cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
 
+        Returns:
+            List[str]: A list of transformed words with no duplicates.
+        """
+        # Initialize a list to store transformed words
+        transformed_words = []
+        for word in words:
+            # Split word into subwords by space
+            subwords = word.split(" ")
+            transformed_subwords = []
+            # Apply transformation to each subword
+            for subword in subwords:
+                transformed_subword = subword  # Start with the original subword
+                # If transformation is a string, apply it to all subwords
+                if isinstance(transformation, str):
+                    if hasattr(subword, transformation):
+                        transformed_subword = getattr(subword, transformation)()
 
-def _apply_str_transformation(
-    words: List[str], transformation: Union[str, Dict[str, str]]
-) -> List[str]:
-    """Apply a user-specified case transformation to each word in the list without appending duplicates.
+                # If transformation is a dictionary, apply case-specific transformations
+                elif isinstance(transformation, dict):
+                    for case_type, transform in transformation.items():
+                        if case_type == "lower" and subword.islower() and transform:
+                            transformed_subword = getattr(subword, transform)()
+                        elif case_type == "upper" and subword.isupper() and transform:
+                            transformed_subword = getattr(subword, transform)()
+                        elif case_type == "title" and subword.istitle() and transform:
+                            transformed_subword = getattr(subword, transform)()
 
-    Args:
-        words (List[str]): A list of words to transform.
-        transformation (Union[str, Dict[str, str]]): A single transformation (e.g., 'lower', 'upper', 'title', 'capitalize')
-            or a dictionary mapping cases ('lower', 'upper', 'title') to transformations (e.g., 'lower'='upper').
+                # Append the transformed subword to the list
+                transformed_subwords.append(transformed_subword)
 
-    Returns:
-        List[str]: A list of transformed words with no duplicates.
-    """
-    # Initialize a list to store transformed words
-    transformed_words = []
-    for word in words:
-        # Split word into subwords by space
-        subwords = word.split(" ")
-        transformed_subwords = []
-        # Apply transformation to each subword
-        for subword in subwords:
-            transformed_subword = subword  # Start with the original subword
-            # If transformation is a string, apply it to all subwords
-            if isinstance(transformation, str):
-                if hasattr(subword, transformation):
-                    transformed_subword = getattr(subword, transformation)()
+            # Rejoin the transformed subwords into a single string to preserve structure
+            transformed_word = " ".join(transformed_subwords)
+            # Only append if the transformed word is not already in the list
+            if transformed_word not in transformed_words:
+                transformed_words.append(transformed_word)
 
-            # If transformation is a dictionary, apply case-specific transformations
-            elif isinstance(transformation, dict):
-                for case_type, transform in transformation.items():
-                    if case_type == "lower" and subword.islower() and transform:
-                        transformed_subword = getattr(subword, transform)()
-                    elif case_type == "upper" and subword.isupper() and transform:
-                        transformed_subword = getattr(subword, transform)()
-                    elif case_type == "title" and subword.istitle() and transform:
-                        transformed_subword = getattr(subword, transform)()
-
-            # Append the transformed subword to the list
-            transformed_subwords.append(transformed_subword)
-
-        # Rejoin the transformed subwords into a single string to preserve structure
-        transformed_word = " ".join(transformed_subwords)
-        # Only append if the transformed word is not already in the list
-        if transformed_word not in transformed_words:
-            transformed_words.append(transformed_word)
-
-    return transformed_words
+        return transformed_words
