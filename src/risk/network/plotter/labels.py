@@ -283,6 +283,9 @@ class Labels:
                 found in arrow_alpha. Defaults to 1.0.
             arrow_base_shrink (float, optional): Distance between the text and the base of the arrow. Defaults to 0.0.
             arrow_tip_shrink (float, optional): Distance between the arrow tip and the centroid. Defaults to 0.0.
+
+        Raises:
+            ValueError: If no nodes are found in the network graph or if there are insufficient nodes to plot.
         """
         # Check if nodes is a list of lists or a flat list
         if any(isinstance(item, (list, tuple, np.ndarray)) for item in nodes):
