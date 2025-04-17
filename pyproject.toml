@@ -51,7 +51,9 @@ text = "GPL-3.0-or-later"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["risk"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.dynamic]
 version = { attr = "risk.__version__" }
