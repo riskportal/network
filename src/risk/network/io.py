@@ -565,7 +565,7 @@ class NetworkIO:
         """
 
         def compute_distance_vectorized(coords, is_sphere):
-            """Compute distances between pairs of coordinates."""
+            """Compute Euclidean or spherical distances between edges in bulk."""
             u_coords, v_coords = coords[:, 0, :], coords[:, 1, :]
             if is_sphere:
                 u_coords /= np.linalg.norm(u_coords, axis=1, keepdims=True)
@@ -586,7 +586,7 @@ class NetworkIO:
         )
         # Compute distances
         distances = compute_distance_vectorized(edge_data, compute_sphere)
-        # Assign distances back to the graph
+        # Assign Euclidean or spherical distances to edges
         for (u, v), distance in zip(G.edges, distances):
             G.edges[u, v]["length"] = distance
 
