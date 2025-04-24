@@ -6,6 +6,7 @@ tests/conftest
 import json
 from pathlib import Path
 
+import networkx as nx
 import pytest
 
 from risk import RISK
@@ -41,6 +42,45 @@ def risk_obj():
         RISK: The initialized RISK object instance.
     """
     return RISK(verbose=False)
+
+
+# Dummy fixtures for fast unit tests
+@pytest.fixture
+def dummy_network():
+    """Create a minimal network for unit tests."""
+    # Simple graph with two nodes
+    G = nx.Graph()
+    G.add_nodes_from(["n1", "n2"])
+    G.add_edge("n1", "n2")
+    # Assign default positions and label for each node
+    for node in G.nodes:
+        G.nodes[node]["x"] = 0.0
+        G.nodes[node]["y"] = 0.0
+        G.nodes[node]["label"] = node
+    # Assign default edge attributes so fallback tests can delete them
+    for u, v in G.edges():
+        G.edges[u, v]["length"] = 1.0
+        G.edges[u, v]["weight"] = 1.0
+
+    return G
+
+
+@pytest.fixture
+def dummy_annotation_dict():
+    """Provide a minimal annotation dictionary for unit tests."""
+    return {"termA": ["n1"], "termB": ["n1", "n2"]}
+
+
+@pytest.fixture
+def dummy_annotations(risk_obj, dummy_network, dummy_annotation_dict):
+    """Load annotations from the dummy dictionary into the dummy network.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the annotations.
+        dummy_network: The dummy network object to which annotations will be applied.
+        dummy_annotation_dict: The dummy annotation dictionary.
+    """
+    return risk_obj.load_dict_annotation(content=dummy_annotation_dict, network=dummy_network)
 
 
 # Network fixtures
@@ -202,7 +242,7 @@ def csv_annotation(risk_obj, cytoscape_network, data_path):
     """Fixture to load and return annotations from a CSV file.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations.
+        risk_obj: The RISK object instance for loading annotations.
         cytoscape_network: The network object to which annotations will be applied.
         data_path: The base path to the directory containing the annotation file.
 

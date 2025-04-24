@@ -6,19 +6,21 @@ tests/test_load_annotations
 import pytest
 from scipy.sparse import csr_matrix, vstack
 
+# Ensure dummy fixtures are imported by referencing them in test signatures below.
 
-def test_missing_annotation_file(risk_obj, cytoscape_network):
+
+def test_missing_annotation_file(risk_obj, dummy_network):
     """Test loading an annotation file that does not exist.
 
     Args:
         risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
+        dummy_network: The network object to which annotations will be applied.
     """
     annotation_file = "nonexistent_file.csv"
     with pytest.raises(FileNotFoundError):
         risk_obj.load_csv_annotation(
             filepath=annotation_file,
-            network=cytoscape_network,
+            network=dummy_network,
             min_nodes_per_term=1,
         )
 
@@ -68,17 +70,17 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert isinstance(annotations["ordered_nodes"], tuple), "'ordered_nodes' should be a tuple"
 
 
-def test_load_dict_annotation(risk_obj, cytoscape_network, annotation_dict):
+def test_load_dict_annotation(risk_obj, dummy_network, dummy_annotation_dict):
     """Test loading annotations from a dictionary and associating them with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
-        annotation_dict: A dictionary containing annotations.
+        dummy_network: The network object to which annotations will be applied.
+        dummy_annotation_dict: A dictionary containing annotations.
     """
     annotations = risk_obj.load_dict_annotation(
-        content=annotation_dict,
-        network=cytoscape_network,
+        content=dummy_annotation_dict,
+        network=dummy_network,
         min_nodes_per_term=1,
     )
 
@@ -86,17 +88,17 @@ def test_load_dict_annotation(risk_obj, cytoscape_network, annotation_dict):
     assert len(annotations) > 0  # Check that annotations are loaded.
 
 
-def test_dict_annotation_structure(risk_obj, cytoscape_network, annotation_dict):
+def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dict):
     """Test the structure of dictionary-loaded annotations.
 
     Args:
         risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
-        annotation_dict: A dictionary containing annotations.
+        dummy_network: The network object to which annotations will be applied.
+        dummy_annotation_dict: A dictionary containing annotations.
     """
     annotations = risk_obj.load_dict_annotation(
-        content=annotation_dict,
-        network=cytoscape_network,
+        content=dummy_annotation_dict,
+        network=dummy_network,
         min_nodes_per_term=1,
     )
 

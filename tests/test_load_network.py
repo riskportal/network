@@ -86,14 +86,14 @@ def test_load_gpickle_network(risk_obj, data_path):
     assert len(network.edges) > 0  # Check that the network has edges
 
 
-def test_load_networkx_network(risk_obj, cytoscape_network):
+def test_load_networkx_network(risk_obj, dummy_network):
     """Test loading a network from a NetworkX graph object.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
         network: The NetworkX graph object to be loaded into the RISK network.
     """
-    network = risk_obj.load_networkx_network(network=cytoscape_network)
+    network = risk_obj.load_networkx_network(network=dummy_network)
 
     assert network is not None
     assert len(network.nodes) > 0  # Check that the graph has nodes
@@ -148,7 +148,7 @@ def test_round_trip_io(risk_obj):
             os.remove(tmp_path)
 
 
-def test_node_positions_constant_after_networkx_load(risk_obj, cytoscape_network):
+def test_node_positions_constant_after_networkx_load(risk_obj, dummy_network):
     """Test that the original network retains its node positions ('x' and 'y') after being passed to
     the loading function.
 
@@ -156,27 +156,27 @@ def test_node_positions_constant_after_networkx_load(risk_obj, cytoscape_network
         risk_obj: The RISK object instance used for loading the network.
         network: The NetworkX graph object to be loaded into the RISK network.
     """
-    # Store the original positions of nodes from the cytoscape_network
+    # Store the original positions of nodes from the dummy_network
     original_positions = {
-        node: (cytoscape_network.nodes[node]["x"], cytoscape_network.nodes[node]["y"])
-        for node in cytoscape_network.nodes
+        node: (dummy_network.nodes[node]["x"], dummy_network.nodes[node]["y"])
+        for node in dummy_network.nodes
     }
     # Pass the network to the load function, and ignore the returned network
-    _ = risk_obj.load_networkx_network(network=cytoscape_network)
+    _ = risk_obj.load_networkx_network(network=dummy_network)
 
-    # Ensure that the original network (cytoscape_network) still has the same node positions
-    for node in cytoscape_network.nodes:
+    # Ensure that the original network (dummy_network) still has the same node positions
+    for node in dummy_network.nodes:
         assert (
-            "x" in cytoscape_network.nodes[node]
+            "x" in dummy_network.nodes[node]
         ), f"Original node {node} missing 'x' attribute after loading"
         assert (
-            "y" in cytoscape_network.nodes[node]
+            "y" in dummy_network.nodes[node]
         ), f"Original node {node} missing 'y' attribute after loading"
         assert (
-            cytoscape_network.nodes[node]["x"] == original_positions[node][0]
+            dummy_network.nodes[node]["x"] == original_positions[node][0]
         ), f"Original node {node} 'x' position changed"
         assert (
-            cytoscape_network.nodes[node]["y"] == original_positions[node][1]
+            dummy_network.nodes[node]["y"] == original_positions[node][1]
         ), f"Original node {node} 'y' position changed"
 
 
@@ -311,19 +311,19 @@ def test_sphere_unfolding(risk_obj, data_path):
         assert -1 <= attrs["y"] <= 1, f"Node {node} 'y' coordinate is out of bounds"
 
 
-def test_edge_attribute_fallback(risk_obj, cytoscape_network):
+def test_edge_attribute_fallback(risk_obj, dummy_network):
     """Test fallback when edges are missing 'length' or 'weight' attributes.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
-        cytoscape_network: The Cytoscape network to be loaded into the R
+        dummy_network: The Cytoscape network to be loaded into the R
     """
     # Remove 'length' and 'weight' attributes
-    for u, v in cytoscape_network.edges():
-        del cytoscape_network.edges[u, v]["length"]
-        del cytoscape_network.edges[u, v]["weight"]
+    for u, v in dummy_network.edges():
+        del dummy_network.edges[u, v]["length"]
+        del dummy_network.edges[u, v]["weight"]
 
-    network = risk_obj.load_networkx_network(network=cytoscape_network)
+    network = risk_obj.load_networkx_network(network=dummy_network)
 
     # Ensure fallback attributes are assigned correctly
     for u, v, attrs in network.edges(data=True):
