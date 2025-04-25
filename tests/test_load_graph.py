@@ -349,8 +349,12 @@ def test_pop_domain(graph):
     """
     # Define the domain ID to be removed
     domain_id_to_remove = 1
-    # Pop the domain ID
-    graph.pop(domain_id_to_remove)
+    # Retrieve expected labels before popping
+    expected_labels = graph.domain_id_to_node_labels_map.get(domain_id_to_remove)
+    # Pop the domain ID and get the returned value
+    popped_labels = graph.pop(domain_id_to_remove)
+    # Assert the returned value equals the expected labels
+    assert popped_labels == expected_labels, "Popped labels do not match the expected labels."
 
     # Check that the domain ID is removed from all relevant attributes
     assert (

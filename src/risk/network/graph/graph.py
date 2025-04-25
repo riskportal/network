@@ -71,14 +71,18 @@ class Graph:
         # NOTE: Only after the above attributes are initialized, we can create the summary
         self.summary = Summary(annotations, neighborhoods, self)
 
-    def pop(self, domain_id: str) -> None:
-        """Remove domain ID from instance domain ID mappings. This can be useful for cleaning up
-        domain-specific mappings based on a given criterion, as domain attributes are stored and
-        accessed only in dictionaries modified by this method.
+    def pop(self, domain_id: int) -> List[str]:
+        """Remove a domain ID from the graph and return the corresponding node labels.
 
         Args:
-            key (str): The domain ID key to be removed from each mapping.
+            key (int): The domain ID key to be removed from each mapping.
+
+        Returns:
+            List[str]: A list of node labels associated with the domain ID.
         """
+        # Get the node labels associated with the domain ID
+        node_labels = self.domain_id_to_node_labels_map.get(domain_id, [])
+
         # Define the domain mappings to be updated
         domain_mappings = [
             self.domain_id_to_node_ids_map,
@@ -96,6 +100,8 @@ class Graph:
             if domain_id in domain_info["domains"]:
                 domain_info["domains"].remove(domain_id)
                 domain_info["significances"].pop(domain_id)
+
+        return node_labels
 
     def _create_domain_id_to_node_ids_map(self, domains: pd.DataFrame) -> Dict[int, Any]:
         """Create a mapping from domains to the list of node IDs belonging to each domain.
