@@ -437,7 +437,8 @@ class NetworkIO:
             G.remove_nodes_from(nodes_to_remove)
 
         # Remove isolated nodes
-        G.remove_nodes_from(nx.isolates(G))
+        isolates = list(nx.isolates(G))
+        G.remove_nodes_from(isolates)
 
         # Log the number of nodes and edges before and after cleaning
         num_final_nodes = G.number_of_nodes()

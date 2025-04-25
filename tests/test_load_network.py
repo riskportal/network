@@ -380,3 +380,22 @@ def test_missing_node_attributes(risk_obj, cytoscape_network):
         ValueError, match="Node .* is missing 'x', 'y', and a valid 'pos' attribute."
     ):
         risk_obj.load_networkx_network(network=cytoscape_network)
+
+
+def test_remove_isolates_does_not_raise(risk_obj, dummy_network):
+    """Test that loading a network with isolated nodes does not raise an error.
+
+    Args:
+        risk_obj: The RISK object instance used for loading the network.
+        dummy_network: The NetworkX graph object to be loaded into the RISK network.
+    """
+    G = dummy_network.copy()
+    G.add_node("iso")
+    G.nodes["iso"]["x"] = 0.0
+    G.nodes["iso"]["y"] = 0.0
+    G.nodes["iso"]["label"] = "iso"
+    # Remove nodes with fewer than min_edges_per_node=1
+    loaded = risk_obj.load_networkx_network(
+        network=G, compute_sphere=False, surface_depth=0.1, min_edges_per_node=1
+    )
+    assert "iso" not in loaded.nodes, "Isolated node 'iso' should have been removed without error"
