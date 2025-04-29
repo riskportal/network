@@ -164,3 +164,6 @@ notes/
 data/
 # Keep user-specific files
 !tests/data/
+
+# Custom files
+.DS_Store
