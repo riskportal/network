@@ -21,7 +21,7 @@ class Params:
     """Handles the storage and logging of various parameters for network analysis.
 
     The Params class provides methods to log parameters related to different components of the analysis,
-    such as the network, annotations, neighborhoods, graph, and plotter settings. It also stores
+    such as the network, annotation, neighborhoods, graph, and plotter settings. It also stores
     the current datetime when the parameters were initialized.
     """
 
@@ -33,7 +33,7 @@ class Params:
     def initialize(self) -> None:
         """Initialize the parameter dictionaries for different components."""
         self.network = {}
-        self.annotations = {}
+        self.annotation = {}
         self.neighborhoods = {}
         self.graph = {}
         self.plotter = {}
@@ -46,13 +46,13 @@ class Params:
         """
         self.network = {**self.network, **kwargs}
 
-    def log_annotations(self, **kwargs) -> None:
+    def log_annotation(self, **kwargs) -> None:
         """Log annotation-related parameters.
 
         Args:
             **kwargs: Annotation parameters to log.
         """
-        self.annotations = {**self.annotations, **kwargs}
+        self.annotation = {**self.annotation, **kwargs}
 
     def log_neighborhoods(self, **kwargs) -> None:
         """Log neighborhood-related parameters.
@@ -139,7 +139,7 @@ class Params:
         log_header("Loading parameters")
         return self._convert_ndarray_to_list(
             {
-                "annotations": self.annotations,
+                "annotation": self.annotation,
                 "datetime": self.datetime,
                 "graph": self.graph,
                 "neighborhoods": self.neighborhoods,

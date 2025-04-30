@@ -3,7 +3,7 @@ risk/risk
 ~~~~~~~~~
 """
 
-from risk.annotations.io import AnnotationsIO
+from risk.annotation.io import AnnotationIO
 from risk.log import params, set_global_verbosity
 from risk.neighborhoods.api import NeighborhoodsAPI
 from risk.network.graph.api import GraphAPI
@@ -11,7 +11,7 @@ from risk.network.io import NetworkIO
 from risk.network.plotter.api import PlotterAPI
 
 
-class RISK(NetworkIO, AnnotationsIO, NeighborhoodsAPI, GraphAPI, PlotterAPI):
+class RISK(NetworkIO, AnnotationIO, NeighborhoodsAPI, GraphAPI, PlotterAPI):
     """RISK: A class for network analysis and visualization.
 
     The RISK class integrates functionalities for loading networks, processing annotations,
