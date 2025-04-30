@@ -449,7 +449,7 @@ def _prune_neighbors(
     )
 
 
-def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
+def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> np.floating[Any]:
     """Calculate the Euclidean distance between two nodes in the network.
 
     Args:
@@ -458,7 +458,7 @@ def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
         network (nx.Graph): The network graph containing the nodes.
 
     Returns:
-        float: The Euclidean distance between the two nodes.
+        np.floating[Any]: The Euclidean distance between the two nodes.
     """
     pos1 = _get_node_position(network, node1)
     pos2 = _get_node_position(network, node2)
@@ -495,7 +495,7 @@ def _calculate_threshold(median_distances: List, distance_threshold: float) -> f
         float: The calculated distance threshold value.
 
     Raises:
-        ValueError: If no significant annotations are found in the median distances.
+        ValueError: If no significant annotation is found in the median distances.
     """
     # Sort the median distances
     sorted_distances = np.sort(median_distances)
@@ -506,7 +506,7 @@ def _calculate_threshold(median_distances: List, distance_threshold: float) -> f
     try:
         smoothed_distances = np.interp(interpolated_percentiles, rank_percentiles, sorted_distances)
     except ValueError as e:
-        raise ValueError("No significant annotations found.") from e
+        raise ValueError("No significant annotation found.") from e
 
     # Determine the index corresponding to the distance threshold
     threshold_index = int(np.ceil(distance_threshold * len(smoothed_distances))) - 1

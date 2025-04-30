@@ -13,7 +13,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 
-from risk.annotations import get_weighted_description
+from risk.annotation import get_weighted_description
 from risk.log import logger
 
 # Define constants for clustering
@@ -28,7 +28,7 @@ LINKAGE_METRICS = {
 
 
 def define_domains(
-    top_annotations: pd.DataFrame,
+    top_annotation: pd.DataFrame,
     significant_neighborhoods_significance: np.ndarray,
     linkage_criterion: str,
     linkage_method: str,
@@ -39,7 +39,7 @@ def define_domains(
     handling errors by assigning unique domains when clustering fails.
 
     Args:
-        top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
+        top_annotation (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         significant_neighborhoods_significance (np.ndarray): The binary significance matrix below alpha.
         linkage_criterion (str): The clustering criterion for defining groups. Choose "off" to disable clustering.
         linkage_method (str): The linkage method for clustering. Choose "auto" to optimize.
@@ -57,7 +57,7 @@ def define_domains(
             raise ValueError("Clustering is turned off.")
 
         # Transpose the matrix to cluster annotations
-        m = significant_neighborhoods_significance[:, top_annotations["significant_annotations"]].T
+        m = significant_neighborhoods_significance[:, top_annotation["significant_annotation"]].T
         # Safeguard the matrix by replacing NaN, Inf, and -Inf values
         m = _safeguard_matrix(m)
         # Optimize silhouette score across different linkage methods and distance metrics
@@ -71,27 +71,23 @@ def define_domains(
         )
         # Calculate the optimal threshold for clustering
         max_d_optimal = np.max(Z[:, 2]) * best_threshold
-        # Assign domains to the annotations matrix
+        # Assign domains to the annotation matrix
         domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
-        top_annotations["domain"] = 0
-        top_annotations.loc[top_annotations["significant_annotations"], "domain"] = domains
+        top_annotation["domain"] = 0
+        top_annotation.loc[top_annotation["significant_annotation"], "domain"] = domains
     except (ValueError, LinAlgError):
         # If a ValueError is encountered, handle it by assigning unique domains
-        n_rows = len(top_annotations)
+        n_rows = len(top_annotation)
         if linkage_criterion == "off":
-            logger.warning(
-                f"Clustering is turned off. Skipping clustering and assigning {n_rows} unique domains."
-            )
+            logger.warning("Clustering is turned off. Skipping clustering.")
         else:
-            logger.error(
-                f"Error encountered. Skipping clustering and assigning {n_rows} unique domains."
-            )
-        top_annotations["domain"] = range(1, n_rows + 1)  # Assign unique domains
+            logger.error("Error encountered. Skipping clustering.")
+        top_annotation["domain"] = range(1, n_rows + 1)  # Assign unique domains
 
     # Create DataFrames to store domain information
     node_to_significance = pd.DataFrame(
         data=significant_neighborhoods_significance,
-        columns=[top_annotations.index.values, top_annotations["domain"]],
+        columns=[top_annotation.index.values, top_annotation["domain"]],
     )
     node_to_domain = node_to_significance.T.groupby(level="domain").sum().T
 
@@ -112,15 +108,15 @@ def define_domains(
 
 def trim_domains(
     domains: pd.DataFrame,
-    top_annotations: pd.DataFrame,
+    top_annotation: pd.DataFrame,
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Trim domains that do not meet size criteria and find outliers.
 
     Args:
         domains (pd.DataFrame): DataFrame of domain data for the network nodes.
-        top_annotations (pd.DataFrame): DataFrame of top annotations data for the network nodes.
+        top_annotation (pd.DataFrame): DataFrame of top annotations data for the network nodes.
         min_cluster_size (int, optional): Minimum size of a cluster to be retained. Defaults to 5.
         max_cluster_size (int, optional): Maximum size of a cluster to be retained. Defaults to 1000.
 
@@ -139,21 +135,21 @@ def trim_domains(
     invalid_domain_id = 888888
     invalid_domain_ids = {0, invalid_domain_id}
     # Mark domains to be removed
-    top_annotations["domain"] = top_annotations["domain"].replace(to_remove, invalid_domain_id)
+    top_annotation["domain"] = top_annotation["domain"].replace(to_remove, invalid_domain_id)
     domains.loc[domains["primary_domain"].isin(to_remove), ["primary_domain"]] = invalid_domain_id
 
     # Normalize "num significant neighborhoods" by percentile for each domain and scale to 0-10
-    top_annotations["normalized_value"] = top_annotations.groupby("domain")[
+    top_annotation["normalized_value"] = top_annotation.groupby("domain")[
         "significant_neighborhood_significance_sums"
     ].transform(lambda x: (x.rank(pct=True) * 10).apply(np.ceil).astype(int))
     # Modify the lambda function to pass both full_terms and significant_significance_score
-    top_annotations["combined_terms"] = top_annotations.apply(
+    top_annotation["combined_terms"] = top_annotation.apply(
         lambda row: " ".join([str(row["full_terms"])] * row["normalized_value"]), axis=1
     )
 
     # Perform the groupby operation while retaining the other columns and adding the weighting with significance scores
     domain_labels = (
-        top_annotations.groupby("domain")
+        top_annotation.groupby("domain")
         .agg(
             full_terms=("full_terms", lambda x: list(x)),
             significance_scores=("significant_significance_score", lambda x: list(x)),
@@ -233,7 +229,7 @@ def _optimize_silhouette_across_linkage_and_metrics(
     # Initialize best overall values
     best_overall_method = linkage_method
     best_overall_metric = linkage_metric
-    best_overall_threshold = linkage_threshold
+    best_overall_threshold = 0.0
     best_overall_score = -np.inf
 
     # Set linkage methods and metrics to all combinations if "auto" is selected

@@ -24,7 +24,7 @@ def compute_neighborhood_score_by_sum(
     Returns:
         np.ndarray: Dense array of summed attribute values for each neighborhood.
     """
-    # Calculate the neighborhood score as the dot product of neighborhoods and annotations
+    # Calculate the neighborhood score as the dot product of neighborhoods and annotation
     neighborhood_score = neighborhoods_matrix @ annotation_matrix  # Sparse matrix multiplication
     # Convert the result to a dense array for downstream calculations
     neighborhood_score_dense = neighborhood_score.toarray()
@@ -43,7 +43,7 @@ def compute_neighborhood_score_by_stdev(
     Returns:
         np.ndarray: Standard deviation of the neighborhood scores.
     """
-    # Calculate the neighborhood score as the dot product of neighborhoods and annotations
+    # Calculate the neighborhood score as the dot product of neighborhoods and annotation
     neighborhood_score = neighborhoods_matrix @ annotation_matrix  # Sparse matrix multiplication
     # Calculate the number of elements in each neighborhood (sum of rows)
     N = neighborhoods_matrix.sum(axis=1).A.flatten()  # Convert to 1D array

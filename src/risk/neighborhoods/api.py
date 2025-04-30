@@ -34,7 +34,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_binom(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -46,7 +46,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -55,7 +55,7 @@ class NeighborhoodsAPI:
             fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -65,7 +65,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the binomial test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -79,7 +79,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_chi2(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -91,7 +91,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -100,7 +100,7 @@ class NeighborhoodsAPI:
             fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -110,7 +110,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the chi-squared test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -124,7 +124,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_hypergeom(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -136,7 +136,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -145,7 +145,7 @@ class NeighborhoodsAPI:
             fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -155,7 +155,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the hypergeometric test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -169,7 +169,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_permutation(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -184,7 +184,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -194,7 +194,7 @@ class NeighborhoodsAPI:
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
             score_metric (str, optional): Scoring metric for neighborhood significance. Defaults to "sum".
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             num_permutations (int, optional): Number of permutations for significance testing. Defaults to 1000.
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
             max_workers (int, optional): Maximum number of workers for parallel computation. Defaults to 1.
@@ -210,7 +210,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the permutation test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -227,7 +227,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_poisson(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -239,7 +239,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -248,7 +248,7 @@ class NeighborhoodsAPI:
             fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -258,7 +258,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the Poisson test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -272,7 +272,7 @@ class NeighborhoodsAPI:
     def load_neighborhoods_by_zscore(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -284,7 +284,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             distance_metric (str, List, Tuple, or np.ndarray, optional): The distance metric(s) to use. Can be a string for one
                 metric or a list/tuple/ndarray of metrics ('greedy_modularity', 'louvain', 'leiden', 'label_propagation',
                 'markov_clustering', 'walktrap', 'spinglass'). Defaults to 'louvain'.
@@ -293,7 +293,7 @@ class NeighborhoodsAPI:
             fraction_shortest_edges (float, List, Tuple, or np.ndarray, optional): Shortest edge rank fraction threshold(s) for creating subgraphs.
                 Can be a single float for one threshold or a list/tuple of floats corresponding to multiple thresholds.
                 Defaults to 0.5.
-            null_distribution (str, optional): Type of null distribution ('network' or 'annotations'). Defaults to "network".
+            null_distribution (str, optional): Type of null distribution ('network' or 'annotation'). Defaults to "network".
             random_seed (int, optional): Seed for random number generation. Defaults to 888.
 
         Returns:
@@ -303,7 +303,7 @@ class NeighborhoodsAPI:
         # Compute neighborhood significance using the z-score test
         return self._load_neighborhoods_by_statistical_test(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             distance_metric=distance_metric,
             louvain_resolution=louvain_resolution,
             leiden_resolution=leiden_resolution,
@@ -317,7 +317,7 @@ class NeighborhoodsAPI:
     def _load_neighborhoods_by_statistical_test(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         distance_metric: Union[str, List, Tuple, np.ndarray] = "louvain",
         louvain_resolution: float = 0.1,
         leiden_resolution: float = 1.0,
@@ -332,7 +332,7 @@ class NeighborhoodsAPI:
 
         Args:
             network (nx.Graph): The input network graph.
-            annotations (Dict[str, Any]): Annotation data associated with the network, including a "matrix" key with annotation values.
+            annotation (Dict[str, Any]): Annotation data associated with the network, including a "matrix" key with annotation values.
             distance_metric (Union[str, List, Tuple, np.ndarray], optional): The distance metric or clustering method to define neighborhoods.
                 Can be a string specifying one method (e.g., 'louvain', 'leiden') or a collection of methods.
                 Defaults to "louvain".
@@ -340,13 +340,13 @@ class NeighborhoodsAPI:
             leiden_resolution (float, optional): Resolution parameter for Leiden clustering. Defaults to 1.0.
             fraction_shortest_edges (Union[float, List, Tuple, np.ndarray], optional): Fraction of shortest edges to consider for creating subgraphs.
                 Can be a single value or a collection of thresholds for flexibility. Defaults to 0.5.
-            null_distribution (str, optional): The type of null distribution to use ('network' or 'annotations').
+            null_distribution (str, optional): The type of null distribution to use ('network' or 'annotation').
                 Defaults to "network".
             random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
             statistical_test_key (str, optional): Key or name of the statistical test to be applied (e.g., "hypergeom", "poisson").
                 Used for logging and debugging. Defaults to "hypergeom".
             statistical_test_function (Any, optional): The function implementing the statistical test.
-                It should accept neighborhoods, annotations, null distribution, and additional kwargs.
+                It should accept neighborhoods, annotation, null distribution, and additional kwargs.
                 Defaults to `compute_hypergeom_test`.
             **kwargs: Additional parameters to be passed to the statistical test function.
 
@@ -381,7 +381,7 @@ class NeighborhoodsAPI:
         # Apply statistical test function to compute neighborhood significance
         neighborhood_significance = statistical_test_function(
             neighborhoods=neighborhoods,
-            annotations=annotations["matrix"],
+            annotation=annotation["matrix"],
             null_distribution=null_distribution,
             **kwargs,
         )
