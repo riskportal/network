@@ -48,7 +48,7 @@ class NetworkIO:
             min_edges_per_node=min_edges_per_node,
         )
 
-    def load_gpickle_network(
+    def load_network_gpickle(
         self,
         filepath: str,
         compute_sphere: bool = True,
@@ -71,9 +71,9 @@ class NetworkIO:
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
         )
-        return networkio._load_gpickle_network(filepath=filepath)
+        return networkio._load_network_gpickle(filepath=filepath)
 
-    def _load_gpickle_network(self, filepath: str) -> nx.Graph:
+    def _load_network_gpickle(self, filepath: str) -> nx.Graph:
         """Private method to load a network from a GPickle file.
 
         Args:
@@ -93,7 +93,7 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(G)
 
-    def load_networkx_network(
+    def load_network_networkx(
         self,
         network: nx.Graph,
         compute_sphere: bool = True,
@@ -116,9 +116,9 @@ class NetworkIO:
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
         )
-        return networkio._load_networkx_network(network=network)
+        return networkio._load_network_networkx(network=network)
 
-    def _load_networkx_network(self, network: nx.Graph) -> nx.Graph:
+    def _load_network_networkx(self, network: nx.Graph) -> nx.Graph:
         """Private method to load a NetworkX graph.
 
         Args:
@@ -137,7 +137,7 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(network_copy)
 
-    def load_cytoscape_network(
+    def load_network_cytoscape(
         self,
         filepath: str,
         source_label: str = "source",
@@ -166,14 +166,14 @@ class NetworkIO:
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
         )
-        return networkio._load_cytoscape_network(
+        return networkio._load_network_cytoscape(
             filepath=filepath,
             source_label=source_label,
             target_label=target_label,
             view_name=view_name,
         )
 
-    def _load_cytoscape_network(
+    def _load_network_cytoscape(
         self,
         filepath: str,
         source_label: str = "source",
@@ -307,7 +307,7 @@ class NetworkIO:
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
 
-    def load_cytoscape_json_network(
+    def load_network_cyjs(
         self,
         filepath: str,
         source_label: str = "source",
@@ -334,13 +334,13 @@ class NetworkIO:
             surface_depth=surface_depth,
             min_edges_per_node=min_edges_per_node,
         )
-        return networkio._load_cytoscape_json_network(
+        return networkio._load_network_cyjs(
             filepath=filepath,
             source_label=source_label,
             target_label=target_label,
         )
 
-    def _load_cytoscape_json_network(self, filepath, source_label="source", target_label="target"):
+    def _load_network_cyjs(self, filepath, source_label="source", target_label="target"):
         """Private method to load a network from a Cytoscape JSON (.cyjs) file.
 
         Args:

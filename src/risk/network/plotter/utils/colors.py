@@ -60,11 +60,13 @@ def get_annotated_domain_colors(
     for _, node_ids in graph.domain_id_to_node_ids_map.items():
         if len(node_ids) > 1:
             # For multi-node domains, choose the brightest color based on RGB sum
-            domain_colors = tuple(node_colors[node] for node in node_ids)
-            color = domain_colors[np.argmax(domain_colors[:, :3].sum(axis=1))]  # Sum the RGB values
+            domain_colors = np.array([node_colors[node] for node in node_ids])
+            color = tuple(
+                domain_colors[np.argmax(domain_colors[:, :3].sum(axis=1))]
+            )  # Sum the RGB values
         else:
             # Single-node domains default to white (RGBA)
-            color = (1.0, 1.0, 1.0, 1.0)
+            color = tuple([1.0, 1.0, 1.0, 1.0])
 
         annotated_colors.append(color)
 

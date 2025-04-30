@@ -28,10 +28,10 @@ class NeighborhoodsAPI:
     The NeighborhoodsAPI class provides methods to load neighborhood results from statistical tests.
     """
 
-    def __init__() -> None:
+    def __init__(self) -> None:
         pass
 
-    def load_neighborhoods_by_binom(
+    def load_neighborhoods_binom(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],
@@ -76,7 +76,7 @@ class NeighborhoodsAPI:
             statistical_test_function=compute_binom_test,
         )
 
-    def load_neighborhoods_by_chi2(
+    def load_neighborhoods_chi2(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],
@@ -121,7 +121,7 @@ class NeighborhoodsAPI:
             statistical_test_function=compute_chi2_test,
         )
 
-    def load_neighborhoods_by_hypergeom(
+    def load_neighborhoods_hypergeom(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],
@@ -166,7 +166,7 @@ class NeighborhoodsAPI:
             statistical_test_function=compute_hypergeom_test,
         )
 
-    def load_neighborhoods_by_permutation(
+    def load_neighborhoods_permutation(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],
@@ -224,7 +224,7 @@ class NeighborhoodsAPI:
             max_workers=max_workers,
         )
 
-    def load_neighborhoods_by_poisson(
+    def load_neighborhoods_poisson(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],
@@ -269,7 +269,7 @@ class NeighborhoodsAPI:
             statistical_test_function=compute_poisson_test,
         )
 
-    def load_neighborhoods_by_zscore(
+    def load_neighborhoods_zscore(
         self,
         network: nx.Graph,
         annotation: Dict[str, Any],

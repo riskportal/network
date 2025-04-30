@@ -20,7 +20,7 @@ class AnnotationIO:
     and to export parameter data to various formats like JSON, CSV, and text files.
     """
 
-    def load_json_annotation(
+    def load_annotation_json(
         self, network: nx.Graph, filepath: str, min_nodes_per_term: int = 2
     ) -> Dict[str, Any]:
         """Load annotation from a JSON file and convert them to a DataFrame.
@@ -47,7 +47,7 @@ class AnnotationIO:
 
         return load_annotation(network, annotation_input, min_nodes_per_term)
 
-    def load_excel_annotation(
+    def load_annotation_excel(
         self,
         network: nx.Graph,
         filepath: str,
@@ -91,7 +91,7 @@ class AnnotationIO:
 
         return load_annotation(network, annotation_input, min_nodes_per_term)
 
-    def load_csv_annotation(
+    def load_annotation_csv(
         self,
         network: nx.Graph,
         filepath: str,
@@ -129,7 +129,7 @@ class AnnotationIO:
 
         return load_annotation(network, annotation_input, min_nodes_per_term)
 
-    def load_tsv_annotation(
+    def load_annotation_tsv(
         self,
         network: nx.Graph,
         filepath: str,
@@ -167,7 +167,7 @@ class AnnotationIO:
 
         return load_annotation(network, annotation_input, min_nodes_per_term)
 
-    def load_dict_annotation(
+    def load_annotation_dict(
         self, network: nx.Graph, content: Dict[str, Any], min_nodes_per_term: int = 2
     ) -> Dict[str, Any]:
         """Load annotation from a provided dictionary and convert them to a dictionary annotation.
