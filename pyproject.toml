@@ -5,15 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "risk-network"
 dynamic = ["version"]
-description = "A Python package for biological network analysis"
+description = "A Python package for biological network analysis."
 authors = [
     { name = "Ira Horecka", email = "ira89@icloud.com" },
 ]
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -22,7 +24,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Development Status :: 4 - Beta",
 ]
 dependencies = [
     "ipywidgets",
@@ -47,7 +48,8 @@ dependencies = [
 text = "GPL-3.0-or-later"
 
 [project.urls]
-"Homepage" = "https://github.com/riskportal/network"
+Homepage = "https://github.com/risk-portal/network"
+Issues = "https://github.com/risk-portal/network/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
