@@ -12,17 +12,17 @@ from risk.network.graph.summary import Summary
 
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
-    """Test loading a graph after generating neighborhoods with specific parameters using JSON annotations.
+    """Test loading a graph after generating neighborhoods with specific parameters using JSON annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        json_annotation: The JSON annotations associated with the network.
+        json_annotation: The JSON annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
-        annotations=json_annotation,
+        annotation=json_annotation,
         distance_metric="leiden",
         louvain_resolution=8,
         leiden_resolution=1.0,
@@ -36,7 +36,7 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
         network=cytoscape_network,
-        annotations=json_annotation,
+        annotation=json_annotation,
         neighborhoods=neighborhoods,
         tail="right",
         pval_cutoff=0.05,
@@ -56,12 +56,12 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
 
 
 def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
-    """Test that statistically significant domains respect min and max cluster sizes using JSON annotations.
+    """Test that statistically significant domains respect min and max cluster sizes using JSON annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        json_annotation: The JSON annotations associated with the network.
+        json_annotation: The JSON annotation associated with the network.
     """
     # Define different combinations of min and max cluster sizes
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
@@ -69,7 +69,7 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
         # Load neighborhoods as a prerequisite
         neighborhoods = risk_obj.load_neighborhoods_by_permutation(
             network=cytoscape_network,
-            annotations=json_annotation,
+            annotation=json_annotation,
             # Test multiple distance metrics
             distance_metric=["louvain", "label_propagation"],
             louvain_resolution=8,
@@ -83,7 +83,7 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
         # Load the graph with the specified parameters
         graph = risk_obj.load_graph(
             network=cytoscape_network,
-            annotations=json_annotation,
+            annotation=json_annotation,
             neighborhoods=neighborhoods,
             tail="right",
             pval_cutoff=0.05,
@@ -108,17 +108,17 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
 
 
 def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
-    """Test loading a graph after generating neighborhoods with specific parameters using dictionary annotations.
+    """Test loading a graph after generating neighborhoods with specific parameters using dictionary annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        dict_annotation: The dictionary annotations associated with the network.
+        dict_annotation: The dictionary annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
-        annotations=dict_annotation,
+        annotation=dict_annotation,
         distance_metric="louvain",
         louvain_resolution=8,
         fraction_shortest_edges=0.75,
@@ -131,7 +131,7 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
         network=cytoscape_network,
-        annotations=dict_annotation,
+        annotation=dict_annotation,
         neighborhoods=neighborhoods,
         tail="right",
         pval_cutoff=0.05,
@@ -151,12 +151,12 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
 
 
 def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
-    """Test that statistically significant domains respect min and max cluster sizes using dictionary annotations.
+    """Test that statistically significant domains respect min and max cluster sizes using dictionary annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        dict_annotation: The dictionary annotations associated with the network.
+        dict_annotation: The dictionary annotation associated with the network.
     """
     # Define different combinations of min and max cluster sizes
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
@@ -164,7 +164,7 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
         # Load neighborhoods as a prerequisite
         neighborhoods = risk_obj.load_neighborhoods_by_permutation(
             network=cytoscape_network,
-            annotations=dict_annotation,
+            annotation=dict_annotation,
             # Test multiple distance metrics
             distance_metric=["louvain", "label_propagation"],
             louvain_resolution=8,
@@ -179,7 +179,7 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
         # Load the graph with the specified parameters
         graph = risk_obj.load_graph(
             network=cytoscape_network,
-            annotations=dict_annotation,
+            annotation=dict_annotation,
             neighborhoods=neighborhoods,
             tail="right",
             pval_cutoff=0.05,
@@ -211,7 +211,7 @@ def test_linkage_criterion_and_auto_clustering_options(
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        json_annotation: The JSON annotations associated with the network.
+        json_annotation: The JSON annotation associated with the network.
     """
     # Define parameters for testing
     test_criteria = ["maxclust", "distance", "off"]
@@ -220,7 +220,7 @@ def test_linkage_criterion_and_auto_clustering_options(
         # Load neighborhoods as a prerequisite
         neighborhoods = risk_obj.load_neighborhoods_by_binom(
             network=cytoscape_network,
-            annotations=json_annotation,
+            annotation=json_annotation,
             distance_metric="louvain",
             louvain_resolution=1.0,
             fraction_shortest_edges=0.75,
@@ -230,7 +230,7 @@ def test_linkage_criterion_and_auto_clustering_options(
         # Load the graph with the specified linkage_criterion
         graph = risk_obj.load_graph(
             network=cytoscape_network,
-            annotations=json_annotation,
+            annotation=json_annotation,
             neighborhoods=neighborhoods,
             tail="right",
             pval_cutoff=0.05,
@@ -261,12 +261,12 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
         cytoscape_network: The network object to be used for neighborhood and graph generation.
-        json_annotation: The JSON annotations associated with the network.
+        json_annotation: The JSON annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=cytoscape_network,
-        annotations=json_annotation,
+        annotation=json_annotation,
         distance_metric="leiden",
         louvain_resolution=8,
         fraction_shortest_edges=0.75,
@@ -279,7 +279,7 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
     # Load the graph with the specified parameters
     graph = risk_obj.load_graph(
         network=cytoscape_network,
-        annotations=json_annotation,
+        annotation=json_annotation,
         neighborhoods=neighborhoods,
         tail="right",
         pval_cutoff=0.05,

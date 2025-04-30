@@ -72,12 +72,12 @@ def dummy_annotation_dict():
 
 
 @pytest.fixture
-def dummy_annotations(risk_obj, dummy_network, dummy_annotation_dict):
-    """Load annotations from the dummy dictionary into the dummy network.
+def dummy_annotation(risk_obj, dummy_network, dummy_annotation_dict):
+    """Load annotation from the dummy dictionary into the dummy network.
 
     Args:
-        risk_obj: The RISK object instance used for loading the annotations.
-        dummy_network: The dummy network object to which annotations will be applied.
+        risk_obj: The RISK object instance used for loading the annotation.
+        dummy_network: The dummy network object to which annotation will be applied.
         dummy_annotation_dict: The dummy annotation dictionary.
     """
     return risk_obj.load_dict_annotation(content=dummy_annotation_dict, network=dummy_network)
@@ -171,15 +171,15 @@ def networkx_network(risk_obj, cytoscape_network):
 # Annotation fixtures
 @pytest.fixture(scope="session")
 def annotation_dict(data_path):
-    """Fixture to load and return annotations from a JSON file as a dictionary.
+    """Fixture to load and return annotation from a JSON file as a dictionary.
 
     Args:
         data_path: The base path to the directory containing the annotation file.
 
     Returns:
-        dict: The loaded annotations as a dictionary.
+        dict: The loaded annotation as a dictionary.
     """
-    annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
+    annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
     # Load the JSON file and return as a dictionary
     with open(annotation_file, "r", encoding="utf-8") as file:
         annotation_dict = json.load(file)
@@ -189,30 +189,30 @@ def annotation_dict(data_path):
 
 @pytest.fixture(scope="session")
 def json_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a JSON file.
+    """Fixture to load and return annotation from a JSON file.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
+        risk_obj: The RISK object instance used for loading annotation.
+        cytoscape_network: The network object to which annotation will be applied.
         data_path: The base path to the directory containing the annotation file.
 
     Returns:
-        Annotations: The loaded annotations object.
+        Annotation: The loaded annotation object.
     """
-    annotation_file = data_path / "json" / "annotations" / "go_biological_process.json"
+    annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
     return risk_obj.load_json_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def dict_annotation(risk_obj, cytoscape_network):
-    """Load and return annotations from a dictionary.
+    """Load and return annotation from a dictionary.
 
     Args:
-        risk_obj: The RISK object instance for loading annotations.
-        cytoscape_network: The network to which the annotations will be applied.
+        risk_obj: The RISK object instance for loading annotation.
+        cytoscape_network: The network to which the annotation will be applied.
 
     Returns:
-        dict: The loaded annotations object.
+        dict: The loaded annotation object.
     """
     annotation_content = {
         "phosphatidylinositol dephosphorylation": [
@@ -239,71 +239,71 @@ def dict_annotation(risk_obj, cytoscape_network):
 
 @pytest.fixture(scope="session")
 def csv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a CSV file.
+    """Fixture to load and return annotation from a CSV file.
 
     Args:
-        risk_obj: The RISK object instance for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
+        risk_obj: The RISK object instance for loading annotation.
+        cytoscape_network: The network object to which annotation will be applied.
         data_path: The base path to the directory containing the annotation file.
 
     Returns:
-        Annotations: The loaded annotations object.
+        Annotation: The loaded annotation object.
     """
-    annotation_file = data_path / "csv" / "annotations" / "go_biological_process.csv"
+    annotation_file = data_path / "csv" / "annotation" / "go_biological_process.csv"
     return risk_obj.load_csv_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def tsv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from a TSV file.
+    """Fixture to load and return annotation from a TSV file.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
+        risk_obj: The RISK object instance used for loading annotation.
+        cytoscape_network: The network object to which annotation will be applied.
         data_path: The base path to the directory containing the annotation file.
 
     Returns:
-        Annotations: The loaded annotations object.
+        Annotation: The loaded annotation object.
     """
-    annotation_file = data_path / "tsv" / "annotations" / "go_biological_process.tsv"
+    annotation_file = data_path / "tsv" / "annotation" / "go_biological_process.tsv"
     return risk_obj.load_tsv_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
 def excel_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotations from an Excel file.
+    """Fixture to load and return annotation from an Excel file.
 
     Args:
-        risk_obj: The RISK object instance used for loading annotations.
-        cytoscape_network: The network object to which annotations will be applied.
+        risk_obj: The RISK object instance used for loading annotation.
+        cytoscape_network: The network object to which annotation will be applied.
         data_path: The base path to the directory containing the annotation file.
 
     Returns:
-        Annotations: The loaded annotations object.
+        Annotation: The loaded annotation object.
     """
-    annotation_file = data_path / "excel" / "annotations" / "go_biological_process.xlsx"
+    annotation_file = data_path / "excel" / "annotation" / "go_biological_process.xlsx"
     return risk_obj.load_excel_annotation(filepath=str(annotation_file), network=cytoscape_network)
 
 
 # Combined fixture for testing graph loading
 @pytest.fixture(scope="session")
 def graph(risk_obj, cytoscape_network, json_annotation):
-    """Fixture to load and return a graph built from a Cytoscape JSON network and annotations.
+    """Fixture to load and return a graph built from a Cytoscape JSON network and annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading the graph.
         cytoscape_network: The network object loaded from a Cytoscape file.
-        json_annotation: The JSON annotations associated with the network.
+        json_annotation: The JSON annotation associated with the network.
 
     Returns:
         Graph: The constructed graph object.
     """
     network = cytoscape_network
-    annotations = json_annotation
-    # Build neighborhoods based on the loaded network and annotations
+    annotation = json_annotation
+    # Build neighborhoods based on the loaded network and annotation
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=network,
-        annotations=annotations,
+        annotation=annotation,
         distance_metric="louvain",
         louvain_resolution=8,
         leiden_resolution=1.0,
@@ -317,7 +317,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
     # Build the graph using the neighborhoods
     graph = risk_obj.load_graph(
         network=network,
-        annotations=annotations,
+        annotation=annotation,
         neighborhoods=neighborhoods,
         tail="right",
         pval_cutoff=0.05,

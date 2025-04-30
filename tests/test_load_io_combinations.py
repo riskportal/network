@@ -26,21 +26,21 @@ import pytest
     ],
 )
 def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
-    """Test loading all possible combinations of networks and annotations followed by graph loading.
+    """Test loading all possible combinations of networks and annotation followed by graph loading.
 
     Args:
         request: The pytest request object to access fixture values.
-        risk_obj: The RISK object instance used for loading the network and annotations.
+        risk_obj: The RISK object instance used for loading the network and annotation.
         network_fixture: The name of the fixture to load the network.
-        annotation_fixture: The name of the fixture to load the annotations.
+        annotation_fixture: The name of the fixture to load the annotation.
     """
     # Load the network using the specified fixture
     network = request.getfixturevalue(network_fixture)
-    # Load the annotations using the specified fixture
-    annotations = request.getfixturevalue(annotation_fixture)
+    # Load the annotation using the specified fixture
+    annotation = request.getfixturevalue(annotation_fixture)
     neighborhoods = risk_obj.load_neighborhoods_by_permutation(
         network=network,
-        annotations=annotations,
+        annotation=annotation,
         distance_metric="louvain",
         louvain_resolution=8,
         leiden_resolution=1.0,
@@ -74,7 +74,7 @@ def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
 
     graph = risk_obj.load_graph(
         network=network,
-        annotations=annotations,
+        annotation=annotation,
         neighborhoods=neighborhoods,
         tail="right",
         pval_cutoff=0.05,

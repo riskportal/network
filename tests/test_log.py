@@ -55,18 +55,18 @@ def test_logger_debug_output(log_capture):
     assert "Test debug message" in contents
 
 
-def test_params_log_annotations(log_capture):
-    """Test that params.log_annotations logs the correct information.
+def test_params_log_annotation(log_capture):
+    """Test that params.log_annotation logs the correct information.
 
     Args:
         log_capture: Captures logger output.
     """
     logger.setLevel(logging.DEBUG)
-    params.log_annotations(
+    params.log_annotation(
         filetype="CSV",
         filepath="mock/path/to/file.csv",
         min_nodes_per_term=3,
     )
-    assert params.annotations["filetype"] == "CSV"
-    assert params.annotations["filepath"] == "mock/path/to/file.csv"
-    assert params.annotations["min_nodes_per_term"] == 3
+    assert params.annotation["filetype"] == "CSV"
+    assert params.annotation["filepath"] == "mock/path/to/file.csv"
+    assert params.annotation["min_nodes_per_term"] == 3
