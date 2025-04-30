@@ -76,7 +76,7 @@ class Canvas:
         fig = self.ax.figure
         # Use a tight layout to ensure that title and subtitle do not overlap with the original plot
         fig.tight_layout(
-            rect=[0, 0, 1, 1 - title_space_offset]
+            rect=(0, 0, 1, 1 - title_space_offset)
         )  # Leave space above the plot for title
 
         # Plot title if provided

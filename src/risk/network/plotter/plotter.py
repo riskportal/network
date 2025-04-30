@@ -29,7 +29,7 @@ class Plotter(Canvas, Network, Contour, Labels):
     def __init__(
         self,
         graph: Graph,
-        figsize: Tuple = (10, 10),
+        figsize: Union[List, Tuple, np.ndarray] = (10, 10),
         background_color: Union[str, List, Tuple, np.ndarray] = "white",
         background_alpha: Union[float, None] = 1.0,
         pad: float = 0.3,
@@ -38,7 +38,7 @@ class Plotter(Canvas, Network, Contour, Labels):
 
         Args:
             graph (Graph): The network data and attributes to be visualized.
-            figsize (Tuple, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
+            figsize (List, Tuple, np.ndarray, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, List, Tuple, np.ndarray, optional): Background color of the plot. Defaults to "white".
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides
                 any existing alpha values found in background_color. Defaults to 1.0.
@@ -58,7 +58,7 @@ class Plotter(Canvas, Network, Contour, Labels):
     def _initialize_plot(
         self,
         graph: Graph,
-        figsize: Tuple,
+        figsize: Union[List, Tuple, np.ndarray],
         background_color: Union[str, List, Tuple, np.ndarray],
         background_alpha: Union[float, None],
         pad: float,
@@ -67,7 +67,7 @@ class Plotter(Canvas, Network, Contour, Labels):
 
         Args:
             graph (Graph): The network data and attributes to be visualized.
-            figsize (Tuple): Size of the figure in inches (width, height).
+            figsize (List, Tuple, np.ndarray, optional): Size of the figure in inches (width, height). Defaults to (10, 10).
             background_color (str, List, Tuple, or np.ndarray): Background color of the plot. Can be a single color or an array of colors.
             background_alpha (float, None, optional): Transparency level of the background color. If provided, it overrides any existing
                 alpha values found in `background_color`.
@@ -93,8 +93,8 @@ class Plotter(Canvas, Network, Contour, Labels):
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()  # Adjust subplot parameters to give specified padding
         # Set axis limits based on the calculated bounding box and radius
-        ax.set_xlim([center[0] - radius - pad, center[0] + radius + pad])
-        ax.set_ylim([center[1] - radius - pad, center[1] + radius + pad])
+        ax.set_xlim((float(center[0] - radius - pad), float(center[0] + radius + pad)))
+        ax.set_ylim((float(center[1] - radius - pad), float(center[1] + radius + pad)))
         ax.set_aspect("equal")  # Ensure the aspect ratio is equal
 
         # Set the background color of the plot

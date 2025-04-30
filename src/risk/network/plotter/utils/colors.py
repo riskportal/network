@@ -23,8 +23,8 @@ def get_annotated_domain_colors(
     scale_factor: float = 1.0,
     ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
-) -> np.ndarray:
-    """Get colors for the domains based on node annotations, or use a specified color.
+) -> List[Tuple]:
+    """Get colors for the domains based on node annotation, or use a specified color.
 
     Args:
         graph (Graph): The network data and attributes to be visualized.
@@ -41,7 +41,7 @@ def get_annotated_domain_colors(
         random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
     Returns:
-        np.ndarray: Array of RGBA colors for each domain.
+        List[Tuple]: List of RGBA colors for each domain, based on significance or the specified color.
     """
     # Generate domain colors based on the significance data
     node_colors = get_domain_colors(
@@ -60,11 +60,11 @@ def get_annotated_domain_colors(
     for _, node_ids in graph.domain_id_to_node_ids_map.items():
         if len(node_ids) > 1:
             # For multi-node domains, choose the brightest color based on RGB sum
-            domain_colors = np.array([node_colors[node] for node in node_ids])
+            domain_colors = tuple(node_colors[node] for node in node_ids)
             color = domain_colors[np.argmax(domain_colors[:, :3].sum(axis=1))]  # Sum the RGB values
         else:
             # Single-node domains default to white (RGBA)
-            color = np.array([1.0, 1.0, 1.0, 1.0])
+            color = (1.0, 1.0, 1.0, 1.0)
 
         annotated_colors.append(color)
 
@@ -202,7 +202,7 @@ def _get_composite_node_colors(
             significances = node_info["significances"]  # List of significance values
             # Filter domains and significances to keep only those with corresponding colors in domain_ids_to_colors
             filtered_domains_significances = [
-                (domain_id, significance)
+                (domain_id, float(significance))
                 for domain_id, significance in zip(domains, significances)
                 if domain_id in domain_ids_to_colors
             ]
@@ -216,7 +216,9 @@ def _get_composite_node_colors(
             colors = [domain_ids_to_colors[domain_id] for domain_id in filtered_domains]
             # Blend the colors using the given gamma (default is 2.2 if None)
             gamma = blend_gamma if blend_gamma is not None else 2.2
-            composite_color = _blend_colors_perceptually(colors, filtered_significances, gamma)
+            composite_color = _blend_colors_perceptually(
+                colors, list(filtered_significances), gamma
+            )
             # Assign the composite color to the node
             composite_colors[node] = composite_color
 
@@ -246,7 +248,7 @@ def _get_colors(
     if color:
         # If a single color is specified, apply it to all domains
         rgba = to_rgba(color, num_repeats=num_domains)
-        return rgba
+        return list(rgba)
 
     # Load colormap and generate a large, maximally separated set of colors
     colormap = matplotlib.colormaps.get_cmap(cmap)

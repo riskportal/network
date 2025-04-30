@@ -94,10 +94,10 @@ class Network:
         # Draw the nodes of the graph
         nx.draw_networkx_nodes(
             self.graph.network,
-            pos=node_coordinates,
+            pos=node_coordinates.tolist(),
             node_size=node_size,
             node_shape=node_shape,
-            node_color=node_color_rgba,
+            node_color=node_color_rgba.tolist(),
             edgecolors=node_edgecolor_rgba,
             linewidths=node_edgewidth,
             ax=self.ax,
@@ -105,9 +105,9 @@ class Network:
         # Draw the edges of the graph
         nx.draw_networkx_edges(
             self.graph.network,
-            pos=node_coordinates,
+            pos=node_coordinates.tolist(),
             width=edge_width,
-            edge_color=edge_color_rgba,
+            edge_color=edge_color_rgba.tolist(),
             ax=self.ax,
         )
 
@@ -181,7 +181,7 @@ class Network:
             nodelist=node_ids,
             node_size=node_size,
             node_shape=node_shape,
-            node_color=node_color_rgba,
+            node_color=node_color_rgba.tolist(),
             edgecolors=node_edgecolor_rgba,
             linewidths=node_edgewidth,
             ax=self.ax,
@@ -192,7 +192,7 @@ class Network:
             subgraph,
             pos=node_coordinates,
             width=edge_width,
-            edge_color=edge_color_rgba,
+            edge_color=edge_color_rgba.tolist(),
             ax=self.ax,
         )
 

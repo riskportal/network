@@ -17,7 +17,7 @@ class Graph:
     """A class to represent a network graph and process its nodes and edges.
 
     The Graph class provides functionality to handle and manipulate a network graph,
-    including managing domains, annotations, and node significance data. It also includes methods
+    including managing domains, annotation, and node significance data. It also includes methods
     for transforming and mapping graph coordinates, as well as generating colors based on node
     significance.
     """
@@ -25,7 +25,7 @@ class Graph:
     def __init__(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         neighborhoods: Dict[str, Any],
         domains: pd.DataFrame,
         trimmed_domains: pd.DataFrame,
@@ -36,7 +36,7 @@ class Graph:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             neighborhoods (Dict[str, Any]): Neighborhood significance data.
             domains (pd.DataFrame): DataFrame containing domain data for the network nodes.
             trimmed_domains (pd.DataFrame): DataFrame containing trimmed domain data for the network nodes.
@@ -69,7 +69,7 @@ class Graph:
         self.node_coordinates = self._extract_node_coordinates(self.network)
 
         # NOTE: Only after the above attributes are initialized, we can create the summary
-        self.summary = Summary(annotations, neighborhoods, self)
+        self.summary = Summary(annotation, neighborhoods, self)
 
     def pop(self, domain_id: int) -> List[str]:
         """Remove a domain ID from the graph and return the corresponding node labels.
@@ -169,8 +169,8 @@ class Graph:
             sorted_descriptions, sorted_scores = zip(*descriptions_and_scores)
             # Assign to the domain info map
             domain_info_map[int(domain_id)] = {
-                "full_descriptions": list(sorted_descriptions),
-                "significance_scores": list(sorted_scores),
+                "full_descriptions": sorted_descriptions,
+                "significance_scores": sorted_scores,
             }
 
         return domain_info_map

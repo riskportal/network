@@ -23,18 +23,18 @@ class Summary:
 
     def __init__(
         self,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         neighborhoods: Dict[str, Any],
         graph,  # Avoid type hinting Graph to prevent circular imports
     ):
         """Initialize the Results object with analysis components.
 
         Args:
-            annotations (Dict[str, Any]): Annotation data, including ordered annotations and matrix of associations.
+            annotation (Dict[str, Any]): Annotation data, including ordered annotations and matrix of associations.
             neighborhoods (Dict[str, Any]): Neighborhood data containing p-values for significance and depletion analysis.
             graph (Graph): Graph object representing domain-to-node and node-to-label mappings.
         """
-        self.annotations = annotations
+        self.annotation = annotation
         self.neighborhoods = neighborhoods
         self.graph = graph
 
@@ -81,7 +81,7 @@ class Summary:
                 and annotation member information.
         """
         log_header("Loading analysis summary")
-        # Calculate significance and depletion q-values from p-value matrices in `annotations`
+        # Calculate significance and depletion q-values from p-value matrices in annotation
         enrichment_pvals = self.neighborhoods["enrichment_pvals"]
         depletion_pvals = self.neighborhoods["depletion_pvals"]
         enrichment_qvals = self._calculate_qvalues(enrichment_pvals)
@@ -147,10 +147,10 @@ class Summary:
             .reset_index(drop=True)
         )
 
-        # Convert annotations list to a DataFrame for comparison then merge with results
-        ordered_annotations = pd.DataFrame({"Annotation": self.annotations["ordered_annotations"]})
+        # Convert annotation list to a DataFrame for comparison then merge with results
+        ordered_annotation = pd.DataFrame({"Annotation": self.annotation["ordered_annotation"]})
         # Merge to ensure all annotations are present, filling missing rows with defaults
-        results = pd.merge(ordered_annotations, results, on="Annotation", how="left").fillna(
+        results = pd.merge(ordered_annotation, results, on="Annotation", how="left").fillna(
             {
                 "Domain ID": -1,
                 "Annotation Members in Network": "",
@@ -205,7 +205,7 @@ class Summary:
                 Minimum significance p-value, significance q-value, depletion p-value, depletion q-value.
         """
         try:
-            annotation_idx = self.annotations["ordered_annotations"].index(description)
+            annotation_idx = self.annotation["ordered_annotation"].index(description)
         except ValueError:
             return None, None, None, None  # Description not found
 
@@ -235,12 +235,12 @@ class Summary:
             str: ';'-separated string of node labels that are associated with the annotation.
         """
         try:
-            annotation_idx = self.annotations["ordered_annotations"].index(description)
+            annotation_idx = self.annotation["ordered_annotation"].index(description)
         except ValueError:
             return ""  # Description not found
 
         # Get the column (safely) from the sparse matrix
-        column = self.annotations["matrix"][:, annotation_idx]
+        column = self.annotation["matrix"][:, annotation_idx]
         # Convert the column to a dense array if needed
         column = column.toarray().ravel()  # Convert to a 1D dense array
         # Get nodes present for the annotation and sort by node label - use np.where on the dense array

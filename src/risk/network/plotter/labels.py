@@ -134,7 +134,7 @@ class Labels:
             max_chars_per_line = int(1e6)
         # Normalize words_to_omit to lowercase
         if words_to_omit:
-            words_to_omit = set(word.lower() for word in words_to_omit)
+            words_to_omit = list(set(word.lower() for word in words_to_omit))
 
         # Calculate the center and radius of domains to position labels around the network
         domain_id_to_centroid_map = {}
@@ -205,13 +205,11 @@ class Labels:
         for idx, (domain, pos) in zip(valid_indices, best_label_positions.items()):
             centroid = filtered_domain_centroids[domain]
             # Split by special key TERM_DELIMITER to split annotation into multiple lines
-            annotations = filtered_domain_terms[domain].split(TERM_DELIMITER)
+            terms = filtered_domain_terms[domain].split(TERM_DELIMITER)
             if fontcase is not None:
-                annotations = self._apply_str_transformation(
-                    words=annotations, transformation=fontcase
-                )
+                terms = self._apply_str_transformation(words=terms, transformation=fontcase)
             self.ax.annotate(
-                "\n".join(annotations),
+                "\n".join(terms),
                 xy=centroid,
                 xytext=pos,
                 textcoords="data",
@@ -237,7 +235,7 @@ class Labels:
                 self.ax.text(
                     centroid[0],
                     centroid[1],
-                    domain,
+                    str(domain),
                     ha="center",
                     va="center",
                     fontsize=fontsize,
@@ -373,7 +371,7 @@ class Labels:
 
     def _process_ids_to_keep(
         self,
-        domain_id_to_centroid_map: Dict[str, np.ndarray],
+        domain_id_to_centroid_map: Dict[int, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
         ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
@@ -382,14 +380,14 @@ class Labels:
         max_label_lines: int,
         min_chars_per_line: int,
         max_chars_per_line: int,
-        filtered_domain_centroids: Dict[str, np.ndarray],
-        filtered_domain_terms: Dict[str, str],
+        filtered_domain_centroids: Dict[int, np.ndarray],
+        filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> None:
         """Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
 
         Args:
-            domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
+            domain_id_to_centroid_map (Dict[int, np.ndarray]): Mapping of domain IDs to their centroids.
             ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
@@ -398,7 +396,7 @@ class Labels:
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
             max_chars_per_line (int): Maximum number of characters in a line to display.
-            filtered_domain_centroids (Dict[str, np.ndarray]): Dictionary to store filtered domain centroids (output).
+            filtered_domain_centroids (Dict[int, np.ndarray]): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (Dict[str, str]): Dictionary to store filtered domain terms (output).
             valid_indices (List): List to store valid indices (output).
 
@@ -415,15 +413,15 @@ class Labels:
             )
 
         # Process each domain in ids_to_keep
-        for domain in ids_to_keep:
+        for domain_id in ids_to_keep:
             if (
-                domain in self.graph.domain_id_to_domain_terms_map
-                and domain in domain_id_to_centroid_map
+                domain_id in self.graph.domain_id_to_domain_terms_map
+                and domain_id in domain_id_to_centroid_map
             ):
-                domain_centroid = domain_id_to_centroid_map[domain]
+                domain_centroid = domain_id_to_centroid_map[domain_id]
                 # No need to filter the domain terms if it is in ids_to_keep
                 _ = self._validate_and_update_domain(
-                    domain=domain,
+                    domain_id=domain_id,
                     domain_centroid=domain_centroid,
                     domain_id_to_centroid_map=domain_id_to_centroid_map,
                     ids_to_labels=ids_to_labels,
@@ -439,7 +437,7 @@ class Labels:
 
     def _process_remaining_domains(
         self,
-        domain_id_to_centroid_map: Dict[str, np.ndarray],
+        domain_id_to_centroid_map: Dict[int, np.ndarray],
         ids_to_keep: Union[List[str], Tuple[str], np.ndarray],
         ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
@@ -448,14 +446,14 @@ class Labels:
         max_label_lines: int,
         min_chars_per_line: int,
         max_chars_per_line: int,
-        filtered_domain_centroids: Dict[str, np.ndarray],
-        filtered_domain_terms: Dict[str, str],
+        filtered_domain_centroids: Dict[int, np.ndarray],
+        filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> None:
         """Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
 
         Args:
-            domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
+            domain_id_to_centroid_map (Dict[int, np.ndarray]): Mapping of domain IDs to their centroids.
             ids_to_keep (List, Tuple, or np.ndarray, optional): IDs of domains that must be labeled.
             ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List, optional): List of words to omit from the labels. Defaults to None.
@@ -464,7 +462,7 @@ class Labels:
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
             max_chars_per_line (int): Maximum number of characters in a line to display.
-            filtered_domain_centroids (Dict[str, np.ndarray]): Dictionary to store filtered domain centroids (output).
+            filtered_domain_centroids (Dict[int, np.ndarray]): Dictionary to store filtered domain centroids (output).
             filtered_domain_terms (Dict[str, str]): Dictionary to store filtered domain terms (output).
             valid_indices (List): List to store valid indices (output).
 
@@ -485,24 +483,24 @@ class Labels:
             return np.linalg.norm(centroid1 - centroid2)
 
         # Domains to plot on network
-        selected_domains = []
+        selected_domain_ids = []
         # Find the farthest apart domains using centroids
         if remaining_domains and remaining_labels:
             first_domain = next(iter(remaining_domains))  # Pick the first domain to start
-            selected_domains.append(first_domain)
+            selected_domain_ids.append(first_domain)
 
-            while len(selected_domains) < remaining_labels:
+            while len(selected_domain_ids) < remaining_labels:
                 farthest_domain = None
                 max_distance = -1
                 # Find the domain farthest from any already selected domain
                 for candidate_domain, candidate_centroid in remaining_domains.items():
-                    if candidate_domain in selected_domains:
+                    if candidate_domain in selected_domain_ids:
                         continue
 
                     # Calculate the minimum distance to any selected domain
                     min_distance = min(
                         calculate_distance(candidate_centroid, remaining_domains[dom])
-                        for dom in selected_domains
+                        for dom in selected_domain_ids
                     )
                     # Update the farthest domain if the minimum distance is greater
                     if min_distance > max_distance:
@@ -511,15 +509,15 @@ class Labels:
 
                 # Add the farthest domain to the selected domains
                 if farthest_domain:
-                    selected_domains.append(farthest_domain)
+                    selected_domain_ids.append(farthest_domain)
                 else:
                     break  # No more domains to select
 
         # Process the selected domains and add to filtered lists
-        for domain in selected_domains:
-            domain_centroid = remaining_domains[domain]
+        for domain_id in selected_domain_ids:
+            domain_centroid = remaining_domains[domain_id]
             is_domain_valid = self._validate_and_update_domain(
-                domain=domain,
+                domain_id=domain_id,
                 domain_centroid=domain_centroid,
                 domain_id_to_centroid_map=domain_id_to_centroid_map,
                 ids_to_labels=ids_to_labels,
@@ -540,45 +538,45 @@ class Labels:
 
     def _validate_and_update_domain(
         self,
-        domain: str,
+        domain_id: int,
         domain_centroid: np.ndarray,
-        domain_id_to_centroid_map: Dict[str, np.ndarray],
+        domain_id_to_centroid_map: Dict[int, np.ndarray],
         ids_to_labels: Union[Dict[int, str], None],
         words_to_omit: Union[List[str], None],
         min_label_lines: int,
         max_label_lines: int,
         min_chars_per_line: int,
         max_chars_per_line: int,
-        filtered_domain_centroids: Dict[str, np.ndarray],
-        filtered_domain_terms: Dict[str, str],
+        filtered_domain_centroids: Dict[int, np.ndarray],
+        filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> bool:
         """Validate and process the domain terms, updating relevant dictionaries if valid.
 
         Args:
-            domain (str): Domain ID to process.
+            domain_id (int): Domain ID to process.
             domain_centroid (np.ndarray): Centroid position of the domain.
-            domain_id_to_centroid_map (Dict[str, np.ndarray]): Mapping of domain IDs to their centroids.
+            domain_id_to_centroid_map (Dict[int, np.ndarray]): Mapping of domain IDs to their centroids.
             ids_to_labels (Dict[int, str], None, optional): A dictionary mapping domain IDs to custom labels. Defaults to None.
             words_to_omit (List[str], None, optional): List of words to omit from the labels. Defaults to None.
             min_label_lines (int): Minimum number of lines required in a label.
             max_label_lines (int): Maximum number of lines allowed in a label.
             min_chars_per_line (int): Minimum number of characters allowed per line.
             max_chars_per_line (int): Maximum number of characters allowed per line.
-            filtered_domain_centroids (Dict[str, np.ndarray]): Dictionary to store valid domain centroids.
+            filtered_domain_centroids (Dict[int, np.ndarray]): Dictionary to store valid domain centroids.
             filtered_domain_terms (Dict[str, str]): Dictionary to store valid domain terms.
             valid_indices (List[int]): List of valid domain indices.
 
         Returns:
             bool: True if the domain is valid and added to the filtered dictionaries, False otherwise.
         """
-        if ids_to_labels and domain in ids_to_labels:
+        if ids_to_labels and domain_id in ids_to_labels:
             # Directly use custom labels without filtering
-            domain_terms = ids_to_labels[domain]
+            domain_terms = ids_to_labels[domain_id]
         else:
             # Process the domain terms automatically
             domain_terms = self._process_terms(
-                domain=domain,
+                domain_id=domain_id,
                 words_to_omit=words_to_omit,
                 max_label_lines=max_label_lines,
                 min_chars_per_line=min_chars_per_line,
@@ -595,24 +593,24 @@ class Labels:
                 return False
 
         # Store the valid terms and centroids
-        filtered_domain_centroids[domain] = domain_centroid
-        filtered_domain_terms[domain] = domain_terms
-        valid_indices.append(list(domain_id_to_centroid_map.keys()).index(domain))
+        filtered_domain_centroids[domain_id] = domain_centroid
+        filtered_domain_terms[domain_id] = domain_terms
+        valid_indices.append(list(domain_id_to_centroid_map.keys()).index(domain_id))
 
         return True
 
     def _process_terms(
         self,
-        domain: str,
+        domain_id: int,
         words_to_omit: Union[List[str], None],
         max_label_lines: int,
         min_chars_per_line: int,
         max_chars_per_line: int,
-    ) -> List[str]:
+    ) -> str:
         """Process terms for a domain, applying word length constraints and combining words where appropriate.
 
         Args:
-            domain (str): The domain being processed.
+            domain_id (int): Domain ID to process.
             words_to_omit (List[str], None): List of words to omit from the labels.
             max_label_lines (int): Maximum number of lines in a label.
             min_chars_per_line (int): Minimum number of characters in a line to display.
@@ -622,7 +620,7 @@ class Labels:
             str: Processed terms separated by TERM_DELIMITER, with words combined if necessary to fit within constraints.
         """
         # Set custom labels from significant terms
-        terms = self.graph.domain_id_to_domain_terms_map[domain].split(" ")
+        terms = self.graph.domain_id_to_domain_terms_map[domain_id].split(" ")
         # Apply words_to_omit and word length constraints
         if words_to_omit:
             terms = [
@@ -632,7 +630,7 @@ class Labels:
             ]
 
         # Use the combine_words function directly to handle word combinations and length constraints
-        compressed_terms = self._combine_words(tuple(terms), max_chars_per_line, max_label_lines)
+        compressed_terms = self._combine_words(list(terms), max_chars_per_line, max_label_lines)
 
         return compressed_terms
 
@@ -647,8 +645,8 @@ class Labels:
         scale_factor: float = 1.0,
         ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
-    ) -> np.ndarray:
-        """Get colors for the labels based on node annotations or a specified colormap.
+    ) -> List:
+        """Get colors for the labels based on node annotation or a specified colormap.
 
         Args:
             cmap (str, optional): Name of the colormap to use for generating label colors. Defaults to "gist_rainbow".
@@ -666,7 +664,7 @@ class Labels:
             random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
-            np.ndarray: Array of RGBA colors for label annotations.
+            List: Array of RGBA colors for label annotation.
         """
         return get_annotated_domain_colors(
             graph=self.graph,
@@ -750,21 +748,21 @@ class Labels:
 
     def _calculate_best_label_positions(
         self,
-        filtered_domain_centroids: Dict[str, Any],
-        center: np.ndarray,
+        filtered_domain_centroids: Dict[int, Any],
+        center: Tuple[float, float],
         radius: float,
         offset: float,
-    ) -> Dict[str, Any]:
+    ) -> Dict[int, Any]:
         """Calculate and optimize label positions for clarity.
 
         Args:
-            filtered_domain_centroids (Dict[str, Any]): Centroids of the filtered domains.
-            center (np.ndarray): The center coordinates for label positioning.
+            filtered_domain_centroids (Dict[int, Any]): Centroids of the filtered domains.
+            center (Tuple[float, float]): The center point around which labels are positioned.
             radius (float): The radius for positioning labels around the center.
             offset (float): The offset distance from the radius for positioning labels.
 
         Returns:
-            Dict[str, Any]: Optimized positions for labels.
+            Dict[int, Any]: Optimized positions for labels.
         """
         num_domains = len(filtered_domain_centroids)
         # Calculate equidistant positions around the center for initial label placement
@@ -777,12 +775,12 @@ class Labels:
         return self._optimize_label_positions(label_positions, filtered_domain_centroids)
 
     def _calculate_equidistant_positions_around_center(
-        self, center: np.ndarray, radius: float, label_offset: float, num_domains: int
+        self, center: Tuple[float, float], radius: float, label_offset: float, num_domains: int
     ) -> List[np.ndarray]:
         """Calculate positions around a center at equidistant angles.
 
         Args:
-            center (np.ndarray): The central point around which positions are calculated.
+            center (Tuple[float, float]): The center point around which positions are calculated.
             radius (float): The radius at which positions are calculated.
             label_offset (float): The offset added to the radius for label positioning.
             num_domains (int): The number of positions (or domains) to calculate.
@@ -799,16 +797,16 @@ class Labels:
         ]
 
     def _optimize_label_positions(
-        self, best_label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, best_label_positions: Dict[int, Any], domain_centroids: Dict[int, Any]
+    ) -> Dict[int, Any]:
         """Optimize label positions around the perimeter to minimize total distance to centroids.
 
         Args:
-            best_label_positions (Dict[str, Any]): Initial positions of labels around the perimeter.
-            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
+            best_label_positions (Dict[int, Any]): Initial positions of labels around the perimeter.
+            domain_centroids (Dict[int, Any]): Centroid positions of the domains.
 
         Returns:
-            Dict[str, Any]: Optimized label positions.
+            Dict[int, Any]: Optimized label positions.
         """
         while True:
             improvement = False  # Start each iteration assuming no improvement
@@ -838,39 +836,39 @@ class Labels:
         return best_label_positions
 
     def _calculate_total_distance(
-        self, label_positions: Dict[str, Any], domain_centroids: Dict[str, Any]
+        self, label_positions: Dict[int, Any], domain_centroids: Dict[int, Any]
     ) -> float:
         """Calculate the total distance from label positions to their domain centroids.
 
         Args:
-            label_positions (Dict[str, Any]): Positions of labels around the perimeter.
-            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
+            label_positions (Dict[int, Any]): Positions of labels around the perimeter.
+            domain_centroids (Dict[int, Any]): Centroid positions of the domains.
 
         Returns:
             float: The total distance from labels to centroids.
         """
-        total_distance = 0
+        total_distance = 0.0
         # Iterate through each domain and calculate the distance to its centroid
         for domain, pos in label_positions.items():
             centroid = domain_centroids[domain]
-            total_distance += np.linalg.norm(centroid - pos)
+            total_distance += float(np.linalg.norm(centroid - pos))
 
         return total_distance
 
     def _swap_and_evaluate(
         self,
-        label_positions: Dict[str, Any],
+        label_positions: Dict[int, Any],
         i: int,
         j: int,
-        domain_centroids: Dict[str, Any],
+        domain_centroids: Dict[int, Any],
     ) -> float:
         """Swap two labels and evaluate the total distance after the swap.
 
         Args:
-            label_positions (Dict[str, Any]): Positions of labels around the perimeter.
+            label_positions (Dict[int, Any]): Positions of labels around the perimeter.
             i (int): Index of the first label to swap.
             j (int): Index of the second label to swap.
-            domain_centroids (Dict[str, Any]): Centroid positions of the domains.
+            domain_centroids (Dict[int, Any]): Centroid positions of the domains.
 
         Returns:
             float: The total distance after swapping the two labels.

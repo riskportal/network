@@ -282,8 +282,8 @@ class Contour:
         scale_factor: float = 1.0,
         ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
-    ) -> np.ndarray:
-        """Get colors for the contours based on node annotations or a specified colormap.
+    ) -> List[Tuple]:
+        """Get colors for the contours based on node annotation or a specified colormap.
 
         Args:
             cmap (str, optional): Name of the colormap to use for generating contour colors. Defaults to "gist_rainbow".
@@ -301,7 +301,7 @@ class Contour:
             random_seed (int, optional): Seed for random number generation to ensure reproducibility. Defaults to 888.
 
         Returns:
-            np.ndarray: Array of RGBA colors for contour annotations.
+            List[Tuple]: List of RGBA colors for the contours, one for each domain in the network graph.
         """
         return get_annotated_domain_colors(
             graph=self.graph,

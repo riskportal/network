@@ -9,7 +9,7 @@ from typing import Any, Dict, Union
 import networkx as nx
 import pandas as pd
 
-from risk.annotations import define_top_annotations
+from risk.annotation import define_top_annotation
 from risk.log import log_header, logger, params
 from risk.neighborhoods import (
     define_domains,
@@ -32,7 +32,7 @@ class GraphAPI:
     def load_graph(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         neighborhoods: Dict[str, Any],
         tail: str = "right",
         pval_cutoff: float = 0.01,
@@ -50,7 +50,7 @@ class GraphAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): The annotations associated with the network.
+            annotation (Dict[str, Any]): The annotation associated with the network.
             neighborhoods (Dict[str, Any]): Neighborhood significance data.
             tail (str, optional): Type of significance tail ("right", "left", "both"). Defaults to "right".
             pval_cutoff (float, optional): p-value cutoff for significance. Defaults to 0.01.
@@ -115,9 +115,9 @@ class GraphAPI:
         logger.debug(f"Min cluster size: {min_cluster_size}")
         logger.debug(f"Max cluster size: {max_cluster_size}")
         # Define top annotations based on processed neighborhoods
-        top_annotations = self._define_top_annotations(
+        top_annotation = self._define_top_annotation(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             neighborhoods=processed_neighborhoods,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
@@ -130,7 +130,7 @@ class GraphAPI:
         ]
         # Define domains in the network using the specified clustering settings
         domains = define_domains(
-            top_annotations=top_annotations,
+            top_annotation=top_annotation,
             significant_neighborhoods_significance=significant_neighborhoods_significance,
             linkage_criterion=linkage_criterion,
             linkage_method=linkage_method,
@@ -140,20 +140,20 @@ class GraphAPI:
         # Trim domains and top annotations based on cluster size constraints
         domains, trimmed_domains = trim_domains(
             domains=domains,
-            top_annotations=top_annotations,
+            top_annotation=top_annotation,
             min_cluster_size=min_cluster_size,
             max_cluster_size=max_cluster_size,
         )
 
         # Prepare node mapping and significance sums for the final Graph object
-        ordered_nodes = annotations["ordered_nodes"]
+        ordered_nodes = annotation["ordered_nodes"]
         node_label_to_id = dict(zip(ordered_nodes, range(len(ordered_nodes))))
         node_significance_sums = processed_neighborhoods["node_significance_sums"]
 
         # Return the fully initialized Graph object
         return Graph(
             network=network,
-            annotations=annotations,
+            annotation=annotation,
             neighborhoods=neighborhoods,
             domains=domains,
             trimmed_domains=trimmed_domains,
@@ -161,10 +161,10 @@ class GraphAPI:
             node_significance_sums=node_significance_sums,
         )
 
-    def _define_top_annotations(
+    def _define_top_annotation(
         self,
         network: nx.Graph,
-        annotations: Dict[str, Any],
+        annotation: Dict[str, Any],
         neighborhoods: Dict[str, Any],
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
@@ -173,7 +173,7 @@ class GraphAPI:
 
         Args:
             network (nx.Graph): The network graph.
-            annotations (Dict[str, Any]): Annotations data for the network.
+            annotation (Dict[str, Any]): Annotation data for the network.
             neighborhoods (Dict[str, Any]): Neighborhood significance data.
             min_cluster_size (int, optional): Minimum size for clusters. Defaults to 5.
             max_cluster_size (int, optional): Maximum size for clusters. Defaults to 1000.
@@ -181,17 +181,17 @@ class GraphAPI:
         Returns:
             Dict[str, Any]: Top annotations identified within the network.
         """
-        # Extract necessary data from annotations and neighborhoods
-        ordered_annotations = annotations["ordered_annotations"]
+        # Extract necessary data from annotation and neighborhoods
+        ordered_annotation = annotation["ordered_annotation"]
         neighborhood_significance_sums = neighborhoods["neighborhood_significance_counts"]
         significant_significance_matrix = neighborhoods["significant_significance_matrix"]
         significant_binary_significance_matrix = neighborhoods[
             "significant_binary_significance_matrix"
         ]
         # Call external function to define top annotations
-        return define_top_annotations(
+        return define_top_annotation(
             network=network,
-            ordered_annotation_labels=ordered_annotations,
+            ordered_annotation_labels=ordered_annotation,
             neighborhood_significance_sums=neighborhood_significance_sums,
             significant_significance_matrix=significant_significance_matrix,
             significant_binary_significance_matrix=significant_binary_significance_matrix,
