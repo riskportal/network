@@ -1,6 +1,6 @@
 """
-risk/annotations/io
-~~~~~~~~~~~~~~~~~~~
+risk/annotation/io
+~~~~~~~~~~~~~~~~~~
 """
 
 import json
@@ -9,43 +9,43 @@ from typing import Any, Dict
 import networkx as nx
 import pandas as pd
 
-from risk.annotations.annotations import load_annotations
+from risk.annotation.annotation import load_annotation
 from risk.log import log_header, logger, params
 
 
-class AnnotationsIO:
-    """Handles the loading and exporting of annotations in various file formats.
+class AnnotationIO:
+    """Handles the loading and exporting of annotation in various file formats.
 
-    The AnnotationsIO class provides methods to load annotations from different file types (JSON, CSV, Excel, etc.)
+    The AnnotationIO class provides methods to load annotation from different file types (JSON, CSV, Excel, etc.)
     and to export parameter data to various formats like JSON, CSV, and text files.
     """
 
     def load_json_annotation(
         self, network: nx.Graph, filepath: str, min_nodes_per_term: int = 2
     ) -> Dict[str, Any]:
-        """Load annotations from a JSON file and convert them to a DataFrame.
+        """Load annotation from a JSON file and convert them to a DataFrame.
 
         Args:
-            network (NetworkX graph): The network to which the annotations are related.
-            filepath (str): Path to the JSON annotations file.
+            network (NetworkX graph): The network to which the annotation is related.
+            filepath (str): Path to the JSON annotation file.
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
                 term to be included. Defaults to 2.
 
         Returns:
-            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotation matrix.
         """
         filetype = "JSON"
         # Log the loading of the JSON file
-        params.log_annotations(
+        params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
         self._log_loading(filetype, filepath=filepath)
 
         # Load the JSON file into a dictionary
         with open(filepath, "r", encoding="utf-8") as file:
-            annotations_input = json.load(file)
+            annotation_input = json.load(file)
 
-        return load_annotations(network, annotations_input, min_nodes_per_term)
+        return load_annotation(network, annotation_input, min_nodes_per_term)
 
     def load_excel_annotation(
         self,
@@ -57,11 +57,11 @@ class AnnotationsIO:
         nodes_delimiter: str = ";",
         min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
-        """Load annotations from an Excel file and associate them with the network.
+        """Load annotation from an Excel file and associate them with the network.
 
         Args:
-            network (nx.Graph): The NetworkX graph to which the annotations are related.
-            filepath (str): Path to the Excel annotations file.
+            network (nx.Graph): The NetworkX graph to which the annotation is related.
+            filepath (str): Path to the Excel annotation file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             sheet_name (str, optional): The name of the Excel sheet to load (default is 'Sheet1').
@@ -75,7 +75,7 @@ class AnnotationsIO:
         """
         filetype = "Excel"
         # Log the loading of the Excel file
-        params.log_annotations(
+        params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
         self._log_loading(filetype, filepath=filepath)
@@ -87,9 +87,9 @@ class AnnotationsIO:
             lambda x: x.split(nodes_delimiter)
         )
         # Convert the DataFrame to a dictionary pairing labels with their corresponding nodes
-        annotations_input = annotation.set_index(label_colname)[nodes_colname].to_dict()
+        annotation_input = annotation.set_index(label_colname)[nodes_colname].to_dict()
 
-        return load_annotations(network, annotations_input, min_nodes_per_term)
+        return load_annotation(network, annotation_input, min_nodes_per_term)
 
     def load_csv_annotation(
         self,
@@ -100,11 +100,11 @@ class AnnotationsIO:
         nodes_delimiter: str = ";",
         min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
-        """Load annotations from a CSV file and associate them with the network.
+        """Load annotation from a CSV file and associate them with the network.
 
         Args:
-            network (nx.Graph): The NetworkX graph to which the annotations are related.
-            filepath (str): Path to the CSV annotations file.
+            network (nx.Graph): The NetworkX graph to which the annotation is related.
+            filepath (str): Path to the CSV annotation file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
@@ -117,17 +117,17 @@ class AnnotationsIO:
         """
         filetype = "CSV"
         # Log the loading of the CSV file
-        params.log_annotations(
+        params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
         self._log_loading(filetype, filepath=filepath)
 
         # Load the CSV file into a dictionary
-        annotations_input = self._load_matrix_file(
+        annotation_input = self._load_matrix_file(
             filepath, label_colname, nodes_colname, delimiter=",", nodes_delimiter=nodes_delimiter
         )
 
-        return load_annotations(network, annotations_input, min_nodes_per_term)
+        return load_annotation(network, annotation_input, min_nodes_per_term)
 
     def load_tsv_annotation(
         self,
@@ -138,11 +138,11 @@ class AnnotationsIO:
         nodes_delimiter: str = ";",
         min_nodes_per_term: int = 2,
     ) -> Dict[str, Any]:
-        """Load annotations from a TSV file and associate them with the network.
+        """Load annotation from a TSV file and associate them with the network.
 
         Args:
-            network (nx.Graph): The NetworkX graph to which the annotations are related.
-            filepath (str): Path to the TSV annotations file.
+            network (nx.Graph): The NetworkX graph to which the annotation is related.
+            filepath (str): Path to the TSV annotation file.
             label_colname (str): Name of the column containing the labels (e.g., GO terms).
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
@@ -155,31 +155,31 @@ class AnnotationsIO:
         """
         filetype = "TSV"
         # Log the loading of the TSV file
-        params.log_annotations(
+        params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
         self._log_loading(filetype, filepath=filepath)
 
         # Load the TSV file into a dictionary
-        annotations_input = self._load_matrix_file(
+        annotation_input = self._load_matrix_file(
             filepath, label_colname, nodes_colname, delimiter="\t", nodes_delimiter=nodes_delimiter
         )
 
-        return load_annotations(network, annotations_input, min_nodes_per_term)
+        return load_annotation(network, annotation_input, min_nodes_per_term)
 
     def load_dict_annotation(
         self, network: nx.Graph, content: Dict[str, Any], min_nodes_per_term: int = 2
     ) -> Dict[str, Any]:
-        """Load annotations from a provided dictionary and convert them to a dictionary annotation.
+        """Load annotation from a provided dictionary and convert them to a dictionary annotation.
 
         Args:
-            network (NetworkX graph): The network to which the annotations are related.
-            content (Dict[str, Any]): The annotations dictionary to load.
+            network (NetworkX graph): The network to which the annotation is related.
+            content (Dict[str, Any]): The annotation dictionary to load.
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
                 term to be included. Defaults to 2.
 
         Returns:
-            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotations matrix.
+            Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the annotation matrix.
 
         Raises:
             TypeError: If the content is not a dictionary.
@@ -191,12 +191,12 @@ class AnnotationsIO:
             )
 
         filetype = "Dictionary"
-        # Log the loading of the annotations from the dictionary
-        params.log_annotations(filepath="In-memory dictionary", filetype=filetype)
+        # Log the loading of the annotation from the dictionary
+        params.log_annotation(filepath="In-memory dictionary", filetype=filetype)
         self._log_loading(filetype, "In-memory dictionary")
 
-        # Load the annotations as a dictionary from the provided dictionary
-        return load_annotations(network, content, min_nodes_per_term)
+        # Load the annotation as a dictionary from the provided dictionary
+        return load_annotation(network, content, min_nodes_per_term)
 
     def _load_matrix_file(
         self,
@@ -206,7 +206,7 @@ class AnnotationsIO:
         delimiter: str = ",",
         nodes_delimiter: str = ";",
     ) -> Dict[str, Any]:
-        """Load annotations from a CSV or TSV file and convert them to a dictionary.
+        """Load annotation from a CSV or TSV file and convert them to a dictionary.
 
         Args:
             filepath (str): Path to the annotation file.
@@ -235,7 +235,7 @@ class AnnotationsIO:
             filetype (str): The type of the file being loaded (e.g., 'Cytoscape').
             filepath (str, optional): The path to the file being loaded.
         """
-        log_header("Loading annotations")
+        log_header("Loading annotation")
         logger.debug(f"Filetype: {filetype}")
         if filepath:
             logger.debug(f"Filepath: {filepath}")

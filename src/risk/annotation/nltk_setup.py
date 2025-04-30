@@ -1,11 +1,11 @@
 """
-risk/annotations/nltk_setup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/annotation/nltk_setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import os
 import zipfile
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import nltk
 from nltk.data import find
@@ -14,7 +14,7 @@ from nltk.data import path as nltk_data_path
 from risk.log import logger
 
 
-def setup_nltk_resources(required_resources: List[Tuple[str, str]] = None) -> None:
+def setup_nltk_resources(required_resources: Optional[List[Tuple[str, str]]] = None) -> None:
     """Ensures all required NLTK resources are available and properly extracted.
     Uses NLTK's default paths and mechanisms.
 

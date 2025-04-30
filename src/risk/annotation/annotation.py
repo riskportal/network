@@ -1,6 +1,6 @@
 """
-risk/annotations/annotations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/annotation/annotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import re
@@ -14,7 +14,7 @@ import pandas as pd
 from nltk.tokenize import word_tokenize
 from scipy.sparse import coo_matrix
 
-from risk.annotations.nltk_setup import setup_nltk_resources
+from risk.annotation.nltk_setup import setup_nltk_resources
 from risk.log import logger
 
 
@@ -35,14 +35,14 @@ def initialize_nltk():
 initialize_nltk()
 
 
-def load_annotations(
-    network: nx.Graph, annotations_input: Dict[str, Any], min_nodes_per_term: int = 2
+def load_annotation(
+    network: nx.Graph, annotation_input: Dict[str, Any], min_nodes_per_term: int = 2
 ) -> Dict[str, Any]:
-    """Convert annotations input to a sparse matrix and reindex based on the network's node labels.
+    """Convert annotation input to a sparse matrix and reindex based on the network's node labels.
 
     Args:
         network (nx.Graph): The network graph.
-        annotations_input (Dict[str, Any]): A dictionary with annotations.
+        annotation_input (Dict[str, Any]): An annotation dictionary.
         min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
             term to be included. Defaults to 2.
 
@@ -51,18 +51,18 @@ def load_annotations(
             matrix.
 
     Raises:
-        ValueError: If no annotations are found for the nodes in the network.
-        ValueError: If no annotations have at least min_nodes_per_term nodes in the network.
+        ValueError: If no annotation is found for the nodes in the network.
+        ValueError: If no annotation has at least min_nodes_per_term nodes in the network.
     """
     # Step 1: Map nodes and annotations to indices
     node_label_order = [attr["label"] for _, attr in network.nodes(data=True) if "label" in attr]
     node_to_idx = {node: i for i, node in enumerate(node_label_order)}
-    annotation_to_idx = {annotation: i for i, annotation in enumerate(annotations_input)}
+    annotation_to_idx = {annotation: i for i, annotation in enumerate(annotation_input)}
     # Step 2: Construct a sparse binary matrix directly
     row = []
     col = []
     data = []
-    for annotation, nodes in annotations_input.items():
+    for annotation, nodes in annotation_input.items():
         for node in nodes:
             if node in node_to_idx and annotation in annotation_to_idx:
                 row.append(node_to_idx[node])
@@ -71,40 +71,40 @@ def load_annotations(
 
     # Create a sparse binary matrix
     num_nodes = len(node_to_idx)
-    num_annotations = len(annotation_to_idx)
-    annotations_pivot = coo_matrix((data, (row, col)), shape=(num_nodes, num_annotations)).tocsr()
+    num_annotation = len(annotation_to_idx)
+    annotation_pivot = coo_matrix((data, (row, col)), shape=(num_nodes, num_annotation)).tocsr()
     # Step 3: Filter out annotations with fewer than min_nodes_per_term occurrences
-    valid_annotations = annotations_pivot.sum(axis=0).A1 >= min_nodes_per_term
-    annotations_pivot = annotations_pivot[:, valid_annotations]
+    valid_annotation = annotation_pivot.sum(axis=0).A1 >= min_nodes_per_term
+    annotation_pivot = annotation_pivot[:, valid_annotation]
     # Step 4: Raise errors for empty matrices
-    if annotations_pivot.nnz == 0:
+    if annotation_pivot.nnz == 0:
         raise ValueError("No terms found in the annotation file for the nodes in the network.")
 
-    num_remaining_annotations = annotations_pivot.shape[1]
-    if num_remaining_annotations == 0:
+    num_remaining_annotation = annotation_pivot.shape[1]
+    if num_remaining_annotation == 0:
         raise ValueError(
             f"No annotation terms found with at least {min_nodes_per_term} nodes in the network."
         )
 
     # Step 5: Extract ordered nodes and annotations
     ordered_nodes = tuple(node_label_order)
-    ordered_annotations = tuple(
-        annotation for annotation, is_valid in zip(annotation_to_idx, valid_annotations) if is_valid
+    ordered_annotation = tuple(
+        annotation for annotation, is_valid in zip(annotation_to_idx, valid_annotation) if is_valid
     )
 
     # Log the filtering details
     logger.info(f"Minimum number of nodes per annotation term: {min_nodes_per_term}")
-    logger.info(f"Number of input annotation terms: {num_annotations}")
-    logger.info(f"Number of remaining annotation terms: {num_remaining_annotations}")
+    logger.info(f"Number of input annotation terms: {num_annotation}")
+    logger.info(f"Number of remaining annotation terms: {num_remaining_annotation}")
 
     return {
         "ordered_nodes": ordered_nodes,
-        "ordered_annotations": ordered_annotations,
-        "matrix": annotations_pivot,
+        "ordered_annotation": ordered_annotation,
+        "matrix": annotation_pivot,
     }
 
 
-def define_top_annotations(
+def define_top_annotation(
     network: nx.Graph,
     ordered_annotation_labels: List[str],
     neighborhood_significance_sums: List[int],
@@ -130,7 +130,7 @@ def define_top_annotations(
     # Sum the columns of the significant significance matrix (positive floating point values)
     significant_significance_scores = significant_significance_matrix.sum(axis=0)
     # Create DataFrame to store annotations, their neighborhood significance sums, and significance scores
-    annotations_significance_matrix = pd.DataFrame(
+    annotation_significance_matrix = pd.DataFrame(
         {
             "id": range(len(ordered_annotation_labels)),
             "full_terms": ordered_annotation_labels,
@@ -138,29 +138,29 @@ def define_top_annotations(
             "significant_significance_score": significant_significance_scores,
         }
     )
-    annotations_significance_matrix["significant_annotations"] = False
+    annotation_significance_matrix["significant_annotation"] = False
     # Apply size constraints to identify potential significant annotations
-    annotations_significance_matrix.loc[
+    annotation_significance_matrix.loc[
         (
-            annotations_significance_matrix["significant_neighborhood_significance_sums"]
+            annotation_significance_matrix["significant_neighborhood_significance_sums"]
             >= min_cluster_size
         )
         & (
-            annotations_significance_matrix["significant_neighborhood_significance_sums"]
+            annotation_significance_matrix["significant_neighborhood_significance_sums"]
             <= max_cluster_size
         ),
-        "significant_annotations",
+        "significant_annotation",
     ] = True
     # Initialize columns for connected components analysis
-    annotations_significance_matrix["num_connected_components"] = 0
-    annotations_significance_matrix["size_connected_components"] = None
-    annotations_significance_matrix["size_connected_components"] = annotations_significance_matrix[
+    annotation_significance_matrix["num_connected_components"] = 0
+    annotation_significance_matrix["size_connected_components"] = None
+    annotation_significance_matrix["size_connected_components"] = annotation_significance_matrix[
         "size_connected_components"
     ].astype(object)
-    annotations_significance_matrix["num_large_connected_components"] = 0
+    annotation_significance_matrix["num_large_connected_components"] = 0
 
-    for attribute in annotations_significance_matrix.index.values[
-        annotations_significance_matrix["significant_annotations"]
+    for attribute in annotation_significance_matrix.index.values[
+        annotation_significance_matrix["significant_annotation"]
     ]:
         # Identify significant neighborhoods based on the binary significance matrix
         significant_neighborhoods = list(
@@ -183,24 +183,24 @@ def define_top_annotations(
         num_large_connected_components = len(filtered_size_connected_components)
 
         # Assign the number of connected components
-        annotations_significance_matrix.loc[attribute, "num_connected_components"] = (
+        annotation_significance_matrix.loc[attribute, "num_connected_components"] = (
             num_connected_components
         )
         # Filter out attributes with more than one connected component
-        annotations_significance_matrix.loc[
-            annotations_significance_matrix["num_connected_components"] > 1,
-            "significant_annotations",
+        annotation_significance_matrix.loc[
+            annotation_significance_matrix["num_connected_components"] > 1,
+            "significant_annotation",
         ] = False
         # Assign the number of large connected components
-        annotations_significance_matrix.loc[attribute, "num_large_connected_components"] = (
+        annotation_significance_matrix.loc[attribute, "num_large_connected_components"] = (
             num_large_connected_components
         )
         # Assign the size of connected components, ensuring it is always a list
-        annotations_significance_matrix.at[attribute, "size_connected_components"] = (
+        annotation_significance_matrix.at[attribute, "size_connected_components"] = (
             filtered_size_connected_components.tolist()
         )
 
-    return annotations_significance_matrix
+    return annotation_significance_matrix
 
 
 def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) -> str:
