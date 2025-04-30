@@ -449,7 +449,7 @@ def _prune_neighbors(
     )
 
 
-def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> np.floating[Any]:
+def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
     """Calculate the Euclidean distance between two nodes in the network.
 
     Args:
@@ -458,7 +458,7 @@ def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> np.flo
         network (nx.Graph): The network graph containing the nodes.
 
     Returns:
-        np.floating[Any]: The Euclidean distance between the two nodes.
+        float: The Euclidean distance between the two nodes.
     """
     pos1 = _get_node_position(network, node1)
     pos2 = _get_node_position(network, node2)
