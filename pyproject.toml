@@ -48,8 +48,8 @@ dependencies = [
 text = "GPL-3.0-or-later"
 
 [project.urls]
-Homepage = "https://github.com/risk-portal/network"
-Issues = "https://github.com/risk-portal/network/issues"
+Homepage = "https://github.com/riskportal/network"
+Issues = "https://github.com/riskportal/network/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
