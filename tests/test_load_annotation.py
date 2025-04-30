@@ -1,6 +1,6 @@
 """
 tests/test_load_annotation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import pytest
@@ -18,14 +18,14 @@ def test_missing_annotation_file(risk_obj, dummy_network):
     """
     annotation_file = "nonexistent_file.csv"
     with pytest.raises(FileNotFoundError):
-        risk_obj.load_csv_annotation(
+        risk_obj.load_annotation_csv(
             filepath=annotation_file,
             network=dummy_network,
             min_nodes_per_term=1,
         )
 
 
-def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):
+def test_load_annotation_csv(risk_obj, cytoscape_network, data_path):
     """Test loading a CSV annotation file and associating it with a network.
 
     Args:
@@ -34,7 +34,7 @@ def test_load_csv_annotation(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "csv" / "annotation" / "go_biological_process.csv"
-    annotation = risk_obj.load_csv_annotation(
+    annotation = risk_obj.load_annotation_csv(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -53,7 +53,7 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "csv" / "annotation" / "go_biological_process.csv"
-    annotation = risk_obj.load_csv_annotation(
+    annotation = risk_obj.load_annotation_csv(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -70,7 +70,7 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert isinstance(annotation["ordered_nodes"], tuple), "'ordered_nodes' should be a tuple"
 
 
-def test_load_dict_annotation(risk_obj, dummy_network, dummy_annotation_dict):
+def test_load_annotation_dict(risk_obj, dummy_network, dummy_annotation_dict):
     """Test loading annotation from a dictionary and associating them with a network.
 
     Args:
@@ -78,7 +78,7 @@ def test_load_dict_annotation(risk_obj, dummy_network, dummy_annotation_dict):
         dummy_network: The network object to which annotation will be applied.
         dummy_annotation_dict: A dictionary containing annotation.
     """
-    annotation = risk_obj.load_dict_annotation(
+    annotation = risk_obj.load_annotation_dict(
         content=dummy_annotation_dict,
         network=dummy_network,
         min_nodes_per_term=1,
@@ -96,7 +96,7 @@ def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dic
         dummy_network: The network object to which annotation will be applied.
         dummy_annotation_dict: A dictionary containing annotation.
     """
-    annotation = risk_obj.load_dict_annotation(
+    annotation = risk_obj.load_annotation_dict(
         content=dummy_annotation_dict,
         network=dummy_network,
         min_nodes_per_term=1,
@@ -113,7 +113,7 @@ def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dic
     assert isinstance(annotation["ordered_nodes"], tuple), "'ordered_nodes' should be a tuple"
 
 
-def test_load_json_annotation(risk_obj, cytoscape_network, data_path):
+def test_load_annotation_json(risk_obj, cytoscape_network, data_path):
     """Test loading a JSON annotation file and associating it with a network.
 
     Args:
@@ -122,7 +122,7 @@ def test_load_json_annotation(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
-    annotation = risk_obj.load_json_annotation(
+    annotation = risk_obj.load_annotation_json(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -141,7 +141,7 @@ def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
-    annotation = risk_obj.load_json_annotation(
+    annotation = risk_obj.load_annotation_json(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -158,7 +158,7 @@ def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert isinstance(annotation["ordered_nodes"], tuple), "'ordered_nodes' should be a tuple"
 
 
-def test_load_tsv_annotation(risk_obj, cytoscape_network, data_path):
+def test_load_annotation_tsv(risk_obj, cytoscape_network, data_path):
     """Test loading a TSV annotation file and associating it with a network.
 
     Args:
@@ -167,7 +167,7 @@ def test_load_tsv_annotation(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "tsv" / "annotation" / "go_biological_process.tsv"
-    annotation = risk_obj.load_tsv_annotation(
+    annotation = risk_obj.load_annotation_tsv(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -186,7 +186,7 @@ def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "tsv" / "annotation" / "go_biological_process.tsv"
-    annotation = risk_obj.load_tsv_annotation(
+    annotation = risk_obj.load_annotation_tsv(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -203,7 +203,7 @@ def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
     assert isinstance(annotation["ordered_nodes"], tuple), "'ordered_nodes' should be a tuple"
 
 
-def test_load_excel_annotation(risk_obj, cytoscape_network, data_path):
+def test_load_annotation_excel(risk_obj, cytoscape_network, data_path):
     """Test loading an Excel annotation file and associating it with a network.
 
     Args:
@@ -212,7 +212,7 @@ def test_load_excel_annotation(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "excel" / "annotation" / "go_biological_process.xlsx"
-    annotation = risk_obj.load_excel_annotation(
+    annotation = risk_obj.load_annotation_excel(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -231,7 +231,7 @@ def test_excel_annotation_structure(risk_obj, cytoscape_network, data_path):
         data_path: The base path to the directory containing the annotation files.
     """
     annotation_file = data_path / "excel" / "annotation" / "go_biological_process.xlsx"
-    annotation = risk_obj.load_excel_annotation(
+    annotation = risk_obj.load_annotation_excel(
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
@@ -258,12 +258,12 @@ def test_combined_annotation(risk_obj, cytoscape_network, data_path):
     """
     csv_file = data_path / "csv" / "annotation" / "go_biological_process.csv"
     json_file = data_path / "json" / "annotation" / "go_biological_process.json"
-    csv_annotation = risk_obj.load_csv_annotation(
+    csv_annotation = risk_obj.load_annotation_csv(
         filepath=str(csv_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
     )
-    json_annotation = risk_obj.load_json_annotation(
+    json_annotation = risk_obj.load_annotation_json(
         filepath=str(json_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
