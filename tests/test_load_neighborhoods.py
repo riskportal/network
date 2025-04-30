@@ -18,7 +18,7 @@ def test_load_neighborhoods_binom(risk_obj, cytoscape_network, json_annotation, 
         json_annotation: The annotation associated with the network.
         null_distribution: Null distribution type for the binomial test (either 'network' or 'annotation').
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_binom(
+    neighborhoods = risk_obj.load_neighborhoods_binom(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -42,7 +42,7 @@ def test_load_neighborhoods_chi2(risk_obj, cytoscape_network, json_annotation, n
         json_annotation: The annotation associated with the network.
         null_distribution: Null distribution type for the chi-squared test (either 'network' or 'annotation').
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_chi2(
+    neighborhoods = risk_obj.load_neighborhoods_chi2(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -68,7 +68,7 @@ def test_load_neighborhoods_hypergeom(
         json_annotation: The annotation associated with the network.
         null_distribution: Null distribution type for the hypergeometric test (either 'network' or 'annotation').
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_hypergeom(
+    neighborhoods = risk_obj.load_neighborhoods_hypergeom(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -96,7 +96,7 @@ def test_load_neighborhoods_permutation_single_process(
         null_distribution: Null distribution type for the permutation test (either 'network' or 'annotation').
     """
     # Load neighborhoods with 1 process
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="leiden",
@@ -123,7 +123,7 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
         json_annotation: The annotation associated with the network.
     """
     # Load neighborhoods with 4 processes
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -152,7 +152,7 @@ def test_load_neighborhoods_poisson(
         json_annotation: The annotation associated with the network.
         null_distribution: Null distribution type for the Poisson test (either 'network' or 'annotation').
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_poisson(
+    neighborhoods = risk_obj.load_neighborhoods_poisson(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -176,7 +176,7 @@ def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation,
         json_annotation: The annotation associated with the network.
         null_distribution: Null distribution type for the z-score test (either 'network' or 'annotation').
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_zscore(
+    neighborhoods = risk_obj.load_neighborhoods_zscore(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -242,7 +242,7 @@ def test_load_neighborhoods_with_various_distance_metrics(
         fraction_shortest_edges: The edge length threshold(s) corresponding to each distance metric.
     """
     # Load neighborhoods with the current distance metric(s) and matching edge length threshold(s)
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric=distance_metric,
@@ -272,7 +272,7 @@ def test_load_neighborhoods_with_various_score_metrics(
         score_metric: The specific score metric to be used for generating neighborhoods.
     """
     # Load neighborhoods with the specified score metric
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",  # Using louvain as the distance metric
@@ -302,7 +302,7 @@ def test_load_neighborhoods_with_various_null_distributions(
         null_distribution: The specific null distribution to be used for generating neighborhoods.
     """
     # Load neighborhoods with the specified null distribution
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",  # Using markov_clustering as the distance metric
@@ -323,7 +323,7 @@ def test_load_neighborhoods_structure(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
     """Test the structure of the neighborhoods object."""
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -361,7 +361,7 @@ def test_load_neighborhoods_empty_network(risk_obj, json_annotation):
         ValueError,
         match="No edge lengths found in the graph. Ensure edges have 'length' attributes.",
     ):
-        risk_obj.load_neighborhoods_by_permutation(
+        risk_obj.load_neighborhoods_permutation(
             network=empty_network,
             annotation=json_annotation,
             distance_metric="louvain",
@@ -387,7 +387,7 @@ def test_load_neighborhoods_output_dimensions(
         json_annotation: The annotation associated with the network.
         null_distribution: The specific null distribution to be used for generating neighborhoods.
     """
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -421,7 +421,7 @@ def test_load_neighborhoods_deterministic_output(risk_obj, cytoscape_network, js
         cytoscape_network: The network object to be used for neighborhood generation.
         json_annotation: The annotation associated with the network.
     """
-    neighborhoods_1 = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods_1 = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",
@@ -433,7 +433,7 @@ def test_load_neighborhoods_deterministic_output(risk_obj, cytoscape_network, js
         random_seed=887,
         max_workers=1,
     )
-    neighborhoods_2 = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods_2 = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="louvain",

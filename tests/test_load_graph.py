@@ -20,7 +20,7 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
         json_annotation: The JSON annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="leiden",
@@ -67,7 +67,7 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
     for min_cluster_size, max_cluster_size in cluster_size_combinations:
         # Load neighborhoods as a prerequisite
-        neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        neighborhoods = risk_obj.load_neighborhoods_permutation(
             network=cytoscape_network,
             annotation=json_annotation,
             # Test multiple distance metrics
@@ -101,10 +101,7 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
         # Validate the graph and its components
         _validate_graph(graph)
         # Validate the size of the domains
-        print("Debugging domain_id_to_node_ids_map:")
-        for domain_id, node_ids in graph.domain_id_to_node_ids_map.items():
-            if pd.isna(domain_id):
-                print(f"Found nan domain with {len(node_ids)} nodes")
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
 
 
 def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
@@ -116,7 +113,7 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
         dict_annotation: The dictionary annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=dict_annotation,
         distance_metric="louvain",
@@ -162,7 +159,7 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
     cluster_size_combinations = [(5, 1000), (10, 500), (20, 300), (50, 200)]
     for min_cluster_size, max_cluster_size in cluster_size_combinations:
         # Load neighborhoods as a prerequisite
-        neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+        neighborhoods = risk_obj.load_neighborhoods_permutation(
             network=cytoscape_network,
             annotation=dict_annotation,
             # Test multiple distance metrics
@@ -197,10 +194,7 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
         # Validate the graph and its components
         _validate_graph(graph)
         # Validate the size of the domains
-        print("Debugging domain_id_to_node_ids_map:")
-        for domain_id, node_ids in graph.domain_id_to_node_ids_map.items():
-            if pd.isna(domain_id):
-                print(f"Found nan domain with {len(node_ids)} nodes")
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
 
 
 def test_linkage_criterion_and_auto_clustering_options(
@@ -218,7 +212,7 @@ def test_linkage_criterion_and_auto_clustering_options(
     min_cluster_size, max_cluster_size = 10, 200  # Fixed for simplicity
     for criterion in test_criteria:
         # Load neighborhoods as a prerequisite
-        neighborhoods = risk_obj.load_neighborhoods_by_binom(
+        neighborhoods = risk_obj.load_neighborhoods_binom(
             network=cytoscape_network,
             annotation=json_annotation,
             distance_metric="louvain",
@@ -247,12 +241,8 @@ def test_linkage_criterion_and_auto_clustering_options(
 
         # Validate graph for all criteria
         _validate_graph(graph)
-
         # Check cluster size bounds for 'distance', 'maxclust', and 'off' criteria
-        print("Debugging domain_id_to_node_ids_map:")
-        for domain_id, node_ids in graph.domain_id_to_node_ids_map.items():
-            if pd.isna(domain_id):
-                print(f"Found nan domain with {len(node_ids)} nodes")
+        _check_component_sizes(graph.domain_id_to_node_ids_map, min_cluster_size, max_cluster_size)
 
 
 def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
@@ -264,7 +254,7 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
         json_annotation: The JSON annotation associated with the network.
     """
     # Load neighborhoods as a prerequisite
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=cytoscape_network,
         annotation=json_annotation,
         distance_metric="leiden",

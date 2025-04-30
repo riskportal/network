@@ -38,7 +38,7 @@ def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
     network = request.getfixturevalue(network_fixture)
     # Load the annotation using the specified fixture
     annotation = request.getfixturevalue(annotation_fixture)
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=network,
         annotation=annotation,
         distance_metric="louvain",

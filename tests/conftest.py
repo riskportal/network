@@ -80,7 +80,7 @@ def dummy_annotation(risk_obj, dummy_network, dummy_annotation_dict):
         dummy_network: The dummy network object to which annotation will be applied.
         dummy_annotation_dict: The dummy annotation dictionary.
     """
-    return risk_obj.load_dict_annotation(content=dummy_annotation_dict, network=dummy_network)
+    return risk_obj.load_annotation_dict(content=dummy_annotation_dict, network=dummy_network)
 
 
 # Network fixtures
@@ -96,7 +96,7 @@ def cytoscape_network(risk_obj, data_path):
         Network: The loaded network object.
     """
     network_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    return risk_obj.load_cytoscape_network(
+    return risk_obj.load_network_cytoscape(
         filepath=str(network_file),
         source_label="source",
         target_label="target",
@@ -119,7 +119,7 @@ def cytoscape_json_network(risk_obj, data_path):
         Network: The loaded network object.
     """
     network_file = data_path / "cyjs" / "michaelis_2023.cyjs"
-    return risk_obj.load_cytoscape_json_network(
+    return risk_obj.load_network_cyjs(
         filepath=str(network_file),
         source_label="source",
         target_label="target",
@@ -141,7 +141,7 @@ def gpickle_network(risk_obj, data_path):
         Network: The loaded network object.
     """
     network_file = data_path / "gpickle" / "michaelis_2023.gpickle"
-    return risk_obj.load_gpickle_network(
+    return risk_obj.load_network_gpickle(
         filepath=str(network_file),
         compute_sphere=True,
         surface_depth=0.1,
@@ -160,7 +160,7 @@ def networkx_network(risk_obj, cytoscape_network):
     Returns:
         NetworkXGraph: The network object converted to a NetworkX graph.
     """
-    return risk_obj.load_networkx_network(
+    return risk_obj.load_network_networkx(
         network=cytoscape_network,
         compute_sphere=True,
         surface_depth=0.1,
@@ -200,7 +200,7 @@ def json_annotation(risk_obj, cytoscape_network, data_path):
         Annotation: The loaded annotation object.
     """
     annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
-    return risk_obj.load_json_annotation(filepath=str(annotation_file), network=cytoscape_network)
+    return risk_obj.load_annotation_json(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
@@ -234,7 +234,7 @@ def dict_annotation(risk_obj, cytoscape_network):
             "SMC6",
         ],
     }
-    return risk_obj.load_dict_annotation(content=annotation_content, network=cytoscape_network)
+    return risk_obj.load_annotation_dict(content=annotation_content, network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
@@ -250,7 +250,7 @@ def csv_annotation(risk_obj, cytoscape_network, data_path):
         Annotation: The loaded annotation object.
     """
     annotation_file = data_path / "csv" / "annotation" / "go_biological_process.csv"
-    return risk_obj.load_csv_annotation(filepath=str(annotation_file), network=cytoscape_network)
+    return risk_obj.load_annotation_csv(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
@@ -266,7 +266,7 @@ def tsv_annotation(risk_obj, cytoscape_network, data_path):
         Annotation: The loaded annotation object.
     """
     annotation_file = data_path / "tsv" / "annotation" / "go_biological_process.tsv"
-    return risk_obj.load_tsv_annotation(filepath=str(annotation_file), network=cytoscape_network)
+    return risk_obj.load_annotation_tsv(filepath=str(annotation_file), network=cytoscape_network)
 
 
 @pytest.fixture(scope="session")
@@ -282,7 +282,7 @@ def excel_annotation(risk_obj, cytoscape_network, data_path):
         Annotation: The loaded annotation object.
     """
     annotation_file = data_path / "excel" / "annotation" / "go_biological_process.xlsx"
-    return risk_obj.load_excel_annotation(filepath=str(annotation_file), network=cytoscape_network)
+    return risk_obj.load_annotation_excel(filepath=str(annotation_file), network=cytoscape_network)
 
 
 # Combined fixture for testing graph loading
@@ -301,7 +301,7 @@ def graph(risk_obj, cytoscape_network, json_annotation):
     network = cytoscape_network
     annotation = json_annotation
     # Build neighborhoods based on the loaded network and annotation
-    neighborhoods = risk_obj.load_neighborhoods_by_permutation(
+    neighborhoods = risk_obj.load_neighborhoods_permutation(
         network=network,
         annotation=annotation,
         distance_metric="louvain",

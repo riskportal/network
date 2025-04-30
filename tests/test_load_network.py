@@ -32,12 +32,12 @@ def test_missing_network_file(risk_obj):
         risk_obj: The RISK object instance used for loading the network.
     """
     with pytest.raises(FileNotFoundError):
-        risk_obj.load_cytoscape_network(
+        risk_obj.load_network_cytoscape(
             filepath="missing_file.cys", source_label="source", target_label="target"
         )
 
 
-def test_load_cytoscape_network(risk_obj, data_path):
+def test_load_network_cytoscape(risk_obj, data_path):
     """Test loading a Cytoscape network from a .cys file.
 
     Args:
@@ -45,7 +45,7 @@ def test_load_cytoscape_network(risk_obj, data_path):
         data_path: The base path to the directory containing the Cytoscape file.
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    network = risk_obj.load_cytoscape_network(
+    network = risk_obj.load_network_cytoscape(
         filepath=str(cys_file), source_label="source", target_label="target", view_name=""
     )
 
@@ -54,7 +54,7 @@ def test_load_cytoscape_network(risk_obj, data_path):
     assert len(network.edges) > 0  # Check that the network has edges
 
 
-def test_load_cytoscape_json_network(risk_obj, data_path):
+def test_load_network_cyjs(risk_obj, data_path):
     """Test loading a Cytoscape JSON network from a .cyjs file.
 
     Args:
@@ -62,7 +62,7 @@ def test_load_cytoscape_json_network(risk_obj, data_path):
         data_path: The base path to the directory containing the Cytoscape JSON file.
     """
     cyjs_file = data_path / "cyjs" / "michaelis_2023.cyjs"
-    network = risk_obj.load_cytoscape_json_network(
+    network = risk_obj.load_network_cyjs(
         filepath=str(cyjs_file), source_label="source", target_label="target"
     )
 
@@ -71,7 +71,7 @@ def test_load_cytoscape_json_network(risk_obj, data_path):
     assert len(network.edges) > 0  # Check that the network has edges
 
 
-def test_load_gpickle_network(risk_obj, data_path):
+def test_load_network_gpickle(risk_obj, data_path):
     """Test loading a network from a .gpickle file.
 
     Args:
@@ -79,21 +79,21 @@ def test_load_gpickle_network(risk_obj, data_path):
         data_path: The base path to the directory containing the gpickle file.
     """
     gpickle_file = data_path / "gpickle" / "michaelis_2023.gpickle"
-    network = risk_obj.load_gpickle_network(filepath=str(gpickle_file))
+    network = risk_obj.load_network_gpickle(filepath=str(gpickle_file))
 
     assert network is not None
     assert len(network.nodes) > 0  # Check that the network has nodes
     assert len(network.edges) > 0  # Check that the network has edges
 
 
-def test_load_networkx_network(risk_obj, dummy_network):
+def test_load_network_networkx(risk_obj, dummy_network):
     """Test loading a network from a NetworkX graph object.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
         network: The NetworkX graph object to be loaded into the RISK network.
     """
-    network = risk_obj.load_networkx_network(network=dummy_network)
+    network = risk_obj.load_network_networkx(network=dummy_network)
 
     assert network is not None
     assert len(network.nodes) > 0  # Check that the graph has nodes
@@ -135,8 +135,8 @@ def test_round_trip_io(risk_obj):
         with open(tmp_path, "wb") as f:
             pickle.dump(G, f)
 
-        # Load it back using risk_obj's load_gpickle_network
-        G_loaded = risk_obj.load_gpickle_network(filepath=tmp_path)
+        # Load it back using risk_obj's load_network_gpickle
+        G_loaded = risk_obj.load_network_gpickle(filepath=tmp_path)
 
         # Compare properties of the graphs - RISK sets node IDs to 'label' attribute when no label is present
         assert set(G.nodes()) == set(G_loaded.nodes())
@@ -162,7 +162,7 @@ def test_node_positions_constant_after_networkx_load(risk_obj, dummy_network):
         for node in dummy_network.nodes
     }
     # Pass the network to the load function, and ignore the returned network
-    _ = risk_obj.load_networkx_network(network=dummy_network)
+    _ = risk_obj.load_network_networkx(network=dummy_network)
 
     # Ensure that the original network (dummy_network) still has the same node positions
     for node in dummy_network.nodes:
@@ -190,7 +190,7 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
     """
     # Load the original network from the Cytoscape file with sphere set to False
     network_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    cytoscape_network = risk_obj.load_cytoscape_network(
+    cytoscape_network = risk_obj.load_network_cytoscape(
         filepath=str(network_file),
         source_label="source",
         target_label="target",
@@ -216,7 +216,7 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
             nx.relabel_nodes(cytoscape_network, {node: new_node_id}, copy=False)
 
     # Load the modified network with the sphere calculation disabled to preserve node positions
-    network = risk_obj.load_networkx_network(
+    network = risk_obj.load_network_networkx(
         network=cytoscape_network,
         compute_sphere=False,
         surface_depth=0.1,
@@ -249,7 +249,7 @@ def test_load_network_min_edges(risk_obj, data_path, min_edges):
         min_edges: The minimum number of edges per node to test.
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    network = risk_obj.load_cytoscape_network(
+    network = risk_obj.load_network_cytoscape(
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
@@ -271,7 +271,7 @@ def test_node_and_edge_attributes(risk_obj, data_path):
         data_path: The base path to the directory containing the Cytoscape file.
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    network = risk_obj.load_cytoscape_network(
+    network = risk_obj.load_network_cytoscape(
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
@@ -297,7 +297,7 @@ def test_sphere_unfolding(risk_obj, data_path):
         data_path: The base path to the directory containing the Cytoscape file.
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    network = risk_obj.load_cytoscape_network(
+    network = risk_obj.load_network_cytoscape(
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
@@ -323,7 +323,7 @@ def test_edge_attribute_fallback(risk_obj, dummy_network):
         del dummy_network.edges[u, v]["length"]
         del dummy_network.edges[u, v]["weight"]
 
-    network = risk_obj.load_networkx_network(network=dummy_network)
+    network = risk_obj.load_network_networkx(network=dummy_network)
 
     # Ensure fallback attributes are assigned correctly
     for u, v, attrs in network.edges(data=True):
@@ -343,14 +343,14 @@ def test_deterministic_network_loading(risk_obj, data_path):
         data_path: The base path to the directory containing the Cytoscape file.
     """
     cys_file = data_path / "cytoscape" / "michaelis_2023.cys"
-    network_1 = risk_obj.load_cytoscape_network(
+    network_1 = risk_obj.load_network_cytoscape(
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
         compute_sphere=True,
         surface_depth=0.5,
     )
-    network_2 = risk_obj.load_cytoscape_network(
+    network_2 = risk_obj.load_network_cytoscape(
         filepath=str(cys_file),
         source_label="source",
         target_label="target",
@@ -379,7 +379,7 @@ def test_missing_node_attributes(risk_obj, cytoscape_network):
     with pytest.raises(
         ValueError, match="Node .* is missing 'x', 'y', and a valid 'pos' attribute."
     ):
-        risk_obj.load_networkx_network(network=cytoscape_network)
+        risk_obj.load_network_networkx(network=cytoscape_network)
 
 
 def test_remove_isolates_does_not_raise(risk_obj, dummy_network):
@@ -395,7 +395,7 @@ def test_remove_isolates_does_not_raise(risk_obj, dummy_network):
     G.nodes["iso"]["y"] = 0.0
     G.nodes["iso"]["label"] = "iso"
     # Remove nodes with fewer than min_edges_per_node=1
-    loaded = risk_obj.load_networkx_network(
+    loaded = risk_obj.load_network_networkx(
         network=G, compute_sphere=False, surface_depth=0.1, min_edges_per_node=1
     )
     assert "iso" not in loaded.nodes, "Isolated node 'iso' should have been removed without error"

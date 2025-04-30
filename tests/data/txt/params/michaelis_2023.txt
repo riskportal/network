@@ -1,4 +1,4 @@
-annotations: {'filepath': './data/json/annotations/go_biological_process.json', 'filetype': 'JSON'}
+annotation: {'filepath': './data/json/annotation/go_biological_process.json', 'filetype': 'JSON'}
 datetime: 2024-08-19 10:36:56
 graph: {'tail': 'right', 'pval_cutoff': 0.05, 'fdr_cutoff': 1.0, 'impute_depth': 0, 'prune_threshold': 0.25, 'linkage_criterion': 'distance', 'linkage_method': 'average', 'linkage_metric': 'yule', 'min_cluster_size': 6, 'max_cluster_size': 1000}
 neighborhoods: {'distance_metric': 'louvain', 'louvain_resolution': 10, 'edge_length_threshold': 0.25, 'score_metric': 'stdev', 'null_distribution': 'network', 'num_permutations': 1000, 'random_seed': 887, 'max_workers': 5}

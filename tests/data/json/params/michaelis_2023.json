@@ -1,6 +1,6 @@
 {
-    "annotations": {
-        "filepath": "./data/json/annotations/go_biological_process.json",
+    "annotation": {
+        "filepath": "./data/json/annotation/go_biological_process.json",
         "filetype": "JSON"
     },
     "datetime": "2024-08-19 10:36:56",
