@@ -39,7 +39,7 @@ class AnnotationIO:
         params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_annotation(filetype, filepath=filepath)
 
         # Load the JSON file into a dictionary
         with open(filepath, "r", encoding="utf-8") as file:
@@ -78,7 +78,7 @@ class AnnotationIO:
         params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_annotation(filetype, filepath=filepath)
 
         # Load the specified sheet from the Excel file
         annotation = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -120,7 +120,7 @@ class AnnotationIO:
         params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_annotation(filetype, filepath=filepath)
 
         # Load the CSV file into a dictionary
         annotation_input = self._load_matrix_file(
@@ -158,7 +158,7 @@ class AnnotationIO:
         params.log_annotation(
             filetype=filetype, filepath=filepath, min_nodes_per_term=min_nodes_per_term
         )
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_annotation(filetype, filepath=filepath)
 
         # Load the TSV file into a dictionary
         annotation_input = self._load_matrix_file(
@@ -193,7 +193,7 @@ class AnnotationIO:
         filetype = "Dictionary"
         # Log the loading of the annotation from the dictionary
         params.log_annotation(filepath="In-memory dictionary", filetype=filetype)
-        self._log_loading(filetype, "In-memory dictionary")
+        self._log_loading_annotation(filetype, "In-memory dictionary")
 
         # Load the annotation as a dictionary from the provided dictionary
         return load_annotation(network, content, min_nodes_per_term)
@@ -228,8 +228,8 @@ class AnnotationIO:
         label_node_dict = annotation.set_index(label_colname)[nodes_colname].to_dict()
         return label_node_dict
 
-    def _log_loading(self, filetype: str, filepath: str = "") -> None:
-        """Log information about the network file being loaded.
+    def _log_loading_annotation(self, filetype: str, filepath: str = "") -> None:
+        """Log the loading of annotation files.
 
         Args:
             filetype (str): The type of the file being loaded (e.g., 'Cytoscape').

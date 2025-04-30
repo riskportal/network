@@ -85,7 +85,7 @@ class NetworkIO:
         filetype = "GPickle"
         # Log the loading of the GPickle file
         params.log_network(filetype=filetype, filepath=filepath)
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_network(filetype, filepath=filepath)
 
         with open(filepath, "rb") as f:
             G = pickle.load(f)
@@ -130,7 +130,7 @@ class NetworkIO:
         filetype = "NetworkX"
         # Log the loading of the NetworkX graph
         params.log_network(filetype=filetype)
-        self._log_loading(filetype)
+        self._log_loading_network(filetype)
 
         # Important: Make a copy of the network to avoid modifying the original
         network_copy = copy.deepcopy(network)
@@ -198,7 +198,7 @@ class NetworkIO:
         filetype = "Cytoscape"
         # Log the loading of the Cytoscape file
         params.log_network(filetype=filetype, filepath=str(filepath))
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_network(filetype, filepath=filepath)
 
         cys_files = []
         tmp_dir = ".tmp_cytoscape"
@@ -354,7 +354,7 @@ class NetworkIO:
         filetype = "Cytoscape JSON"
         # Log the loading of the Cytoscape JSON file
         params.log_network(filetype=filetype, filepath=str(filepath))
-        self._log_loading(filetype, filepath=filepath)
+        self._log_loading_network(filetype, filepath=filepath)
 
         # Load the Cytoscape JSON file
         with open(filepath, "r") as f:
@@ -672,12 +672,12 @@ class NetworkIO:
 
         return G
 
-    def _log_loading(
+    def _log_loading_network(
         self,
         filetype: str,
         filepath: str = "",
     ) -> None:
-        """Log the initialization details of the RISK class.
+        """Log the loading of the network with relevant parameters.
 
         Args:
             filetype (str): The type of the file being loaded (e.g., 'CSV', 'JSON').
