@@ -1,3 +1,4 @@
+igraph
 ipywidgets
 leidenalg
 markov_clustering
