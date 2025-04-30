@@ -25,7 +25,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
 ]
 dependencies = [
-    "igraph",
     "ipywidgets",
     "leidenalg",
     "markov_clustering",
