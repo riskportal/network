@@ -49,9 +49,10 @@ This figure highlights RISK’s capability to detect both established and novel 
 
 ## Citation
 
-If you use RISK in your research, please cite:
+If you use RISK in your research, please reference the following:
 
-**Horecka et al.**, "RISK: a next-generation tool for biological network annotation and visualization", **Bioinformatics**, 2025. DOI: [10.1234/zenodo.xxxxxxx](https://doi.org/10.1234/zenodo.xxxxxxx)
+**Horecka et al.**, *"RISK: a next-generation tool for biological network annotation and visualization"*, 2025.  
+DOI: [10.1234/zenodo.xxxxxxx](https://doi.org/10.1234/zenodo.xxxxxxx)
 
 ## Software Architecture and Implementation
 
