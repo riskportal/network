@@ -323,7 +323,7 @@ def test_min_max_nodes_per_term(risk_obj, cytoscape_network, data_path):
         max_nodes_per_term=max_nodes,
     )
     # Extract the mapping of term to genes from the raw JSON input
-    with open(annotation_file, 'r') as f:
+    with open(annotation_file, "r") as f:
         raw_dict = json.load(f)
 
     filtered_terms = annotation["ordered_annotation"]
