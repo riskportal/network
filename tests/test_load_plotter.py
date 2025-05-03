@@ -11,7 +11,8 @@ import pytest
 
 
 def initialize_plotter(risk, graph):
-    """Initialize the plotter with specified settings.
+    """
+    Initialize the plotter with specified settings.
 
     Args:
         risk: The RISK object instance used for plotting.
@@ -29,7 +30,8 @@ def initialize_plotter(risk, graph):
 
 
 def plot_title(plotter):
-    """Plot a title and subtitle on the network graph with preset parameters.
+    """
+    Plot a title and subtitle on the network graph with preset parameters.
 
     Args:
         plotter: The initialized plotter object.
@@ -53,7 +55,8 @@ def plot_title(plotter):
 
 
 def plot_circle_perimeter(plotter):
-    """Plot a circle perimeter around the network using the plotter.
+    """
+    Plot a circle perimeter around the network using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -74,7 +77,8 @@ def plot_circle_perimeter(plotter):
 
 
 def plot_contour_perimeter(plotter):
-    """Plot a contour perimeter around the network using KDE-based contour.
+    """
+    Plot a contour perimeter around the network using KDE-based contour.
 
     Args:
         plotter: The initialized plotter object.
@@ -96,7 +100,8 @@ def plot_contour_perimeter(plotter):
 
 
 def plot_network(plotter):
-    """Plot the full network using the plotter.
+    """
+    Plot the full network using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -131,7 +136,8 @@ def plot_network(plotter):
 
 
 def plot_subnetwork(plotter):
-    """Plot a specific subnetwork using the plotter.
+    """
+    Plot a specific subnetwork using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -162,7 +168,8 @@ def plot_subnetwork(plotter):
 
 
 def plot_contours(plotter):
-    """Plot contours on the network using the plotter.
+    """
+    Plot contours on the network using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -182,7 +189,8 @@ def plot_contours(plotter):
 
 
 def plot_subcontour(plotter):
-    """Plot subcontours on a specific subnetwork using the plotter.
+    """
+    Plot subcontours on a specific subnetwork using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -210,7 +218,8 @@ def plot_subcontour(plotter):
 
 
 def plot_labels(plotter):
-    """Plot labels on the network using the plotter.
+    """
+    Plot labels on the network using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -249,7 +258,8 @@ def plot_labels(plotter):
 
 
 def plot_sublabel(plotter):
-    """Plot a specific sublabel on the network using the plotter.
+    """
+    Plot a specific sublabel on the network using the plotter.
 
     Args:
         plotter: The initialized plotter object.
@@ -283,7 +293,8 @@ def plot_sublabel(plotter):
 
 
 def test_initialize_plotter(risk_obj, graph):
-    """Test initializing the plotter object with a graph.
+    """
+    Test initializing the plotter object with a graph.
 
     Args:
         risk_obj: The RISK object instance used for initializing the plotter.
@@ -296,7 +307,8 @@ def test_initialize_plotter(risk_obj, graph):
 
 
 def test_plot_title(risk_obj, graph):
-    """Test the basic plotting of title and subtitle on the network graph.
+    """
+    Test the basic plotting of title and subtitle on the network graph.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -309,7 +321,8 @@ def test_plot_title(risk_obj, graph):
 
 
 def test_plot_circle_perimeter(risk_obj, graph):
-    """Test plotting a circle perimeter around the network using the plotter.
+    """
+    Test plotting a circle perimeter around the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -322,7 +335,8 @@ def test_plot_circle_perimeter(risk_obj, graph):
 
 
 def test_plot_contour_perimeter(risk_obj, graph):
-    """Test plotting a contour perimeter around the network using the plotter.
+    """
+    Test plotting a contour perimeter around the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -335,7 +349,8 @@ def test_plot_contour_perimeter(risk_obj, graph):
 
 
 def test_plot_network(risk_obj, graph):
-    """Test plotting the full network using the plotter.
+    """
+    Test plotting the full network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -348,7 +363,8 @@ def test_plot_network(risk_obj, graph):
 
 
 def test_plot_subnetwork(risk_obj, graph):
-    """Test plotting a subnetwork using the plotter.
+    """
+    Test plotting a subnetwork using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -361,7 +377,8 @@ def test_plot_subnetwork(risk_obj, graph):
 
 
 def test_plot_contours(risk_obj, graph):
-    """Test plotting contours on the network using the plotter.
+    """
+    Test plotting contours on the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -374,7 +391,8 @@ def test_plot_contours(risk_obj, graph):
 
 
 def test_plot_subcontour(risk_obj, graph):
-    """Test plotting subcontours on the network using the plotter.
+    """
+    Test plotting subcontours on the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -387,7 +405,8 @@ def test_plot_subcontour(risk_obj, graph):
 
 
 def test_plot_labels(risk_obj, graph):
-    """Test plotting labels on the network using the plotter.
+    """
+    Test plotting labels on the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -400,7 +419,8 @@ def test_plot_labels(risk_obj, graph):
 
 
 def test_plot_sublabel(risk_obj, graph):
-    """Test plotting a sublabel on the network using the plotter.
+    """
+    Test plotting a sublabel on the network using the plotter.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -458,7 +478,8 @@ def test_plot_title_with_custom_params(
     subtitle_offset,
     font,
 ):
-    """Test the plot_title method with different title and subtitle configurations.
+    """
+    Test the plot_title method with different title and subtitle configurations.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -541,7 +562,8 @@ def test_plot_circle_perimeter_with_custom_params(
     center_offset_x,
     center_offset_y,
 ):
-    """Test plot_circle_perimeter with different color, alpha, and style parameters.
+    """
+    Test plot_circle_perimeter with different color, alpha, and style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -611,7 +633,8 @@ def test_plot_contour_perimeter_with_custom_params(
     outline_alpha,
     fill_alpha,
 ):
-    """Test plot_contour_perimeter with different contour and alpha parameters.
+    """
+    Test plot_contour_perimeter with different contour and alpha parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -740,7 +763,8 @@ def test_plot_network_with_custom_params(
     edge_width,
     node_edgewidth,
 ):
-    """Test plot_network with different node, edge, and node edge colors, sizes, edge widths, node edge widths, and alpha values.
+    """
+    Test plot_network with different node, edge, and node edge colors, sizes, edge widths, node edge widths, and alpha values.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -816,7 +840,8 @@ def test_plot_subnetwork_with_custom_params(
     edge_alpha,
     node_shape,
 ):
-    """Test plot_subnetwork with different node, edge, and node edge colors, sizes, edge widths, shapes, and alpha values.
+    """
+    Test plot_subnetwork with different node, edge, and node edge colors, sizes, edge widths, shapes, and alpha values.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -913,7 +938,8 @@ def test_plot_contours_with_custom_params(
     linestyle,
     linewidth,
 ):
-    """Test plot_contours with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
+    """
+    Test plot_contours with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -996,7 +1022,8 @@ def test_plot_subcontour_with_custom_params(
     linestyle,
     linewidth,
 ):
-    """Test plot_subcontour with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
+    """
+    Test plot_subcontour with different color formats, alpha values, fill_alpha values, contour levels, bandwidths, grid sizes, and line styles.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -1207,7 +1234,8 @@ def test_plot_labels_with_custom_params(
     ids_to_keep,
     ids_to_labels,
 ):
-    """Test plot_labels with varying label and arrow customization options, including font colors, alpha values, label placement
+    """
+    Test plot_labels with varying label and arrow customization options, including font colors, alpha values, label placement
         constraints, and additional style parameters.
 
     Args:
@@ -1363,7 +1391,8 @@ def test_plot_sublabel_with_custom_params(
     arrow_base_shrink,
     arrow_tip_shrink,
 ):
-    """Test plot_sublabel with different label and arrow colors, alpha values, label positioning, and other style parameters.
+    """
+    Test plot_sublabel with different label and arrow colors, alpha values, label positioning, and other style parameters.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -1447,7 +1476,8 @@ def test_plot_sublabel_with_custom_params(
 
 
 def test_plotter_savefig(risk_obj, graph, tmp_path):
-    """Test that savefig creates a valid output image file.
+    """
+    Test that savefig creates a valid output image file.
 
     Args:
         risk_obj: The RISK object instance used for plotting.
@@ -1466,7 +1496,8 @@ def test_plotter_savefig(risk_obj, graph, tmp_path):
 
 
 def test_plotter_show(risk_obj, graph, monkeypatch):
-    """Test that show() executes without raising exceptions.
+    """
+    Test that show() executes without raising exceptions.
 
     Args:
         risk_obj: The RISK object instance used for plotting.

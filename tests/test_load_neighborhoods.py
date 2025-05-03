@@ -10,7 +10,8 @@ import pytest
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotation"])
 def test_load_neighborhoods_binom(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """Test loading neighborhoods using the binomial test with multiple null distributions.
+    """
+    Test loading neighborhoods using the binomial test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -34,7 +35,8 @@ def test_load_neighborhoods_binom(risk_obj, cytoscape_network, json_annotation, 
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotation"])
 def test_load_neighborhoods_chi2(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """Test loading neighborhoods using the chi-squared test with multiple null distributions.
+    """
+    Test loading neighborhoods using the chi-squared test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -60,7 +62,8 @@ def test_load_neighborhoods_chi2(risk_obj, cytoscape_network, json_annotation, n
 def test_load_neighborhoods_hypergeom(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
-    """Test loading neighborhoods using the hypergeometric test with multiple null distributions.
+    """
+    Test loading neighborhoods using the hypergeometric test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -86,7 +89,8 @@ def test_load_neighborhoods_hypergeom(
 def test_load_neighborhoods_permutation_single_process(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
-    """Test loading neighborhoods using a single process with the permutation test with multiple
+    """
+    Test loading neighborhoods using a single process with the permutation test with multiple
     null distributions.
 
     Args:
@@ -115,7 +119,8 @@ def test_load_neighborhoods_permutation_single_process(
 
 
 def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_network, json_annotation):
-    """Test loading neighborhoods using multiple processes with the permutation test.
+    """
+    Test loading neighborhoods using multiple processes with the permutation test.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -144,7 +149,8 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
 def test_load_neighborhoods_poisson(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
-    """Test loading neighborhoods using the Poisson test with multiple null distributions.
+    """
+    Test loading neighborhoods using the Poisson test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -168,7 +174,8 @@ def test_load_neighborhoods_poisson(
 
 @pytest.mark.parametrize("null_distribution", ["network", "annotation"])
 def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """Test loading neighborhoods using the z-score test with multiple null distributions.
+    """
+    Test loading neighborhoods using the z-score test with multiple null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -232,7 +239,8 @@ def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation,
 def test_load_neighborhoods_with_various_distance_metrics(
     risk_obj, cytoscape_network, json_annotation, distance_metric, fraction_shortest_edges
 ):
-    """Test loading neighborhoods using various distance metrics with matching edge length thresholds.
+    """
+    Test loading neighborhoods using various distance metrics with matching edge length thresholds.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -263,7 +271,8 @@ def test_load_neighborhoods_with_various_distance_metrics(
 def test_load_neighborhoods_with_various_score_metrics(
     risk_obj, cytoscape_network, json_annotation, score_metric
 ):
-    """Test loading neighborhoods using various score metrics.
+    """
+    Test loading neighborhoods using various score metrics.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -293,7 +302,8 @@ def test_load_neighborhoods_with_various_score_metrics(
 def test_load_neighborhoods_with_various_null_distributions(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
-    """Test loading neighborhoods using various null distributions.
+    """
+    Test loading neighborhoods using various null distributions.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -379,7 +389,8 @@ def test_load_neighborhoods_empty_network(risk_obj, json_annotation):
 def test_load_neighborhoods_output_dimensions(
     risk_obj, cytoscape_network, json_annotation, null_distribution
 ):
-    """Test that the output dimensions of neighborhoods match expectations.
+    """
+    Test that the output dimensions of neighborhoods match expectations.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.
@@ -414,7 +425,8 @@ def test_load_neighborhoods_output_dimensions(
 
 
 def test_load_neighborhoods_deterministic_output(risk_obj, cytoscape_network, json_annotation):
-    """Test that loading neighborhoods with the same random seed produces consistent results.
+    """
+    Test that loading neighborhoods with the same random seed produces consistent results.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods.

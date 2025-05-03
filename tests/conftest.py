@@ -16,7 +16,8 @@ ROOT_PATH = Path(__file__).resolve().parent / "data"
 
 @pytest.fixture(scope="session")
 def data_path():
-    """Fixture to provide the base path to the data directory.
+    """
+    Fixture to provide the base path to the data directory.
 
     Returns:
         Path: The base path to the data directory.
@@ -26,7 +27,8 @@ def data_path():
 
 @pytest.fixture(scope="session")
 def risk():
-    """Fixture to return the uninitialized RISK object.
+    """
+    Fixture to return the uninitialized RISK object.
 
     Returns:
         RISK: The uninitialized RISK object instance.
@@ -36,7 +38,8 @@ def risk():
 
 @pytest.fixture(scope="session")
 def risk_obj():
-    """Fixture to initialize and return the RISK object.
+    """
+    Fixture to initialize and return the RISK object.
 
     Returns:
         RISK: The initialized RISK object instance.
@@ -73,7 +76,8 @@ def dummy_annotation_dict():
 
 @pytest.fixture
 def dummy_annotation(risk_obj, dummy_network, dummy_annotation_dict):
-    """Load annotation from the dummy dictionary into the dummy network.
+    """
+    Load annotation from the dummy dictionary into the dummy network.
 
     Args:
         risk_obj: The RISK object instance used for loading the annotation.
@@ -86,7 +90,8 @@ def dummy_annotation(risk_obj, dummy_network, dummy_annotation_dict):
 # Network fixtures
 @pytest.fixture(scope="session")
 def cytoscape_network(risk_obj, data_path):
-    """Fixture to load and return a spherical network from a Cytoscape file.
+    """
+    Fixture to load and return a spherical network from a Cytoscape file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -109,7 +114,8 @@ def cytoscape_network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def cytoscape_json_network(risk_obj, data_path):
-    """Fixture to load and return the network from a Cytoscape JSON file.
+    """
+    Fixture to load and return the network from a Cytoscape JSON file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -131,7 +137,8 @@ def cytoscape_json_network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def gpickle_network(risk_obj, data_path):
-    """Fixture to load and return the network from a GPickle file.
+    """
+    Fixture to load and return the network from a GPickle file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -151,7 +158,8 @@ def gpickle_network(risk_obj, data_path):
 
 @pytest.fixture(scope="session")
 def networkx_network(risk_obj, cytoscape_network):
-    """Fixture to convert and return the network from a Cytoscape file as a NetworkX graph.
+    """
+    Fixture to convert and return the network from a Cytoscape file as a NetworkX graph.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -171,7 +179,8 @@ def networkx_network(risk_obj, cytoscape_network):
 # Annotation fixtures
 @pytest.fixture(scope="session")
 def annotation_dict(data_path):
-    """Fixture to load and return annotation from a JSON file as a dictionary.
+    """
+    Fixture to load and return annotation from a JSON file as a dictionary.
 
     Args:
         data_path: The base path to the directory containing the annotation file.
@@ -189,7 +198,8 @@ def annotation_dict(data_path):
 
 @pytest.fixture(scope="session")
 def json_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotation from a JSON file.
+    """
+    Fixture to load and return annotation from a JSON file.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -205,7 +215,8 @@ def json_annotation(risk_obj, cytoscape_network, data_path):
 
 @pytest.fixture(scope="session")
 def dict_annotation(risk_obj, cytoscape_network):
-    """Load and return annotation from a dictionary.
+    """
+    Load and return annotation from a dictionary.
 
     Args:
         risk_obj: The RISK object instance for loading annotation.
@@ -239,7 +250,8 @@ def dict_annotation(risk_obj, cytoscape_network):
 
 @pytest.fixture(scope="session")
 def csv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotation from a CSV file.
+    """
+    Fixture to load and return annotation from a CSV file.
 
     Args:
         risk_obj: The RISK object instance for loading annotation.
@@ -255,7 +267,8 @@ def csv_annotation(risk_obj, cytoscape_network, data_path):
 
 @pytest.fixture(scope="session")
 def tsv_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotation from a TSV file.
+    """
+    Fixture to load and return annotation from a TSV file.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -271,7 +284,8 @@ def tsv_annotation(risk_obj, cytoscape_network, data_path):
 
 @pytest.fixture(scope="session")
 def excel_annotation(risk_obj, cytoscape_network, data_path):
-    """Fixture to load and return annotation from an Excel file.
+    """
+    Fixture to load and return annotation from an Excel file.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -288,7 +302,8 @@ def excel_annotation(risk_obj, cytoscape_network, data_path):
 # Combined fixture for testing graph loading
 @pytest.fixture(scope="session")
 def graph(risk_obj, cytoscape_network, json_annotation):
-    """Fixture to load and return a graph built from a Cytoscape JSON network and annotation.
+    """
+    Fixture to load and return a graph built from a Cytoscape JSON network and annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading the graph.

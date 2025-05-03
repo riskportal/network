@@ -13,7 +13,8 @@ import pytest
 
 @pytest.mark.parametrize("verbose_setting", [True, False])
 def test_initialize_risk(risk, verbose_setting):
-    """Test RISK instance initialization with verbose parameter.
+    """
+    Test RISK instance initialization with verbose parameter.
 
     Args:
         verbose_setting: Boolean value to set verbosity of the RISK instance.
@@ -26,7 +27,8 @@ def test_initialize_risk(risk, verbose_setting):
 
 
 def test_missing_network_file(risk_obj):
-    """Test loading a missing network file.
+    """
+    Test loading a missing network file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -38,7 +40,8 @@ def test_missing_network_file(risk_obj):
 
 
 def test_load_network_cytoscape(risk_obj, data_path):
-    """Test loading a Cytoscape network from a .cys file.
+    """
+    Test loading a Cytoscape network from a .cys file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -55,7 +58,8 @@ def test_load_network_cytoscape(risk_obj, data_path):
 
 
 def test_load_network_cyjs(risk_obj, data_path):
-    """Test loading a Cytoscape JSON network from a .cyjs file.
+    """
+    Test loading a Cytoscape JSON network from a .cyjs file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -72,7 +76,8 @@ def test_load_network_cyjs(risk_obj, data_path):
 
 
 def test_load_network_gpickle(risk_obj, data_path):
-    """Test loading a network from a .gpickle file.
+    """
+    Test loading a network from a .gpickle file.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -87,7 +92,8 @@ def test_load_network_gpickle(risk_obj, data_path):
 
 
 def test_load_network_networkx(risk_obj, dummy_network):
-    """Test loading a network from a NetworkX graph object.
+    """
+    Test loading a network from a NetworkX graph object.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -109,7 +115,8 @@ def test_load_network_networkx(risk_obj, dummy_network):
 
 
 def test_round_trip_io(risk_obj):
-    """Test saving and loading a small graph using the io module.
+    """
+    Test saving and loading a small graph using the io module.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -149,7 +156,8 @@ def test_round_trip_io(risk_obj):
 
 
 def test_node_positions_constant_after_networkx_load(risk_obj, dummy_network):
-    """Test that the original network retains its node positions ('x' and 'y') after being passed to
+    """
+    Test that the original network retains its node positions ('x' and 'y') after being passed to
     the loading function.
 
     Args:
@@ -181,7 +189,8 @@ def test_node_positions_constant_after_networkx_load(risk_obj, dummy_network):
 
 
 def test_attribute_fallback_mechanism(risk_obj, data_path):
-    """Test attribute fallback mechanism by assigning 'x' and 'y' as 'pos' and
+    """
+    Test attribute fallback mechanism by assigning 'x' and 'y' as 'pos' and
     using 'label' as the node ID after loading two networks with different configurations.
 
     Args:
@@ -241,7 +250,8 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
 
 @pytest.mark.parametrize("min_edges", [1, 5, 10])
 def test_load_network_min_edges(risk_obj, data_path, min_edges):
-    """Test loading a Cytoscape network with varying min_edges_per_node.
+    """
+    Test loading a Cytoscape network with varying min_edges_per_node.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -264,7 +274,8 @@ def test_load_network_min_edges(risk_obj, data_path, min_edges):
 
 
 def test_node_and_edge_attributes(risk_obj, data_path):
-    """Test that nodes and edges have the required attributes after loading.
+    """
+    Test that nodes and edges have the required attributes after loading.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -290,7 +301,8 @@ def test_node_and_edge_attributes(risk_obj, data_path):
 
 
 def test_sphere_unfolding(risk_obj, data_path):
-    """Test that the sphere-to-plane unfolding correctly updates node coordinates.
+    """
+    Test that the sphere-to-plane unfolding correctly updates node coordinates.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -312,7 +324,8 @@ def test_sphere_unfolding(risk_obj, data_path):
 
 
 def test_edge_attribute_fallback(risk_obj, dummy_network):
-    """Test fallback when edges are missing 'length' or 'weight' attributes.
+    """
+    Test fallback when edges are missing 'length' or 'weight' attributes.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -336,7 +349,8 @@ def test_edge_attribute_fallback(risk_obj, dummy_network):
     reason="Fails due to recursion depth in Windows 3.10",
 )
 def test_deterministic_network_loading(risk_obj, data_path):
-    """Test that loading the same network produces identical results.
+    """
+    Test that loading the same network produces identical results.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -362,7 +376,8 @@ def test_deterministic_network_loading(risk_obj, data_path):
 
 
 def test_missing_node_attributes(risk_obj, cytoscape_network):
-    """Test fallback mechanism for missing node attributes.
+    """
+    Test fallback mechanism for missing node attributes.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -383,7 +398,8 @@ def test_missing_node_attributes(risk_obj, cytoscape_network):
 
 
 def test_remove_isolates_does_not_raise(risk_obj, dummy_network):
-    """Test that loading a network with isolated nodes does not raise an error.
+    """
+    Test that loading a network with isolated nodes does not raise an error.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.

@@ -26,7 +26,8 @@ import pytest
     ],
 )
 def test_load_graphs(request, risk_obj, network_fixture, annotation_fixture):
-    """Test loading all possible combinations of networks and annotation followed by graph loading.
+    """
+    Test loading all possible combinations of networks and annotation followed by graph loading.
 
     Args:
         request: The pytest request object to access fixture values.

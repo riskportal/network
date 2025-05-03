@@ -10,7 +10,8 @@ from scipy.sparse import csr_matrix, vstack
 
 
 def test_missing_annotation_file(risk_obj, dummy_network):
-    """Test loading an annotation file that does not exist.
+    """
+    Test loading an annotation file that does not exist.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -27,7 +28,8 @@ def test_missing_annotation_file(risk_obj, dummy_network):
 
 
 def test_load_annotation_csv(risk_obj, cytoscape_network, data_path):
-    """Test loading a CSV annotation file and associating it with a network.
+    """
+    Test loading a CSV annotation file and associating it with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -47,7 +49,8 @@ def test_load_annotation_csv(risk_obj, cytoscape_network, data_path):
 
 
 def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
-    """Test that loaded CSV annotation have the correct structure.
+    """
+    Test that loaded CSV annotation have the correct structure.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -74,7 +77,8 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
 
 
 def test_load_annotation_dict(risk_obj, dummy_network, dummy_annotation_dict):
-    """Test loading annotation from a dictionary and associating them with a network.
+    """
+    Test loading annotation from a dictionary and associating them with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -93,7 +97,8 @@ def test_load_annotation_dict(risk_obj, dummy_network, dummy_annotation_dict):
 
 
 def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dict):
-    """Test the structure of dictionary-loaded annotation.
+    """
+    Test the structure of dictionary-loaded annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -119,7 +124,8 @@ def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dic
 
 
 def test_load_annotation_json(risk_obj, cytoscape_network, data_path):
-    """Test loading a JSON annotation file and associating it with a network.
+    """
+    Test loading a JSON annotation file and associating it with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -139,7 +145,8 @@ def test_load_annotation_json(risk_obj, cytoscape_network, data_path):
 
 
 def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
-    """Test the structure of JSON-loaded annotation.
+    """
+    Test the structure of JSON-loaded annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -166,7 +173,8 @@ def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
 
 
 def test_load_annotation_tsv(risk_obj, cytoscape_network, data_path):
-    """Test loading a TSV annotation file and associating it with a network.
+    """
+    Test loading a TSV annotation file and associating it with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -186,7 +194,8 @@ def test_load_annotation_tsv(risk_obj, cytoscape_network, data_path):
 
 
 def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
-    """Test the structure of TSV-loaded annotation.
+    """
+    Test the structure of TSV-loaded annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -213,7 +222,8 @@ def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
 
 
 def test_load_annotation_excel(risk_obj, cytoscape_network, data_path):
-    """Test loading an Excel annotation file and associating it with a network.
+    """
+    Test loading an Excel annotation file and associating it with a network.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -233,7 +243,8 @@ def test_load_annotation_excel(risk_obj, cytoscape_network, data_path):
 
 
 def test_excel_annotation_structure(risk_obj, cytoscape_network, data_path):
-    """Test the structure of Excel-loaded annotation.
+    """
+    Test the structure of Excel-loaded annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -260,7 +271,8 @@ def test_excel_annotation_structure(risk_obj, cytoscape_network, data_path):
 
 
 def test_combined_annotation(risk_obj, cytoscape_network, data_path):
-    """Test combining annotations from multiple sources.
+    """
+    Test combining annotations from multiple sources.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.
@@ -305,7 +317,8 @@ def test_combined_annotation(risk_obj, cytoscape_network, data_path):
 
 
 def test_min_max_nodes_per_term(risk_obj, cytoscape_network, data_path):
-    """Test that loaded annotation respects min and max node limits per term.
+    """
+    Test that loaded annotation respects min and max node limits per term.
 
     Args:
         risk_obj: The RISK object instance used for loading annotation.

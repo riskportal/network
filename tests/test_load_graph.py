@@ -12,7 +12,8 @@ from risk.network.graph.summary import Summary
 
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
-    """Test loading a graph after generating neighborhoods with specific parameters using JSON annotation.
+    """
+    Test loading a graph after generating neighborhoods with specific parameters using JSON annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -56,7 +57,8 @@ def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annot
 
 
 def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, json_annotation):
-    """Test that statistically significant domains respect min and max cluster sizes using JSON annotation.
+    """
+    Test that statistically significant domains respect min and max cluster sizes using JSON annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -105,7 +107,8 @@ def test_cluster_size_limits_with_json_annotation(risk_obj, cytoscape_network, j
 
 
 def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
-    """Test loading a graph after generating neighborhoods with specific parameters using dictionary annotation.
+    """
+    Test loading a graph after generating neighborhoods with specific parameters using dictionary annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -148,7 +151,8 @@ def test_load_graph_with_dict_annotation(risk_obj, cytoscape_network, dict_annot
 
 
 def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, dict_annotation):
-    """Test that statistically significant domains respect min and max cluster sizes using dictionary annotation.
+    """
+    Test that statistically significant domains respect min and max cluster sizes using dictionary annotation.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -200,7 +204,8 @@ def test_cluster_size_limits_with_dict_annotation(risk_obj, cytoscape_network, d
 def test_linkage_criterion_and_auto_clustering_options(
     risk_obj, cytoscape_network, json_annotation
 ):
-    """Test the linkage criterion and auto-clustering options for generating graphs.
+    """
+    Test the linkage criterion and auto-clustering options for generating graphs.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -246,7 +251,8 @@ def test_linkage_criterion_and_auto_clustering_options(
 
 
 def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
-    """Test that the Graph object contains the expected components.
+    """
+    Test that the Graph object contains the expected components.
 
     Args:
         risk_obj: The RISK object instance used for loading neighborhoods and graphs.
@@ -320,7 +326,8 @@ def test_network_graph_structure(risk_obj, cytoscape_network, json_annotation):
 
 
 def test_load_graph_summary(graph):
-    """Test loading the graph summary with predefined parameters.
+    """
+    Test loading the graph summary with predefined parameters.
 
     Args:
         graph: The graph object instance to be summarized.
@@ -332,7 +339,8 @@ def test_load_graph_summary(graph):
 
 
 def test_pop_domain(graph):
-    """Test the pop method for removing a domain ID from all Graph attribute domain mappings.
+    """
+    Test the pop method for removing a domain ID from all Graph attribute domain mappings.
 
     Args:
         graph: The graph object instance with existing domain mappings.
@@ -371,7 +379,8 @@ def test_pop_domain(graph):
 
 
 def _validate_graph(graph):
-    """Validate that the graph is not None and contains nodes and edges.
+    """
+    Validate that the graph is not None and contains nodes and edges.
 
     Args:
         graph: The graph object to validate.
@@ -391,7 +400,8 @@ def _validate_graph(graph):
 
 
 def _check_component_sizes(domain_id_to_node_id_map, min_cluster_size, max_cluster_size):
-    """Check whether domains are within the specified size range.
+    """
+    Check whether domains are within the specified size range.
 
     Args:
         domain_id_to_node_id_map (dict): A mapping of domain IDs to lists of node IDs.

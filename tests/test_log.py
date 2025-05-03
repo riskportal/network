@@ -13,7 +13,8 @@ from risk.log import log_header, logger, params
 
 @pytest.fixture
 def log_capture():
-    """Fixture to capture log output for assertions.
+    """
+    Fixture to capture log output for assertions.
 
     Returns:
         (log_stream, original_handlers) for inspection and cleanup.
@@ -29,7 +30,8 @@ def log_capture():
 
 
 def test_log_header_output(log_capture):
-    """Test that log_header outputs a correctly formatted section header.
+    """
+    Test that log_header outputs a correctly formatted section header.
 
     Args:
         log_capture: Captures logger output.
@@ -44,7 +46,8 @@ def test_log_header_output(log_capture):
 
 
 def test_logger_debug_output(log_capture):
-    """Test that logger.debug writes the expected message to the log.
+    """
+    Test that logger.debug writes the expected message to the log.
 
     Args:
         log_capture: Captures logger output.
@@ -56,7 +59,8 @@ def test_logger_debug_output(log_capture):
 
 
 def test_params_log_annotation(log_capture):
-    """Test that params.log_annotation logs the correct information.
+    """
+    Test that params.log_annotation logs the correct information.
 
     Args:
         log_capture: Captures logger output.
