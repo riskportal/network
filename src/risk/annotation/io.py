@@ -24,7 +24,7 @@ class AnnotationIO:
         self,
         network: nx.Graph,
         filepath: str,
-        min_nodes_per_term: int = 2,
+        min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
         """Load annotation from a JSON file and convert them to a DataFrame.
@@ -33,7 +33,7 @@ class AnnotationIO:
             network (NetworkX graph): The network to which the annotation is related.
             filepath (str): Path to the JSON annotation file.
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-                term to be included. Defaults to 2.
+                term to be included. Defaults to 1.
             max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
                 term to be included. Defaults to 10_000.
 
@@ -64,7 +64,7 @@ class AnnotationIO:
         nodes_colname: str = "nodes",
         sheet_name: str = "Sheet1",
         nodes_delimiter: str = ";",
-        min_nodes_per_term: int = 2,
+        min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
         """Load annotation from an Excel file and associate them with the network.
@@ -77,7 +77,7 @@ class AnnotationIO:
             sheet_name (str, optional): The name of the Excel sheet to load (default is 'Sheet1').
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-                term to be included. Defaults to 2.
+                term to be included. Defaults to 1.
             max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
                 term to be included. Defaults to 10_000.
 
@@ -113,7 +113,7 @@ class AnnotationIO:
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
-        min_nodes_per_term: int = 2,
+        min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
         """Load annotation from a CSV file and associate them with the network.
@@ -125,7 +125,7 @@ class AnnotationIO:
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-                term to be included. Defaults to 2.
+                term to be included. Defaults to 1.
             max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
                 term to be included. Defaults to 10_000.
 
@@ -157,7 +157,7 @@ class AnnotationIO:
         label_colname: str = "label",
         nodes_colname: str = "nodes",
         nodes_delimiter: str = ";",
-        min_nodes_per_term: int = 2,
+        min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
         """Load annotation from a TSV file and associate them with the network.
@@ -169,7 +169,7 @@ class AnnotationIO:
             nodes_colname (str): Name of the column containing the nodes associated with each label.
             nodes_delimiter (str, optional): Delimiter used to separate multiple nodes within the nodes column (default is ';').
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-                term to be included. Defaults to 2.
+                term to be included. Defaults to 1.
             max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
                 term to be included. Defaults to 10_000.
 
@@ -198,7 +198,7 @@ class AnnotationIO:
         self,
         network: nx.Graph,
         content: Dict[str, Any],
-        min_nodes_per_term: int = 2,
+        min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
         """Load annotation from a provided dictionary and convert them to a dictionary annotation.
@@ -207,7 +207,7 @@ class AnnotationIO:
             network (NetworkX graph): The network to which the annotation is related.
             content (Dict[str, Any]): The annotation dictionary to load.
             min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-                term to be included. Defaults to 2.
+                term to be included. Defaults to 1.
             max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
                 term to be included. Defaults to 10_000.
 

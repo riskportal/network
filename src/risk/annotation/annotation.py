@@ -38,7 +38,7 @@ initialize_nltk()
 def load_annotation(
     network: nx.Graph,
     annotation_input: Dict[str, Any],
-    min_nodes_per_term: int = 2,
+    min_nodes_per_term: int = 1,
     max_nodes_per_term: int = 10_000,
 ) -> Dict[str, Any]:
     """Convert annotation input to a sparse matrix and reindex based on the network's node labels.
@@ -47,7 +47,7 @@ def load_annotation(
         network (nx.Graph): The network graph.
         annotation_input (Dict[str, Any]): An annotation dictionary.
         min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
-            term to be included. Defaults to 2.
+            term to be included. Defaults to 1.
         max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
             term. Defaults to 10_000.
 
