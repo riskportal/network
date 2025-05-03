@@ -58,13 +58,8 @@ def test_logger_debug_output(log_capture):
     assert "Test debug message" in contents
 
 
-def test_params_log_annotation(log_capture):
-    """
-    Test that params.log_annotation logs the correct information.
-
-    Args:
-        log_capture: Captures logger output.
-    """
+def test_params_log_annotation():
+    """Test that params.log_annotation logs the correct information."""
     logger.setLevel(logging.DEBUG)
     params.log_annotation(
         filetype="CSV",
