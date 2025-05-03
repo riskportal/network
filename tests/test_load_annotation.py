@@ -22,6 +22,7 @@ def test_missing_annotation_file(risk_obj, dummy_network):
             filepath=annotation_file,
             network=dummy_network,
             min_nodes_per_term=1,
+            max_nodes_per_term=1000,
         )
 
 
@@ -38,6 +39,7 @@ def test_load_annotation_csv(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert annotation is not None
@@ -57,6 +59,7 @@ def test_csv_annotation_structure(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert isinstance(annotation, dict), "Annotation should be a dictionary"
@@ -82,6 +85,7 @@ def test_load_annotation_dict(risk_obj, dummy_network, dummy_annotation_dict):
         content=dummy_annotation_dict,
         network=dummy_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert annotation is not None
@@ -100,6 +104,7 @@ def test_dict_annotation_structure(risk_obj, dummy_network, dummy_annotation_dic
         content=dummy_annotation_dict,
         network=dummy_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert isinstance(annotation, dict), "Annotation should be a dictionary"
@@ -126,6 +131,7 @@ def test_load_annotation_json(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert annotation is not None
@@ -145,6 +151,7 @@ def test_json_annotation_structure(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert isinstance(annotation, dict), "Annotation should be a dictionary"
@@ -171,6 +178,7 @@ def test_load_annotation_tsv(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert annotation is not None
@@ -190,6 +198,7 @@ def test_tsv_annotation_structure(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert isinstance(annotation, dict), "Annotation should be a dictionary"
@@ -216,6 +225,7 @@ def test_load_annotation_excel(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert annotation is not None
@@ -235,6 +245,7 @@ def test_excel_annotation_structure(risk_obj, cytoscape_network, data_path):
         filepath=str(annotation_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
 
     assert isinstance(annotation, dict), "Annotation should be a dictionary"
@@ -262,11 +273,13 @@ def test_combined_annotation(risk_obj, cytoscape_network, data_path):
         filepath=str(csv_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
     json_annotation = risk_obj.load_annotation_json(
         filepath=str(json_file),
         network=cytoscape_network,
         min_nodes_per_term=1,
+        max_nodes_per_term=1000,
     )
     # Combine the components of the annotations
     combined_annotation = {

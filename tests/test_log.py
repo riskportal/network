@@ -66,7 +66,9 @@ def test_params_log_annotation(log_capture):
         filetype="CSV",
         filepath="mock/path/to/file.csv",
         min_nodes_per_term=3,
+        max_nodes_per_term=5,
     )
     assert params.annotation["filetype"] == "CSV"
     assert params.annotation["filepath"] == "mock/path/to/file.csv"
     assert params.annotation["min_nodes_per_term"] == 3
+    assert params.annotation["max_nodes_per_term"] == 5
