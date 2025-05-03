@@ -3,10 +3,10 @@ tests/test_load_annotation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
+import json
+
 import pytest
 from scipy.sparse import csr_matrix, vstack
-
-# Ensure dummy fixtures are imported by referencing them in test signatures below.
 
 
 def test_missing_annotation_file(risk_obj, dummy_network):
@@ -302,3 +302,32 @@ def test_combined_annotation(risk_obj, cytoscape_network, data_path):
     assert len(combined_annotation["ordered_nodes"]) == len(csv_annotation["ordered_nodes"]) + len(
         json_annotation["ordered_nodes"]
     )
+
+
+def test_min_max_nodes_per_term(risk_obj, cytoscape_network, data_path):
+    """Test that loaded annotation respects min and max node limits per term.
+
+    Args:
+        risk_obj: The RISK object instance used for loading annotation.
+        cytoscape_network: The network object to which annotation will be applied.
+        data_path: The base path to the directory containing the annotation files.
+    """
+    annotation_file = data_path / "json" / "annotation" / "go_biological_process.json"
+    min_nodes = 2
+    max_nodes = 100
+    # Load annotation with filtering
+    annotation = risk_obj.load_annotation_json(
+        filepath=str(annotation_file),
+        network=cytoscape_network,
+        min_nodes_per_term=min_nodes,
+        max_nodes_per_term=max_nodes,
+    )
+    # Extract the mapping of term to genes from the raw JSON input
+    with open(annotation_file, 'r') as f:
+        raw_dict = json.load(f)
+
+    filtered_terms = annotation["ordered_annotation"]
+    for term in filtered_terms:
+        gene_count = len(raw_dict[term])
+        assert gene_count >= min_nodes, f"Term {term} has too few genes: {gene_count}"
+        assert gene_count <= max_nodes, f"Term {term} has too many genes: {gene_count}"
