@@ -36,7 +36,10 @@ initialize_nltk()
 
 
 def load_annotation(
-    network: nx.Graph, annotation_input: Dict[str, Any], min_nodes_per_term: int = 2
+    network: nx.Graph,
+    annotation_input: Dict[str, Any],
+    min_nodes_per_term: int = 2,
+    max_nodes_per_term: int = 10_000,
 ) -> Dict[str, Any]:
     """Convert annotation input to a sparse matrix and reindex based on the network's node labels.
 
@@ -45,6 +48,8 @@ def load_annotation(
         annotation_input (Dict[str, Any]): An annotation dictionary.
         min_nodes_per_term (int, optional): The minimum number of network nodes required for each annotation
             term to be included. Defaults to 2.
+        max_nodes_per_term (int, optional): The maximum number of network nodes allowed for each annotation
+            term. Defaults to 10_000.
 
     Returns:
         Dict[str, Any]: A dictionary containing ordered nodes, ordered annotations, and the sparse binary annotations
@@ -52,7 +57,6 @@ def load_annotation(
 
     Raises:
         ValueError: If no annotation is found for the nodes in the network.
-        ValueError: If no annotation has at least min_nodes_per_term nodes in the network.
     """
     # Step 1: Map nodes and annotations to indices
     node_label_order = [attr["label"] for _, attr in network.nodes(data=True) if "label" in attr]
@@ -72,9 +76,18 @@ def load_annotation(
     # Create a sparse binary matrix
     num_nodes = len(node_to_idx)
     num_annotation = len(annotation_to_idx)
-    annotation_pivot = coo_matrix((data, (row, col)), shape=(num_nodes, num_annotation)).tocsr()
-    # Step 3: Filter out annotations with fewer than min_nodes_per_term occurrences
-    valid_annotation = annotation_pivot.sum(axis=0).A1 >= min_nodes_per_term
+    # Convert to a sparse matrix and set the data type to uint8 for binary representation
+    annotation_pivot = (
+        coo_matrix((data, (row, col)), shape=(num_nodes, num_annotation)).tocsr().astype(np.uint8)
+    )
+    # Step 3: Filter out annotations with too few or too many nodes
+    valid_annotation = np.array(
+        [
+            annotation_pivot[:, i].sum() >= min_nodes_per_term
+            and annotation_pivot[:, i].sum() <= max_nodes_per_term
+            for i in range(num_annotation)
+        ]
+    )
     annotation_pivot = annotation_pivot[:, valid_annotation]
     # Step 4: Raise errors for empty matrices
     if annotation_pivot.nnz == 0:
@@ -83,7 +96,7 @@ def load_annotation(
     num_remaining_annotation = annotation_pivot.shape[1]
     if num_remaining_annotation == 0:
         raise ValueError(
-            f"No annotation terms found with at least {min_nodes_per_term} nodes in the network."
+            f"No annotation terms found with at least {min_nodes_per_term} nodes and at most {max_nodes_per_term} nodes."
         )
 
     # Step 5: Extract ordered nodes and annotations
@@ -94,6 +107,7 @@ def load_annotation(
 
     # Log the filtering details
     logger.info(f"Minimum number of nodes per annotation term: {min_nodes_per_term}")
+    logger.info(f"Maximum number of nodes per annotation term: {max_nodes_per_term}")
     logger.info(f"Number of input annotation terms: {num_annotation}")
     logger.info(f"Number of remaining annotation terms: {num_remaining_annotation}")
 
@@ -122,7 +136,7 @@ def define_top_annotation(
         significant_significance_matrix (np.ndarray): Enrichment matrix below alpha threshold.
         significant_binary_significance_matrix (np.ndarray): Binary significance matrix below alpha threshold.
         min_cluster_size (int, optional): Minimum cluster size. Defaults to 5.
-        max_cluster_size (int, optional): Maximum cluster size. Defaults to 1000.
+        max_cluster_size (int, optional): Maximum cluster size. Defaults to 10_000.
 
     Returns:
         pd.DataFrame: DataFrame with top annotations and their properties.
