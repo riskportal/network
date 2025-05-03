@@ -24,7 +24,8 @@ def get_annotated_domain_colors(
     ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> List[Tuple]:
-    """Get colors for the domains based on node annotation, or use a specified color.
+    """
+    Get colors for the domains based on node annotation, or use a specified color.
 
     Args:
         graph (Graph): The network data and attributes to be visualized.
@@ -85,7 +86,8 @@ def get_domain_colors(
     ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> np.ndarray:
-    """Generate composite colors for domains based on significance or specified colors.
+    """
+    Generate composite colors for domains based on significance or specified colors.
 
     Args:
         graph (Graph): The network data and attributes to be visualized.
@@ -135,7 +137,8 @@ def _get_domain_ids_to_colors(
     ids_to_colors: Union[Dict[int, Any], None] = None,
     random_seed: int = 888,
 ) -> Dict[int, Any]:
-    """Get colors for each domain.
+    """
+    Get colors for each domain.
 
     Args:
         graph (Graph): The network data and attributes to be visualized.
@@ -174,7 +177,8 @@ def _get_composite_node_colors(
     blend_colors: bool = False,
     blend_gamma: float = 2.2,
 ) -> np.ndarray:
-    """Generate composite colors for nodes based on domain colors and significance values, with optional color blending.
+    """
+    Generate composite colors for nodes based on domain colors and significance values, with optional color blending.
 
     Args:
         graph (Graph): The network data and attributes to be visualized.
@@ -233,7 +237,8 @@ def _get_colors(
     color: Union[str, List, Tuple, np.ndarray, None] = None,
     random_seed: int = 888,
 ) -> List[Tuple]:
-    """Generate a list of RGBA colors for domains, ensuring maximally separated colors for nearby domains.
+    """
+    Generate a list of RGBA colors for domains, ensuring maximally separated colors for nearby domains.
 
     Args:
         domain_id_to_node_ids_map (Dict[int, Any]): Mapping from domain IDs to lists of node IDs.
@@ -266,7 +271,8 @@ def _get_colors(
 def _blend_colors_perceptually(
     colors: Union[List, Tuple, np.ndarray], significances: List[float], gamma: float = 2.2
 ) -> Tuple[float, float, float, float]:
-    """Blends a list of RGBA colors using gamma correction for perceptually uniform color mixing.
+    """
+    Blends a list of RGBA colors using gamma correction for perceptually uniform color mixing.
 
     Args:
         colors (List, Tuple, np.ndarray): List of RGBA colors. Can be a list, tuple, or NumPy array of RGBA values.
@@ -297,7 +303,8 @@ def _transform_colors(
     max_scale: float = 1.0,
     scale_factor: float = 1.0,
 ) -> np.ndarray:
-    """Transform colors using power scaling to emphasize high significance sums more. Black colors are replaced with
+    """
+    Transform colors using power scaling to emphasize high significance sums more. Black colors are replaced with
     very dark grey to avoid issues with color scaling (rgb(0.1, 0.1, 0.1)).
 
     Args:
@@ -349,7 +356,8 @@ def to_rgba(
     alpha: Union[float, None] = None,
     num_repeats: Union[int, None] = None,
 ) -> np.ndarray:
-    """Convert color(s) to RGBA format, applying alpha and repeating as needed.
+    """
+    Convert color(s) to RGBA format, applying alpha and repeating as needed.
 
     Args:
         color (str, List, Tuple, np.ndarray, None): The color(s) to convert. Can be a string (e.g., 'red'), a list or tuple of RGB/RGBA values,

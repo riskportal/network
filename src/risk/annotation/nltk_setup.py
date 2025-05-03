@@ -15,7 +15,8 @@ from risk.log import logger
 
 
 def setup_nltk_resources(required_resources: Optional[List[Tuple[str, str]]] = None) -> None:
-    """Ensures all required NLTK resources are available and properly extracted.
+    """
+    Ensures all required NLTK resources are available and properly extracted.
     Uses NLTK's default paths and mechanisms.
 
     Args:
@@ -47,7 +48,8 @@ def setup_nltk_resources(required_resources: Optional[List[Tuple[str, str]]] = N
 
 
 def verify_and_extract_if_needed(resource_path: str, package_name: str) -> None:
-    """Verifies if the resource is properly extracted and extracts if needed. Respects
+    """
+    Verifies if the resource is properly extracted and extracts if needed. Respects
     NLTK's directory structure where the extracted content should be in the same directory
     as the zip file.
 

@@ -15,7 +15,8 @@ from scipy.sparse import csr_matrix
 def compute_neighborhood_score_by_sum(
     neighborhoods_matrix: csr_matrix, annotation_matrix: csr_matrix
 ) -> np.ndarray:
-    """Compute the sum of attribute values for each neighborhood using sparse matrices.
+    """
+    Compute the sum of attribute values for each neighborhood using sparse matrices.
 
     Args:
         neighborhoods_matrix (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -34,7 +35,8 @@ def compute_neighborhood_score_by_sum(
 def compute_neighborhood_score_by_stdev(
     neighborhoods_matrix: csr_matrix, annotation_matrix: csr_matrix
 ) -> np.ndarray:
-    """Compute the standard deviation of neighborhood scores for sparse matrices.
+    """
+    Compute the standard deviation of neighborhood scores for sparse matrices.
 
     Args:
         neighborhoods_matrix (csr_matrix): Sparse binary matrix representing neighborhoods.

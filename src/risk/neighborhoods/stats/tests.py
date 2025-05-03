@@ -15,7 +15,8 @@ def compute_binom_test(
     annotation: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute Binomial test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute Binomial test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -60,7 +61,8 @@ def compute_chi2_test(
     annotation: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute chi-squared test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute chi-squared test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -122,7 +124,8 @@ def compute_hypergeom_test(
     annotation: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute hypergeometric test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -178,7 +181,8 @@ def compute_poisson_test(
     annotation: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute Poisson test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute Poisson test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -220,7 +224,8 @@ def compute_zscore_test(
     annotation: csr_matrix,
     null_distribution: str = "network",
 ) -> Dict[str, Any]:
-    """Compute z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
+    """
+    Compute z-score test for enrichment and depletion in neighborhoods with selectable null distribution.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.

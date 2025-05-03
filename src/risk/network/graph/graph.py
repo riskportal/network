@@ -14,7 +14,8 @@ from risk.network.graph.summary import Summary
 
 
 class Graph:
-    """A class to represent a network graph and process its nodes and edges.
+    """
+    A class to represent a network graph and process its nodes and edges.
 
     The Graph class provides functionality to handle and manipulate a network graph,
     including managing domains, annotation, and node significance data. It also includes methods
@@ -32,7 +33,9 @@ class Graph:
         node_label_to_node_id_map: Dict[str, Any],
         node_significance_sums: np.ndarray,
     ):
-        """Initialize the Graph object.
+        """
+
+        Initialize the Graph object.
 
         Args:
             network (nx.Graph): The network graph.
@@ -72,7 +75,8 @@ class Graph:
         self.summary = Summary(annotation, neighborhoods, self)
 
     def pop(self, domain_id: int) -> List[str]:
-        """Remove a domain ID from the graph and return the corresponding node labels.
+        """
+        Remove a domain ID from the graph and return the corresponding node labels.
 
         Args:
             key (int): The domain ID key to be removed from each mapping.
@@ -104,7 +108,8 @@ class Graph:
         return node_labels
 
     def _create_domain_id_to_node_ids_map(self, domains: pd.DataFrame) -> Dict[int, Any]:
-        """Create a mapping from domains to the list of node IDs belonging to each domain.
+        """
+        Create a mapping from domains to the list of node IDs belonging to each domain.
 
         Args:
             domains (pd.DataFrame): DataFrame containing domain information, including the 'primary domain' for each node.
@@ -123,7 +128,8 @@ class Graph:
     def _create_domain_id_to_domain_terms_map(
         self, trimmed_domains: pd.DataFrame
     ) -> Dict[int, Any]:
-        """Create a mapping from domain IDs to their corresponding terms.
+        """
+        Create a mapping from domain IDs to their corresponding terms.
 
         Args:
             trimmed_domains (pd.DataFrame): DataFrame containing domain IDs and their corresponding labels.
@@ -142,7 +148,8 @@ class Graph:
         self,
         trimmed_domains: pd.DataFrame,
     ) -> Dict[int, Dict[str, Any]]:
-        """Create a mapping from domain IDs to their corresponding full description and significance score,
+        """
+        Create a mapping from domain IDs to their corresponding full description and significance score,
         with scores sorted in descending order.
 
         Args:
@@ -178,7 +185,8 @@ class Graph:
     def _create_node_id_to_domain_ids_and_significances(
         self, domains: pd.DataFrame
     ) -> Dict[int, Dict]:
-        """Creates a dictionary mapping each node ID to its corresponding domain IDs and significance values.
+        """
+        Creates a dictionary mapping each node ID to its corresponding domain IDs and significance values.
 
         Args:
             domains (pd.DataFrame): A DataFrame containing domain information for each node. Assumes the last
@@ -210,7 +218,8 @@ class Graph:
         return node_id_to_domain_ids_and_significances
 
     def _create_domain_id_to_node_labels_map(self) -> Dict[int, List[str]]:
-        """Create a map from domain IDs to node labels.
+        """
+        Create a map from domain IDs to node labels.
 
         Returns:
             Dict[int, List[str]]: A dictionary mapping domain IDs to the corresponding node labels.
@@ -224,7 +233,8 @@ class Graph:
         return domain_id_to_label_map
 
     def _unfold_sphere_to_plane(self, G: nx.Graph) -> nx.Graph:
-        """Convert 3D coordinates to 2D by unfolding a sphere to a plane.
+        """
+        Convert 3D coordinates to 2D by unfolding a sphere to a plane.
 
         Args:
             G (nx.Graph): A network graph with 3D coordinates. Each node should have 'x', 'y', and 'z' attributes.
@@ -254,7 +264,8 @@ class Graph:
         return G
 
     def _extract_node_coordinates(self, G: nx.Graph) -> np.ndarray:
-        """Extract 2D coordinates of nodes from the graph.
+        """
+        Extract 2D coordinates of nodes from the graph.
 
         Args:
             G (nx.Graph): The network graph with node coordinates.

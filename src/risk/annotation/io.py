@@ -14,7 +14,8 @@ from risk.log import log_header, logger, params
 
 
 class AnnotationIO:
-    """Handles the loading and exporting of annotation in various file formats.
+    """
+    Handles the loading and exporting of annotation in various file formats.
 
     The AnnotationIO class provides methods to load annotation from different file types (JSON, CSV, Excel, etc.)
     and to export parameter data to various formats like JSON, CSV, and text files.
@@ -27,7 +28,8 @@ class AnnotationIO:
         min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
-        """Load annotation from a JSON file and convert them to a DataFrame.
+        """
+        Load annotation from a JSON file and convert them to a DataFrame.
 
         Args:
             network (NetworkX graph): The network to which the annotation is related.
@@ -67,7 +69,8 @@ class AnnotationIO:
         min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
-        """Load annotation from an Excel file and associate them with the network.
+        """
+        Load annotation from an Excel file and associate them with the network.
 
         Args:
             network (nx.Graph): The NetworkX graph to which the annotation is related.
@@ -116,7 +119,8 @@ class AnnotationIO:
         min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
-        """Load annotation from a CSV file and associate them with the network.
+        """
+        Load annotation from a CSV file and associate them with the network.
 
         Args:
             network (nx.Graph): The NetworkX graph to which the annotation is related.
@@ -160,7 +164,8 @@ class AnnotationIO:
         min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
-        """Load annotation from a TSV file and associate them with the network.
+        """
+        Load annotation from a TSV file and associate them with the network.
 
         Args:
             network (nx.Graph): The NetworkX graph to which the annotation is related.
@@ -201,7 +206,8 @@ class AnnotationIO:
         min_nodes_per_term: int = 1,
         max_nodes_per_term: int = 10_000,
     ) -> Dict[str, Any]:
-        """Load annotation from a provided dictionary and convert them to a dictionary annotation.
+        """
+        Load annotation from a provided dictionary and convert them to a dictionary annotation.
 
         Args:
             network (NetworkX graph): The network to which the annotation is related.
@@ -244,7 +250,8 @@ class AnnotationIO:
         delimiter: str = ",",
         nodes_delimiter: str = ";",
     ) -> Dict[str, Any]:
-        """Load annotation from a CSV or TSV file and convert them to a dictionary.
+        """
+        Load annotation from a CSV or TSV file and convert them to a dictionary.
 
         Args:
             filepath (str): Path to the annotation file.
@@ -267,7 +274,8 @@ class AnnotationIO:
         return label_node_dict
 
     def _log_loading_annotation(self, filetype: str, filepath: str = "") -> None:
-        """Log the loading of annotation files.
+        """
+        Log the loading of annotation files.
 
         Args:
             filetype (str): The type of the file being loaded (e.g., 'Cytoscape').

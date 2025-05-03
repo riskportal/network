@@ -19,7 +19,8 @@ from risk.network.plotter.utils.layout import calculate_bounding_box
 
 
 class Plotter(Canvas, Network, Contour, Labels):
-    """A class for visualizing network graphs with customizable options.
+    """
+    A class for visualizing network graphs with customizable options.
 
     The Plotter class uses a Graph object and provides methods to plot the network with
     flexible node and edge properties. It also supports plotting labels, contours, drawing the network's
@@ -34,7 +35,8 @@ class Plotter(Canvas, Network, Contour, Labels):
         background_alpha: Union[float, None] = 1.0,
         pad: float = 0.3,
     ) -> None:
-        """Initialize the Plotter with a Graph object and plotting parameters.
+        """
+        Initialize the Plotter with a Graph object and plotting parameters.
 
         Args:
             graph (Graph): The network data and attributes to be visualized.
@@ -63,7 +65,8 @@ class Plotter(Canvas, Network, Contour, Labels):
         background_alpha: Union[float, None],
         pad: float,
     ) -> plt.Axes:
-        """Set up the plot with figure size and background color.
+        """
+        Set up the plot with figure size and background color.
 
         Args:
             graph (Graph): The network data and attributes to be visualized.
@@ -115,7 +118,8 @@ class Plotter(Canvas, Network, Contour, Labels):
         return ax
 
     def savefig(self, *args, pad_inches: float = 0.5, dpi: int = 100, **kwargs) -> None:
-        """Save the current plot to a file with additional export options.
+        """
+        Save the current plot to a file with additional export options.
 
         Args:
             *args: Positional arguments passed to `plt.savefig`.
@@ -132,7 +136,8 @@ class Plotter(Canvas, Network, Contour, Labels):
         plt.savefig(*args, **kwargs)
 
     def show(self, *args, **kwargs) -> None:
-        """Display the current plot.
+        """
+        Display the current plot.
 
         Args:
             *args: Positional arguments passed to `plt.show`.

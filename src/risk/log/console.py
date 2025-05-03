@@ -7,7 +7,8 @@ import logging
 
 
 def in_jupyter():
-    """Check if the code is running in a Jupyter notebook environment.
+    """
+    Check if the code is running in a Jupyter notebook environment.
 
     Returns:
         bool: True if running in a Jupyter notebook or QtConsole, False otherwise.
@@ -26,7 +27,8 @@ def in_jupyter():
 
 # Define the MockLogger class to replicate logging behavior with print statements in Jupyter
 class MockLogger:
-    """MockLogger: A lightweight logger replacement using print statements in Jupyter.
+    """
+    MockLogger: A lightweight logger replacement using print statements in Jupyter.
 
     The MockLogger class replicates the behavior of a standard logger using print statements
     to display messages. This is primarily used in a Jupyter environment to show outputs
@@ -35,7 +37,8 @@ class MockLogger:
     """
 
     def __init__(self, verbose: bool = True):
-        """Initialize the MockLogger with verbosity settings.
+        """
+        Initialize the MockLogger with verbosity settings.
 
         Args:
             verbose (bool): If True, display all log messages (info, debug, warning).
@@ -44,7 +47,8 @@ class MockLogger:
         self.verbose = verbose
 
     def info(self, message: str) -> None:
-        """Display an informational message.
+        """
+        Display an informational message.
 
         Args:
             message (str): The informational message to be printed.
@@ -53,7 +57,8 @@ class MockLogger:
             print(message)
 
     def debug(self, message: str) -> None:
-        """Display a debug message.
+        """
+        Display a debug message.
 
         Args:
             message (str): The debug message to be printed.
@@ -62,7 +67,8 @@ class MockLogger:
             print(message)
 
     def warning(self, message: str) -> None:
-        """Display a warning message.
+        """
+        Display a warning message.
 
         Args:
             message (str): The warning message to be printed.
@@ -70,7 +76,8 @@ class MockLogger:
         print(message)
 
     def error(self, message: str) -> None:
-        """Display an error message.
+        """
+        Display an error message.
 
         Args:
             message (str): The error message to be printed.
@@ -78,7 +85,8 @@ class MockLogger:
         print(message)
 
     def setLevel(self, level: int) -> None:
-        """Adjust verbosity based on the logging level.
+        """
+        Adjust verbosity based on the logging level.
 
         Args:
             level (int): Logging level to control message display.
@@ -108,7 +116,8 @@ else:
 
 
 def set_global_verbosity(verbose):
-    """Set the global verbosity level for the logger.
+    """
+    Set the global verbosity level for the logger.
 
     Args:
         verbose (bool): Whether to display all log messages (True) or only error messages (False).
@@ -130,7 +139,8 @@ def set_global_verbosity(verbose):
 
 
 def log_header(input_string: str) -> None:
-    """Log the input string as a header with a line of dashes above and below it.
+    """
+    Log the input string as a header with a line of dashes above and below it.
 
     Args:
         input_string (str): The string to be printed as a header.

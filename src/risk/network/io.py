@@ -19,7 +19,8 @@ from risk.log import log_header, logger, params
 
 
 class NetworkIO:
-    """A class for loading, processing, and managing network data.
+    """
+    A class for loading, processing, and managing network data.
 
     The NetworkIO class provides methods to load network data from various formats (e.g., GPickle, NetworkX)
     and process the network by adjusting node coordinates, calculating edge lengths, and validating graph structure.
@@ -31,7 +32,8 @@ class NetworkIO:
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
     ):
-        """Initialize the NetworkIO class.
+        """
+        Initialize the NetworkIO class.
 
         Args:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
@@ -55,7 +57,8 @@ class NetworkIO:
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
     ) -> nx.Graph:
-        """Load a network from a GPickle file.
+        """
+        Load a network from a GPickle file.
 
         Args:
             filepath (str): Path to the GPickle file.
@@ -74,7 +77,8 @@ class NetworkIO:
         return networkio._load_network_gpickle(filepath=filepath)
 
     def _load_network_gpickle(self, filepath: str) -> nx.Graph:
-        """Private method to load a network from a GPickle file.
+        """
+        Private method to load a network from a GPickle file.
 
         Args:
             filepath (str): Path to the GPickle file.
@@ -100,7 +104,8 @@ class NetworkIO:
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
     ) -> nx.Graph:
-        """Load a NetworkX graph.
+        """
+        Load a NetworkX graph.
 
         Args:
             network (nx.Graph): A NetworkX graph object.
@@ -119,7 +124,8 @@ class NetworkIO:
         return networkio._load_network_networkx(network=network)
 
     def _load_network_networkx(self, network: nx.Graph) -> nx.Graph:
-        """Private method to load a NetworkX graph.
+        """
+        Private method to load a NetworkX graph.
 
         Args:
             network (nx.Graph): A NetworkX graph object.
@@ -147,7 +153,8 @@ class NetworkIO:
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
     ) -> nx.Graph:
-        """Load a network from a Cytoscape file.
+        """
+        Load a network from a Cytoscape file.
 
         Args:
             filepath (str): Path to the Cytoscape file.
@@ -180,7 +187,8 @@ class NetworkIO:
         target_label: str = "target",
         view_name: str = "",
     ) -> nx.Graph:
-        """Private method to load a network from a Cytoscape file.
+        """
+        Private method to load a network from a Cytoscape file.
 
         Args:
             filepath (str): Path to the Cytoscape file.
@@ -316,7 +324,8 @@ class NetworkIO:
         surface_depth: float = 0.0,
         min_edges_per_node: int = 0,
     ) -> nx.Graph:
-        """Load a network from a Cytoscape JSON (.cyjs) file.
+        """
+        Load a network from a Cytoscape JSON (.cyjs) file.
 
         Args:
             filepath (str): Path to the Cytoscape JSON file.
@@ -341,7 +350,8 @@ class NetworkIO:
         )
 
     def _load_network_cyjs(self, filepath, source_label="source", target_label="target"):
-        """Private method to load a network from a Cytoscape JSON (.cyjs) file.
+        """
+        Private method to load a network from a Cytoscape JSON (.cyjs) file.
 
         Args:
             filepath (str): Path to the Cytoscape JSON file.
@@ -396,7 +406,8 @@ class NetworkIO:
         return self._initialize_graph(G)
 
     def _initialize_graph(self, G: nx.Graph) -> nx.Graph:
-        """Initialize the graph by processing and validating its nodes and edges.
+        """
+        Initialize the graph by processing and validating its nodes and edges.
 
         Args:
             G (nx.Graph): The input NetworkX graph.
@@ -414,7 +425,8 @@ class NetworkIO:
         return G
 
     def _remove_invalid_graph_properties(self, G: nx.Graph) -> None:
-        """Remove invalid properties from the graph, including self-loops, nodes with fewer edges than
+        """
+        Remove invalid properties from the graph, including self-loops, nodes with fewer edges than
         the threshold, and isolated nodes.
 
         Args:
@@ -449,7 +461,8 @@ class NetworkIO:
         logger.debug(f"Final edge count: {num_final_edges}")
 
     def _assign_edge_weights(self, G: nx.Graph) -> None:
-        """Assign default edge weights to the graph.
+        """
+        Assign default edge weights to the graph.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
@@ -459,7 +472,8 @@ class NetworkIO:
         nx.set_edge_attributes(G, default_weight, "weight")
 
     def _validate_nodes(self, G: nx.Graph) -> None:
-        """Validate the graph structure and attributes with attribute fallback for positions and labels.
+        """
+        Validate the graph structure and attributes with attribute fallback for positions and labels.
 
         Args:
             G (nx.Graph): A NetworkX graph object.
@@ -519,7 +533,8 @@ class NetworkIO:
             )
 
     def _assign_edge_lengths(self, G: nx.Graph) -> None:
-        """Prepare the network by adjusting surface depth and calculating edge lengths.
+        """
+        Prepare the network by adjusting surface depth and calculating edge lengths.
 
         Args:
             G (nx.Graph): The input network graph.
@@ -537,7 +552,8 @@ class NetworkIO:
         compute_sphere: bool = True,
         surface_depth: float = 0.0,
     ) -> nx.Graph:
-        """Prepare the graph by normalizing coordinates and optionally mapping nodes to a sphere.
+        """
+        Prepare the graph by normalizing coordinates and optionally mapping nodes to a sphere.
 
         Args:
             G (nx.Graph): The input graph.
@@ -558,7 +574,8 @@ class NetworkIO:
         return G_depth
 
     def _calculate_and_set_edge_lengths(self, G: nx.Graph, compute_sphere: bool) -> None:
-        """Compute and assign edge lengths in the graph.
+        """
+        Compute and assign edge lengths in the graph.
 
         Args:
             G (nx.Graph): The input graph.
@@ -592,7 +609,8 @@ class NetworkIO:
             G.edges[u, v]["length"] = distance
 
     def _map_to_sphere(self, G: nx.Graph) -> None:
-        """Map the x and y coordinates of graph nodes onto a 3D sphere.
+        """
+        Map the x and y coordinates of graph nodes onto a 3D sphere.
 
         Args:
             G (nx.Graph): The input graph with nodes having 'x' and 'y' coordinates.
@@ -616,7 +634,8 @@ class NetworkIO:
         nx.set_node_attributes(G, xyz_coords)
 
     def _normalize_graph_coordinates(self, G: nx.Graph) -> None:
-        """Normalize the x and y coordinates of the nodes in the graph to the [0, 1] range.
+        """
+        Normalize the x and y coordinates of the nodes in the graph to the [0, 1] range.
 
         Args:
             G (nx.Graph): The input graph with nodes having 'x' and 'y' coordinates.
@@ -633,7 +652,8 @@ class NetworkIO:
             G.nodes[node]["x"], G.nodes[node]["y"] = normalized_xy[i]
 
     def _create_depth(self, G: nx.Graph, surface_depth: float = 0.0) -> nx.Graph:
-        """Adjust the 'z' attribute of each node based on the subcluster strengths and normalized surface depth.
+        """
+        Adjust the 'z' attribute of each node based on the subcluster strengths and normalized surface depth.
 
         Args:
             G (nx.Graph): The input graph.
@@ -677,7 +697,8 @@ class NetworkIO:
         filetype: str,
         filepath: str = "",
     ) -> None:
-        """Log the loading of the network with relevant parameters.
+        """
+        Log the loading of the network with relevant parameters.
 
         Args:
             filetype (str): The type of the file being loaded (e.g., 'CSV', 'JSON').

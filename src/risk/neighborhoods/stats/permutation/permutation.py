@@ -24,7 +24,8 @@ def compute_permutation_test(
     random_seed: int = 888,
     max_workers: int = 1,
 ) -> Dict[str, Any]:
-    """Compute permutation test for enrichment and depletion in neighborhoods.
+    """
+    Compute permutation test for enrichment and depletion in neighborhoods.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -75,7 +76,8 @@ def _run_permutation_test(
     random_seed: int = 888,
     max_workers: int = 4,
 ) -> tuple:
-    """Run the permutation test to calculate depletion and enrichment counts.
+    """
+    Run the permutation test to calculate depletion and enrichment counts.
 
     Args:
         neighborhoods (csr_matrix): Sparse binary matrix representing neighborhoods.
@@ -181,7 +183,8 @@ def _permutation_process_batch(
     progress_counter: ValueProxy,
     max_workers: int,
 ) -> tuple:
-    """Process a batch of permutations in a worker process.
+    """
+    Process a batch of permutations in a worker process.
 
     Args:
         permutations (Union[List, Tuple, np.ndarray]): Permutation batch to process.

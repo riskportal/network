@@ -18,7 +18,8 @@ class Canvas:
     """A class for laying out the canvas in a network graph."""
 
     def __init__(self, graph: Graph, ax: plt.Axes) -> None:
-        """Initialize the Canvas with a Graph and axis for plotting.
+        """
+        Initialize the Canvas with a Graph and axis for plotting.
 
         Args:
             graph (Graph): The Graph object containing the network data.
@@ -41,7 +42,8 @@ class Canvas:
         title_space_offset: float = 0.075,
         subtitle_offset: float = 0.025,
     ) -> None:
-        """Plot title and subtitle on the network graph with customizable parameters.
+        """
+        Plot title and subtitle on the network graph with customizable parameters.
 
         Args:
             title (str, optional): Title of the plot. Defaults to None.
@@ -122,7 +124,8 @@ class Canvas:
         outline_alpha: Union[float, None] = 1.0,
         fill_alpha: Union[float, None] = 0.0,
     ) -> None:
-        """Plot a circle around the network graph to represent the network perimeter.
+        """
+        Plot a circle around the network graph to represent the network perimeter.
 
         Args:
             scale (float, optional): Scaling factor for the perimeter diameter. Defaults to 1.0.
@@ -257,7 +260,8 @@ class Canvas:
         center_offset_x: float = 0.0,
         center_offset_y: float = 0.0,
     ) -> Tuple[float, float]:
-        """Calculate the adjusted center for the network perimeter circle based on user-defined offsets.
+        """
+        Calculate the adjusted center for the network perimeter circle based on user-defined offsets.
 
         Args:
             center (Tuple[float, float]): Original center coordinates of the network graph.

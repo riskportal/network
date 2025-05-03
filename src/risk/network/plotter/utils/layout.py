@@ -12,7 +12,8 @@ import numpy as np
 def calculate_bounding_box(
     node_coordinates: np.ndarray, radius_margin: float = 1.05
 ) -> Tuple[Tuple, float]:
-    """Calculate the bounding box of the network based on node coordinates.
+    """
+    Calculate the bounding box of the network based on node coordinates.
 
     Args:
         node_coordinates (np.ndarray): Array of node coordinates (x, y).
@@ -37,7 +38,8 @@ def refine_center_iteratively(
     max_iterations: int = 10,
     tolerance: float = 1e-2,
 ) -> Tuple[np.ndarray, float]:
-    """Refine the center of the graph iteratively to minimize skew in node distribution.
+    """
+    Refine the center of the graph iteratively to minimize skew in node distribution.
 
     Args:
         node_coordinates (np.ndarray): Array of node coordinates (x, y).
@@ -72,7 +74,8 @@ def refine_center_iteratively(
 def calculate_centroids(
     network: nx.Graph, domain_id_to_node_ids_map: Dict[int, Any]
 ) -> List[Tuple[float, float]]:
-    """Calculate the centroid for each domain based on node x and y coordinates in the network.
+    """
+    Calculate the centroid for each domain based on node x and y coordinates in the network.
 
     Args:
         network (nx.Graph): The graph representing the network.

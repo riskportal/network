@@ -13,7 +13,8 @@ from risk.log.console import log_header, logger
 
 
 class Summary:
-    """Handles the processing, storage, and export of network analysis results.
+    """
+    Handles the processing, storage, and export of network analysis results.
 
     The Results class provides methods to process significance and depletion data, compute
     FDR-corrected q-values, and structure information on domains and annotations into a
@@ -27,7 +28,8 @@ class Summary:
         neighborhoods: Dict[str, Any],
         graph,  # Avoid type hinting Graph to prevent circular imports
     ):
-        """Initialize the Results object with analysis components.
+        """
+        Initialize the Results object with analysis components.
 
         Args:
             annotation (Dict[str, Any]): Annotation data, including ordered annotations and matrix of associations.
@@ -39,7 +41,8 @@ class Summary:
         self.graph = graph
 
     def to_csv(self, filepath: str) -> None:
-        """Export significance results to a CSV file.
+        """
+        Export significance results to a CSV file.
 
         Args:
             filepath (str): The path where the CSV file will be saved.
@@ -50,7 +53,8 @@ class Summary:
         logger.info(f"Analysis summary exported to CSV file: {filepath}")
 
     def to_json(self, filepath: str) -> None:
-        """Export significance results to a JSON file.
+        """
+        Export significance results to a JSON file.
 
         Args:
             filepath (str): The path where the JSON file will be saved.
@@ -61,7 +65,8 @@ class Summary:
         logger.info(f"Analysis summary exported to JSON file: {filepath}")
 
     def to_txt(self, filepath: str) -> None:
-        """Export significance results to a text file.
+        """
+        Export significance results to a text file.
 
         Args:
             filepath (str): The path where the text file will be saved.
@@ -74,7 +79,8 @@ class Summary:
         logger.info(f"Analysis summary exported to text file: {filepath}")
 
     def load(self) -> pd.DataFrame:
-        """Load and process domain and annotation data into a DataFrame with significance metrics.
+        """
+        Load and process domain and annotation data into a DataFrame with significance metrics.
 
         Returns:
             pd.DataFrame: Processed DataFrame containing significance scores, p-values, q-values,
@@ -171,7 +177,8 @@ class Summary:
         return results
 
     def _calculate_qvalues(self, pvals: np.ndarray) -> np.ndarray:
-        """Calculate q-values (FDR) for each row of a p-value matrix.
+        """
+        Calculate q-values (FDR) for each row of a p-value matrix.
 
         Args:
             pvals (np.ndarray): 2D array of p-values.
@@ -190,7 +197,8 @@ class Summary:
         enrichment_qvals: np.ndarray,
         depletion_qvals: np.ndarray,
     ) -> Tuple[Union[float, None], Union[float, None], Union[float, None], Union[float, None]]:
-        """Retrieve the most significant p-values and q-values (FDR) for a given annotation.
+        """
+        Retrieve the most significant p-values and q-values (FDR) for a given annotation.
 
         Args:
             domain_id (int): The domain ID associated with the annotation.
@@ -226,7 +234,8 @@ class Summary:
         )
 
     def _get_annotation_members(self, description: str) -> str:
-        """Retrieve node labels associated with a given annotation description.
+        """
+        Retrieve node labels associated with a given annotation description.
 
         Args:
             description (str): The annotation description.

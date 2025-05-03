@@ -18,7 +18,8 @@ warnings.filterwarnings("ignore")
 
 
 class Params:
-    """Handles the storage and logging of various parameters for network analysis.
+    """
+    Handles the storage and logging of various parameters for network analysis.
 
     The Params class provides methods to log parameters related to different components of the analysis,
     such as the network, annotation, neighborhoods, graph, and plotter settings. It also stores
@@ -39,7 +40,8 @@ class Params:
         self.plotter = {}
 
     def log_network(self, **kwargs) -> None:
-        """Log network-related parameters.
+        """
+        Log network-related parameters.
 
         Args:
             **kwargs: Network parameters to log.
@@ -47,7 +49,8 @@ class Params:
         self.network = {**self.network, **kwargs}
 
     def log_annotation(self, **kwargs) -> None:
-        """Log annotation-related parameters.
+        """
+        Log annotation-related parameters.
 
         Args:
             **kwargs: Annotation parameters to log.
@@ -55,7 +58,8 @@ class Params:
         self.annotation = {**self.annotation, **kwargs}
 
     def log_neighborhoods(self, **kwargs) -> None:
-        """Log neighborhood-related parameters.
+        """
+        Log neighborhood-related parameters.
 
         Args:
             **kwargs: Neighborhood parameters to log.
@@ -63,7 +67,8 @@ class Params:
         self.neighborhoods = {**self.neighborhoods, **kwargs}
 
     def log_graph(self, **kwargs) -> None:
-        """Log graph-related parameters.
+        """
+        Log graph-related parameters.
 
         Args:
             **kwargs: Graph parameters to log.
@@ -71,7 +76,8 @@ class Params:
         self.graph = {**self.graph, **kwargs}
 
     def log_plotter(self, **kwargs) -> None:
-        """Log plotter-related parameters.
+        """
+        Log plotter-related parameters.
 
         Args:
             **kwargs: Plotter parameters to log.
@@ -79,7 +85,8 @@ class Params:
         self.plotter = {**self.plotter, **kwargs}
 
     def to_csv(self, filepath: str) -> None:
-        """Export the parameters to a CSV file.
+        """
+        Export the parameters to a CSV file.
 
         Args:
             filepath (str): The path where the CSV file will be saved.
@@ -102,7 +109,8 @@ class Params:
         logger.info(f"Parameters exported to CSV file: {filepath}")
 
     def to_json(self, filepath: str) -> None:
-        """Export the parameters to a JSON file.
+        """
+        Export the parameters to a JSON file.
 
         Args:
             filepath (str): The path where the JSON file will be saved.
@@ -113,7 +121,8 @@ class Params:
         logger.info(f"Parameters exported to JSON file: {filepath}")
 
     def to_txt(self, filepath: str) -> None:
-        """Export the parameters to a text file.
+        """
+        Export the parameters to a text file.
 
         Args:
             filepath (str): The path where the text file will be saved.
@@ -131,7 +140,8 @@ class Params:
         logger.info(f"Parameters exported to text file: {filepath}")
 
     def load(self) -> Dict[str, Any]:
-        """Load and process various parameters, converting any np.ndarray values to lists.
+        """
+        Load and process various parameters, converting any np.ndarray values to lists.
 
         Returns:
             Dict[str, Any]: A dictionary containing the processed parameters.
@@ -149,7 +159,8 @@ class Params:
         )
 
     def _convert_ndarray_to_list(self, d: Dict[str, Any]) -> Dict[str, Any]:
-        """Recursively convert all np.ndarray values in the dictionary to lists.
+        """
+        Recursively convert all np.ndarray values in the dictionary to lists.
 
         Args:
             d (Dict[str, Any]): The dictionary to process.

@@ -19,7 +19,8 @@ from risk.log import logger
 
 
 def initialize_nltk():
-    """Initialize all required NLTK components."""
+    """
+    Initialize all required NLTK components."""
     setup_nltk_resources()
 
     # After resources are available, initialize the components
@@ -41,7 +42,8 @@ def load_annotation(
     min_nodes_per_term: int = 1,
     max_nodes_per_term: int = 10_000,
 ) -> Dict[str, Any]:
-    """Convert annotation input to a sparse matrix and reindex based on the network's node labels.
+    """
+    Convert annotation input to a sparse matrix and reindex based on the network's node labels.
 
     Args:
         network (nx.Graph): The network graph.
@@ -127,7 +129,8 @@ def define_top_annotation(
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
 ) -> pd.DataFrame:
-    """Define top annotations based on neighborhood significance sums and binary significance matrix.
+    """
+    Define top annotations based on neighborhood significance sums and binary significance matrix.
 
     Args:
         network (NetworkX graph): The network graph.
@@ -218,7 +221,8 @@ def define_top_annotation(
 
 
 def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) -> str:
-    """Generate a weighted description from words and their corresponding scores,
+    """
+    Generate a weighted description from words and their corresponding scores,
     using improved weighting logic with normalization, lemmatization, and aggregation.
 
     Args:
@@ -286,7 +290,8 @@ def get_weighted_description(words_column: pd.Series, scores_column: pd.Series) 
 
 
 def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
-    """Filter out words that are too similar based on the Jaccard index,
+    """
+    Filter out words that are too similar based on the Jaccard index,
     keeping the word with the higher aggregated count.
 
     Args:
@@ -326,7 +331,8 @@ def _simplify_word_list(words: List[str], threshold: float = 0.80) -> List[str]:
 
 
 def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
-    """Calculate the Jaccard index between two sets.
+    """
+    Calculate the Jaccard index between two sets.
 
     Args:
         set1 (Set[Any]): The first set.
@@ -341,7 +347,8 @@ def _calculate_jaccard_index(set1: Set[Any], set2: Set[Any]) -> float:
 
 
 def _generate_coherent_description(words: List[str]) -> str:
-    """Generate a coherent description from a list of words.
+    """
+    Generate a coherent description from a list of words.
 
     If there is only one unique entry, return it directly.
     Otherwise, order the words by frequency and join them into a single string.

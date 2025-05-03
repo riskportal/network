@@ -18,7 +18,8 @@ from risk.log import logger
 def calculate_greedy_modularity_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> csr_matrix:
-    """Calculate neighborhoods using the Greedy Modularity method with CSR matrix output.
+    """
+    Calculate neighborhoods using the Greedy Modularity method with CSR matrix output.
 
     Args:
         network (nx.Graph): The network graph.
@@ -62,7 +63,8 @@ def calculate_greedy_modularity_neighborhoods(
 def calculate_label_propagation_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> csr_matrix:
-    """Apply Label Propagation to the network to detect communities.
+    """
+    Apply Label Propagation to the network to detect communities.
 
     Args:
         network (nx.Graph): The network graph.
@@ -112,7 +114,8 @@ def calculate_leiden_neighborhoods(
     fraction_shortest_edges: float = 1.0,
     random_seed: int = 888,
 ) -> csr_matrix:
-    """Calculate neighborhoods using the Leiden method with CSR matrix output.
+    """
+    Calculate neighborhoods using the Leiden method with CSR matrix output.
 
     Args:
         network (nx.Graph): The network graph.
@@ -168,7 +171,8 @@ def calculate_louvain_neighborhoods(
     fraction_shortest_edges: float = 1.0,
     random_seed: int = 888,
 ) -> csr_matrix:
-    """Calculate neighborhoods using the Louvain method.
+    """
+    Calculate neighborhoods using the Louvain method.
 
     Args:
         network (nx.Graph): The network graph.
@@ -221,7 +225,8 @@ def calculate_louvain_neighborhoods(
 def calculate_markov_clustering_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> csr_matrix:
-    """Apply Markov Clustering (MCL) to the network and return a binary neighborhood matrix (CSR).
+    """
+    Apply Markov Clustering (MCL) to the network and return a binary neighborhood matrix (CSR).
 
     Args:
         network (nx.Graph): The network graph.
@@ -291,7 +296,8 @@ def calculate_markov_clustering_neighborhoods(
 def calculate_spinglass_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> csr_matrix:
-    """Apply Spinglass Community Detection to the network, handling disconnected components.
+    """
+    Apply Spinglass Community Detection to the network, handling disconnected components.
 
     Args:
         network (nx.Graph): The network graph.
@@ -355,7 +361,8 @@ def calculate_spinglass_neighborhoods(
 def calculate_walktrap_neighborhoods(
     network: nx.Graph, fraction_shortest_edges: float = 1.0
 ) -> csr_matrix:
-    """Apply Walktrap Community Detection to the network with CSR matrix output.
+    """
+    Apply Walktrap Community Detection to the network with CSR matrix output.
 
     Args:
         network (nx.Graph): The network graph.
@@ -399,7 +406,8 @@ def calculate_walktrap_neighborhoods(
 
 
 def _create_percentile_limited_subgraph(G: nx.Graph, fraction_shortest_edges: float) -> nx.Graph:
-    """Create a subgraph containing the shortest edges based on the specified rank fraction
+    """
+    Create a subgraph containing the shortest edges based on the specified rank fraction
     of all edge lengths in the input graph.
 
     Args:

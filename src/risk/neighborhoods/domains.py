@@ -35,7 +35,8 @@ def define_domains(
     linkage_metric: str,
     linkage_threshold: Union[float, str],
 ) -> pd.DataFrame:
-    """Define domains and assign nodes to these domains based on their significance scores and clustering,
+    """
+    Define domains and assign nodes to these domains based on their significance scores and clustering,
     handling errors by assigning unique domains when clustering fails.
 
     Args:
@@ -112,7 +113,8 @@ def trim_domains(
     min_cluster_size: int = 5,
     max_cluster_size: int = 1000,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Trim domains that do not meet size criteria and find outliers.
+    """
+    Trim domains that do not meet size criteria and find outliers.
 
     Args:
         domains (pd.DataFrame): DataFrame of domain data for the network nodes.
@@ -182,7 +184,8 @@ def trim_domains(
 
 
 def _safeguard_matrix(matrix: np.ndarray) -> np.ndarray:
-    """Safeguard the matrix by replacing NaN, Inf, and -Inf values.
+    """
+    Safeguard the matrix by replacing NaN, Inf, and -Inf values.
 
     Args:
         matrix (np.ndarray): Data matrix.
@@ -211,7 +214,8 @@ def _optimize_silhouette_across_linkage_and_metrics(
     linkage_metric: str,
     linkage_threshold: Union[str, float],
 ) -> Tuple[str, str, float]:
-    """Optimize silhouette score across different linkage methods and distance metrics.
+    """
+    Optimize silhouette score across different linkage methods and distance metrics.
 
     Args:
         m (np.ndarray): Data matrix.
@@ -287,7 +291,8 @@ def _find_best_silhouette_score(
     lower_bound: float = 0.001,
     upper_bound: float = 1.0,
 ) -> Tuple[float, float]:
-    """Find the best silhouette score using binary search.
+    """
+    Find the best silhouette score using binary search.
 
     Args:
         Z (np.ndarray): Linkage matrix.

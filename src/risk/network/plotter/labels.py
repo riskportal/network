@@ -22,7 +22,8 @@ class Labels:
     """Class to handle the annotation of network graphs with labels for different domains."""
 
     def __init__(self, graph: Graph, ax: plt.Axes):
-        """Initialize the Labeler object with a network graph and matplotlib axes.
+        """
+        Initialize the Labeler object with a network graph and matplotlib axes.
 
         Args:
             graph (Graph): Graph object containing the network data.
@@ -56,7 +57,8 @@ class Labels:
         ids_to_keep: Union[List, Tuple, np.ndarray, None] = None,
         ids_to_labels: Union[Dict[int, str], None] = None,
     ) -> None:
-        """Annotate the network graph with labels for different domains, positioned around the network for clarity.
+        """
+        Annotate the network graph with labels for different domains, positioned around the network for clarity.
 
         Args:
             scale (float, optional): Scale factor for positioning labels around the perimeter. Defaults to 1.05.
@@ -261,7 +263,8 @@ class Labels:
         arrow_base_shrink: float = 0.0,
         arrow_tip_shrink: float = 0.0,
     ) -> None:
-        """Annotate the network graph with a label for the given nodes, with one arrow pointing to each centroid of sublists of nodes.
+        """
+        Annotate the network graph with a label for the given nodes, with one arrow pointing to each centroid of sublists of nodes.
 
         Args:
             nodes (List, Tuple, or np.ndarray): List of node labels or list of lists of node labels.
@@ -349,7 +352,8 @@ class Labels:
             )
 
     def _calculate_domain_centroid(self, nodes: List) -> tuple:
-        """Calculate the most centrally located node in .
+        """
+        Calculate the most centrally located node in the domain based on the coordinates of the nodes.
 
         Args:
             nodes (List): List of node labels to include in the subnetwork.
@@ -384,7 +388,8 @@ class Labels:
         filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> None:
-        """Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
+        """
+        Process the ids_to_keep, apply filtering, and store valid domain centroids and terms.
 
         Args:
             domain_id_to_centroid_map (Dict[int, np.ndarray]): Mapping of domain IDs to their centroids.
@@ -450,7 +455,8 @@ class Labels:
         filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> None:
-        """Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
+        """
+        Process remaining domains to fill in additional labels, respecting the remaining_labels limit.
 
         Args:
             domain_id_to_centroid_map (Dict[int, np.ndarray]): Mapping of domain IDs to their centroids.
@@ -551,7 +557,8 @@ class Labels:
         filtered_domain_terms: Dict[int, str],
         valid_indices: List[int],
     ) -> bool:
-        """Validate and process the domain terms, updating relevant dictionaries if valid.
+        """
+        Validate and process the domain terms, updating relevant dictionaries if valid.
 
         Args:
             domain_id (int): Domain ID to process.
@@ -607,7 +614,8 @@ class Labels:
         min_chars_per_line: int,
         max_chars_per_line: int,
     ) -> str:
-        """Process terms for a domain, applying word length constraints and combining words where appropriate.
+        """
+        Process terms for a domain, applying word length constraints and combining words where appropriate.
 
         Args:
             domain_id (int): Domain ID to process.
@@ -646,7 +654,8 @@ class Labels:
         ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> List:
-        """Get colors for the labels based on node annotation or a specified colormap.
+        """
+        Get colors for the labels based on node annotation or a specified colormap.
 
         Args:
             cmap (str, optional): Name of the colormap to use for generating label colors. Defaults to "gist_rainbow".
@@ -682,8 +691,9 @@ class Labels:
     def _combine_words(
         self, words: List[str], max_chars_per_line: int, max_label_lines: int
     ) -> str:
-        """Combine words to fit within the max_chars_per_line and max_label_lines constraints,
-        and separate the final output by TERM_DELIMITER for plotting.
+        """
+        Combine words to fit within the max_chars_per_line and max_label_lines constraints, and separate the
+        final output by TERM_DELIMITER for plotting.
 
         Args:
             words (List[str]): List of words to combine.
@@ -753,7 +763,8 @@ class Labels:
         radius: float,
         offset: float,
     ) -> Dict[int, Any]:
-        """Calculate and optimize label positions for clarity.
+        """
+        Calculate and optimize label positions for clarity.
 
         Args:
             filtered_domain_centroids (Dict[int, Any]): Centroids of the filtered domains.
@@ -777,7 +788,8 @@ class Labels:
     def _calculate_equidistant_positions_around_center(
         self, center: Tuple[float, float], radius: float, label_offset: float, num_domains: int
     ) -> List[np.ndarray]:
-        """Calculate positions around a center at equidistant angles.
+        """
+        Calculate positions around a center at equidistant angles.
 
         Args:
             center (Tuple[float, float]): The center point around which positions are calculated.
@@ -799,7 +811,8 @@ class Labels:
     def _optimize_label_positions(
         self, best_label_positions: Dict[int, Any], domain_centroids: Dict[int, Any]
     ) -> Dict[int, Any]:
-        """Optimize label positions around the perimeter to minimize total distance to centroids.
+        """
+        Optimize label positions around the perimeter to minimize total distance to centroids.
 
         Args:
             best_label_positions (Dict[int, Any]): Initial positions of labels around the perimeter.
@@ -838,7 +851,8 @@ class Labels:
     def _calculate_total_distance(
         self, label_positions: Dict[int, Any], domain_centroids: Dict[int, Any]
     ) -> float:
-        """Calculate the total distance from label positions to their domain centroids.
+        """
+        Calculate the total distance from label positions to their domain centroids.
 
         Args:
             label_positions (Dict[int, Any]): Positions of labels around the perimeter.
@@ -862,7 +876,8 @@ class Labels:
         j: int,
         domain_centroids: Dict[int, Any],
     ) -> float:
-        """Swap two labels and evaluate the total distance after the swap.
+        """
+        Swap two labels and evaluate the total distance after the swap.
 
         Args:
             label_positions (Dict[int, Any]): Positions of labels around the perimeter.
@@ -887,7 +902,8 @@ class Labels:
     def _apply_str_transformation(
         self, words: List[str], transformation: Union[str, Dict[str, str]]
     ) -> List[str]:
-        """Apply a user-specified case transformation to each word in the list without appending duplicates.
+        """
+        Apply a user-specified case transformation to each word in the list without appending duplicates.
 
         Args:
             words (List[str]): A list of words to transform.

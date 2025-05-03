@@ -14,13 +14,15 @@ from risk.network.plotter.utils.colors import get_domain_colors, to_rgba
 
 
 class Network:
-    """A class for plotting network graphs with customizable options.
+    """
+    A class for plotting network graphs with customizable options.
 
     The Network class provides methods to plot network graphs with flexible node and edge properties.
     """
 
     def __init__(self, graph: Graph, ax: Any = None) -> None:
-        """Initialize the Plotter class.
+        """
+        Initialize the Plotter class.
 
         Args:
             graph (Graph): The network data and attributes to be visualized.
@@ -41,7 +43,8 @@ class Network:
         node_alpha: Union[float, None] = 1.0,
         edge_alpha: Union[float, None] = 1.0,
     ) -> None:
-        """Plot the network graph with customizable node colors, sizes, edge widths, and node edge widths.
+        """
+        Plot the network graph with customizable node colors, sizes, edge widths, and node edge widths.
 
         Args:
             node_size (int or np.ndarray, optional): Size of the nodes. Can be a single integer or an array of sizes. Defaults to 50.
@@ -124,7 +127,8 @@ class Network:
         node_alpha: Union[float, None] = None,
         edge_alpha: Union[float, None] = None,
     ) -> None:
-        """Plot a subnetwork of selected nodes with customizable node and edge attributes.
+        """
+        Plot a subnetwork of selected nodes with customizable node and edge attributes.
 
         Args:
             nodes (List, Tuple, or np.ndarray): List of node labels to include in the subnetwork. Accepts nested lists.
@@ -211,7 +215,8 @@ class Network:
         ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> np.ndarray:
-        """Adjust the colors of nodes in the network graph based on significance.
+        """
+        Adjust the colors of nodes in the network graph based on significance.
 
         Args:
             cmap (str, optional): Colormap to use for coloring the nodes. Defaults to "gist_rainbow".
@@ -270,7 +275,8 @@ class Network:
     def get_annotated_node_sizes(
         self, significant_size: int = 50, nonsignificant_size: int = 25
     ) -> np.ndarray:
-        """Adjust the sizes of nodes in the network graph based on whether they are significant or not.
+        """
+        Adjust the sizes of nodes in the network graph based on whether they are significant or not.
 
         Args:
             significant_size (int): Size for significant nodes. Defaults to 50.

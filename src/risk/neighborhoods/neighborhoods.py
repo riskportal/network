@@ -36,7 +36,8 @@ def get_network_neighborhoods(
     leiden_resolution: float = 1.0,
     random_seed: int = 888,
 ) -> csr_matrix:
-    """Calculate the combined neighborhoods for each node using sparse matrices.
+    """
+    Calculate the combined neighborhoods for each node using sparse matrices.
 
     Args:
         network (nx.Graph): The network graph.
@@ -125,7 +126,8 @@ def get_network_neighborhoods(
 
 
 def _set_max_row_value_to_one_sparse(matrix: csr_matrix) -> csr_matrix:
-    """Set the maximum value in each row of a sparse matrix to 1.
+    """
+    Set the maximum value in each row of a sparse matrix to 1.
 
     Args:
         matrix (csr_matrix): The input sparse matrix.
@@ -142,34 +144,14 @@ def _set_max_row_value_to_one_sparse(matrix: csr_matrix) -> csr_matrix:
     return matrix
 
 
-def _set_max_row_value_to_one(matrix: np.ndarray) -> np.ndarray:
-    """For each row in the input matrix, set the maximum value(s) to 1 and all other values to 0. This is particularly
-    useful for neighborhood matrices that have undergone multiple neighborhood detection algorithms, where the
-    maximum value in each row represents the most significant relationship per node in the combined neighborhoods.
-
-    Args:
-        matrix (np.ndarray): A 2D numpy array representing the neighborhood matrix.
-
-    Returns:
-        np.ndarray: The modified matrix where only the maximum value(s) in each row is set to 1, and others are set to 0.
-    """
-    # Find the maximum value in each row (column-wise max operation)
-    max_values = np.max(matrix, axis=1, keepdims=True)
-    # Create a boolean mask where elements are True if they are the max value in their row
-    max_mask = matrix == max_values
-    # Set all elements to 0, and then set the maximum value positions to 1
-    matrix[:] = 0  # Set everything to 0
-    matrix[max_mask] = 1  # Set only the max values to 1
-    return matrix
-
-
 def process_neighborhoods(
     network: nx.Graph,
     neighborhoods: Dict[str, Any],
     impute_depth: int = 0,
     prune_threshold: float = 0.0,
 ) -> Dict[str, Any]:
-    """Process neighborhoods based on the imputation and pruning settings.
+    """
+    Process neighborhoods based on the imputation and pruning settings.
 
     Args:
         network (nx.Graph): The network data structure used for imputing and pruning neighbors.
@@ -226,7 +208,8 @@ def _impute_neighbors(
     significant_binary_significance_matrix: np.ndarray,
     max_depth: int = 3,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Impute rows with sums of zero in the significance matrix based on the closest non-zero neighbors in the network graph.
+    """
+    Impute rows with sums of zero in the significance matrix based on the closest non-zero neighbors in the network graph.
 
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
@@ -262,7 +245,8 @@ def _impute_neighbors_with_similarity(
     significant_binary_significance_matrix: np.ndarray,
     max_depth: int = 3,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Impute non-significant nodes based on the closest significant neighbors' profiles and their similarity.
+    """
+    Impute non-significant nodes based on the closest significant neighbors' profiles and their similarity.
 
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
@@ -306,7 +290,8 @@ def _process_node_imputation(
     significant_binary_significance_matrix: np.ndarray,
     depth: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Process the imputation for a single node based on its significant neighbors.
+    """
+    Process the imputation for a single node based on its significant neighbors.
 
     Args:
         row_index (int): The index of the significant node being processed.
@@ -391,7 +376,8 @@ def _prune_neighbors(
     significant_binary_significance_matrix: np.ndarray,
     distance_threshold: float = 0.9,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Remove outliers based on their rank for edge lengths.
+    """
+    Remove outliers based on their rank for edge lengths.
 
     Args:
         network (nx.Graph): The network graph with nodes having IDs matching the matrix indices.
@@ -450,7 +436,8 @@ def _prune_neighbors(
 
 
 def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
-    """Calculate the Euclidean distance between two nodes in the network.
+    """
+    Calculate the Euclidean distance between two nodes in the network.
 
     Args:
         node1 (Any): The first node.
@@ -466,7 +453,8 @@ def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
 
 
 def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
-    """Retrieve the position of a node in the network as a numpy array.
+    """
+    Retrieve the position of a node in the network as a numpy array.
 
     Args:
         network (nx.Graph): The network graph containing node positions.
@@ -485,7 +473,8 @@ def _get_node_position(network: nx.Graph, node: Any) -> np.ndarray:
 
 
 def _calculate_threshold(median_distances: List, distance_threshold: float) -> float:
-    """Calculate the distance threshold based on the given median distances and a percentile threshold.
+    """
+    Calculate the distance threshold based on the given median distances and a percentile threshold.
 
     Args:
         median_distances (List): An array of median distances.

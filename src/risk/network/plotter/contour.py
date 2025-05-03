@@ -20,7 +20,8 @@ class Contour:
     """Class to generate Kernel Density Estimate (KDE) contours for nodes in a network graph."""
 
     def __init__(self, graph: Graph, ax: plt.Axes) -> None:
-        """Initialize the Contour with a Graph and axis for plotting.
+        """
+        Initialize the Contour with a Graph and axis for plotting.
 
         Args:
             graph (Graph): The Graph object containing the network data.
@@ -40,7 +41,8 @@ class Contour:
         alpha: Union[float, None] = 1.0,
         fill_alpha: Union[float, None] = None,
     ) -> None:
-        """Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
+        """
+        Draw KDE contours for nodes in various domains of a network graph, highlighting areas of high density.
 
         Args:
             levels (int, optional): Number of contour levels to plot. Defaults to 5.
@@ -105,7 +107,8 @@ class Contour:
         alpha: Union[float, None] = 1.0,
         fill_alpha: Union[float, None] = None,
     ) -> None:
-        """Plot a subcontour for a given set of nodes or a list of node sets using Kernel Density Estimation (KDE).
+        """
+        Plot a subcontour for a given set of nodes or a list of node sets using Kernel Density Estimation (KDE).
 
         Args:
             nodes (List, Tuple, or np.ndarray): List of node labels or list of lists of node labels to plot the contour for.
@@ -179,7 +182,8 @@ class Contour:
         linewidth: float = 1.5,
         fill_alpha: Union[float, None] = 0.2,
     ) -> None:
-        """Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
+        """
+        Draw a Kernel Density Estimate (KDE) contour plot for a set of nodes on a given axis.
 
         Args:
             ax (plt.Axes): The axis to draw the contour on.
@@ -283,7 +287,8 @@ class Contour:
         ids_to_colors: Union[Dict[int, Any], None] = None,
         random_seed: int = 888,
     ) -> List[Tuple]:
-        """Get colors for the contours based on node annotation or a specified colormap.
+        """
+        Get colors for the contours based on node annotation or a specified colormap.
 
         Args:
             cmap (str, optional): Name of the colormap to use for generating contour colors. Defaults to "gist_rainbow".
@@ -317,7 +322,8 @@ class Contour:
         )
 
     def _is_connected(self, z: np.ndarray) -> bool:
-        """Determine if a thresholded grid represents a single, connected component.
+        """
+        Determine if a thresholded grid represents a single, connected component.
 
         Args:
             z (np.ndarray): A binary grid where the component connectivity is evaluated.

@@ -23,7 +23,8 @@ from risk.neighborhoods.stats import (
 
 
 class NeighborhoodsAPI:
-    """Handles the loading of statistical results and annotation significance for neighborhoods.
+    """
+    Handles the loading of statistical results and annotation significance for neighborhoods.
 
     The NeighborhoodsAPI class provides methods to load neighborhood results from statistical tests.
     """
@@ -42,7 +43,8 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the binomial test.
+        """
+        Load significant neighborhoods for the network using the binomial test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -87,7 +89,8 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the chi-squared test.
+        """
+        Load significant neighborhoods for the network using the chi-squared test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -132,7 +135,8 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the hypergeometric test.
+        """
+        Load significant neighborhoods for the network using the hypergeometric test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -180,7 +184,8 @@ class NeighborhoodsAPI:
         random_seed: int = 888,
         max_workers: int = 1,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the permutation test.
+        """
+        Load significant neighborhoods for the network using the permutation test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -235,7 +240,8 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the Poisson test.
+        """
+        Load significant neighborhoods for the network using the Poisson test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -280,7 +286,8 @@ class NeighborhoodsAPI:
         null_distribution: str = "network",
         random_seed: int = 888,
     ) -> Dict[str, Any]:
-        """Load significant neighborhoods for the network using the z-score test.
+        """
+        Load significant neighborhoods for the network using the z-score test.
 
         Args:
             network (nx.Graph): The network graph.
@@ -328,7 +335,8 @@ class NeighborhoodsAPI:
         statistical_test_function: Any = compute_hypergeom_test,
         **kwargs,
     ):
-        """Load and compute significant neighborhoods for the network using a specified statistical test.
+        """
+        Load and compute significant neighborhoods for the network using a specified statistical test.
 
         Args:
             network (nx.Graph): The input network graph.
@@ -398,7 +406,8 @@ class NeighborhoodsAPI:
         fraction_shortest_edges: Union[float, List, Tuple, np.ndarray] = 0.5,
         random_seed: int = 888,
     ) -> csr_matrix:
-        """Load significant neighborhoods for the network.
+        """
+        Load significant neighborhoods for the network.
 
         Args:
             network (nx.Graph): The network graph.

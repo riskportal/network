@@ -21,7 +21,8 @@ from risk.network.graph.stats import calculate_significance_matrices
 
 
 class GraphAPI:
-    """Handles the loading of network graphs and associated data.
+    """
+    Handles the loading of network graphs and associated data.
 
     The GraphAPI class provides methods to load and process network graphs, annotations, and neighborhoods.
     """
@@ -46,7 +47,8 @@ class GraphAPI:
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
     ) -> Graph:
-        """Load and process the network graph, defining top annotations and domains.
+        """
+        Load and process the network graph, defining top annotations and domains.
 
         Args:
             network (nx.Graph): The network graph.
@@ -169,7 +171,8 @@ class GraphAPI:
         min_cluster_size: int = 5,
         max_cluster_size: int = 1000,
     ) -> pd.DataFrame:
-        """Define top annotations for the network.
+        """
+        Define top annotations for the network.
 
         Args:
             network (nx.Graph): The network graph.

@@ -13,7 +13,8 @@ from risk.network.plotter.plotter import Plotter
 
 
 class PlotterAPI:
-    """Handles the loading of network plotter objects.
+    """
+    Handles the loading of network plotter objects.
 
     The PlotterAPI class provides methods to load and configure Plotter objects for plotting network graphs.
     """
@@ -29,7 +30,8 @@ class PlotterAPI:
         background_alpha: Union[float, None] = 1.0,
         pad: float = 0.3,
     ) -> Plotter:
-        """Get a Plotter object for plotting.
+        """
+        Get a Plotter object for plotting.
 
         Args:
             graph (Graph): The graph to plot.

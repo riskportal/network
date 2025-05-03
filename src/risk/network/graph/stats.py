@@ -16,7 +16,8 @@ def calculate_significance_matrices(
     pval_cutoff: float = 0.05,
     fdr_cutoff: float = 0.05,
 ) -> Dict[str, Any]:
-    """Calculate significance matrices based on p-values and specified tail.
+    """
+    Calculate significance matrices based on p-values and specified tail.
 
     Args:
         depletion_pvals (np.ndarray): Matrix of depletion p-values.
@@ -89,7 +90,8 @@ def _select_significance_matrices(
     log_enrichment_matrix: np.ndarray,
     enrichment_alpha_threshold_matrix: np.ndarray,
 ) -> tuple:
-    """Select significance matrices based on the specified tail type.
+    """
+    Select significance matrices based on the specified tail type.
 
     Args:
         tail (str): The tail type for significance selection. Options are 'left', 'right', or 'both'.
@@ -143,7 +145,8 @@ def _compute_threshold_matrix(
     pval_cutoff: float = 0.05,
     fdr_cutoff: float = 0.05,
 ) -> np.ndarray:
-    """Compute a threshold matrix indicating significance based on p-value and FDR cutoffs.
+    """
+    Compute a threshold matrix indicating significance based on p-value and FDR cutoffs.
 
     Args:
         pvals (np.ndarray): Array of p-values for statistical tests.

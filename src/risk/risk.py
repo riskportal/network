@@ -12,7 +12,8 @@ from risk.network.plotter.api import PlotterAPI
 
 
 class RISK(NetworkIO, AnnotationIO, NeighborhoodsAPI, GraphAPI, PlotterAPI):
-    """RISK: A class for network analysis and visualization.
+    """
+    RISK: A class for network analysis and visualization.
 
     The RISK class integrates functionalities for loading networks, processing annotations,
     performing network-based statistical analysis to quantify neighborhood relationships,
@@ -20,7 +21,8 @@ class RISK(NetworkIO, AnnotationIO, NeighborhoodsAPI, GraphAPI, PlotterAPI):
     """
 
     def __init__(self, verbose: bool = True):
-        """Initialize the RISK class with configuration settings.
+        """
+        Initialize the RISK class with configuration settings.
 
         Args:
             verbose (bool): If False, suppresses all log messages to the console. Defaults to True.
