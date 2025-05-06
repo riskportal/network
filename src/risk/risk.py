@@ -3,12 +3,10 @@ risk/risk
 ~~~~~~~~~
 """
 
-from risk.annotation.io import AnnotationIO
-from risk.log import params, set_global_verbosity
-from risk.neighborhoods.api import NeighborhoodsAPI
-from risk.network.graph.api import GraphAPI
-from risk.network.io import NetworkIO
-from risk.network.plotter.api import PlotterAPI
+from ._annotation import AnnotationIO
+from ._log import params, set_global_verbosity
+from ._neighborhoods import NeighborhoodsAPI
+from ._network import GraphAPI, NetworkIO, PlotterAPI
 
 
 class RISK(NetworkIO, AnnotationIO, NeighborhoodsAPI, GraphAPI, PlotterAPI):

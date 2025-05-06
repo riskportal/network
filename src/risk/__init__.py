@@ -5,6 +5,6 @@ risk
 RISK: Regional Inference of Significant Kinships
 """
 
-from risk.risk import RISK
+from .risk import RISK
 
 __version__ = "0.0.13-beta.4"
