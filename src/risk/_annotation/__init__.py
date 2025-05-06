@@ -1,6 +1,6 @@
 """
-risk/annotation
-~~~~~~~~~~~~~~~
+risk/_annotation
+~~~~~~~~~~~~~~~~
 """
 
 from ._annotation import (

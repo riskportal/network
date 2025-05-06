@@ -1,6 +1,6 @@
 """
-risk/log
-~~~~~~~~
+risk/_log
+~~~~~~~~~
 """
 
 from ._console import log_header, logger, set_global_verbosity

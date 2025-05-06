@@ -1,6 +1,6 @@
 """
-risk/network/graph
-~~~~~~~~~~~~~~~~~~
+risk/_network/_graph
+~~~~~~~~~~~~~~~~~~~~
 """
 
 from ._api import GraphAPI

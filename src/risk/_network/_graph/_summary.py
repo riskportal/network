@@ -1,6 +1,6 @@
 """
-risk/network/graph/summary
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_network/_graph/_summary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from typing import Any, Dict, Tuple, Union

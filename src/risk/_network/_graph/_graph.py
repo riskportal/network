@@ -1,6 +1,6 @@
 """
-risk/network/graph/graph
-~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_network/_graph/_graph
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from collections import defaultdict

@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/neighborhoods
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods/_neighborhoods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import random

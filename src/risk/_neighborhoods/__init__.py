@@ -1,6 +1,6 @@
 """
-risk/neighborhoods
-~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods
+~~~~~~~~~~~~~~~~~~~
 """
 
 from ._api import NeighborhoodsAPI

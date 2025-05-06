@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/stats/permutation/test_functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods/_stats/_permutation/_test_functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import numpy as np

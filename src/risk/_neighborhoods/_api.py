@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/api
-~~~~~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods/_api
+~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import copy

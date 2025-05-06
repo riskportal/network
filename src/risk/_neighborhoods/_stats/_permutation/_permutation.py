@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/stats/permutation/permutation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods/_stats/_permutation/_permutation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from multiprocessing import Manager, get_context

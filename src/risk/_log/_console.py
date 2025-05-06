@@ -1,6 +1,6 @@
 """
-risk/log/console
-~~~~~~~~~~~~~~~~
+risk/_log/_console
+~~~~~~~~~~~~~~~~~~
 """
 
 import logging

@@ -1,6 +1,6 @@
 """
-risk/neighborhoods/stats
-~~~~~~~~~~~~~~~~~~~~~~~~
+risk/_neighborhoods/_stats
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 from ._permutation import compute_permutation_test
