@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from risk.network.graph.summary import Summary
+from risk._network._graph._summary import Summary
 
 
 def test_load_graph_with_json_annotation(risk_obj, cytoscape_network, json_annotation):

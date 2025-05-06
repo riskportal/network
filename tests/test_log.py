@@ -8,7 +8,7 @@ import logging
 
 import pytest
 
-from risk.log import log_header, logger, params
+from risk._log import log_header, logger, params
 
 
 @pytest.fixture
