@@ -1,6 +1,6 @@
 """
-risk/risk
-~~~~~~~~~
+risk/_risk
+~~~~~~~~~~
 """
 
 from ._annotation import AnnotationIO
