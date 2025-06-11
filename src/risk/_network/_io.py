@@ -18,6 +18,150 @@ import pandas as pd
 from .._log import log_header, logger, params
 
 
+class NetworkAPI:
+    """
+    Public-facing interface for loading and initializing network data.
+    Delegates to the NetworkIO worker class for actual I/O and processing.
+    """
+
+    def __init__(
+        self,
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+    ):
+        """
+        Initialize the NetworkAPI.
+
+        Args:
+            compute_sphere (bool): Whether to map nodes to a sphere. Defaults to True.
+            surface_depth (float): Surface depth for the sphere. Defaults to 0.0.
+            min_edges_per_node (int): Minimum number of edges per node. Defaults to 0.
+        """
+        self.compute_sphere = compute_sphere
+        self.surface_depth = surface_depth
+        self.min_edges_per_node = min_edges_per_node
+
+    def load_network_gpickle(
+        self,
+        filepath: str,
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+    ) -> nx.Graph:
+        """
+        Load a network from a GPickle file via NetworkIO.
+
+        Args:
+            filepath (str): Path to the GPickle file.
+            compute_sphere (bool, optional): Override or use API default. Defaults to True.
+            surface_depth (float, optional): Override or use API default. Defaults to 0.0.
+            min_edges_per_node (int, optional): Override or use API default. Defaults to 0.
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        io = NetworkIO(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+        )
+        return io.load_network_gpickle(filepath=filepath)
+
+    def load_network_networkx(
+        self,
+        network: nx.Graph,
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+    ) -> nx.Graph:
+        """
+        Load a NetworkX graph via NetworkIO.
+
+        Args:
+            network (nx.Graph): A NetworkX graph object.
+            compute_sphere (bool, optional): Override or use API default. Defaults to True.
+            surface_depth (float, optional): Override or use API default. Defaults to 0.0.
+            min_edges_per_node (int, optional): Override or use API default. Defaults to 0.
+        Returns:
+            nx.Graph: Processed network.
+        """
+        io = NetworkIO(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+        )
+        return io.load_network_networkx(network=network)
+
+    def load_network_cytoscape(
+        self,
+        filepath: str,
+        source_label: str = "source",
+        target_label: str = "target",
+        view_name: str = "",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+    ) -> nx.Graph:
+        """
+        Load a network from a Cytoscape file via NetworkIO.
+
+        Args:
+            filepath (str): Path to the Cytoscape file.
+            source_label (str, optional): Source node label. Defaults to "source".
+            target_label (str, optional): Target node label. Defaults to "target".
+            view_name (str, optional): Specific view name to load. Defaults to "".
+            compute_sphere (bool, optional): Override or use API default. Defaults to True.
+            surface_depth (float, optional): Override or use API default. Defaults to 0.0.
+            min_edges_per_node (int, optional): Override or use API default. Defaults to 0.
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        io = NetworkIO(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+        )
+        return io.load_network_cytoscape(
+            filepath=filepath,
+            source_label=source_label,
+            target_label=target_label,
+            view_name=view_name,
+        )
+
+    def load_network_cyjs(
+        self,
+        filepath: str,
+        source_label: str = "source",
+        target_label: str = "target",
+        compute_sphere: bool = True,
+        surface_depth: float = 0.0,
+        min_edges_per_node: int = 0,
+    ) -> nx.Graph:
+        """
+        Load a network from a Cytoscape JSON (.cyjs) file via NetworkIO.
+
+        Args:
+            filepath (str): Path to the Cytoscape JSON file.
+            source_label (str, optional): Source node label. Defaults to "source".
+            target_label (str, optional): Target node label. Defaults to "target".
+            compute_sphere (bool, optional): Override or use API default. Defaults to True.
+            surface_depth (float, optional): Override or use API default. Defaults to 0.0.
+            min_edges_per_node (int, optional): Override or use API default. Defaults to 0.
+        Returns:
+            nx.Graph: Loaded and processed network.
+        """
+        io = NetworkIO(
+            compute_sphere=compute_sphere,
+            surface_depth=surface_depth,
+            min_edges_per_node=min_edges_per_node,
+        )
+        return io.load_network_cyjs(
+            filepath=filepath,
+            source_label=source_label,
+            target_label=target_label,
+        )
+
+
 class NetworkIO:
     """
     A class for loading, processing, and managing network data.
@@ -50,35 +194,9 @@ class NetworkIO:
             min_edges_per_node=min_edges_per_node,
         )
 
-    def load_network_gpickle(
-        self,
-        filepath: str,
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
-    ) -> nx.Graph:
+    def load_network_gpickle(self, filepath: str) -> nx.Graph:
         """
         Load a network from a GPickle file.
-
-        Args:
-            filepath (str): Path to the GPickle file.
-            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-
-        Returns:
-            nx.Graph: Loaded and processed network.
-        """
-        networkio = NetworkIO(
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-        )
-        return networkio._load_network_gpickle(filepath=filepath)
-
-    def _load_network_gpickle(self, filepath: str) -> nx.Graph:
-        """
-        Private method to load a network from a GPickle file.
 
         Args:
             filepath (str): Path to the GPickle file.
@@ -97,35 +215,9 @@ class NetworkIO:
         # Initialize the graph
         return self._initialize_graph(G)
 
-    def load_network_networkx(
-        self,
-        network: nx.Graph,
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
-    ) -> nx.Graph:
+    def load_network_networkx(self, network: nx.Graph) -> nx.Graph:
         """
         Load a NetworkX graph.
-
-        Args:
-            network (nx.Graph): A NetworkX graph object.
-            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-
-        Returns:
-            nx.Graph: Loaded and processed network.
-        """
-        networkio = NetworkIO(
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-        )
-        return networkio._load_network_networkx(network=network)
-
-    def _load_network_networkx(self, network: nx.Graph) -> nx.Graph:
-        """
-        Private method to load a NetworkX graph.
 
         Args:
             network (nx.Graph): A NetworkX graph object.
@@ -149,46 +241,9 @@ class NetworkIO:
         source_label: str = "source",
         target_label: str = "target",
         view_name: str = "",
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
     ) -> nx.Graph:
         """
         Load a network from a Cytoscape file.
-
-        Args:
-            filepath (str): Path to the Cytoscape file.
-            source_label (str, optional): Source node label. Defaults to "source".
-            target_label (str, optional): Target node label. Defaults to "target".
-            view_name (str, optional): Specific view name to load. Defaults to "".
-            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-
-        Returns:
-            nx.Graph: Loaded and processed network.
-        """
-        networkio = NetworkIO(
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-        )
-        return networkio._load_network_cytoscape(
-            filepath=filepath,
-            source_label=source_label,
-            target_label=target_label,
-            view_name=view_name,
-        )
-
-    def _load_network_cytoscape(
-        self,
-        filepath: str,
-        source_label: str = "source",
-        target_label: str = "target",
-        view_name: str = "",
-    ) -> nx.Graph:
-        """
-        Private method to load a network from a Cytoscape file.
 
         Args:
             filepath (str): Path to the Cytoscape file.
@@ -315,43 +370,9 @@ class NetworkIO:
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
 
-    def load_network_cyjs(
-        self,
-        filepath: str,
-        source_label: str = "source",
-        target_label: str = "target",
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
-    ) -> nx.Graph:
+    def load_network_cyjs(self, filepath, source_label="source", target_label="target"):
         """
         Load a network from a Cytoscape JSON (.cyjs) file.
-
-        Args:
-            filepath (str): Path to the Cytoscape JSON file.
-            source_label (str, optional): Source node label. Default is "source".
-            target_label (str, optional): Target node label. Default is "target".
-            compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
-
-        Returns:
-            NetworkX graph: Loaded and processed network.
-        """
-        networkio = NetworkIO(
-            compute_sphere=compute_sphere,
-            surface_depth=surface_depth,
-            min_edges_per_node=min_edges_per_node,
-        )
-        return networkio._load_network_cyjs(
-            filepath=filepath,
-            source_label=source_label,
-            target_label=target_label,
-        )
-
-    def _load_network_cyjs(self, filepath, source_label="source", target_label="target"):
-        """
-        Private method to load a network from a Cytoscape JSON (.cyjs) file.
 
         Args:
             filepath (str): Path to the Cytoscape JSON file.
