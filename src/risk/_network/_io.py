@@ -24,24 +24,6 @@ class NetworkAPI:
     Delegates to the NetworkIO worker class for actual I/O and processing.
     """
 
-    def __init__(
-        self,
-        compute_sphere: bool = True,
-        surface_depth: float = 0.0,
-        min_edges_per_node: int = 0,
-    ):
-        """
-        Initialize the NetworkAPI.
-
-        Args:
-            compute_sphere (bool): Whether to map nodes to a sphere. Defaults to True.
-            surface_depth (float): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int): Minimum number of edges per node. Defaults to 0.
-        """
-        self.compute_sphere = compute_sphere
-        self.surface_depth = surface_depth
-        self.min_edges_per_node = min_edges_per_node
-
     def load_network_gpickle(
         self,
         filepath: str,

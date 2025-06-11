@@ -27,9 +27,6 @@ class GraphAPI:
     The GraphAPI class provides methods to load and process network graphs, annotations, and neighborhoods.
     """
 
-    def __init__(self) -> None:
-        pass
-
     def load_graph(
         self,
         network: nx.Graph,

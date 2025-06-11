@@ -29,9 +29,6 @@ class NeighborhoodsAPI:
     The NeighborhoodsAPI class provides methods to load neighborhood results from statistical tests.
     """
 
-    def __init__(self) -> None:
-        pass
-
     def load_neighborhoods_binom(
         self,
         network: nx.Graph,
