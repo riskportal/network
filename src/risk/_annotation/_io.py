@@ -13,11 +13,11 @@ from .._log import log_header, logger, params
 from ._annotation import load_annotation
 
 
-class AnnotationIO:
+class AnnotationHandler:
     """
     Handles the loading and exporting of annotation in various file formats.
 
-    The AnnotationIO class provides methods to load annotation from different file types (JSON, CSV, Excel, etc.)
+    The AnnotationHandler class provides methods to load annotation from different file types (JSON, CSV, Excel, etc.)
     and to export parameter data to various formats like JSON, CSV, and text files.
     """
 
