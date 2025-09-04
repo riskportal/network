@@ -251,7 +251,7 @@ def test_attribute_fallback_mechanism(risk_obj, data_path):
 @pytest.mark.parametrize("min_edges", [1, 5, 10])
 def test_load_network_min_edges(risk_obj, data_path, min_edges):
     """
-    Test loading a Cytoscape network with varying min_edges_per_node.
+    Test loading a Cytoscape network with varying min_edges_per_node using canonical k-core pruning.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.
@@ -399,7 +399,7 @@ def test_missing_node_attributes(risk_obj, cytoscape_network):
 
 def test_remove_isolates_does_not_raise(risk_obj, dummy_network):
     """
-    Test that loading a network with isolated nodes does not raise an error.
+    Test that canonical k-core removal (via min_edges_per_node) handles isolated nodes without error.
 
     Args:
         risk_obj: The RISK object instance used for loading the network.

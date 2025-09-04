@@ -164,7 +164,7 @@ class NetworkIO:
         Args:
             compute_sphere (bool, optional): Whether to map nodes to a sphere. Defaults to True.
             surface_depth (float, optional): Surface depth for the sphere. Defaults to 0.0.
-            min_edges_per_node (int, optional): Minimum number of edges per node. Defaults to 0.
+            min_edges_per_node (int, optional): Minimum number of edges per node (k-core threshold). Defaults to 0.
         """
         self.compute_sphere = compute_sphere
         self.surface_depth = surface_depth
@@ -440,20 +440,14 @@ class NetworkIO:
         num_initial_edges = G.number_of_edges()
         # Remove self-loops to ensure correct edge count
         G.remove_edges_from(nx.selfloop_edges(G))
-        # Iteratively remove nodes with fewer edges than the threshold
-        while True:
-            nodes_to_remove = [
-                node
-                for node, degree in dict(G.degree()).items()
-                if degree < self.min_edges_per_node
-            ]
-            if not nodes_to_remove:
-                break  # Exit loop if no nodes meet the condition
-            G.remove_nodes_from(nodes_to_remove)
-
-        # Remove isolated nodes
-        isolates = list(nx.isolates(G))
-        G.remove_nodes_from(isolates)
+        # Apply canonical node k-core pruning if requested
+        if self.min_edges_per_node > 0:
+            # networkx.k_core returns a subgraph; to preserve in-place behavior, copy back
+            core = nx.k_core(G, k=self.min_edges_per_node)
+            # Rebuild G in-place to keep external references valid
+            G.clear()
+            G.add_nodes_from(core.nodes(data=True))
+            G.add_edges_from(core.edges(data=True))
 
         # Log the number of nodes and edges before and after cleaning
         num_final_nodes = G.number_of_nodes()
