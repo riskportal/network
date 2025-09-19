@@ -54,37 +54,48 @@ def define_domains(
     Raises:
         ValueError: If the clustering criterion is set to "off" or if an error occurs during clustering.
     """
-    try:
-        if linkage_criterion == "off":
-            raise ValueError("Clustering is turned off.")
+    # Validate args first; let user mistakes raise immediately
+    clustering_off = _validate_clustering_args(
+        linkage_criterion, linkage_method, linkage_metric, linkage_threshold
+    )
 
+    # If clustering is turned off, assign unique domains and skip
+    if clustering_off:
+        n_rows = len(top_annotation)
+        logger.warning("Clustering is turned off. Skipping clustering.")
+        top_annotation["domain"] = range(1, n_rows + 1)
+    else:
         # Transpose the matrix to cluster annotations
         m = significant_neighborhoods_significance[:, top_annotation["significant_annotation"]].T
         # Safeguard the matrix by replacing NaN, Inf, and -Inf values
         m = _safeguard_matrix(m)
-        # Optimize silhouette score across different linkage methods and distance metrics
-        best_linkage, best_metric, best_threshold = _optimize_silhouette_across_linkage_and_metrics(
-            m, linkage_criterion, linkage_method, linkage_metric, linkage_threshold
-        )
-        # Perform hierarchical clustering
-        Z = linkage(m, method=best_linkage, metric=best_metric)
-        logger.warning(
-            f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'\nLinkage threshold: {round(best_threshold, 3)}"
-        )
-        # Calculate the optimal threshold for clustering
-        max_d_optimal = np.max(Z[:, 2]) * best_threshold
-        # Assign domains to the annotation matrix
-        domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
-        top_annotation["domain"] = 0
-        top_annotation.loc[top_annotation["significant_annotation"], "domain"] = domains
-    except (ValueError, LinAlgError):
-        # If a ValueError is encountered, handle it by assigning unique domains
-        n_rows = len(top_annotation)
-        if linkage_criterion == "off":
-            logger.warning("Clustering is turned off. Skipping clustering.")
-        else:
-            logger.error("Error encountered. Skipping clustering.")
-        top_annotation["domain"] = range(1, n_rows + 1)  # Assign unique domains
+        try:
+            # Optimize silhouette score across different linkage methods and distance metrics
+            (
+                best_linkage,
+                best_metric,
+                best_threshold,
+            ) = _optimize_silhouette_across_linkage_and_metrics(
+                m, linkage_criterion, linkage_method, linkage_metric, linkage_threshold
+            )
+            # Perform hierarchical clustering
+            Z = linkage(m, method=best_linkage, metric=best_metric)
+            logger.warning(
+                f"Linkage criterion: '{linkage_criterion}'\nLinkage method: '{best_linkage}'\nLinkage metric: '{best_metric}'\nLinkage threshold: {round(best_threshold, 3)}"
+            )
+            # Calculate the optimal threshold for clustering
+            max_d_optimal = np.max(Z[:, 2]) * best_threshold
+            # Assign domains to the annotation matrix
+            domains = fcluster(Z, max_d_optimal, criterion=linkage_criterion)
+            top_annotation["domain"] = 0
+            top_annotation.loc[top_annotation["significant_annotation"], "domain"] = domains
+        except (LinAlgError, ValueError):
+            # Numerical errors or degenerate input are handled gracefully (not user error)
+            n_rows = len(top_annotation)
+            logger.error(
+                "Clustering failed due to numerical or data degeneracy. Assigning unique domains."
+            )
+            top_annotation["domain"] = range(1, n_rows + 1)
 
     # Create DataFrames to store domain information
     node_to_significance = pd.DataFrame(
@@ -182,6 +193,46 @@ def trim_domains(
         ~trimmed_domains_matrix.index.isin(invalid_domain_ids)
     ]
     return valid_domains, valid_trimmed_domains_matrix
+
+
+def _validate_clustering_args(
+    linkage_criterion: str,
+    linkage_method: str,
+    linkage_metric: str,
+    linkage_threshold: Union[float, str],
+) -> bool:
+    """
+    Validate user-provided clustering arguments.
+
+    Returns:
+        bool: True if clustering is turned off (criterion == 'off'); False otherwise.
+
+    Raises:
+        ValueError: If any argument is invalid (user error).
+    """
+    # Allow opting out of clustering without raising
+    if linkage_criterion == "off":
+        return True
+    # Validate linkage method (allow "auto")
+    if linkage_method != "auto" and linkage_method not in LINKAGE_METHODS:
+        raise ValueError(
+            f"Invalid linkage_method '{linkage_method}'. Allowed values are 'auto' or one of: {sorted(LINKAGE_METHODS)}"
+        )
+    # Validate linkage metric (allow "auto")
+    if linkage_metric != "auto" and linkage_metric not in LINKAGE_METRICS:
+        raise ValueError(
+            f"Invalid linkage_metric '{linkage_metric}'. Allowed values are 'auto' or one of: {sorted(LINKAGE_METRICS)}"
+        )
+    # Validate linkage threshold (allow "auto"; otherwise must be float in (0, 1])
+    if linkage_threshold != "auto":
+        try:
+            lt = float(linkage_threshold)
+        except (TypeError, ValueError):
+            raise ValueError("linkage_threshold must be 'auto' or a float in the interval (0, 1].")
+        if not (0.0 < lt <= 1.0):
+            raise ValueError(f"linkage_threshold must be within (0, 1]. Received: {lt}")
+
+    return False
 
 
 def _safeguard_matrix(matrix: np.ndarray) -> np.ndarray:

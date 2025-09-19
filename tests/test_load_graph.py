@@ -378,6 +378,94 @@ def test_pop_domain(graph):
         ), f"{domain_id_to_remove} should be removed from node_id_to_domain_ids_and_significance_map['significances']"
 
 
+@pytest.mark.parametrize(
+    "bad_kwargs",
+    [
+        {"linkage_method": "not_a_method"},
+        {"linkage_metric": "not_a_metric"},
+        {"linkage_threshold": "bad"},
+        {"linkage_threshold": 0.0},  # out of (0, 1]
+        {"linkage_threshold": 1.5},  # out of (0, 1]
+    ],
+)
+def test_invalid_clustering_args_raise(risk_obj, cytoscape_network, json_annotation, bad_kwargs):
+    """
+    Validate that invalid clustering options raise a ValueError (user error).
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs.
+        cytoscape_network: The network object to be used for neighborhood and graph generation.
+        json_annotation: The JSON annotation associated with the network.
+        bad_kwargs: A dict containing an intentionally invalid clustering parameter.
+    """
+    neighborhoods = risk_obj.load_neighborhoods_binom(
+        network=cytoscape_network,
+        annotation=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=1.0,
+        fraction_shortest_edges=0.75,
+        null_distribution="network",
+        random_seed=888,
+    )
+
+    with pytest.raises(ValueError):
+        risk_obj.load_graph(
+            network=cytoscape_network,
+            annotation=json_annotation,
+            neighborhoods=neighborhoods,
+            tail="right",
+            pval_cutoff=0.05,
+            fdr_cutoff=1.0,
+            impute_depth=1,
+            prune_threshold=0.1,
+            linkage_criterion="distance",
+            linkage_method=bad_kwargs.get("linkage_method", "average"),
+            linkage_metric=bad_kwargs.get("linkage_metric", "yule"),
+            linkage_threshold=bad_kwargs.get("linkage_threshold", 0.2),
+            min_cluster_size=5,
+            max_cluster_size=1000,
+        )
+
+
+def test_off_criterion_bypasses_invalid_options(risk_obj, cytoscape_network, json_annotation):
+    """
+    Verify that setting linkage_criterion='off' cleanly bypasses clustering validation and does not raise.
+
+    Args:
+        risk_obj: The RISK object instance used for loading neighborhoods and graphs.
+        cytoscape_network: The network object to be used for neighborhood and graph generation.
+        json_annotation: The JSON annotation associated with the network.
+    """
+    neighborhoods = risk_obj.load_neighborhoods_binom(
+        network=cytoscape_network,
+        annotation=json_annotation,
+        distance_metric="louvain",
+        louvain_resolution=1.0,
+        fraction_shortest_edges=0.75,
+        null_distribution="network",
+        random_seed=888,
+    )
+
+    graph = risk_obj.load_graph(
+        network=cytoscape_network,
+        annotation=json_annotation,
+        neighborhoods=neighborhoods,
+        tail="right",
+        pval_cutoff=0.05,
+        fdr_cutoff=1.0,
+        impute_depth=1,
+        prune_threshold=0.1,
+        linkage_criterion="off",
+        linkage_method="not_a_method",
+        linkage_metric="not_a_metric",
+        linkage_threshold="bad",
+        min_cluster_size=5,
+        max_cluster_size=1000,
+    )
+
+    _validate_graph(graph)
+
+
 def _validate_graph(graph):
     """
     Validate that the graph is not None and contains nodes and edges.
