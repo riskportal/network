@@ -84,7 +84,7 @@ class Summary:
 
         Returns:
             pd.DataFrame: Processed DataFrame containing significance scores, p-values, q-values,
-                and annotation member information.
+                and matched annotation members information.
         """
         log_header("Loading analysis summary")
         # Calculate significance and depletion q-values from p-value matrices in annotation
@@ -109,9 +109,9 @@ class Summary:
         # Add minimum p-values and q-values to DataFrame
         results[
             [
-                "Enrichment P-Value",
+                "Enrichment P-value",
                 "Enrichment Q-value",
-                "Depletion P-Value",
+                "Depletion P-value",
                 "Depletion Q-value",
             ]
         ] = results.apply(
@@ -126,13 +126,13 @@ class Summary:
             axis=1,
             result_type="expand",
         )
-        # Add annotation members and their counts
-        results["Annotation Members in Network"] = results["Annotation"].apply(
+        # Add matched annotation members and their counts
+        results["Matched Members"] = results["Annotation"].apply(
             lambda desc: self._get_annotation_members(desc)
         )
-        results["Annotation Members in Network Count"] = results[
-            "Annotation Members in Network"
-        ].apply(lambda x: len(x.split(";")) if x else 0)
+        results["Matched Count"] = results["Matched Members"].apply(
+            lambda x: len(x.split(";")) if x else 0
+        )
 
         # Reorder columns and drop rows with NaN values
         results = (
@@ -140,12 +140,12 @@ class Summary:
                 [
                     "Domain ID",
                     "Annotation",
-                    "Annotation Members in Network",
-                    "Annotation Members in Network Count",
+                    "Matched Members",
+                    "Matched Count",
                     "Summed Significance Score",
-                    "Enrichment P-Value",
+                    "Enrichment P-value",
                     "Enrichment Q-value",
-                    "Depletion P-Value",
+                    "Depletion P-value",
                     "Depletion Q-value",
                 ]
             ]
@@ -159,20 +159,18 @@ class Summary:
         results = pd.merge(ordered_annotation, results, on="Annotation", how="left").fillna(
             {
                 "Domain ID": -1,
-                "Annotation Members in Network": "",
-                "Annotation Members in Network Count": 0,
+                "Matched Members": "",
+                "Matched Count": 0,
                 "Summed Significance Score": 0.0,
-                "Enrichment P-Value": 1.0,
+                "Enrichment P-value": 1.0,
                 "Enrichment Q-value": 1.0,
-                "Depletion P-Value": 1.0,
+                "Depletion P-value": 1.0,
                 "Depletion Q-value": 1.0,
             }
         )
-        # Convert "Domain ID" and "Annotation Members in Network Count" to integers
+        # Convert "Domain ID" and "Matched Count" to integers
         results["Domain ID"] = results["Domain ID"].astype(int)
-        results["Annotation Members in Network Count"] = results[
-            "Annotation Members in Network Count"
-        ].astype(int)
+        results["Matched Count"] = results["Matched Count"].astype(int)
 
         return results
 
