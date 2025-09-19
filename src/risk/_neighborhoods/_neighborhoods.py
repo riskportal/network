@@ -394,34 +394,33 @@ def _prune_neighbors(
     # Identify indices with non-zero rows in the binary significance matrix
     non_zero_indices = np.where(significant_binary_significance_matrix.sum(axis=1) != 0)[0]
     median_distances = []
+    distance_lookup = {}
     for node in non_zero_indices:
-        neighbors = [
-            n
-            for n in network.neighbors(node)
-            if significant_binary_significance_matrix[n].sum() != 0
-        ]
-        if neighbors:
-            median_distance = np.median(
-                [_get_euclidean_distance(node, n, network) for n in neighbors]
-            )
-            median_distances.append(median_distance)
+        dist = _median_distance_to_significant_neighbors(
+            node, network, significant_binary_significance_matrix
+        )
+        if dist is not None:
+            median_distances.append(dist)
+            distance_lookup[node] = dist
+
+    if not median_distances:
+        logger.warning("No significant neighbors found for pruning.")
+        significant_significance_matrix = np.where(
+            significant_binary_significance_matrix == 1, significance_matrix, 0
+        )
+        return (
+            significance_matrix,
+            significant_binary_significance_matrix,
+            significant_significance_matrix,
+        )
 
     # Calculate the distance threshold value based on rank
     distance_threshold_value = _calculate_threshold(median_distances, 1 - distance_threshold)
     # Prune nodes that are outliers based on the distance threshold
-    for row_index in non_zero_indices:
-        neighbors = [
-            n
-            for n in network.neighbors(row_index)
-            if significant_binary_significance_matrix[n].sum() != 0
-        ]
-        if neighbors:
-            median_distance = np.median(
-                [_get_euclidean_distance(row_index, n, network) for n in neighbors]
-            )
-            if median_distance >= distance_threshold_value:
-                significance_matrix[row_index] = 0
-                significant_binary_significance_matrix[row_index] = 0
+    for node, dist in distance_lookup.items():
+        if dist >= distance_threshold_value:
+            significance_matrix[node] = 0
+            significant_binary_significance_matrix[node] = 0
 
     # Create a matrix where non-significant entries are set to zero
     significant_significance_matrix = np.where(
@@ -433,6 +432,29 @@ def _prune_neighbors(
         significant_binary_significance_matrix,
         significant_significance_matrix,
     )
+
+
+def _median_distance_to_significant_neighbors(
+    node, network, significance_mask
+) -> Union[float, None]:
+    """
+    Calculate the median distance from a node to its significant neighbors.
+
+    Args:
+        node (Any): The node for which the median distance is being calculated.
+        network (nx.Graph): The network graph containing the nodes.
+        significance_mask (np.ndarray): Binary matrix indicating significant nodes.
+
+    Returns:
+        Union[float, None]: The median distance to significant neighbors, or None if no significant neighbors exist.
+    """
+    neighbors = [n for n in network.neighbors(node) if significance_mask[n].sum() != 0]
+    if not neighbors:
+        return None
+    # Calculate distances to significant neighbors
+    distances = [_get_euclidean_distance(node, n, network) for n in neighbors]
+
+    return np.median(distances)
 
 
 def _get_euclidean_distance(node1: Any, node2: Any, network: nx.Graph) -> float:
