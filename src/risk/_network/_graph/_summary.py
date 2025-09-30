@@ -134,6 +134,8 @@ class Summary:
             lambda x: len(x.split(";")) if x else 0
         )
 
+        # Drop the "Summed Significance Score" column before reordering and returning
+        results = results.drop(columns=["Summed Significance Score"])
         # Reorder columns and drop rows with NaN values
         results = (
             results[
@@ -142,7 +144,6 @@ class Summary:
                     "Annotation",
                     "Matched Members",
                     "Matched Count",
-                    "Summed Significance Score",
                     "Enrichment P-value",
                     "Enrichment Q-value",
                     "Depletion P-value",
@@ -161,7 +162,6 @@ class Summary:
                 "Domain ID": -1,
                 "Matched Members": "",
                 "Matched Count": 0,
-                "Summed Significance Score": 0.0,
                 "Enrichment P-value": 1.0,
                 "Enrichment Q-value": 1.0,
                 "Depletion P-value": 1.0,
