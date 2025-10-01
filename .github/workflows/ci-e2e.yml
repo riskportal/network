@@ -6,6 +6,8 @@ on:
 jobs:
   test-all-os:
     runs-on: ${{ matrix.os }}
+    env:
+      MPLBACKEND: Agg  # Force non-GUI backend for matplotlib
     strategy:
       fail-fast: false
       matrix:
