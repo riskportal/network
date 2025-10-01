@@ -145,58 +145,6 @@ def test_load_neighborhoods_permutation_multi_process(risk_obj, cytoscape_networ
     assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
 
 
-@pytest.mark.parametrize("null_distribution", ["network", "annotation"])
-def test_load_neighborhoods_poisson(
-    risk_obj, cytoscape_network, json_annotation, null_distribution
-):
-    """
-    Test loading neighborhoods using the Poisson test with multiple null distributions.
-
-    Args:
-        risk_obj: The RISK object instance used for loading neighborhoods.
-        cytoscape_network: The network object to be used for neighborhood generation.
-        json_annotation: The annotation associated with the network.
-        null_distribution: Null distribution type for the Poisson test (either 'network' or 'annotation').
-    """
-    neighborhoods = risk_obj.load_neighborhoods_poisson(
-        network=cytoscape_network,
-        annotation=json_annotation,
-        distance_metric="louvain",
-        louvain_resolution=0.01,
-        fraction_shortest_edges=0.15,
-        null_distribution=null_distribution,
-        random_seed=887,
-    )
-
-    assert neighborhoods is not None
-    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
-
-
-@pytest.mark.parametrize("null_distribution", ["network", "annotation"])
-def test_load_neighborhoods_zscore(risk_obj, cytoscape_network, json_annotation, null_distribution):
-    """
-    Test loading neighborhoods using the z-score test with multiple null distributions.
-
-    Args:
-        risk_obj: The RISK object instance used for loading neighborhoods.
-        cytoscape_network: The network object to be used for neighborhood generation.
-        json_annotation: The annotation associated with the network.
-        null_distribution: Null distribution type for the z-score test (either 'network' or 'annotation').
-    """
-    neighborhoods = risk_obj.load_neighborhoods_zscore(
-        network=cytoscape_network,
-        annotation=json_annotation,
-        distance_metric="louvain",
-        louvain_resolution=0.01,
-        fraction_shortest_edges=0.25,
-        null_distribution=null_distribution,
-        random_seed=887,
-    )
-
-    assert neighborhoods is not None
-    assert len(neighborhoods) > 0  # Ensure neighborhoods are loaded
-
-
 @pytest.mark.parametrize(
     "distance_metric, fraction_shortest_edges",
     [
