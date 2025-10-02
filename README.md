@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-GPLv3-purple)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.xxxxxxx.svg)](https://doi.org/10.5281/zenodo.xxxxxxx)
 ![Downloads](https://img.shields.io/pypi/dm/risk-network)
-![Tests](https://github.com/riskportal/network/actions/workflows/ci.yml/badge.svg)
+![Tests](https://github.com/riskportal/risk/actions/workflows/ci.yml/badge.svg)
 
 **RISK** (Regional Inference of Significant Kinships) is a next-generation tool for biological network annotation and visualization. It integrates community detection algorithms, rigorous overrepresentation analysis, and a modular framework for diverse network types. RISK identifies biologically coherent relationships within networks and generates publication-ready visualizations, making it a useful tool for biological and interdisciplinary network analysis.
 
@@ -21,8 +21,8 @@ DOI: [10.5281/zenodo.xxxxxxx](https://doi.org/10.5281/zenodo.xxxxxxx)
 
 Full documentation is available at:
 
-- **Docs:** [https://riskportal.github.io/network-tutorial](https://riskportal.github.io/network-tutorial)
-- **Tutorial Jupyter Notebook Repository:** [https://github.com/riskportal/network-tutorial](https://github.com/riskportal/network-tutorial)
+- **Docs:** [https://riskportal.github.io/risk-docs](https://riskportal.github.io/risk-docs)
+- **Tutorial Jupyter Notebook Repository:** [https://github.com/riskportal/risk-docs](https://github.com/riskportal/risk-docs)
 
 ## Installation
 
@@ -58,12 +58,12 @@ DOI: [10.5281/zenodo.xxxxxxx](https://doi.org/10.5281/zenodo.xxxxxxx)
 
 We welcome contributions from the community:
 
-- [Issues Tracker](https://github.com/riskportal/network/issues)
-- [Source Code](https://github.com/riskportal/network/tree/main/risk)
+- [Issues Tracker](https://github.com/riskportal/risk/issues)
+- [Source Code](https://github.com/riskportal/risk/tree/main/risk)
 
 ## Support
 
-If you encounter issues or have suggestions for new features, please use the [Issues Tracker](https://github.com/riskportal/network/issues) on GitHub.
+If you encounter issues or have suggestions for new features, please use the [Issues Tracker](https://github.com/riskportal/risk/issues) on GitHub.
 
 ## License
 
