@@ -1,7 +1,5 @@
 # RISK
 
-<br>
-
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 [![pypiv](https://img.shields.io/pypi/v/risk-network.svg)](https://pypi.python.org/pypi/risk-network)
 ![License](https://img.shields.io/badge/license-GPLv3-purple)
@@ -34,7 +32,7 @@ pip install risk-network --upgrade
 
 ## Key Features of RISK
 
-- **Broad Data Compatibility**: Accepts multiple network formats (NetworkX, Cytoscape, Cytoscape JSON, GPickle) and user-provided annotations formatted as term–to–gene membership tables (JSON, CSV, TSV, Excel, or Python dictionaries).
+- **Broad Data Compatibility**: Accepts multiple network formats (Cytoscape, Cytoscape JSON, GPickle, NetworkX) and user-provided annotations formatted as term–to–gene membership tables (JSON, CSV, TSV, Excel, Python dictionaries).
 - **Flexible Clustering**: Offers Louvain, Leiden, Markov Clustering, Greedy Modularity, Label Propagation, Spinglass, and Walktrap, with user-defined resolution parameters to detect both coarse and fine-grained modules.
 - **Statistical Testing**: Provides permutation, hypergeometric, chi-squared, and binomial tests, balancing statistical rigor with speed.
 - **High-Resolution Visualization**: Generates publication-ready figures with customizable node/edge properties, contour overlays, and export to SVG, PNG, or PDF.
