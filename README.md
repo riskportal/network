@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 [![pypiv](https://img.shields.io/pypi/v/risk-network.svg)](https://pypi.python.org/pypi/risk-network)
 ![License](https://img.shields.io/badge/license-GPLv3-purple)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.xxxxxxx.svg)](https://doi.org/10.5281/zenodo.xxxxxxx)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17257418.svg)](https://doi.org/10.5281/zenodo.17257418)
 ![Downloads](https://img.shields.io/pypi/dm/risk-network)
 ![Tests](https://github.com/riskportal/risk/actions/workflows/ci.yml/badge.svg)
 
@@ -13,7 +13,7 @@ For a full description of RISK and its applications, see:
 <br>
 **Horecka and Röst (2025)**, _"RISK: a next-generation tool for biological network annotation and visualization"_.
 <br>
-DOI: [10.5281/zenodo.xxxxxxx](https://doi.org/10.5281/zenodo.xxxxxxx)
+DOI: [10.5281/zenodo.17257418](https://doi.org/10.5281/zenodo.17257418)
 
 ## Documentation and Tutorial
 
@@ -50,7 +50,7 @@ If you use RISK in your research, please cite the following:
 
 **Horecka and Röst (2025)**, _"RISK: a next-generation tool for biological network annotation and visualization"_.
 <br>
-DOI: [10.5281/zenodo.xxxxxxx](https://doi.org/10.5281/zenodo.xxxxxxx)
+DOI: [10.5281/zenodo.17257418](https://doi.org/10.5281/zenodo.17257418)
 
 ## Contributing
 
